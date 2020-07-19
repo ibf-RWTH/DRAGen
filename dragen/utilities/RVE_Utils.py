@@ -1,15 +1,16 @@
 import sys
 import numpy as np
 
-class RVE_utils:
+
+class RVEUtils:
     """Common Representative Volume Element (RVE) operations."""
 
-    def __init__(self, box_size, points_on_edge, bandwidth = 0):
+    def __init__(self, box_size, points_on_edge, bandwidth=0):
         # LOGGER initialization can be added here
         self.box_size = box_size
         self.points_on_edge = points_on_edge
-        self.step_size = box_size/points_on_edge
-        self.step_half = self.step_size/2
+        self.step_size = box_size / points_on_edge
+        self.step_half = self.step_size / 2
         self.bandwidth = bandwidth
 
     def convert_volume(self, radius_a, radius_b, radius_c):
@@ -20,13 +21,13 @@ class RVE_utils:
         radius_b : Integer, radius along z-axis
         """
         grid = np.around(np.arange(-self.box_size + self.step_half, self.box_size, self.step_size))
-        mingrid = min([n for n in grid if n > 0])
-        x0 = list(grid).index(mingrid)
+        min_grid = min([n for n in grid if n > 0])
+        x0 = list(grid).index(min_grid)
         grainx, grainy, grainz = np.meshgrid(grid, grid, grid)
         A0 = (1. / radius_a) ** 2
         B0 = (1. / radius_b) ** 2
         C0 = (1. / radius_c) ** 2
-        r = np.sqrt(A0 * (grainx-grid[x0]) ** 2 + B0 * (grainy-grid[x0]) ** 2 + C0 * (grainz-grid[x0]) ** 2)
+        r = np.sqrt(A0 * (grainx - grid[x0]) ** 2 + B0 * (grainy - grid[x0]) ** 2 + C0 * (grainz - grid[x0]) ** 2)
         inside = r <= 1
         # LOGGER : print the returned volume for (radius_a, radius_b, radius_c)
         return len(grainx[inside])
@@ -82,16 +83,16 @@ class RVE_utils:
 
         return periodic_pt, periodic_identifier_list
 
-    def band_generator(self, xyz_grid, plane = 'xy'):
+    def band_generator(self, xyz_grid, plane='xy'):
         """Creates a band of given bandwidth for given points in interval [step_half, box_size)
         with step_size spacing along the axis.
         Parameters :
         xyz_grid : Array, list of points in interval [step_half, box_size) with step_size spacing
         plane : String, default is 'xy'
         """
-        band_half = self.bandwidth/2
-        randidx = int(np.random.rand()*len(xyz_grid))
-        band_center = xyz_grid[randidx]
+        band_half = self.bandwidth / 2
+        rand_idx = int(np.random.rand() * len(xyz_grid))
+        band_center = xyz_grid[rand_idx]
         x, y, z = np.meshgrid(xyz_grid, xyz_grid, xyz_grid)
         if plane == 'xy':
             r = z
@@ -100,7 +101,7 @@ class RVE_utils:
         elif plane == 'xz':
             r = y
         else:
-            print('Error: plane must be defined as xy, yz or xz! Default: xy') # LOGGER
+            print('Error: plane must be defined as xy, yz or xz! Default: xy')  # LOGGER
             sys.exit(1)
         left_bound = r >= band_center - band_half
         right_bound = r <= band_center + band_half

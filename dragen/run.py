@@ -1,4 +1,4 @@
-from main import DataTask
+from dragen.main import DataTask
 
 if __name__ == "__main__":
     obj = DataTask()

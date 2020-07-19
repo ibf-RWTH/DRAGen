@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 class FileUtils:
     """General file utilities."""
 
@@ -11,7 +12,7 @@ class FileUtils:
         Parameter :
         file_name : String, name of the input file
         """
-        data = pd.read_csv(filename)
+        data = pd.read_csv(file_name)
         radius_a, radius_b, radius_c = ([] for i in range(3))
         data.sort_values(by=['Volumen'], ascending=False, inplace=True)
         if 'a' in data.head(0):
