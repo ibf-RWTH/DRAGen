@@ -4,7 +4,7 @@ import datetime
 import numpy as np
 import csv
 
-import tqdm.auto
+from tqdm import tqdm
 
 from dragen.generation.discrete_RSA import DiscreteRSA
 from dragen.generation.discrete_tesselation import DiscreteTesselation
@@ -33,21 +33,20 @@ class DataTask:
         main_dir = sys.argv[0][:-7]
         os.chdir(main_dir)
 
-        file_utils_obj = FileUtils()
         utils_obj = RVEUtils(self.box_size, self.points_on_edge, self.bandwidth)
         discrete_RSA_obj = DiscreteRSA(self.box_size, self.points_on_edge, self.tolerance, self.number_of_bands,
                                        self.bandwidth)
         discrete_tesselation_obj = DiscreteTesselation(main_dir, self.box_size, self.points_on_edge, self.bandwidth)
 
-        phase1csv = '../Inputdata/Bainite-1300.csv'
+        phase1csv = 'Inputdata/Bainite-1300.csv'
         phase2csv = '../Inputdata/38Mn-Pearlite.csv'
         testcase1 = '../Inputdata/Input2.csv'
         testcase2 = '../Inputdata/Input3.csv'
         testcase3 = '../Inputdata/Input4.csv'
-        testcase4 = '../Inputdata/martensite.csv'
+        testcase4 = 'Inputdata/martensite.csv'
 
-        phase1_a, phase1_b, phase1_c, volume_phase1 = file_utils_obj.read_input(phase1csv)
-        phase2_a, phase2_b, phase2_c, volume_phase2 = file_utils_obj.read_input(testcase4)
+        phase1_a, phase1_b, phase1_c, volume_phase1 = utils_obj.read_input(phase1csv)
+        phase2_a, phase2_b, phase2_c, volume_phase2 = utils_obj.read_input(testcase4)
         convert_list = []
         for i in tqdm(range(len(phase1_a))):
             vol = utils_obj.convert_volume(phase1_a[i], phase1_b[i], phase1_c[i])
@@ -73,8 +72,9 @@ class DataTask:
             phase2 = list(zip(self.shrink_factor * phase2_a, self.shrink_factor * phase2_a, self.shrink_factor * phase2_c))
 
         for i in range(self.first_RVE, self.last_RVE + 1):
-            store_path = '../OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(i)
-            os.system('mkdir ' + store_path)
+            store_path = 'OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(i)
+            if not os.path.isdir(store_path):
+                os.makedirs(store_path)
             with open(store_path + '/discrete_input_vol.csv', 'w', newline='') as f:
                 writer = csv.writer(f)
                 writer.writerow(convert_list)
@@ -84,4 +84,4 @@ class DataTask:
             if status:
                 discrete_tesselation_obj.tesselation(store_path, pt, rad, phase, convert_list, band)
             del pt, rad, phase
-            sys.exit()
+        sys.exit()

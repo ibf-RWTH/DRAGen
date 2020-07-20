@@ -3,7 +3,8 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import tqdm.auto
+
+from tqdm import tqdm
 
 from dragen.utilities.RVE_Utils import RVEUtils
 

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import multiprocessing as mp
 
 from random import randrange
-import tqdm.auto
+from tqdm import tqdm
 
 from dragen.utilities.RVE_Utils import RVEUtils
 
@@ -269,7 +269,7 @@ class DiscreteRSA:
         print('Die Raumfüllung beträgt: ' + str(Raumfuellung) + '%')
         print(str(len(accepted_grains_list)) + ' Grains have been placed')
         if not os.path.isdir(store_path + '/Fig'):
-            os.system('mkdir ' + store_path + '/Fig')
+            os.makedirs(store_path + '/Fig')
         plt.savefig(store_path + '/Fig/RSA')
         if len(accepted_grains_list) == total_number_of_grains:
             status = True

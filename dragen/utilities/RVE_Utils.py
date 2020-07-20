@@ -1,4 +1,5 @@
 import sys
+import pandas as pd
 import numpy as np
 
 
@@ -12,6 +13,26 @@ class RVEUtils:
         self.step_size = box_size / points_on_edge
         self.step_half = self.step_size / 2
         self.bandwidth = bandwidth
+
+    def read_input(self, file_name):
+        """Reads the given input file and returns the volume along with radii list.
+        Parameter :
+        file_name : String, name of the input file
+        """
+        data = pd.read_csv(file_name)
+        radius_a, radius_b, radius_c = ([] for i in range(3))
+        data.sort_values(by=['Volumen'], ascending=False, inplace=True)
+        if 'a' in data.head(0):
+            for rad in data['a']:
+                radius_a.append(rad)
+        if 'b' in data.head(0):
+            for rad in data['b']:
+                radius_b.append(rad)
+        if 'c' in data.head(0):
+            for rad in data['c']:
+                radius_c.append(rad)
+        # LOGGER: add 'CSV Gesamtvolumen: sum(volume)'
+        return radius_a, radius_b, radius_c, data['Volumen']
 
     def convert_volume(self, radius_a, radius_b, radius_c):
         """Compute the volume for the given radii.
