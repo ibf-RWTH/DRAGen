@@ -1,26 +1,31 @@
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
 from testprint import Generator
 
 
 class ProcessWindow(QMainWindow):
-    def __init__(self, parent=None):
-        super(ProcessWindow,self).__init__(parent)
+    def __init__(self, box_size, points_on_edge, packing_ratio, bands, bandwidth, speed, parent=None):
+        super(ProcessWindow, self).__init__(parent)
+        self.central_widget = QWidget()
         self.worker_thread = Generator()
+        self.setFixedSize(640, 480)
         self.worker_thread.job_done.connect(self.on_job_done)
+        self.box_size = box_size
+        self.points_on_edge = points_on_edge
+        self.packing_ratio = packing_ratio
+        self.bands = bands
+        self.bandwidth = bandwidth
+        self.speed = speed
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('DRAGen - Tool by IMS')
-        self.central_widget = QWidget()
+        self.setWindowTitle('RVE Generator')
         self.setCentralWidget(self.central_widget)
 
         vbox = QVBoxLayout(self.central_widget)
 
         self.textedit = QTextEdit("result:")
-        self.start = QPushButton("Start",self)
-        self.cancel = QPushButton("Cancel",self)
+        self.start = QPushButton("Start", self)
+        self.cancel = QPushButton("Cancel", self)
 
         self.start.clicked.connect(self.start_thread)
         self.cancel.clicked.connect(self.buttonClicked)
@@ -47,17 +52,16 @@ class ProcessWindow(QMainWindow):
         sender = self.sender()
         if sender.text() == "Start":
             pass
-
-
         elif sender.text() == "Cancel":
             self.closeAndReturn()
 
 
-
-if __name__ == "__main__":
+"""if __name__ == "__main__":
     import sys
+
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
     w = ProcessWindow()
     w.show()
     sys.exit(app.exec_())
+"""
