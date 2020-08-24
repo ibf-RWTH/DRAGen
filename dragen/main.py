@@ -27,7 +27,7 @@ class DataTask:
         self.tolerance = 0.01
         self.speed = speed
         main_dir = sys.argv[0][:-7]
-        os.chdir(main_dir)
+        #os.chdir(main_dir)
         self.utils_obj = RVEUtils(self.box_size, self.points_on_edge, self.bandwidth)
         self.discrete_RSA_obj = DiscreteRSA(self.box_size, self.points_on_edge, self.tolerance, self.number_of_bands,
                                             self.bandwidth)
@@ -35,12 +35,12 @@ class DataTask:
                                                             self.bandwidth)
 
     def initializations(self):
-        phase1csv = 'Inputdata/Bainite-1300.csv'
+        phase1csv = 'Bainite-1300.csv'
         phase2csv = '../Inputdata/38Mn-Pearlite.csv'
         testcase1 = '../Inputdata/Input2.csv'
         testcase2 = '../Inputdata/Input3.csv'
         testcase3 = '../Inputdata/Input4.csv'
-        testcase4 = 'Inputdata/martensite.csv'
+        testcase4 = 'martensite.csv'
 
         phase1_a, phase1_b, phase1_c, volume_phase1 = self.utils_obj.read_input(phase1csv)
         phase2_a, phase2_b, phase2_c, volume_phase2 = self.utils_obj.read_input(testcase4)

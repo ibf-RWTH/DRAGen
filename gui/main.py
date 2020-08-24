@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import *
-from RVEGen import RVEGeneratorGUI
+from gui.RVEGen import RVEGeneratorGUI
 
 
 class MyWindow(QMainWindow):

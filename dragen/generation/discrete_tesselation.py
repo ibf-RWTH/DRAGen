@@ -27,7 +27,7 @@ class DiscreteTesselation:
         if band is None:
             band = set()
         utils_obj = RVEUtils(self.box_size, self.points_on_edge, self.bandwidth)
-        os.chdir(self.main_dir)
+        #os.chdir(self.main_dir)
         packing_ratio = 0
         box_xyz = np.arange(self.step_half, self.box_size, self.step_size)
         xyz = np.arange(-self.box_size + self.step_half, self.double_box, self.step_size)

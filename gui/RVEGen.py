@@ -1,11 +1,10 @@
 from PyQt5.QtWidgets import *
-from dragen.main import DataTask
+from gui.RVEProc import ProcessWindow
 
 
 class RVEGeneratorGUI(QMainWindow):
     def __init__(self, parent=None):
         super(RVEGeneratorGUI, self).__init__(parent)
-        self.completed = 0
         self.central_widget = QWidget()
         self.setFixedSize(640, 480)
         self.initUI()
@@ -85,23 +84,27 @@ class RVEGeneratorGUI(QMainWindow):
         hbox7.addWidget(start)
         hbox8.addWidget(cancel)
 
+        self.rveproc = ProcessWindow(self.box_size_input.value(), self.points_input.value(), self.packing_input.value(),
+                                     self.bands_input.value(), self.width_input.value(), self.speed_input.value())
+
     def closeAndReturn(self):
         self.close()
         self.parent().show()
 
     def buttonClicked(self):
         sender = self.sender()
-        last_RVE = 3
+        #last_RVE = 3
 
         if sender.text() == 'Start':
             if self.points_input.value() % 2 == 0:
                 self.statusBar().clearMessage()
-                self.obj = DataTask(self.box_size_input.value(), self.points_input.value(),
-                                    self.bands_input.value(), self.width_input.value(), self.speed_input.value())
-                convert_list, phase1, phase2 = self.obj.initializations
-                for i in range(last_RVE + 1):
-                    self.obj.rve_generation(i, convert_list, phase1, phase2)
-                    self.statusBar().showMessage('Iteration ' + str(i) + ': RVE generation in progress...')
+                self.rveproc.show()
+                #self.obj = DataTask(self.box_size_input.value(), self.points_input.value(),
+                 #                   self.bands_input.value(), self.width_input.value(), self.speed_input.value())
+                #convert_list, phase1, phase2 = self.obj.initializations
+                #for i in range(last_RVE + 1):
+                    # self.obj.rve_generation(i, convert_list, phase1, phase2)
+                 #   self.statusBar().showMessage('Iteration ' + str(i) + ': RVE generation in progress...')
             else:
                 self.statusBar().showMessage('Number of points on edge input has to be even.')
 
