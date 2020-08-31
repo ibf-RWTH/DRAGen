@@ -2,8 +2,11 @@ import sys
 
 from dragen.main import DataTask
 
+
 if __name__ == "__main__":
-    last_RVE = 10
+    last_RVE = 10  # Specify the number of iterations
+    # Optional arguments with default values:
+    # DataTask(box_size=22, points_on_edge=22, number_of_bands=0, bandwidth=3, speed=1, shrink_factor=0.3)
     obj = DataTask()
     try:
         convert_list, phase1, phase2 = obj.initializations()

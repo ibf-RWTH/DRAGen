@@ -3,6 +3,7 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import logging
 
 from tqdm import tqdm
 
@@ -12,7 +13,7 @@ from dragen.utilities.RVE_Utils import RVEUtils
 class DiscreteTesselation:
 
     def __init__(self, main_dir, box_size, points_on_edge, bandwidth=0):
-        # LOGGER initialization
+        self.logger = logging.getLogger("RVE-Gen")
         self.main_dir = main_dir
         self.box_size = box_size
         self.points_on_edge = points_on_edge
@@ -27,12 +28,11 @@ class DiscreteTesselation:
         if band is None:
             band = set()
         utils_obj = RVEUtils(self.box_size, self.points_on_edge, self.bandwidth)
-        #os.chdir(self.main_dir)
+        os.chdir(self.main_dir)
         packing_ratio = 0
         box_xyz = np.arange(self.step_half, self.box_size, self.step_size)
         xyz = np.arange(-self.box_size + self.step_half, self.double_box, self.step_size)
         vol0 = len(box_xyz) * len(box_xyz) * len(box_xyz)
-        print(vol0)  # LOGGER
         N = len(box_xyz)
         bin_size = self.speed * self.box_size / N
         x, y, z = np.meshgrid(xyz, xyz, xyz)
@@ -62,17 +62,17 @@ class DiscreteTesselation:
 
         if len(band) > 0:
             taken_points.update(band)
-            print('bin in band if ')
+            self.logger.info("Bin in band if")
             tess_grains.append(list(band))
             phase.append(2)
 
-        print('Volumen RSAGrains', sum([len(tess_grain) for tess_grain in tess_grains]))  # LOGGER
+        self.logger.info("Volumen RSAGrains: {}".format(sum([len(tess_grain) for tess_grain in tess_grains])))
         p_bar = tqdm(total=len(RSA_grains))
         RSA_grains_backup = RSA_grains
         idx_list_backup = idx_list
         volume_backup = volume
         rad = [list(rad_i) for rad_i in rad]
-        print('Vol0: ', vol0)  # LOGGER
+        self.logger.info("Volume before growth: {}", vol0)
         # Starting growth
         repeat = False
         step = 0
@@ -165,34 +165,31 @@ class DiscreteTesselation:
                 plt.savefig(store_path + '/Fig/2DRSA_' + str(step))
                 plt.cla()
 
-        # LOGGER
-        # print(pid)
-        # print('takenpoints',len(takenpoints))
-        # print('vol0',vol0)
+        self.logger.info("PID: {}".format(pid))
+        self.logger.info("Total points taken: {}".format(len(taken_points)))
+        self.logger.info("Volume after growth: {}".format(vol0))
 
         volume_list = [len(TessGrain) for TessGrain in tess_grains]
         with open(store_path + '/tess_vol.csv', 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(volume_list)
-        # LOGGER
-        # print('len(tess_grains)',len(tess_grains))
-        # print('len(volume_list)',len(volume_list))
-        # print(packingratio)
+
+        self.logger.info("Total tesselation grains: {}".format(len(tess_grains)))
+        self.logger.info("Length of volume list: {}".format(len(volume_list)))
+        self.logger.info("Packing ratio: {}".format(packing_ratio))
 
         grain_df = [pd.DataFrame(grain, columns=['x', 'y', 'z']) for grain in tess_grains]
-        # print(graindf[0][:10])
         box_rve = pd.DataFrame()
         for i in range(len(grain_df)):
             grain_df[i]['GrainID'] = i
             grain_df[i]['vol'] = len(grain_df[i])
             grain_df[i]['phaseID'] = phase[i]
-        print('Storing RVE in dataframe')
+        self.logger.info("Storing RVE in dataframe...")
         for i in tqdm(range(len(grain_df))):
             box_rve = pd.concat([box_rve, grain_df[i]])
         box_rve['rvesize'] = len(box_xyz)
         box_rve.sort_values(by=['x', 'y', 'z'], inplace=True)
         box_rve.reset_index(inplace=True, drop=True)
-        # print(boxrve)
         box_rve.to_hdf(store_path + '/boxrve.h5', key='gb', mode='w')
         box_rve.to_csv(store_path + '/boxrve.csv', mode='w')
         flat_grain_list = [y for x in tess_grains for y in x]

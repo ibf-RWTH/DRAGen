@@ -1,13 +1,14 @@
 import sys
 import pandas as pd
 import numpy as np
+import logging
 
 
 class RVEUtils:
     """Common Representative Volume Element (RVE) operations."""
 
     def __init__(self, box_size, points_on_edge, bandwidth=0):
-        # LOGGER initialization can be added here
+        self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.points_on_edge = points_on_edge
         self.step_size = box_size / points_on_edge
@@ -31,7 +32,7 @@ class RVEUtils:
         if 'c' in data.head(0):
             for rad in data['c']:
                 radius_c.append(rad)
-        # LOGGER: add 'CSV Gesamtvolumen: sum(volume)'
+        self.logger.info("CSV total volume: {}".format(sum(data['Volumen'])))
         return radius_a, radius_b, radius_c, data['Volumen']
 
     def convert_volume(self, radius_a, radius_b, radius_c):
@@ -50,7 +51,7 @@ class RVEUtils:
         C0 = (1. / radius_c) ** 2
         r = np.sqrt(A0 * (grainx - grid[x0]) ** 2 + B0 * (grainy - grid[x0]) ** 2 + C0 * (grainz - grid[x0]) ** 2)
         inside = r <= 1
-        # LOGGER : print the returned volume for (radius_a, radius_b, radius_c)
+        self.logger.info("Volume for the given radii: {}".format(len(grainx[inside])))
         return len(grainx[inside])
 
     def periodicity_RSA(self, coordinate, points):
@@ -122,11 +123,12 @@ class RVEUtils:
         elif plane == 'xz':
             r = y
         else:
-            print('Error: plane must be defined as xy, yz or xz! Default: xy')  # LOGGER
+            self.logger.error("Error: plane must be defined as xy, yz or xz! Default: xy")
             sys.exit(1)
         left_bound = r >= band_center - band_half
         right_bound = r <= band_center + band_half
-        # LOGGER : Print bandwidth, bandcenter-bandhalf, bandcenter+bandhalf, left, right
+        self.logger.info("Band generator - Bandwidth: {}, Left bound: {} and Right bound: {}"
+                         .format(self.bandwidth, left_bound, right_bound))
         left = set([a for a in zip(x[right_bound], y[right_bound], z[right_bound])])
         right = set([a for a in zip(x[left_bound], y[left_bound], z[left_bound])])
 

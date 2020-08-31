@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import multiprocessing as mp
+import logging
 
 from random import randrange
 from tqdm import tqdm
@@ -14,7 +15,7 @@ from dragen.utilities.RVE_Utils import RVEUtils
 class DiscreteRSA:
 
     def __init__(self, box_size, points_on_edge, tolerance, number_of_bands, bandwidth=0):
-        # LOGGER initialization
+        self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.points_on_edge = points_on_edge
         self.step_size = box_size / points_on_edge
@@ -167,7 +168,7 @@ class DiscreteRSA:
                     vol = vol + 4 / 3 * np.pi * radii[n + 1][0] * radii[n + 1][1] * radii[n + 1][2]
                     n = n + 2
                 else:
-                    print('Intersection too big')
+                    self.logger.info("Intersection is too big.")
                 trial = seed_grid
             else:
                 grid_index = randrange(len(trial))
@@ -194,7 +195,8 @@ class DiscreteRSA:
                         frac = size / len(grain1)
                         if frac <= self.tolerance:
                             if len(grain1) == 0:
-                                print('Error ', grain1, n)  # LOGGER
+                                self.logger.error("An error occurred. The value for grain is: {} and value for n: {}"
+                                                  .format(grain1, n))
                                 sys.exit(0)
 
                             accepted_grains.update(grain1)
@@ -213,7 +215,7 @@ class DiscreteRSA:
 
                     else:
                         if len(grain1) == 0:
-                            print('Error ', grain1)  # LOGGER
+                            self.logger.error("An error occurred. The value for grain is: {}".format(grain1))
                             sys.exit(0)
                         accepted_grains.update(grain1)
                         accepted_grains_list.append(grain1)
@@ -245,7 +247,7 @@ class DiscreteRSA:
                 try:
                     ax.scatter(*zip(*grain))
                 except:
-                    print(grain)
+                    self.logger.error("Grain: {}".format(grain))
                     sys.exit(0)
 
             if phase[i] == 2:
@@ -266,8 +268,8 @@ class DiscreteRSA:
         for grain in accepted_grains_list:
             Raumfuellung = Raumfuellung + len(grain)
         Raumfuellung = Raumfuellung / Vol0 * 100
-        print('Die Raumfüllung beträgt: ' + str(Raumfuellung) + '%')
-        print(str(len(accepted_grains_list)) + ' Grains have been placed')
+        self.logger.info("Die Raumfüllung beträgt: {}%".format(str(Raumfuellung)))
+        self.logger.info("{} grains have been placed.".format(str(len(accepted_grains_list))))
         if not os.path.isdir(store_path + '/Fig'):
             os.makedirs(store_path + '/Fig')
         plt.savefig(store_path + '/Fig/RSA')
@@ -277,8 +279,7 @@ class DiscreteRSA:
             status = False
 
         single_layer = rsa[rsa['x'] == xyz_min]
-        print(single_layer)
-        # sys.exit()
+        self.logger.info("Single layer: {}".format(single_layer))
         fig, ax = plt.subplots()
         ax.set_xlim(0, self.box_size)
         ax.set_ylim(0, self.box_size)
