@@ -15,7 +15,7 @@ from dragen.utilities.RVE_Utils import RVEUtils
 
 class DataTask:
 
-    def __init__(self, box_size=22, points_on_edge=22, number_of_bands=0, bandwidth=3, speed=1, shrink_factor=0.3):
+    def __init__(self, box_size=22, points_on_edge=22, number_of_bands=0, bandwidth=3, speed=1, shrink_factor=0.3, file1=None, file2=None, gui_flag=False):
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.points_on_edge = points_on_edge  # has to be even
@@ -29,7 +29,11 @@ class DataTask:
         self.tolerance = 0.01
         self.speed = speed
         main_dir = sys.argv[0][:-7]
-        os.chdir(main_dir)
+        self.gui_flag = gui_flag
+        if not gui_flag:
+            os.chdir(main_dir)
+        self.file1 = file1
+        self.file2 = file2
         self.utils_obj = RVEUtils(self.box_size, self.points_on_edge, self.bandwidth)
         self.discrete_RSA_obj = DiscreteRSA(self.box_size, self.points_on_edge, self.tolerance, self.number_of_bands,
                                             self.bandwidth)
@@ -49,12 +53,16 @@ class DataTask:
 
     def initializations(self):
         self.setup_logging()
-        phase1csv = 'Inputdata/Bainite-1300.csv'
-        phase2csv = '../Inputdata/38Mn-Pearlite.csv'
-        testcase1 = '../Inputdata/Input2.csv'
-        testcase2 = '../Inputdata/Input3.csv'
-        testcase3 = '../Inputdata/Input4.csv'
-        testcase4 = 'Inputdata/martensite.csv'
+        if not self.gui_flag:
+            phase1csv = 'Inputdata/Bainite-1300.csv'
+            phase2csv = '../Inputdata/38Mn-Pearlite.csv'
+            testcase1 = '../Inputdata/Input2.csv'
+            testcase2 = '../Inputdata/Input3.csv'
+            testcase3 = '../Inputdata/Input4.csv'
+            testcase4 = 'Inputdata/martensite.csv'
+        else:
+            phase1csv = self.file1
+            testcase4 = self.file2
 
         self.logger.info("RVE generation process has started...")
         phase1_a, phase1_b, phase1_c, volume_phase1 = self.utils_obj.read_input(phase1csv)
@@ -99,6 +107,6 @@ class DataTask:
         pt, rad, phase, band, status = self.discrete_RSA_obj.RSA3D(store_path, phase1, phase2)
 
         if status:
-            self.discrete_tesselation_obj.tesselation(store_path, pt, rad, phase, convert_list, band)
+            self.discrete_tesselation_obj.tesselation(store_path, pt, rad, phase, convert_list, self.gui_flag, band)
         del pt, rad, phase
         self.logger.info("RVE generation process has successfully completed...")

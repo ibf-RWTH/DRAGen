@@ -24,11 +24,12 @@ class DiscreteTesselation:
         self.speed = 1
         self.radius = 1.0
 
-    def tesselation(self, store_path, pt, rad, phase, convert_list, band=None, animation=False):
+    def tesselation(self, store_path, pt, rad, phase, convert_list, gui_flag, band=None, animation=False):
         if band is None:
             band = set()
         utils_obj = RVEUtils(self.box_size, self.points_on_edge, self.bandwidth)
-        os.chdir(self.main_dir)
+        if not gui_flag:
+            os.chdir(self.main_dir)
         packing_ratio = 0
         box_xyz = np.arange(self.step_half, self.box_size, self.step_size)
         xyz = np.arange(-self.box_size + self.step_half, self.double_box, self.step_size)
