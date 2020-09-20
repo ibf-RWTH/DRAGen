@@ -68,10 +68,10 @@ class DataTask:
         phase1_a, phase1_b, phase1_c, volume_phase1 = self.utils_obj.read_input(phase1csv)
         phase2_a, phase2_b, phase2_c, volume_phase2 = self.utils_obj.read_input(testcase4)
         convert_list = []
-        for i in tqdm(range(len(phase1_a))):
+        for i in range(len(phase1_a)):
             vol = self.utils_obj.convert_volume(phase1_a[i], phase1_b[i], phase1_c[i])
             convert_list.append(vol)
-        for i in tqdm(range(len(phase2_a))):
+        for i in range(len(phase2_a)):
             vol = self.utils_obj.convert_volume(phase2_a[i], phase2_b[i], phase2_c[i])
             convert_list.append(vol)
 

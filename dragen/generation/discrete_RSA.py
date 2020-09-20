@@ -258,7 +258,7 @@ class DiscreteRSA:
             ax.scatter(*zip(*band), c='k')
 
         rsa['Orientation'] = 0
-        for i in tqdm(range(len(rsa.groupby(['GrainID'])) + 1)):
+        for i in range(len(rsa.groupby(['GrainID'])) + 1):
             rsa.loc[rsa.GrainID == i, 'Orientation'] = \
                 np.random.randint(360)
         rsa.loc[rsa.phaseID == 2, 'Orientation'] = 720

@@ -42,7 +42,7 @@ class DiscreteTesselation:
         RSA_grains, tess_grains, idx_list, volume = ([] for i in range(4))
 
         # Reconstructing RSA
-        for i in tqdm(range(len(pt))):
+        for i in range(len(pt)):
             A1 = 1. / rad[i][0]
             B1 = 1. / rad[i][1]
             C1 = 1. / rad[i][2]
@@ -73,7 +73,7 @@ class DiscreteTesselation:
         idx_list_backup = idx_list
         volume_backup = volume
         rad = [list(rad_i) for rad_i in rad]
-        self.logger.info("Volume before growth: {}", vol0)
+        self.logger.info("Volume before growth: {}".format(vol0))
         # Starting growth
         repeat = False
         step = 0
@@ -186,7 +186,7 @@ class DiscreteTesselation:
             grain_df[i]['vol'] = len(grain_df[i])
             grain_df[i]['phaseID'] = phase[i]
         self.logger.info("Storing RVE in dataframe...")
-        for i in tqdm(range(len(grain_df))):
+        for i in range(len(grain_df)):
             box_rve = pd.concat([box_rve, grain_df[i]])
         box_rve['rvesize'] = len(box_xyz)
         box_rve.sort_values(by=['x', 'y', 'z'], inplace=True)
