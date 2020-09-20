@@ -22,11 +22,11 @@ def open_file2():
 
 root = Tk()
 root.title("DRAGen - a RVE Generator Tool")
-root.geometry('550x380')
+root.geometry('550x450')  # (width x length)
 
-var = DoubleVar(value=50)  # initial value
+var = DoubleVar(value=22)  # initial value
 box_size_input = Spinbox(root, from_=10, to=100, width=10, textvariable=var)
-var = DoubleVar(value=50)
+var = DoubleVar(value=22)
 points_input = Spinbox(root, from_=10, to=512, width=10, textvariable=var)
 var = DoubleVar(value=0.5)  # initial value
 pack_ratio_input = Spinbox(root, from_=0.2, to=0.7, width=10, increment=.1, textvariable=var)
@@ -39,13 +39,19 @@ second_input_file = Button(root, text='Upload 2', command=open_file2)
 
 
 def rveGeneration(file1, file2):
-    last_RVE = 3
+    last_RVE = 4
+    progress = 0
+    n = Label(root, text="RVE generation in progress... 0%").grid(row=24, column=1, sticky=W, padx=3, pady=3)
     obj = DataTask(int(box_size_input.get()), int(points_input.get()), int(bands_input.get()),
                    float(bandwidth_input.get()), int(speed_input.get()), float(pack_ratio_input.get()), file1, file2, True)
     convert_list, phase1, phase2 = obj.initializations()
     for i in range(last_RVE + 1):
+        progress_label = "RVE generation in progress... {}%".format(progress)
+        n = Label(root, text=progress_label).grid(row=24, column=1, sticky=W, padx=3, pady=3)
         obj.rve_generation(i, convert_list, phase1, phase2)
-    sys.exit()
+        progress = progress + 100/(last_RVE+1)
+
+    m = Label(root, text="RVE generation completed successfully!!!").grid(row=24, column=1, sticky=W, padx=3, pady=3)
 
 
 class ProcessWindow(Toplevel):
@@ -53,8 +59,8 @@ class ProcessWindow(Toplevel):
         Toplevel.__init__(self, parent)
         self.parent = parent
         self.process = process
-        terminate_button = ttk.Button(self, text="Cancel", command=self.cancel)
-        terminate_button.grid(row=0, column=0)
+        #terminate_button = ttk.Button(self, text="Cancel", command=self.cancel)
+        #terminate_button.grid(row=0, column=0)
         self.grab_set()  # so you can't push submit multiple times
 
     def cancel(self):
@@ -64,7 +70,7 @@ class ProcessWindow(Toplevel):
 
     def launch(self):
         self.process.start()
-        self.after(10, self.isAlive)  # Starting the loop to check when the process is going to end
+        self.after(100, self.isAlive)  # Starting the loop to check when the process is going to end
 
     def isAlive(self):
         if self.process.is_alive():  # Process still running
