@@ -66,7 +66,10 @@ class DataTask:
 
         self.logger.info("RVE generation process has started...")
         phase1_a, phase1_b, phase1_c, volume_phase1 = self.utils_obj.read_input(phase1csv)
-        phase2_a, phase2_b, phase2_c, volume_phase2 = self.utils_obj.read_input(testcase4)
+        if testcase4 is not None:
+            phase2_a, phase2_b, phase2_c, volume_phase2 = self.utils_obj.read_input(testcase4)
+        else:
+            phase2_a, phase2_b, phase2_c = ([] for i in range(3))
         convert_list = []
         for i in range(len(phase1_a)):
             vol = self.utils_obj.convert_volume(phase1_a[i], phase1_b[i], phase1_c[i])

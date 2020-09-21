@@ -10,19 +10,19 @@ def open_file1():
     global name1
     name1 = askopenfilename(title="Select file", filetypes=(("CSV Files", "*.csv"),))
     if name1:
-        i = Label(root, text=name1).grid(row=14, column=1, sticky=W, padx=3, pady=3)
+        i = Label(root, text=name1).grid(row=16, column=1, sticky=W, padx=3, pady=3)
 
 
 def open_file2():
     global name2
     name2 = askopenfilename(title="Select file", filetypes=(("CSV Files", "*.csv"),))
     if name2:
-        j = Label(root, text=name2).grid(row=18, column=1, sticky=W, padx=3, pady=3)
+        j = Label(root, text=name2).grid(row=20, column=1, sticky=W, padx=3, pady=3)
 
 
 root = Tk()
 root.title("DRAGen - a RVE Generator Tool")
-root.geometry('550x450')  # (width x length)
+root.geometry('550x480')  # (width x length)
 
 var = DoubleVar(value=22)  # initial value
 box_size_input = Spinbox(root, from_=10, to=100, width=10, textvariable=var)
@@ -36,22 +36,24 @@ bandwidth_input = Spinbox(root, from_=1, to=100, width=10, increment=.1, textvar
 speed_input = Spinbox(root, from_=1, to=10, width=10)
 first_input_file = Button(root, text='Upload 1', command=open_file1)
 second_input_file = Button(root, text='Upload 2', command=open_file2)
+var = DoubleVar(value=1)  # initial value
+number_of_rve_input = Spinbox(root, from_=1, to=100, width=10, textvariable=var)
 
 
 def rveGeneration(file1, file2):
-    last_RVE = 4
+    last_RVE = int(number_of_rve_input.get())
     progress = 0
-    n = Label(root, text="RVE generation in progress... 0%").grid(row=24, column=1, sticky=W, padx=3, pady=3)
+    n = Label(root, text="RVE generation in progress... 0%").grid(row=26, column=1, sticky=W, padx=3, pady=3)
     obj = DataTask(int(box_size_input.get()), int(points_input.get()), int(bands_input.get()),
                    float(bandwidth_input.get()), int(speed_input.get()), float(pack_ratio_input.get()), file1, file2, True)
     convert_list, phase1, phase2 = obj.initializations()
     for i in range(last_RVE + 1):
         progress_label = "RVE generation in progress... {}%".format(progress)
-        n = Label(root, text=progress_label).grid(row=24, column=1, sticky=W, padx=3, pady=3)
+        n = Label(root, text=progress_label).grid(row=26, column=1, sticky=W, padx=3, pady=3)
         obj.rve_generation(i, convert_list, phase1, phase2)
         progress = progress + 100/(last_RVE+1)
 
-    m = Label(root, text="RVE generation completed successfully!!!").grid(row=24, column=1, sticky=W, padx=3, pady=3)
+    m = Label(root, text="RVE generation completed successfully!!!").grid(row=26, column=1, sticky=W, padx=3, pady=3)
 
 
 class ProcessWindow(Toplevel):
@@ -92,9 +94,10 @@ class MainApplication(ttk.Frame):
         d = Label(root, text="Number of bands: ").grid(row=6, column=0, sticky=W, padx=5, pady=5)
         e = Label(root, text="Bandwidth: ").grid(row=8, column=0, sticky=W, padx=5, pady=5)
         f = Label(root, text="Growing speed for grain growth: ").grid(row=10, column=0, sticky=W, padx=5, pady=5)
-        g = Label(root, text="Upload first input file*: ").grid(row=12, column=0, sticky=W, padx=5, pady=5)
-        h = Label(root, text="Upload second input file*: ").grid(row=16, column=0, sticky=W, padx=5, pady=5)
-        k = Label(root, text="* Required Fields").grid(row=22, column=0, sticky=W, padx=5, pady=5)
+        o = Label(root, text="Number of RVEs required: ").grid(row=12, column=0, sticky=W, padx=5, pady=5)
+        g = Label(root, text="Upload first input file*: ").grid(row=14, column=0, sticky=W, padx=5, pady=5)
+        h = Label(root, text="Upload second input file: ").grid(row=18, column=0, sticky=W, padx=5, pady=5)
+        k = Label(root, text="* Required").grid(row=24, column=0, sticky=W, padx=5, pady=5)
 
         box_size_input.grid(row=0, column=1)
         points_input.grid(row=2, column=1)
@@ -102,17 +105,18 @@ class MainApplication(ttk.Frame):
         bands_input.grid(row=6, column=1)
         bandwidth_input.grid(row=8, column=1)
         speed_input.grid(row=10, column=1)
-        first_input_file.grid(row=12, column=1)
-        second_input_file.grid(row=16, column=1)
+        number_of_rve_input.grid(row=12, column=1)
+        first_input_file.grid(row=14, column=1)
+        second_input_file.grid(row=18, column=1)
 
         self.submit_btn = Button(root, text="Submit", command=self.validateData)
-        self.submit_btn.grid(row=20, column=0, padx=5, pady=5)
+        self.submit_btn.grid(row=22, column=0, padx=5, pady=5)
 
         self.cancel_btn = Button(root, text="Cancel", command=self.terminateProcess)
-        self.cancel_btn.grid(row=20, column=1, padx=5, pady=5)
+        self.cancel_btn.grid(row=22, column=1, padx=5, pady=5)
 
     def validateData(self):
-        if int(points_input.get()) % 2 == 0 and name1 and name2:
+        if int(points_input.get()) % 2 == 0 and name1:
             proc = multiprocessing.Process(target=rveGeneration(name1, name2))
             process_window = ProcessWindow(self, proc)
             process_window.launch()
@@ -125,7 +129,7 @@ class MainApplication(ttk.Frame):
     def validationError(self):
         popup = Tk()
         popup.title("Error!")
-        label = Label(popup, text="Make sure that the 'Number of Points on Edge' input is even and there are two CSV files uploaded.")
+        label = Label(popup, text="Make sure that the 'Number of Points on Edge' input is even and there is a CSV file uploaded.")
         label.pack(side="top", fill="x", pady=10)
         popup.mainloop()
 
