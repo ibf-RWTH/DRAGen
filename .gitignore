@@ -1,6 +1,6 @@
 __pycache__
-Inputdata/
-OutputData/
-Logs/
+[Ii]nputdata/
+[Oo]utputData/
+[Ll]ogs/
 venv/
 .idea/
