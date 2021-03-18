@@ -47,11 +47,11 @@ def rveGeneration(file1, file2):
     obj = DataTask(int(box_size_input.get()), int(points_input.get()), int(bands_input.get()),
                    float(bandwidth_input.get()), int(speed_input.get()), float(pack_ratio_input.get()), file1, file2, True)
     convert_list, phase1, phase2 = obj.initializations()
-    for i in range(last_RVE + 1):
+    for i in range(last_RVE):
         progress_label = "RVE generation in progress... {}%".format(progress)
         n = Label(root, text=progress_label).grid(row=26, column=1, sticky=W, padx=3, pady=3)
         obj.rve_generation(i, convert_list, phase1, phase2)
-        progress = progress + 100/(last_RVE+1)
+        progress = progress + 100/(last_RVE)
 
     m = Label(root, text="RVE generation completed successfully!!!").grid(row=26, column=1, sticky=W, padx=3, pady=3)
 
