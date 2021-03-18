@@ -28,9 +28,12 @@ class DataTask:
         self.shrink_factor = np.cbrt(shrink_factor)
         self.tolerance = 0.01
         self.speed = speed
-        main_dir = sys.argv[0][:-7]
         self.gui_flag = gui_flag
         if not gui_flag:
+            main_dir = sys.argv[0][:-7]
+            os.chdir(main_dir)
+        else:
+            main_dir = sys.argv[0][:-31]
             os.chdir(main_dir)
         self.file1 = file1
         self.file2 = file2
@@ -112,6 +115,4 @@ class DataTask:
         if status:
             self.discrete_tesselation_obj.tesselation(store_path, pt, rad, phase, convert_list, self.gui_flag, band)
         del pt, rad, phase
-
-
         self.logger.info("RVE generation process has successfully completed...")
