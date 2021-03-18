@@ -1063,6 +1063,16 @@ class Mesher:
         else:
             plotter.show(screenshot=storepath + storepath + storename + '.png', auto_close=True)
 
+    def mesh_and_build_abaqus_model(self, storePath: str) -> None:
+
+        GRID = self.gen_blocks()
+        GRID = self.gen_grains(GRID)
+        grain_boundaries_poly_data, tri_df = self.convert_to_mesh(GRID)
+        face_label = self.gen_face_labels(tri_df)
+        smooth_grain_boundaries = self.smooth(grain_boundaries_poly_data, GRID, tri_df, face_label)
+        tet_RVE_smooth = self.build_abaqus_model(file_prefix=rvePath, poly_data=smooth_grain_boundaries,
+                                                        fl=face_label, tri_df=tri_df)
+        tet_RVE_smooth.save('rve_mesh.vtk')
 
 if __name__ == '__main__':
     rvePath = '../../outputData/2021-02-16_0/'
