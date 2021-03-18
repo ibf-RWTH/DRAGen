@@ -54,20 +54,20 @@ class DataTask:
     def initializations(self):
         self.setup_logging()
         if not self.gui_flag:
-            phase1csv = 'Inputdata/Bainite-1300.csv'
-            phase2csv = '../Inputdata/38Mn-Pearlite.csv'
+            phase1 = 'Inputdata/Bainite-1300.csv'
+            phase2 = '../Inputdata/38Mn-Pearlite.csv'
             testcase1 = '../Inputdata/Input2.csv'
             testcase2 = '../Inputdata/Input3.csv'
             testcase3 = '../Inputdata/Input4.csv'
             testcase4 = 'Inputdata/martensite.csv'
         else:
-            phase1csv = self.file1
-            testcase4 = self.file2
+            phase1 = self.file1
+            phase2 = self.file2
 
         self.logger.info("RVE generation process has started...")
-        phase1_a, phase1_b, phase1_c, volume_phase1 = self.utils_obj.read_input(phase1csv)
-        if testcase4 is not None:
-            phase2_a, phase2_b, phase2_c, volume_phase2 = self.utils_obj.read_input(testcase4)
+        phase1_a, phase1_b, phase1_c, volume_phase1 = self.utils_obj.read_input(phase1)
+        if phase2 is not None:
+            phase2_a, phase2_b, phase2_c, volume_phase2 = self.utils_obj.read_input(phase2)
         else:
             phase2_a, phase2_b, phase2_c = ([] for i in range(3))
         convert_list = []
@@ -112,4 +112,6 @@ class DataTask:
         if status:
             self.discrete_tesselation_obj.tesselation(store_path, pt, rad, phase, convert_list, self.gui_flag, band)
         del pt, rad, phase
+
+
         self.logger.info("RVE generation process has successfully completed...")
