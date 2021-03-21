@@ -3,7 +3,7 @@ import numpy as np
 import datetime
 import sys
 
-class Tesselation:
+class Tesselation3D:
     def __init__(self, box_size, n_pts, a, b, c, x_0, y_0, z_0, shrinkfactor, debug=False):
         self.box_size = box_size
         self.bin_size = box_size/n_pts

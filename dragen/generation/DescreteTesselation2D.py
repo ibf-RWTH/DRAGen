@@ -3,7 +3,7 @@ import numpy as np
 
 import sys
 
-class Tesselation:
+class Tesselation2D:
     def __init__(self, box_size, n_pts, a, b, x_0, y_0, shrinkfactor):
         self.box_size = box_size
         self.bin_size = box_size/n_pts
