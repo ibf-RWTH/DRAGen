@@ -22,7 +22,7 @@ class RVEUtils:
         """
         data = pd.read_csv(file_name)
         radius_a, radius_b, radius_c = ([] for i in range(3))
-        data.sort_values(by=['volume'], ascending=False, inplace=True)
+
         if 'a' in data.head(0):
             for rad in data['a']:
                 radius_a.append(rad)
@@ -32,8 +32,11 @@ class RVEUtils:
         if 'c' in data.head(0):
             for rad in data['c']:
                 radius_c.append(rad)
-        self.logger.info("CSV total volume: {}".format(sum(data['volume'])))
-        return radius_a, radius_b, radius_c, data['volume']
+        if len(radius_a)>0 & len(radius_b)>0 & len(radius_c)>0:
+            print(radius_a, radius_b, radius_c)
+            return radius_a, radius_b, radius_c
+        else:
+            return radius_a, radius_b
 
     def convert_volume(self, radius_a, radius_b, radius_c):
         """Compute the volume for the given radii.
