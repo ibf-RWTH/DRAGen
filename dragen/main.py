@@ -117,6 +117,6 @@ class DataTask:
         if status:
             self.discrete_tesselation_obj.tesselation(store_path, pt, rad, phase, convert_list, self.gui_flag, band)
         del pt, rad, phase
-        RVE = pd.DataFrame(pd.read_hdf(store_path + 'boxrve.h5'))
+        RVE = pd.DataFrame(pd.read_hdf(store_path + '/boxrve.h5'))
         mesher.Mesher(RVE).mesh_and_build_abaqus_model(store_path)
         self.logger.info("RVE generation process has successfully completed...")
