@@ -215,7 +215,7 @@ class Mesher:
                 grid = sub_grid
             else:
                 grid = sub_grid.merge(grid)
-        pv.save_meshio(file_prefix + 'rve-part.inp', grid)
+        pv.save_meshio(file_prefix + '/rve-part.inp', grid)
         f = open(file_prefix + '/rve-part.inp', 'r')
         lines = f.readlines()
         f.close()
@@ -279,12 +279,12 @@ class Mesher:
         if errors appear or equations are wrong check ppt presentation from ICAMS
         included in the docs folder called PBC_docs"""
 
-        min_x = self.x_min - self.stepsize / 2
-        min_y = self.y_min - self.stepsize / 2
-        min_z = self.z_min - self.stepsize / 2
-        max_x = self.x_max + self.stepsize / 2
-        max_y = self.y_max + self.stepsize / 2
-        max_z = self.z_max + self.stepsize / 2
+        min_x = self.x_min# - self.stepsize / 2
+        min_y = self.y_min# - self.stepsize / 2
+        min_z = self.z_min# - self.stepsize / 2
+        max_x = self.x_max# + self.stepsize / 2
+        max_y = self.y_max# + self.stepsize / 2
+        max_z = self.z_max# + self.stepsize / 2
         numberofgrains = self.numberOfGrains
         ########## write Equation - sets ##########
         periodic_df = periodic_df.sort_values(by=['x', 'y', 'z'])
@@ -292,7 +292,8 @@ class Mesher:
         periodic_df = periodic_df.reset_index()
         periodic_df.index.rename('Eqn-Set', inplace=True)
         periodic_df = periodic_df.reset_index()
-
+        print(periodic_df.head())
+        print(min_x, max_x)
         ########## Define Corner Sets ###########
         corner_df = periodic_df.loc[((periodic_df['x'] == max_x) | (periodic_df['x'] == min_x)) &
                                     ((periodic_df['y'] == max_y) | (periodic_df['y'] == min_y)) &
@@ -1063,14 +1064,14 @@ class Mesher:
         else:
             plotter.show(screenshot=storepath + storepath + storename + '.png', auto_close=True)
 
-    def mesh_and_build_abaqus_model(self, storePath: str) -> None:
+    def mesh_and_build_abaqus_model(self, store_path: str) -> None:
 
         GRID = self.gen_blocks()
         GRID = self.gen_grains(GRID)
         grain_boundaries_poly_data, tri_df = self.convert_to_mesh(GRID)
         face_label = self.gen_face_labels(tri_df)
         smooth_grain_boundaries = self.smooth(grain_boundaries_poly_data, GRID, tri_df, face_label)
-        tet_RVE_smooth = self.build_abaqus_model(file_prefix=rvePath, poly_data=smooth_grain_boundaries,
+        tet_RVE_smooth = self.build_abaqus_model(file_prefix=store_path, poly_data=smooth_grain_boundaries,
                                                         fl=face_label, tri_df=tri_df)
         tet_RVE_smooth.save('rve_mesh.vtk')
 
