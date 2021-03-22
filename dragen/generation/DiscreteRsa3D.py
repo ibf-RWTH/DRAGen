@@ -4,18 +4,28 @@ from mpl_toolkits.mplot3d import Axes3D
 import random
 import sys
 import datetime
+import logging
+
+from dragen.utilities.RVE_Utils import RVEUtils
+
 
 class DiscreteRsa3D:
-    def __init__(self, box_size, n_pts, a, b, c, debug):
+
+    def __init__(self, box_size, n_pts, a, b, c, store_path, debug=False):
+
         self.box_size = box_size
         self.n_pts = n_pts
-        xyz = np.linspace(-box_size / 2, box_size + box_size / 2, 2*self.n_pts, endpoint=True)
-        self.x_grid, self.y_grid, self.z_grid = np.meshgrid(xyz, xyz, xyz)
         self.a = a
         self.b = b
         self.c = c
-        self.n_grains = len(a)
+        self.store_path = store_path
         self.debug = debug
+
+        self.logger = logging.getLogger("RVE-Gen")
+        xyz = np.linspace(-box_size / 2, box_size + box_size / 2, 2 * self.n_pts, endpoint=True)
+        self.x_grid, self.y_grid, self.z_grid = np.meshgrid(xyz, xyz, xyz)
+        self.n_grains = len(a)
+        self.rve_utils_object = RVEUtils(box_size, n_pts, self.x_grid, self.y_grid, self.z_grid, debug=debug)
 
     def gen_ellipsoid(self, array, iterator):
         t_0 = datetime.datetime.now()
@@ -47,157 +57,10 @@ class DiscreteRsa3D:
                           (z_grid - z_0) ** 2 / (c ** 2))
         time_elapse = datetime.datetime.now() - t_0
         if self.debug:
-            print('time spent on ellipse{}: {}'.format(iterator, time_elapse.total_seconds()))
+            self.logger.info('time spent on ellipse{}: {}'.format(iterator, time_elapse.total_seconds()))
         return ellipse, x_0, y_0, z_0
 
-    def gen_boundaries(self, points_array):
-        t_0 = datetime.datetime.now()
-        box_size = self.box_size
-        x_grid = self.x_grid
-        y_grid = self.y_grid
-        z_grid = self.z_grid
-
-
-        """
-        Each region around the RVE needs to be labled on order to move grainparts
-        outside the rve_box to the correct position and make everything periodic
-        the lables are shown below.
-        It is higly recommended to not change anything here it will only destroy
-        the periodicity
-        
-        z < 0
-                ###########################
-                #       #       #       #
-                #   -7  #   -8  #   -9  # y > bs
-                #       #       #       #
-                ###########################
-                #       #       #       #
-                #   -4  #   -5  #   -6  # y > 0
-                #       #       #       #
-                ###########################
-                #       #       #       #
-          y     #   -1  #   -2  #   -3  # y < 0
-          ^     #       #       #       #
-          |__>x ###########################
-                #  x<0  #  x>0  #  x>bs #
-        """
-
-        points_array[(x_grid < 0) & (y_grid < 0) & (z_grid < 0)] = -1
-        points_array[(x_grid > 0) & (y_grid < 0) & (z_grid < 0)] = -2
-        points_array[(x_grid > box_size) & (y_grid < 0) & (z_grid < 0)] = -3
-
-        points_array[(x_grid < 0) & (y_grid > 0) & (z_grid < 0)] = -4
-        points_array[(x_grid > 0) & (y_grid > 0) & (z_grid < 0)] = -5
-        points_array[(x_grid > box_size) & (y_grid > 0) & (z_grid < 0)] = -6
-
-        points_array[(x_grid < 0) & (y_grid > box_size) & (z_grid < 0)] = -7
-        points_array[(x_grid > 0) & (y_grid > box_size) & (z_grid < 0)] = -8
-        points_array[(x_grid > box_size) & (y_grid > box_size) & (z_grid < 0)] = -9
-
-
-        """
-        z > 0
-                    ###########################
-                    #       #       #       #
-                    #  -15  #  -16  #  -17  # y > bs
-                    #       #       #       #
-                    ###########################
-                    #       #       #       #
-                    #  -13  #  RVE  #  -14  # y > 0
-                    #       #       #       #
-                    ###########################
-                    #       #       #       #
-              y     #  -10  #  -11  #  -12  # y < 0
-              ^     #       #       #       #
-              |__>x ###########################
-                    #  x<0  #  x>0  #  x>bs #
-        """
-        points_array[(x_grid < 0) & (y_grid < 0) & (z_grid > 0)] = -10
-        points_array[(x_grid > 0) & (y_grid < 0) & (z_grid > 0)] = -11
-        points_array[(x_grid > box_size) & (y_grid < 0) & (z_grid > 0)] = -12
-
-        points_array[(x_grid < 0) & (y_grid > 0) & (z_grid > 0)] = -13
-        points_array[(x_grid > box_size) & (y_grid > 0) & (z_grid > 0)] = -14
-
-        points_array[(x_grid < 0) & (y_grid > box_size) & (z_grid > 0)] = -15
-        points_array[(x_grid > 0) & (y_grid > box_size) & (z_grid > 0)] = -16
-        points_array[(x_grid > box_size) & (y_grid > box_size) & (z_grid > 0)] = -17
-
-
-        """
-        Z > box_size
-                ###########################
-                #       #       #       #
-                #  -24  #  -25  #  -26  # y > bs
-                #       #       #       #
-                ###########################
-                #       #       #       #
-                #  -21  #  -22  #  -23  # y > 0
-                #       #       #       #
-                ###########################
-                #       #       #       #
-          y     #  -18  #  -19  #  -20  # y < 0
-          ^     #       #       #       #
-          |__>x ###########################    
-                #  x<0  #  x>0  #  x>bs #
-
-        """
-        points_array[(x_grid < 0) & (y_grid < 0) & (z_grid > box_size)] = -18
-        points_array[(x_grid > 0) & (y_grid < 0) & (z_grid > box_size)] = -19
-        points_array[(x_grid > box_size) & (y_grid < 0) & (z_grid > box_size)] = -20
-
-        points_array[(x_grid < 0) & (y_grid > 0) & (z_grid > box_size)] = -21
-        points_array[(x_grid > 0) & (y_grid > 0) & (z_grid > box_size)] = -22
-        points_array[(x_grid > box_size) & (y_grid > 0) & (z_grid > box_size)] = -23
-
-        points_array[(x_grid < 0) & (y_grid > box_size) & (z_grid > box_size)] = -24
-        points_array[(x_grid > 0) & (y_grid > box_size) & (z_grid > box_size)] = -25
-        points_array[(x_grid > box_size) & (y_grid > box_size) & (z_grid > box_size)] = -26
-        time_elapse = datetime.datetime.now() - t_0
-        if self.debug:
-            print('time spent on gen_boundaries: {}'.format(time_elapse.total_seconds()))
-        return points_array
-
-    def make_periodic(self, points_array, ellipse_points, iterator):
-        points_array_mod = np.zeros(points_array.shape)
-        points_array_mod[points_array == iterator] = iterator
-        t_0 = datetime.datetime.now()
-        for i in range(1, 27): #move points in x,y and z dir
-            points_array_copy = np.zeros(points_array.shape)
-            points_array_copy[(ellipse_points <= 1) & (points_array == -1*i)] = -100-i
-            if (i == 1) | (i == 3) | (i == 7) | (i == 9) | \
-                    (i == 18) | (i == 20) | (i == 24) | (i == 26):  # move points in x,y and z direction
-                points_array_copy = np.roll(points_array_copy, n_pts, axis=0)
-                points_array_copy = np.roll(points_array_copy, n_pts, axis=1)
-                points_array_copy = np.roll(points_array_copy, n_pts, axis=2)
-                points_array_mod[points_array_copy == -100-i] = iterator
-            elif (i == 10) | (i == 12) | (i == 15) | (i == 17):  # move points in x and y direction
-                points_array_copy = np.roll(points_array_copy, n_pts, axis=0)
-                points_array_copy = np.roll(points_array_copy, n_pts, axis=1)
-                points_array_mod[points_array_copy == -100-i] = iterator
-            elif (i == 4) | (i == 6) | (i == 21) | (i == 23):  # move points in x and z direction
-                points_array_copy = np.roll(points_array_copy, n_pts, axis=1)
-                points_array_copy = np.roll(points_array_copy, n_pts, axis=2)
-                points_array_mod[points_array_copy == -100-i] = iterator
-            elif (i == 2) | (i == 8) | (i == 19) | (i == 25):  # move points in y and z direction
-                points_array_copy = np.roll(points_array_copy, n_pts, axis=0)
-                points_array_copy = np.roll(points_array_copy, n_pts, axis=2)
-                points_array_mod[points_array_copy == -100-i] = iterator
-            elif (i == 13) | (i == 14) :  # move points in x direction
-                points_array_copy = np.roll(points_array_copy, n_pts, axis=1)
-                points_array_mod[points_array_copy == -100-i] = iterator
-            elif (i == 11) | (i == 16):  # move points in y direction
-                points_array_copy = np.roll(points_array_copy, n_pts, axis=0)
-                points_array_mod[points_array_copy == -100-i] = iterator
-            elif (i == 5) | (i == 22):  # move points in z direction
-                points_array_copy = np.roll(points_array_copy, n_pts, axis=2)
-                points_array_mod[points_array_copy == -100-i] = iterator
-        time_elapse = datetime.datetime.now()-t_0
-        if self.debug:
-            print('time spent on periodicity for grain {}: {}'.format(iterator, time_elapse.total_seconds()) )
-        return points_array_mod
-
-    def rsa_plotter(self, array, storepath, iterator, attempt):
+    def rsa_plotter(self, array, iterator, attempt):
         t_0 = datetime.datetime.now()
         n_grains = self.n_grains
         rve_x, rve_y, rve_z = np.where(array >= 1)
@@ -221,62 +84,67 @@ class DiscreteRsa3D:
         ax.set_ylabel('y (µm)')
         ax.set_zlabel('z (µm)')
         #plt.show()
-        plt.savefig(storepath+'/3D_Epoch_{}_{}.png'.format(iterator, attempt))
+        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}.png'.format(iterator, attempt))
         plt.close(fig)
         time_elapse = datetime.datetime.now() - t_0
         if self.debug:
-            print('time spent on plotter for grain {}: {}'.format(iterator, time_elapse.total_seconds()))
+            self.logger.info('time spent on plotter for grain {}: {}'.format(iterator, time_elapse.total_seconds()))
 
     def run_rsa(self, animation=False):
-        rve = np.zeros((2 * n_pts, 2 * n_pts, 2 * n_pts), dtype=np.int32)
-        rve = self.gen_boundaries(rve)
-        x0_list = list()
-        y0_list = list()
-        z0_list = list()
-        rve_boundaries = rve.copy()
+        status = False
+        rsa = np.zeros((2 * self.n_pts, 2 * self.n_pts, 2 * self.n_pts), dtype=np.int32)
+        rsa = self.rve_utils_object.gen_boundaries_3D(rsa)
+        x_0_list = list()
+        y_0_list = list()
+        z_0_list = list()
+        rsa_boundaries = rsa.copy()
         i = 1
         attempt = 0
         while i < self.n_grains + 1 | attempt < 1000:
             t_0 = datetime.datetime.now()
-            free_points_old = np.count_nonzero(rve == 0)
-            grain = rve_boundaries.copy()
-            ellipse, x0, y0, z0 = self.gen_ellipsoid(rve, iterator=i-1)
+            free_points_old = np.count_nonzero(rsa == 0)
+            grain = rsa_boundaries.copy()
+            ellipse, x0, y0, z0 = self.gen_ellipsoid(rsa, iterator=i-1)
             grain[(ellipse <= 1) & (grain == 0)] = i
-            periodic_grain = self.make_periodic(grain, ellipse, iterator=i)
-            rve[(periodic_grain == i) & (rve == 0)] = i
+            periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipse, iterator=i)
+            rsa[(periodic_grain == i) & (rsa == 0)] = i
 
             if animation:
-                rsa_obj.rsa_plotter(rve, storepath='./', iterator=i, attempt=attempt)
+                self.rsa_plotter(rsa, iterator=i, attempt=attempt)
 
-            free_points = np.count_nonzero(rve == 0)
+            free_points = np.count_nonzero(rsa == 0)
             if free_points_old - free_points != np.count_nonzero(periodic_grain):
-                rve[np.where(rve == i)] = 0
+                rsa[np.where(rsa == i)] = 0
                 attempt = attempt + 1
 
             else:
-                x0_list.append(x0)
-                y0_list.append(y0)
-                z0_list.append(z0)
+                x_0_list.append(x0)
+                y_0_list.append(y0)
+                z_0_list.append(z0)
                 i = i + 1
                 attempt = 0
                 if self.debug:
                     time_elapse = datetime.datetime.now() - t_0
-                    print('total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()) )
-        return x0_list, y0_list, z0_list
+                    self.logger.info('total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()) )
+        if len(x_0_list) == self.n_grains:
+            status = True
+        else:
+            self.logger.info("Not all grains could be placed please decrease shrinkfactor!")
+        return rsa, x_0_list, y_0_list, z_0_list, status
 
 
 if __name__ == '__main__':
     a = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
     b = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
     c = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
-    animation = True
-    debug = False
+    animation_test = True
+    debug_test = True
     # Define Box-dimension
     box_size = 100
     # Define resolution of Grid
-    n_pts = 50
-    rsa_obj = DiscreteRsa3D(box_size, n_pts, a, b, c, debug)
-    x_0_list, y_0_list, z_0_list = rsa_obj.run_rsa(animation)
+    n_pts_test = 50
+    rsa_obj = DiscreteRsa3D(box_size, n_pts_test, a, b, c, debug_test)
+    rsa, x_0_list, y_0_list, z_0_list, status = rsa_obj.run_rsa(animation_test)
     np.save('./3D_x0_list', x_0_list, allow_pickle=True, fix_imports=True)
     np.save('./3D_y0_list', y_0_list, allow_pickle=True, fix_imports=True)
     np.save('./3D_z0_list', z_0_list, allow_pickle=True, fix_imports=True)

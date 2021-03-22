@@ -3,17 +3,23 @@ import matplotlib.pyplot as plt
 import random
 import logging
 
+from dragen.utilities.RVE_Utils import RVEUtils
+
+
 class DiscreteRsa2D:
-    def __init__(self, box_size, n_pts, a, b, store_path='./'):
-        self.logger = logging.getLogger("RVE-Gen")
+    def __init__(self, box_size, n_pts, a, b, store_path):
+
         self.box_size = box_size
         self.n_pts = n_pts
-        xy = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2*self.n_pts, endpoint=True)
-        self.x_grid, self.y_grid = np.meshgrid(xy, xy)
         self.a = a
         self.b = b
-        self.n_grains = len(a)
         self.store_path = store_path
+
+        self.n_grains = len(a)
+        self.logger = logging.getLogger("RVE-Gen")
+        xy = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
+        self.x_grid, self.y_grid = np.meshgrid(xy, xy)
+        self.rve_utils_object = RVEUtils(box_size, n_pts, self.x_grid, self.y_grid)
 
     def gen_ellipsoid(self, array, iterator):
         x_grid = self.x_grid
@@ -35,39 +41,6 @@ class DiscreteRsa2D:
         b = b[iterator]
         ellipse = np.sqrt((x_grid - x_0) ** 2 / (a ** 2) + (y_grid - y_0) ** 2 / (b ** 2))
         return ellipse, x_0, y_0
-
-    def gen_boundaries(self, points_array):
-        box_size = self.box_size
-        x_grid = self.x_grid
-        y_grid = self.y_grid
-        points_array[np.where((x_grid > box_size) & (y_grid > box_size))] = -1
-        points_array[(x_grid < box_size) & (y_grid > box_size)] = -2
-        points_array[(x_grid < 0) & (y_grid > box_size)] = -3
-        points_array[(x_grid < 0) & (y_grid < box_size)] = -4
-        points_array[(x_grid > box_size) & (y_grid < box_size)] = -8
-        points_array[(x_grid > box_size) & (y_grid < 0)] = -7
-        points_array[(x_grid < box_size) & (y_grid < 0)] = -6
-        points_array[(x_grid < 0) & (y_grid < 0)] = -5
-        return points_array
-
-    def make_periodic(self, points_array, ellipse_points, iterator):
-        points_array_mod = np.zeros(points_array.shape)
-        points_array_mod[points_array == iterator] = iterator
-
-        for i in range(1, 9):
-            points_array_copy = np.zeros(points_array.shape)
-            points_array_copy[(ellipse_points <= 1) & (points_array == -1*i)] = -100-i
-            if i % 2 != 0:
-                points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
-                points_array_mod[np.where(points_array_copy == -100-i)] = iterator
-            elif (i == 2) | (i == 6):
-                points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                points_array_mod[np.where(points_array_copy == -100 - i)] = iterator
-            else:
-                points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
-                points_array_mod[np.where(points_array_copy == -100 - i)] = iterator
-        return points_array_mod
 
     def rsa_plotter(self, array, n_grains, iterator, attempt):
         rsa_x, rsa_y = np.where(array >= 1)
@@ -99,21 +72,24 @@ class DiscreteRsa2D:
         plt.close(fig)
 
     def run_rsa(self, animation=False):
+
+        #define some variables
         status = False
-        rsa = np.zeros((2 * self.n_pts, 2 * self.n_pts), dtype=np.int32)
-        rsa = self.gen_boundaries(rsa)
         x_0_list = list()
         y_0_list = list()
-
         i = 1
         attempt = 0
-        while i < self.n_grains + 1 | attempt < 1000:
+        rsa = np.zeros((2 * self.n_pts, 2 * self.n_pts), dtype=np.int32)
+        rsa = self.rve_utils_object.gen_boundaries_2D(rsa)
+        rsa_boundaries = rsa.copy()
+
+        free_points = np.count_nonzero(rsa == 0)
+        while i < self.n_grains + 1 | attempt < free_points:
             free_points_old = np.count_nonzero(rsa == 0)
-            grain = np.zeros((2 * self.n_pts, 2 * self.n_pts), dtype=np.int32)
-            grain = self.gen_boundaries(grain)
+            grain = rsa_boundaries.copy()
             ellipse, x0, y0 = self.gen_ellipsoid(rsa, iterator=i - 1)
             grain[(ellipse <= 1) & (grain == 0)] = i
-            periodic_grain = self.make_periodic(grain, ellipse, iterator=i)
+            periodic_grain = self.rve_utils_object.make_periodic_2D(grain, ellipse, iterator=i)
             rsa[(periodic_grain == i) & (rsa == 0)] = i
 
             if animation:
@@ -137,20 +113,22 @@ class DiscreteRsa2D:
 
         return rsa, x_0_list, y_0_list, status
 
+
 if __name__ == '__main__':
     a = [10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10]
-    b = [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5]
+    b = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
+
     # Define Box-dimension
     box_size = 100
     # Define resolution of Grid
     n_pts = 100
     rsa_obj = DiscreteRsa2D(box_size, n_pts, a, b)
-    rve, x_0_list, y_0_list = rsa_obj.run_rsa(animation=True)
+    rsa, x_0_list, y_0_list, status = rsa_obj.run_rsa(animation=True)
     print(x_0_list)
     print(y_0_list)
     np.save('./2D_x_0', x_0_list, allow_pickle=True, fix_imports=True)
     np.save('./2D_y_0', y_0_list, allow_pickle=True, fix_imports=True)
-    np.save('./2D_rve', rve, allow_pickle=True, fix_imports=True)
+    np.save('./2D_rve', rsa, allow_pickle=True, fix_imports=True)
 
 
 

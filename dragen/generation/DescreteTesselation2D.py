@@ -4,67 +4,47 @@ import logging
 
 import sys
 
+from dragen.utilities.RVE_Utils import RVEUtils
+
+
 class Tesselation2D:
-    def __init__(self, box_size, n_pts, a, b, x_0, y_0, shrinkfactor, storepath='./'):
-        self.logger = logging.getLogger("RVE-Gen")
+    def __init__(self, box_size, n_pts, a, b, x_0, y_0, shrinkfactor, storepath):
+
         self.box_size = box_size
-        self.bin_size = box_size/n_pts
         self.n_pts = n_pts
         self.a = a
         self.b = b
-        self.final_volume = [np.pi * a[i] * b[i]/shrinkfactor for i in range(len(a))]
-        xy = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
-        self.x_grid, self.y_grid = np.meshgrid(xy, xy)
         self.x_0 = x_0
         self.y_0 = y_0
         self.shrinkfactor = shrinkfactor
         self.storepath = storepath
 
-    def gen_boundaries(self, points_array):
-        box_size = self.box_size
-        x_grid = self.x_grid
-        y_grid = self.y_grid
-        points_array[np.where((x_grid > box_size) & (y_grid > box_size))] = -1
-        points_array[(x_grid < box_size) & (y_grid > box_size)] = -2
-        points_array[(x_grid < 0) & (y_grid > box_size)] = -3
-        points_array[(x_grid < 0) & (y_grid < box_size)] = -4
-        points_array[(x_grid > box_size) & (y_grid < box_size)] = -8
-        points_array[(x_grid > box_size) & (y_grid < 0)] = -7
-        points_array[(x_grid < box_size) & (y_grid < 0)] = -6
-        points_array[(x_grid < 0) & (y_grid < 0)] = -5
-        return points_array
+        self.logger = logging.getLogger("RVE-Gen")
+        self.bin_size = box_size / n_pts
+        self.a_max = max(a)
+        self.b_max = max(b)
+        self.final_volume = [np.pi * a[i] * b[i] / shrinkfactor for i in range(len(a))]
+        xy = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
+        self.x_grid, self.y_grid = np.meshgrid(xy, xy)
+        self.rve_utils_object = RVEUtils(box_size, n_pts, self.x_grid, self.y_grid)
 
-    def grow(self, iterator, frame):
+    def grow(self, iterator, a, b):
         x_grid = self.x_grid
         y_grid = self.y_grid
         x_0 = self.x_0[iterator-1]
         y_0 = self.y_0[iterator-1]
-        total_grow_dist_a = self.a[iterator-1]/self.shrinkfactor - self.a[iterator-1]
-        total_grow_dist_b = self.b[iterator - 1] / self.shrinkfactor - self.b[iterator - 1]
-        a = self.a[iterator-1]+(frame)/10*self.bin_size*total_grow_dist_a
-        b = self.b[iterator-1]+(frame)/10*self.bin_size*total_grow_dist_b
+        a_i = a[iterator - 1]
+        b_i = b[iterator - 1]
+        a_i = a_i + b_i/self.a_max*self.bin_size
+        b_i = b_i + b_i/self.b_max*self.bin_size
+        if iterator == 1:
+            print(a_i)
+            print(b_i)
+        a[iterator - 1] = a_i
+        b[iterator - 1] = b_i
+        ellipse = (x_grid - x_0) ** 2 / (a_i ** 2) + (y_grid - y_0) ** 2 / (b_i ** 2)
 
-        ellipse = (x_grid - x_0) ** 2 / (a ** 2) + (y_grid - y_0) ** 2 / (b ** 2)
-        return ellipse
-
-    def make_periodic(self, points_array, ellipse_points, iterator):
-        points_array_mod = np.zeros(points_array.shape)
-        points_array_mod[points_array == iterator] = iterator
-
-        for i in range(1, 9):
-            points_array_copy = np.zeros(points_array.shape)
-            points_array_copy[(ellipse_points <= 1) & (points_array == -1 * i)] = -100 - i
-            if i % 2 != 0:
-                points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
-                points_array_mod[np.where(points_array_copy == -100 - i)] = iterator
-            elif (i == 2) | (i == 6):
-                points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                points_array_mod[np.where(points_array_copy == -100 - i)] = iterator
-            else:
-                points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
-                points_array_mod[np.where(points_array_copy == -100 - i)] = iterator
-        return points_array_mod
+        return ellipse, a, b
 
     def tesselation_plotter(self, array, storepath, epoch):
         n_grains = len(self.a)
@@ -89,19 +69,26 @@ class Tesselation2D:
         plt.savefig(storepath+'/Figs/2D_Tesselation_Epoch_{}.png'.format(epoch))
         plt.close(fig)
 
-    def run_tesselation(self):
+    def run_tesselation(self, rsa):
+
+        # define some variables
         status = False
         repeat = False
         packingratio = 0
-        tesselation_obj = Tesselation2D(self.box_size, self.n_pts, self.a, self.b, self.x_0, self.y_0, self.shrinkfactor)
-        rve = np.zeros((2 * self.n_pts, 2 * self.n_pts), dtype=np.int32)
-        rve = tesselation_obj.gen_boundaries(rve)
-        rve_boundaries = rve.copy()  # empty rve grid with defined boundaries
-        vol_0 = np.count_nonzero(rve == 0)
+        a = self.a
+        b = self.b
         epoch = 0
-        freepoints = np.count_nonzero(rve == 0)
         n_grains = len(self.a)
-        print(n_grains)
+
+        # load some variables
+        rve = rsa
+        empty_rve = np.zeros((2 * self.n_pts, 2 * self.n_pts), dtype=np.int32)
+        empty_rve = self.rve_utils_object.gen_boundaries_2D(empty_rve)
+        rve_boundaries = empty_rve.copy()  # empty rve grid with defined boundaries
+
+        vol_0 = np.count_nonzero(empty_rve == 0)
+        freepoints = np.count_nonzero(rve == 0)
+
         grain_idx = [i for i in range(1, n_grains+1)]
         grain_idx_backup = grain_idx.copy()
         while freepoints > 0:
@@ -109,42 +96,29 @@ class Tesselation2D:
             np.random.shuffle(grain_idx)
             while i < len(grain_idx):
                 idx = grain_idx[i]
-                freepoints_old = freepoints
-                ellipse = tesselation_obj.grow(idx, epoch)
                 grain = rve_boundaries.copy()
-                grain[(ellipse < 1) & (grain == 0)] = idx
-                periodic_grain = tesselation_obj.make_periodic(grain, ellipse, iterator=idx)
+                ellipse, a, b = self.grow(idx, a, b)
+                grain[(ellipse <= 1) & (grain == 0)] = idx
+                periodic_grain = self.rve_utils_object.make_periodic_2D(grain, ellipse, iterator=idx)
                 rve[(periodic_grain == idx) & (rve == 0)] = idx
                 freepoints = np.count_nonzero(rve == 0)
                 grain_vol = np.count_nonzero(rve == idx)*self.bin_size**2
-                i += 1
-                #### Hier passt was nicht....überpfüfen
-                '''if freepoints_old == freepoints:
-                    print(vol_0)
-                    print('idx-1', idx-1)
-                    print('a', self.a[idx-1])
-                    print('b', self.b[idx-1])
-                    print('vol', self.b[idx-1]*self.a[idx-1]*np.pi)
-                    print('vol/shrinkfactor', self.b[idx-1]*self.a[idx-1]*np.pi/self.shrinkfactor)
-                    print('grainvol', grain_vol)
-                    print('grain_pts', np.count_nonzero(rve == idx))
-                    print('bin_size', self.bin_size)
-                    print('finalvol', self.final_volume[idx-1])
-                    sys.exit()
+                if freepoints == 0:
+                    break
+                if grain_vol > self.final_volume[idx-1] and not repeat:
                     self.logger.info('grain_{} reached final volume and was deleted '
                                      'from growth list'.format(grain_idx[i]))
-                    #print('delete!')
                     del grain_idx[i]
-                
+                i += 1
             if len(grain_idx) == 0:
                 print('restore')
                 grain_idx = grain_idx_backup.copy()
                 repeat = True
                 self.logger.info('grain_idx was restored since all grains reached final volume'
                                  'Boxsize should probably be decreased or shrinkfactor increased'
-                                 'use animation to check if how much space is used by the grains')'''
+                                 'use animation to check if how much space is used by the grains')
 
-            tesselation_obj.tesselation_plotter(rve, self.storepath, epoch)
+            self.tesselation_plotter(rve, self.storepath, epoch)
             epoch += 1
             packingratio = (1-freepoints/vol_0)*100
             print('packingratio:', packingratio, '%')
@@ -154,8 +128,8 @@ class Tesselation2D:
 
 
 if __name__ == '__main__':
-    a = [10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10]
-    b = [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5]
+    a_test = [10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10]
+    b_test = [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5]
     # Define Box-dimension
     box_size = 100
     # Define resolution of Grid
@@ -165,7 +139,7 @@ if __name__ == '__main__':
     y0_path = './2D_y_0.npy'
     x_0 = np.load(x0_path)
     y_0 = np.load(y0_path)
-    tesselation_obj = Tesselation2D(box_size, n_pts, a, b, x_0, y_0, shrinkfactor)
+    tesselation_obj = Tesselation2D(box_size, n_pts, a_test, b_test, x_0, y_0, shrinkfactor)
     tesselation_obj.run_tesselation()
 
 
