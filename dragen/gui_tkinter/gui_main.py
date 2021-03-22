@@ -3,7 +3,8 @@ from tkinter import ttk, messagebox, Toplevel, Tk, DoubleVar, Spinbox, Label, Bu
 import multiprocessing
 from tkinter.filedialog import askopenfilename
 
-from dragen.main import DataTask
+from dragen.main2D import DataTask2D
+from dragen.main3D import DataTask3D
 
 
 def open_file1():
@@ -33,7 +34,7 @@ pack_ratio_input = Spinbox(root, from_=0.2, to=0.7, width=10, increment=.1, text
 bands_input = Spinbox(root, from_=0, to=100, width=10)
 var = DoubleVar(value=3)  # initial value
 bandwidth_input = Spinbox(root, from_=1, to=100, width=10, increment=.1, textvariable=var)
-speed_input = Spinbox(root, from_=1, to=10, width=10)
+dimension_input = Spinbox(root, from_=2, to=3, width=10)
 first_input_file = Button(root, text='Upload 1', command=open_file1)
 second_input_file = Button(root, text='Upload 2', command=open_file2)
 var = DoubleVar(value=1)  # initial value
@@ -43,14 +44,23 @@ number_of_rve_input = Spinbox(root, from_=1, to=100, width=10, textvariable=var)
 def rveGeneration(file1, file2):
     last_RVE = int(number_of_rve_input.get())
     progress = 0
+    dim = int(dimension_input.get())
     n = Label(root, text="RVE generation in progress... 0%").grid(row=26, column=1, sticky=W, padx=3, pady=3)
-    obj = DataTask(int(box_size_input.get()), int(points_input.get()), int(bands_input.get()),
-                   float(bandwidth_input.get()), int(speed_input.get()), float(pack_ratio_input.get()), file1, file2, True)
-    convert_list, phase1, phase2 = obj.initializations()
+
+    if dim == 2:
+        obj = DataTask2D(int(box_size_input.get()), int(points_input.get()), int(bands_input.get()),
+                       float(bandwidth_input.get()),  float(pack_ratio_input.get()), file1, file2, True)
+        grains_df = obj.initializations(dimension=dim)
+    elif dim == 3:
+        obj = DataTask3D(int(box_size_input.get()), int(points_input.get()), int(bands_input.get()),
+                         float(bandwidth_input.get()), float(pack_ratio_input.get()),
+                         file1, file2, True)
+
+        grains_df = obj.initializations(dimension=dim)
     for i in range(last_RVE):
         progress_label = "RVE generation in progress... {}%".format(progress)
         n = Label(root, text=progress_label).grid(row=26, column=1, sticky=W, padx=3, pady=3)
-        obj.rve_generation(i, convert_list, phase1, phase2)
+        obj.rve_generation(i, grains_df)
         progress = progress + 100/(last_RVE)
 
     m = Label(root, text="RVE generation completed successfully!!!").grid(row=26, column=1, sticky=W, padx=3, pady=3)
@@ -93,7 +103,7 @@ class MainApplication(ttk.Frame):
         c = Label(root, text="Packing ratio: ").grid(row=4, column=0, sticky=W, padx=5, pady=5)
         d = Label(root, text="Number of bands: ").grid(row=6, column=0, sticky=W, padx=5, pady=5)
         e = Label(root, text="Bandwidth: ").grid(row=8, column=0, sticky=W, padx=5, pady=5)
-        f = Label(root, text="Growing speed for grain growth: ").grid(row=10, column=0, sticky=W, padx=5, pady=5)
+        f = Label(root, text="Type 2 for 2D and 3 for 3D RVE: ").grid(row=10, column=0, sticky=W, padx=5, pady=5)
         o = Label(root, text="Number of RVEs required: ").grid(row=12, column=0, sticky=W, padx=5, pady=5)
         g = Label(root, text="Upload first input file*: ").grid(row=14, column=0, sticky=W, padx=5, pady=5)
         h = Label(root, text="Upload second input file: ").grid(row=18, column=0, sticky=W, padx=5, pady=5)
@@ -104,7 +114,7 @@ class MainApplication(ttk.Frame):
         pack_ratio_input.grid(row=4, column=1)
         bands_input.grid(row=6, column=1)
         bandwidth_input.grid(row=8, column=1)
-        speed_input.grid(row=10, column=1)
+        dimension_input.grid(row=10, column=1)
         number_of_rve_input.grid(row=12, column=1)
         first_input_file.grid(row=14, column=1)
         second_input_file.grid(row=18, column=1)
