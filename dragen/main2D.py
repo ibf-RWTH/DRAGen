@@ -105,12 +105,15 @@ class DataTask2D:
                                                      grains_df['b'].tolist(), x_0_list, y_0_list,
                                                      self.shrink_factor, store_path)
             rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa)
+
+
         else:
             self.logger.info("The rsa did not succeed...")
             sys.exit()
 
         if rve_status:
-            pass
+            np.save(store_path + '/rve_array_2D', rve)
+
             #RVE = pd.DataFrame(pd.read_hdf(store_path + '/boxrve.h5'))
             #mesher.Mesher(rve).mesh_and_build_abaqus_model(store_path)
         self.logger.info("RVE generation process has successfully completed...")

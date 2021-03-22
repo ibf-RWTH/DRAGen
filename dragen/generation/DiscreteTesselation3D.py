@@ -132,7 +132,7 @@ class Tesselation3D:
             packingratio = (1 - freepoints / vol_0) * 100
             print('packingratio:', packingratio, '%')
 
-        if packingratio == 1:
+        if packingratio == 100:
             status = True
         return rve, status
 
