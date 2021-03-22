@@ -8,7 +8,7 @@ from dragen.main3D import DataTask3D
 
 if __name__ == "__main__":
     last_RVE = 1  # Specify the number of iterations
-    dimension = 2
+    dimension = 3
     # Optional arguments with default values:
     # DataTask(box_size=50, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5, file1=None, file2=None, gui_flag=False):
     obj2D = DataTask2D()

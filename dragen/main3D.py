@@ -27,7 +27,7 @@ class DataTask3D:
         self.shrink_factor = np.cbrt(shrink_factor)
         self.gui_flag = gui_flag
         if not gui_flag:
-            main_dir = sys.argv[0][:-7]
+            main_dir = sys.argv[0][:-14]
             os.chdir(main_dir)
         else:
             main_dir = sys.argv[0][:-31]
@@ -50,8 +50,8 @@ class DataTask3D:
     def initializations(self, dimension):
         self.setup_logging()
         if not self.gui_flag:
-            phase1 = '../ExampleInput/ferrite_54_grains.csv'
-            phase2 = '../ExampleInput/pearlite_22_grains.csv'
+            phase1 = './ExampleInput/ferrite_54_grains.csv'
+            phase2 = './ExampleInput/pearlite_22_grains.csv'
         else:
             phase1 = self.file1
             phase2 = self.file2
