@@ -5,6 +5,7 @@ import logging
 import datetime
 
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 class RVEUtils:
     """Common Representative Volume Element (RVE) operations."""
@@ -275,13 +276,15 @@ class RVEUtils:
         box_size = self.box_size
         n_pts = self.n_pts
 
+        # Transform np.array to coordinates
         xy = np.linspace(-box_size / 2, box_size + box_size / 2, 2 * self.n_pts, endpoint=True)
         x_grid, y_grid = np.meshgrid(xy, xy)
-        rve_xx, rve_yy = np.where(rve_array >= 1)
-        boundary_xx, boundary_yy = np.where(rve_array < 0)
 
-        rve_tuples = [*zip(rve_xx, rve_yy)]
-        boundary_tuples = [*zip(boundary_xx, boundary_yy)]
+        rve_x_idx, rve_y_idx = np.where(rve_array >= 1)
+        boundary_x_idx, boundary_y_idx = np.where(rve_array < 0)
+
+        rve_tuples = [*zip(rve_x_idx, rve_y_idx)]
+        boundary_tuples = [*zip(boundary_x_idx, boundary_y_idx)]
 
         rve_x = [x_grid[rve_tuples_i[0]][rve_tuples_i[1]] for rve_tuples_i in rve_tuples]
         rve_y = [y_grid[rve_tuples_i[0]][rve_tuples_i[1]] for rve_tuples_i in rve_tuples]
@@ -289,6 +292,7 @@ class RVEUtils:
         boundary_x = [x_grid[boundary_tuples_i[0]][boundary_tuples_i[1]] for boundary_tuples_i in boundary_tuples]
         boundary_y = [y_grid[boundary_tuples_i[0]][boundary_tuples_i[1]] for boundary_tuples_i in boundary_tuples]
 
+        # generate pandas Dataframe of coordinates and grain IDs
         rve_dict = {'x': rve_x, 'y': rve_y, 'GrainID': rve_array[rve_array > 0]}
         rve = pd.DataFrame(rve_dict)
         rve['box_size'] = box_size
@@ -297,6 +301,7 @@ class RVEUtils:
         boundary_dict = {'x': boundary_x, 'y': boundary_y, 'GrainID': rve_array[rve_array < 0]}
         boundary = pd.DataFrame(boundary_dict)
 
+        # Extract points that are supposed to be added to the rve
         new_max_x = min(boundary[boundary['GrainID'] == -1].x)
         new_max_y = min(boundary[boundary['GrainID'] == -2].y)
 
@@ -324,7 +329,7 @@ class RVEUtils:
         max_y = max(rve.y)
         min_y = min(rve.y)
 
-        # fixing corners
+        # fixing grain IDs of corners
         rve_corners = rve.loc[((rve['x'] == min_x) & (rve['y'] == min_y)) |
                               ((rve['x'] == max_x) & (rve['y'] == max_y)) |
                               ((rve['x'] == min_x) & (rve['y'] == max_y)) |
@@ -334,7 +339,7 @@ class RVEUtils:
 
         rve.loc[rve_corners.index, 'GrainID'] = cornersGrainID
 
-        # fixing Edges
+        # fixing grain IDs of Edges
         rve_edges = rve.loc[(rve['x'] == max_x) | (rve['x'] == min_x) |
                             (rve['y'] == max_y) | (rve['y'] == min_y)].copy()
         # Left Edge
@@ -352,28 +357,93 @@ class RVEUtils:
         return rve
 
     def repair_periodicity_3D(self, rve_array: np.ndarray) -> pd.DataFrame:
-
+        """this function is used to mirror the three masterfaces on the three slave faces of the rve
+        in order to achieve exact periodicity"""
         # load some variables
         box_size = self.box_size
         n_pts = self.n_pts
-        dim = rve_array.shape[1]
 
+        # Transform np.array to coordinates
         xyz = np.linspace(-box_size / 2, box_size + box_size / 2, 2 * self.n_pts, endpoint=True)
         x_grid, y_grid, z_grid = np.meshgrid(xyz, xyz, xyz)
-        rve_xx, rve_yy, rve_zz = np.where(rve_array >= 1)
-        grain_tuples = [*zip(rve_xx, rve_yy, rve_zz)]
 
-        rve_x = [x_grid[grain_tuples_i[0]][grain_tuples_i[1]][grain_tuples_i[2]]
-                    for grain_tuples_i in grain_tuples]
-        rve_y = [y_grid[grain_tuples_i[0]][grain_tuples_i[1]][grain_tuples_i[2]]
-                    for grain_tuples_i in grain_tuples]
-        rve_z = [z_grid[grain_tuples_i[0]][grain_tuples_i[1]][grain_tuples_i[2]]
-                    for grain_tuples_i in grain_tuples]
+        rve_x_idx, rve_y_idx, rve_z_idx = np.where(rve_array > 0)
+        boundary_x_idx, boundary_y_idx, boundary_z_idx = np.where(rve_array < 0)
 
-        rve_dict = {'x': rve_x, 'y': rve_y, 'z': rve_z, 'grainID': rve_array[rve_array > 0]}
+        rve_tuples = [*zip(rve_x_idx, rve_y_idx, rve_z_idx)]
+        boundary_tuples = [*zip(boundary_x_idx, boundary_y_idx, boundary_z_idx)]
+
+        rve_x = [x_grid[rve_tuples_i[0]][rve_tuples_i[1]][rve_tuples_i[2]] for rve_tuples_i in rve_tuples]
+        rve_y = [y_grid[rve_tuples_i[0]][rve_tuples_i[1]][rve_tuples_i[2]] for rve_tuples_i in rve_tuples]
+        rve_z = [z_grid[rve_tuples_i[0]][rve_tuples_i[1]][rve_tuples_i[2]] for rve_tuples_i in rve_tuples]
+
+        boundary_x = [x_grid[boundary_tuples_i[0]][boundary_tuples_i[1]][boundary_tuples_i[2]]
+                      for boundary_tuples_i in boundary_tuples]
+        boundary_y = [y_grid[boundary_tuples_i[0]][boundary_tuples_i[1]][boundary_tuples_i[2]]
+                      for boundary_tuples_i in boundary_tuples]
+        boundary_z = [z_grid[boundary_tuples_i[0]][boundary_tuples_i[1]][boundary_tuples_i[2]]
+                      for boundary_tuples_i in boundary_tuples]
+
+        # generate pandas Dataframe of coordinates and grain IDs
+        rve_dict = {'x': rve_x, 'y': rve_y, 'z': rve_z, 'GrainID': rve_array[rve_array > 0]}
         rve = pd.DataFrame(rve_dict)
         rve['box_size'] = box_size
         rve['n_pts'] = n_pts
+
+        boundary_dict = {'x': boundary_x, 'y': boundary_y, 'z': boundary_z, 'GrainID': rve_array[rve_array < 0]}
+        boundary = pd.DataFrame(boundary_dict)
+
+        # Extract points that are supposed to be added to the rve
+        new_max_x = min(boundary[boundary['GrainID'] == -26].x)     # several numbers are possible -26 just works
+        new_max_y = min(boundary[boundary['GrainID'] == -26].y)     # for all three directions
+        new_max_z = min(boundary[boundary['GrainID'] == -26].z)     # therefore it's the most intuitive choice
+
+
+                                                                         # these boundaries contain the new cornerpoints:
+        additional_corner_pts = boundary[(boundary['GrainID'] == -26)    # top_front_right (-26)
+                                         ].copy()
+
+                                                                        # these boundaries contain the new edgepoints:
+        additional_edge_pts = boundary[(boundary['GrainID'] == -17) |   # bottom_to_top_front_right (-17)
+                                       (boundary['GrainID'] == -23) |   # left_to_right_top_front (-23)
+                                       (boundary['GrainID'] == -25)     # rear_to_front_top_right (-25)
+                                       ].copy()
+
+                                                                        # these boundaries contain the new edgepoints:
+        additional_face_pts = boundary[(boundary['GrainID'] == -14) |   # left_to_right_bottom_front (-6)
+                                       (boundary['GrainID'] == -16) |   # rear_to_front_bottom_right (-8)
+                                       (boundary['GrainID'] == -22)     # bottom_to_top_front_left (-12)
+
+                                       ].copy()
+
+        drop_idx_corners = additional_corner_pts[(additional_corner_pts['x'] != new_max_x) |
+                                                 (additional_corner_pts['y'] != new_max_y) |
+                                                 (additional_corner_pts['z'] != new_max_z)].index
+
+        additional_corner_pts.drop(drop_idx_corners, inplace=True)
+
+        drop_idx_edges = additional_edge_pts[((additional_edge_pts['GrainID'] == -17) &
+                                              ((additional_edge_pts['x'] > new_max_x) |
+                                               (additional_edge_pts['y'] > new_max_y))) |
+                                             ((additional_edge_pts['GrainID'] == -23) &
+                                              ((additional_edge_pts['x'] > new_max_x) |
+                                               (additional_edge_pts['z'] > new_max_z))) |
+                                             ((additional_edge_pts['GrainID'] == -25) &
+                                              ((additional_edge_pts['y'] > new_max_y) |
+                                               (additional_edge_pts['z'] > new_max_z)))].index
+
+        additional_edge_pts.drop(drop_idx_edges, inplace=True)
+
+
+        drop_idx_faces = additional_face_pts[((additional_face_pts['GrainID'] == -14) &
+                                              (additional_face_pts['x'] > new_max_x)) |
+                                             ((additional_face_pts['GrainID'] == -16) &
+                                              (additional_face_pts['y'] > new_max_y)) |
+                                             ((additional_face_pts['GrainID'] == -22) &
+                                              (additional_face_pts['z'] > new_max_z))].index
+        additional_face_pts.drop(drop_idx_faces, inplace=True)
+
+        rve = pd.concat([rve, additional_face_pts, additional_edge_pts, additional_corner_pts])
 
         max_x = max(rve.x)
         min_x = min(rve.x)
@@ -382,107 +452,7 @@ class RVEUtils:
         max_z = max(rve.z)
         min_z = min(rve.z)
 
-        # fixing corners
-        rve_corners = rve.loc[((rve['x'] == min_x) &
-                               (rve['y'] == min_y) & (rve['z'] == max_z)) |
-                              ((rve['x'] == max_x) &
-                               (rve['y'] == min_y) & (rve['z'] == max_z)) |
-                              ((rve['x'] == max_x) &
-                               (rve['y'] == max_y) & (rve['z'] == max_z)) |
-                              ((rve['x'] == min_x) &
-                               (rve['y'] == max_y) & (rve['z'] == max_z)) |
-                              ((rve['x'] == min_x) &
-                               (rve['y'] == min_y) & (rve['z'] == min_z)) |
-                              ((rve['x'] == max_x) &
-                               (rve['y'] == min_y) & (rve['z'] == min_z)) |
-                              ((rve['x'] == max_x) &
-                               (rve['y'] == max_y) & (rve['z'] == min_z)) |
-                              ((rve['x'] == min_x) &
-                               (rve['y'] == max_y) & (rve['z'] == min_z))]
-
-        # cornersGrainID = rve_corners.GrainID.mode()[0] #find most common grainID on all corners and advise it to each corner
-        # rve.loc[rve_corners.index,'GrainID'] = cornersGrainID
-
-        # fixing Edges
-        rve_edges = rve.loc[(((rve['x'] == max_x) | (rve['x'] == min_x)) &
-                             ((rve['y'] == max_y) | (rve['y'] == min_y)) &
-                             ((rve['z'] != max_z) & (rve['z'] != min_z))) |
-
-                            (((rve['x'] == max_x) | (rve['x'] == min_x)) &
-                             ((rve['y'] != max_y) & (rve['y'] != min_y)) &
-                             ((rve['z'] == max_z) | (rve['z'] == min_z))) |
-
-                            (((rve['x'] != max_x) & (rve['x'] != min_x)) &
-                             ((rve['y'] == max_y) | (rve['y'] == min_y)) &
-                             ((rve['z'] == max_z) | (rve['z'] == min_z)))]
-        # Top front Edge
-        E_T1 = rve_edges.loc[(rve_edges['y'] == max_y) & (rve_edges['z'] == max_z)].copy()
-        # Top right Edge
-        E_T2 = rve_edges.loc[(rve_edges['x'] == max_x) & (rve_edges['y'] == max_y)].copy()
-        # Top back Edge
-        E_T3 = rve_edges.loc[(rve_edges['y'] == max_y) & (rve_edges['z'] == min_z)].copy()
-        # Top left Edge
-        E_T4 = rve_edges.loc[(rve_edges['x'] == min_x) & (rve_edges['y'] == max_y)].copy()
-        # bottm front edge
-        E_B1 = rve_edges.loc[(rve_edges['y'] == min_y) & (rve_edges['z'] == max_z)].copy()
-        # bottm right edge
-        E_B2 = rve_edges.loc[(rve_edges['x'] == max_x) & (rve_edges['y'] == min_y)].copy()
-        # bottm back edge
-        E_B3 = rve_edges.loc[(rve_edges['y'] == min_y) & (rve_edges['z'] == min_z)].copy()
-        # bottm left edge
-        E_B4 = rve_edges.loc[(rve_edges['x'] == min_x) & (rve_edges['y'] == min_y)].copy()
-        # left front edge
-        E_M1 = rve_edges.loc[(rve_edges['x'] == min_x) & (rve_edges['z'] == max_z)].copy()
-        # right front edge
-        E_M2 = rve_edges.loc[(rve_edges['x'] == max_x) & (rve_edges['z'] == max_z)].copy()
-        # left rear edge
-        E_M4 = rve_edges.loc[(rve_edges['x'] == min_x) & (rve_edges['z'] == min_z)].copy()
-        # right rear edge
-        E_M3 = rve_edges.loc[(rve_edges['x'] == max_x) & (rve_edges['z'] == min_z)].copy()
-
-        E_T1.reset_index(inplace=True)
-        E_T3.reset_index(inplace=True)
-        E_B1.reset_index(inplace=True)
-        E_B3.reset_index(inplace=True)
-        E_T1['GrainID'] = np.where(E_B1['GrainID'] != E_T1['GrainID'], E_B1['GrainID'], E_T1['GrainID'])
-        E_T3['GrainID'] = np.where(E_B1['GrainID'] != E_T3['GrainID'], E_B1['GrainID'], E_T3['GrainID'])
-        E_B3['GrainID'] = np.where(E_B1['GrainID'] != E_B3['GrainID'], E_B1['GrainID'], E_B3['GrainID'])
-        E_T1.set_index('index', inplace=True)
-        E_T3.set_index('index', inplace=True)
-        E_B3.set_index('index', inplace=True)
-
-        E_B4.reset_index(inplace=True)
-        E_B2.reset_index(inplace=True)
-        E_T4.reset_index(inplace=True)
-        E_T2.reset_index(inplace=True)
-        E_B2['GrainID'] = np.where(E_B4['GrainID'] != E_B2['GrainID'], E_B4['GrainID'], E_B2['GrainID'])
-        E_T4['GrainID'] = np.where(E_B4['GrainID'] != E_T4['GrainID'], E_B4['GrainID'], E_T4['GrainID'])
-        E_T2['GrainID'] = np.where(E_B4['GrainID'] != E_T2['GrainID'], E_B4['GrainID'], E_T2['GrainID'])
-        E_B2.set_index('index', inplace=True)
-        E_T4.set_index('index', inplace=True)
-        E_T2.set_index('index', inplace=True)
-
-        E_M1.reset_index(inplace=True)
-        E_M2.reset_index(inplace=True)
-        E_M3.reset_index(inplace=True)
-        E_M4.reset_index(inplace=True)
-        E_M2['GrainID'] = np.where(E_M1['GrainID'] != E_M2['GrainID'], E_M1['GrainID'], E_M2['GrainID'])
-        E_M3['GrainID'] = np.where(E_M1['GrainID'] != E_M3['GrainID'], E_M1['GrainID'], E_M3['GrainID'])
-        E_M4['GrainID'] = np.where(E_M1['GrainID'] != E_M4['GrainID'], E_M1['GrainID'], E_M4['GrainID'])
-        E_M2.set_index('index', inplace=True)
-        E_M3.set_index('index', inplace=True)
-        E_M4.set_index('index', inplace=True)
-
-        rve.loc[E_B2.index, 'GrainID'] = E_B2
-        rve.loc[E_B3.index, 'GrainID'] = E_B3
-        rve.loc[E_T1.index, 'GrainID'] = E_T1
-        rve.loc[E_T2.index, 'GrainID'] = E_T2
-        rve.loc[E_T3.index, 'GrainID'] = E_T3
-        rve.loc[E_T4.index, 'GrainID'] = E_T4
-        rve.loc[E_M2.index, 'GrainID'] = E_M2
-        rve.loc[E_M3.index, 'GrainID'] = E_M3
-        rve.loc[E_M4.index, 'GrainID'] = E_M4
-
+        # fixing faces
         rve_faces = rve.loc[(((rve['x'] == max_x) | (rve['x'] == min_x)) &
                              ((rve['y'] != max_y) & (rve['y'] != min_y)) &
                              ((rve['z'] != max_z) & (rve['z'] != min_z))) |
@@ -493,37 +463,92 @@ class RVEUtils:
 
                             (((rve['x'] != max_x) & (rve['x'] != min_x)) &
                              ((rve['y'] == max_y) | (rve['y'] == min_y)) &
-                             ((rve['z'] != max_z) & (rve['z'] != min_z)))]
+                             ((rve['z'] != max_z) & (rve['z'] != min_z)))].copy()
 
-        # left set
-        LeftSet = rve_faces.loc[rve_faces['x'] == min_x].copy()
-        # right set
-        RightSet = rve_faces.loc[rve_faces['x'] == max_x].copy()
-        # bottom set
-        BottomSet = rve_faces.loc[rve_faces['y'] == min_y].copy()
-        # top set
-        TopSet = rve_faces.loc[rve_faces['y'] == max_y].copy()
         # front set
-        RearSet = rve_faces.loc[rve_faces['z'] == min_z].copy()
+        RearSet = rve_faces.loc[rve_faces['x'] == min_x].copy()
         # rear set
-        FrontSet = rve_faces.loc[rve_faces['z'] == max_z].copy()
+        FrontSet = rve_faces.loc[rve_faces['x'] == max_x].copy()
+        # left set
+        LeftSet = rve_faces.loc[rve_faces['y'] == min_y].copy()
+        # right set
+        RightSet = rve_faces.loc[rve_faces['y'] == max_y].copy()
+        # bottom set
+        BottomSet = rve_faces.loc[rve_faces['z'] == min_z].copy()
+        # top set
+        TopSet = rve_faces.loc[rve_faces['z'] == max_z].copy()
 
-        LeftSet.reset_index(inplace=True)
-        BottomSet.reset_index(inplace=True)
-        FrontSet.reset_index(inplace=True)
-        RightSet.reset_index(inplace=True)
-        TopSet.reset_index(inplace=True)
-        RearSet.reset_index(inplace=True)
-        RightSet['GrainID'] = np.where(LeftSet['GrainID'] != RightSet['GrainID'], LeftSet['GrainID'],
-                                       RightSet['GrainID'])
-        TopSet['GrainID'] = np.where(BottomSet['GrainID'] != TopSet['GrainID'], BottomSet['GrainID'], TopSet['GrainID'])
-        RearSet['GrainID'] = np.where(FrontSet['GrainID'] != RearSet['GrainID'], FrontSet['GrainID'],
-                                      RearSet['GrainID'])
-        RightSet.set_index('index', inplace=True)
-        TopSet.set_index('index', inplace=True)
-        RearSet.set_index('index', inplace=True)
-        rve.loc[RightSet.index, 'GrainID'] = RightSet
-        rve.loc[TopSet.index, 'GrainID'] = TopSet
-        rve.loc[RearSet.index, 'GrainID'] = RearSet
+        rve.loc[RightSet.index, 'GrainID'] = LeftSet.GrainID.values
+        rve.loc[TopSet.index, 'GrainID'] = BottomSet.GrainID.values
+        rve.loc[FrontSet.index, 'GrainID'] = RearSet.GrainID.values
 
+        rve_hull = rve.loc[(rve.x == min_x) | (rve.y == min_y) | (rve.z == min_z) |
+                           (rve.x == max_x) | (rve.y == max_y) | (rve.z == max_z)]
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(rve_hull.x, rve_hull.y, rve_hull.z, c=rve_hull.GrainID)
+        plt.show()
+
+        # fixing Edges
+        rve_edges = rve.loc[(
+                            ((rve['x'] == min_x) & (rve['z'] == min_z)) |
+                            ((rve['x'] == max_x) & (rve['z'] == min_z)) |
+                            ((rve['x'] == min_x) & (rve['z'] == max_z)) |
+                            ((rve['x'] == max_x) & (rve['z'] == max_z))) |
+                            (
+                            ((rve['y'] == min_y) & (rve['z'] == min_z)) |
+                            ((rve['y'] == max_y) & (rve['z'] == min_z)) |
+                            ((rve['y'] == min_y) & (rve['z'] == max_z)) |
+                            ((rve['y'] == max_y) & (rve['z'] == max_z))) |
+                            (
+                            ((rve['x'] == min_x) & (rve['y'] == min_y)) |
+                            ((rve['x'] == max_x) & (rve['y'] == min_y)) |
+                            ((rve['x'] == min_x) & (rve['y'] == max_y)) |
+                            ((rve['x'] == max_x) & (rve['y'] == max_y)))].copy()
+
+        # bottom_to_top_rear_left is mirrored on bottom_to_top_front_left,
+        # bottom_to_top_front_right and bottom_to_top_rear_right
+        bottom_to_top_rear_left = rve_edges.loc[(rve_edges['x'] == min_x) & (rve_edges['y'] == min_y)].copy()
+        bottom_to_top_front_left = rve_edges.loc[(rve_edges['x'] == max_x) & (rve_edges['y'] == min_y)].copy()
+        bottom_to_top_front_right = rve_edges.loc[(rve_edges['x'] == max_x) & (rve_edges['y'] == max_y)].copy()
+        bottom_to_top_rear_right =  rve_edges.loc[(rve_edges['x'] == min_x) & (rve_edges['y'] == max_y)].copy()
+
+        rve.loc[bottom_to_top_front_left.index, 'GrainID'] = bottom_to_top_rear_left.GrainID.values
+        rve.loc[bottom_to_top_front_right.index, 'GrainID'] = bottom_to_top_rear_left.GrainID.values
+        rve.loc[bottom_to_top_rear_right.index, 'GrainID'] = bottom_to_top_rear_left.GrainID.values
+
+        # left_to_right_bottom_rear is mirrored on left_to_right_top_rear,
+        # left_to_right_top_front and left_to_right_bottom_front
+        left_to_right_bottom_rear = rve_edges.loc[(rve_edges['x'] == min_x) & (rve_edges['z'] == min_z)].copy()
+        left_to_right_top_rear = rve_edges.loc[(rve_edges['x'] == min_x) & (rve_edges['z'] == max_z)].copy()
+        left_to_right_top_front = rve_edges.loc[(rve_edges['x'] == max_x) & (rve_edges['z'] == max_z)].copy()
+        left_to_right_bottom_front =  rve_edges.loc[(rve_edges['x'] == max_x) & (rve_edges['z'] == min_z)].copy()
+
+        rve.loc[left_to_right_top_rear.index, 'GrainID'] = left_to_right_bottom_rear.GrainID.values
+        rve.loc[left_to_right_top_front.index, 'GrainID'] = left_to_right_bottom_rear.GrainID.values
+        rve.loc[left_to_right_bottom_front.index, 'GrainID'] = left_to_right_bottom_rear.GrainID.values
+
+        # rear_to_front_bottom_left is mirrored on rear_to_front_top_left,
+        # rear_to_front_top_right and rear_to_front_bottom_right
+        rear_to_front_bottom_left = rve_edges.loc[(rve_edges['y'] == min_y) & (rve_edges['z'] == min_z)].copy()
+        rear_to_front_top_left = rve_edges.loc[(rve_edges['y'] == min_y) & (rve_edges['z'] == max_z)].copy()
+        rear_to_front_top_right = rve_edges.loc[(rve_edges['y'] == max_y) & (rve_edges['z'] == max_z)].copy()
+        rear_to_front_bottom_right = rve_edges.loc[(rve_edges['y'] == max_y) & (rve_edges['z'] == min_z)].copy()
+
+        rve.loc[rear_to_front_top_left.index, 'GrainID'] = rear_to_front_bottom_left.GrainID.values
+        rve.loc[rear_to_front_top_right.index, 'GrainID'] = rear_to_front_bottom_left.GrainID.values
+        rve.loc[rear_to_front_bottom_right.index, 'GrainID'] = rear_to_front_bottom_left.GrainID.values
+
+        # fixing corners
+        corner1 = rve.loc[(rve['x'] == min_x) & (rve['y'] == min_y) & (rve['z'] == min_z)]
+        corners = rve.loc[((rve['x'] == min_x) & (rve['y'] == min_y) & (rve['z'] == min_z)) |
+                          ((rve['x'] == min_x) & (rve['y'] == max_y) & (rve['z'] == min_z)) |
+                          ((rve['x'] == max_x) & (rve['y'] == min_y) & (rve['z'] == min_z)) |
+                          ((rve['x'] == max_x) & (rve['y'] == max_y) & (rve['z'] == min_z)) |
+                          ((rve['x'] == min_x) & (rve['y'] == min_y) & (rve['z'] == max_z)) |
+                          ((rve['x'] == min_x) & (rve['y'] == max_y) & (rve['z'] == max_z)) |
+                          ((rve['x'] == max_x) & (rve['y'] == min_y) & (rve['z'] == max_z)) |
+                          ((rve['x'] == max_x) & (rve['y'] == max_y) & (rve['z'] == max_z))]
+        rve.loc[corners.index, 'GrainID'] = corner1.GrainID.values
         return rve
