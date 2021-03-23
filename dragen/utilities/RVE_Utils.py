@@ -66,9 +66,9 @@ class RVEUtils:
 
     def band_generator(self, xyz_grid, plane='xy'):
         """Creates a band of given bandwidth for given points in interval [step_half, box_size)
-        with step_size spacing along the axis.
+        with bin_size spacing along the axis.
         Parameters :
-        xyz_grid : Array, list of points in interval [step_half, box_size) with step_size spacing
+        xyz_grid : Array, list of points in interval [step_half, box_size) with bin_size spacing
         plane : String, default is 'xy'
         """
         band_half = self.bandwidth / 2

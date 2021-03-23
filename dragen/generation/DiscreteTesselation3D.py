@@ -83,7 +83,7 @@ class Tesselation3D:
         if self.debug:
             self.logger.info('time spent on plotter for epoch {}: {}'.format(epoch, time_elapse.total_seconds()))
 
-    def run_tesselation(self, rsa):
+    def run_tesselation(self, rsa, animation=True):
 
         # set some variables
         status = False
@@ -127,7 +127,8 @@ class Tesselation3D:
             if not grain_idx:
                 repeat = True
                 grain_idx = grain_idx_backup.copy()
-            self.tesselation_plotter(rve, epoch)
+            if animation:
+                self.tesselation_plotter(rve, epoch)
             epoch += 1
             packingratio = (1 - freepoints / vol_0) * 100
             print('packingratio:', packingratio, '%')

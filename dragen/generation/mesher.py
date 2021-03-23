@@ -20,25 +20,47 @@ class Mesher:
         self.y_min = int(min(rve.y))
         self.z_max = int(max(rve.z))
         self.z_min = int(min(rve.z))
-        self.numberOfGrains = int(max(rve.GrainID))
-        self.stepsize = rve.boxsize[0] / rve.pointsonedge[0]
-        self.pointsonedge = rve.pointsonedge[0]
+        self.n_grains = int(max(rve.GrainID))
+        #self.bin_size = rve.boxsize[0] / rve.pointsonedge[0]
+        #self.n_pts = rve.pointsonedge[0]
+        self.n_pts = int(rve.n_pts[0])
+        self.bin_size = rve.box_size[0] / self.n_pts
         self.logger = logging.getLogger("RVE-Gen")
+
+        x_range = list(set(self.rve.x))
+        x_range.sort()
+        x_range = [x - self.bin_size / 2 for x in x_range]
+        self.x_range = [x - x_range[0] for x in x_range]
+        self.x_range.append(x_range[-1] + self.bin_size / 2)
+
+        y_range = list(set(self.rve.y))
+        y_range.sort()
+        y_range = [y - self.bin_size / 2 for y in y_range]
+        self.y_range = [y - y_range[0] for y in y_range]
+        self.y_range.append(y_range[-1] + self.bin_size / 2)
+
+        z_range = list(set(self.rve.x))
+        z_range.sort()
+        z_range = [z - self.bin_size / 2 for z in z_range]
+        self.z_range = [z - z_range[0] for z in z_range]
+        self.z_range.append(z_range[-1] + self.bin_size / 2)
+
 
     def gen_blocks(self) -> pv.StructuredGrid:
 
         """this function generates a structured grid
         in py-vista according to the rve"""
 
-        step_size = self.stepsize
-        pointsonedge = self.pointsonedge
-        x_range = np.linspace(self.x_min - int(step_size / 2), self.x_max + int(step_size / 2), pointsonedge + 1,
+        '''bin_size = self.bin_size
+        pointsonedge = self.n_pts
+        x_range = np.linspace(self.x_min - int(bin_size / 2), self.x_max + int(bin_size / 2), pointsonedge + 1,
                               endpoint=True)
-        y_range = np.linspace(self.y_min - int(step_size / 2), self.y_max + int(step_size / 2), pointsonedge + 1,
+        y_range = np.linspace(self.y_min - int(bin_size / 2), self.y_max + int(bin_size / 2), pointsonedge + 1,
                               endpoint=True)
-        z_range = np.linspace(self.z_min - int(step_size / 2), self.z_max + int(step_size / 2), pointsonedge + 1,
-                              endpoint=True)
-        xx, yy, zz = np.meshgrid(x_range, y_range, z_range)
+        z_range = np.linspace(self.z_min - int(bin_size / 2), self.z_max + int(bin_size / 2), pointsonedge + 1,
+                              endpoint=True)'''
+
+        xx, yy, zz = np.meshgrid(self.x_range, self.y_range, self.z_range)
         grid = pv.StructuredGrid(xx, yy, zz)
         return grid
 
@@ -47,9 +69,10 @@ class Mesher:
         """the grainIDs are written on the cell_array"""
 
         rve = self.rve
-        rve.sort_values(by=['x', 'y', 'z'])
-        grainIDs = rve.GrainID
+        rve.sort_values(by=['x', 'y', 'z'], inplace=True)
+        grainIDs = rve.GrainID.values.astype(int)
         grid.cell_arrays.append(grainIDs, name='GrainID')
+
         return grid
 
     def convert_to_mesh(self, grid: pv.StructuredGrid) -> tuple:
@@ -58,13 +81,13 @@ class Mesher:
         is extracted here and stored in pv.Polydata and
         in a pd.Dataframe"""
 
-        numberOfGrains = self.numberOfGrains
+        numberOfGrains = self.n_grains
         grainboundary_df = pd.DataFrame()
         all_points = grid.points
         all_points_df = pd.DataFrame(all_points, columns=['x', 'y', 'z'], dtype=float)
         all_points_df.sort_values(by=['x', 'y', 'z'], inplace=True)
 
-        for i in range(numberOfGrains + 1):
+        for i in range(1,numberOfGrains + 1):
             sub_grid = grid.extract_cells(np.where(np.asarray(grid.cell_arrays.values())[0] == i))
             sub_surf = sub_grid.extract_surface()
             sub_surf.triangulate(inplace=True)
@@ -90,7 +113,7 @@ class Mesher:
             f_df['p1'] = [idx[j] for j in f_df['p1'].values]
             f_df['p2'] = [idx[j] for j in f_df['p2'].values]
             f_df['p3'] = [idx[j] for j in f_df['p3'].values]
-            f_df['facelabel'] = str(i + 1)
+            f_df['facelabel'] = str(i)
 
             grainboundary_df = pd.concat([grainboundary_df, f_df])
 
@@ -107,7 +130,7 @@ class Mesher:
         unique_grainboundary_df = grainboundary_df.drop_duplicates(subset=['sorted_tris'], keep='first')
 
         all_faces = unique_grainboundary_df.drop(['sorted_tris', 'facelabel'], axis=1)
-        all_faces = np.asarray(all_faces)
+        all_faces = np.asarray(all_faces, dtype='int32')
         all_faces = np.reshape(all_faces, (1, int(len(all_faces) * 4)))[0]
         boundaries = pv.PolyData(all_points, all_faces)
 
@@ -148,14 +171,13 @@ class Mesher:
         tri_df = tri_df.drop(['facelabel', 'sorted_tris'], axis=1)
         tri_sub = tri_df.copy()
         tri_sub.drop(fl_df.loc[(fl_df[0] == -1) | (fl_df[1] == -1)].index, inplace=True, axis='rows')
-        tri_sub = tri_sub.to_numpy()
+        tri_sub = tri_sub.to_numpy().astype('int32')
 
         ########## mesh and smooth blocks ########################
         surf = pv.PolyData(pts, tri_sub)
-        smooth_boundaries = surf.smooth(n_iter=1000)
+        smooth_boundaries = surf.smooth(n_iter=200)
         smooth_points = smooth_boundaries.points
         smooth_points = np.asarray(smooth_points)
-        smooth_points = np.round(smooth_points, 5)
         smooth_boundaries = pv.PolyData(smooth_points, tri_sub)  # kept here for debugging purposes
         smooth_rve = pv.PolyData(smooth_points, tri)
         return smooth_rve
@@ -185,18 +207,20 @@ class Mesher:
         f.write('**\n')
         f.close()
 
-        for i in range(self.numberOfGrains + 1):
-            x_min = self.x_min - self.stepsize / 2
-            y_min = self.y_min - self.stepsize / 2
-            z_min = self.z_min - self.stepsize / 2
-            x_max = self.x_max + self.stepsize / 2
-            y_max = self.y_max + self.stepsize / 2
-            z_max = self.z_max + self.stepsize / 2
+        for i in range(self.n_grains):
+            x_min = min(self.x_range)
+            y_min = min(self.y_range)
+            z_min = min(self.z_range)
+            x_max = max(self.x_range)
+            y_max = max(self.y_range)
+            z_max = max(self.z_range)
             nGrain = i + 1
+
             tri_idx = fl_df.loc[(fl_df[0] == nGrain) | (fl_df[1] == nGrain)].index
             triGrain = tri[tri_idx, :]
             faces = triGrain.astype('int32')
             sub_surf = pv.PolyData(smooth_points, faces)
+
             tet = tetgen.TetGen(sub_surf)
             tet.tetrahedralize(order=1, mindihedral=10, minratio=1.5, supsteiner_level=1)
             sub_grid = tet.grid
@@ -224,7 +248,7 @@ class Mesher:
         f.write('*Part, name=PART-1\n')
         for line in lines[startingLine:]:
             f.write(line)
-        for i in range(self.numberOfGrains + 1):
+        for i in range(self.n_grains + 1):
             nGrain = i + 1
 
             cells = np.where(grid.cell_arrays['GrainID'] == nGrain)[0]
@@ -234,7 +258,7 @@ class Mesher:
                     f.write('\n')
                 f.write(' {},'.format(cell))
             f.write('\n')
-        for i in range(self.numberOfGrains + 1):
+        for i in range(self.n_grains + 1):
             nGrain = i + 1
             f.write('** Section: Section - {}\n'.format(nGrain))
             f.write('*Solid Section, elset=Set-{}, material=Ferrite_{}\n'.format(nGrain, nGrain))
@@ -279,13 +303,13 @@ class Mesher:
         if errors appear or equations are wrong check ppt presentation from ICAMS
         included in the docs folder called PBC_docs"""
 
-        min_x = self.x_min# - self.stepsize / 2
-        min_y = self.y_min# - self.stepsize / 2
-        min_z = self.z_min# - self.stepsize / 2
-        max_x = self.x_max# + self.stepsize / 2
-        max_y = self.y_max# + self.stepsize / 2
-        max_z = self.z_max# + self.stepsize / 2
-        numberofgrains = self.numberOfGrains
+        min_x = min(self.x_range)
+        min_y = min(self.y_range)
+        min_z = min(self.z_range)
+        max_x = max(self.x_range)
+        max_y = max(self.y_range)
+        max_z = max(self.z_range)
+        numberofgrains = self.n_grains
         ########## write Equation - sets ##########
         periodic_df = periodic_df.sort_values(by=['x', 'y', 'z'])
         periodic_df.index.rename('pointNumber', inplace=True)
@@ -920,21 +944,21 @@ class Mesher:
         OutPutFile.close()
 
         OutPutFile = open(filePrefix + '/VerticeSets.inp', 'w')
-        OutPutFile.write('*Nset, nset=V1, instance=PART-{}-1\n'.format(cornerInstance))
+        OutPutFile.write('*Nset, nset=V1, instance=PART-1-1\n')
         OutPutFile.write(' {},\n'.format(V1 + 1))
-        OutPutFile.write('*Nset, nset=V2, instance=PART-{}-1\n'.format(cornerInstance))
+        OutPutFile.write('*Nset, nset=V2, instance=PART-1-1\n')
         OutPutFile.write(' {},\n'.format(V2 + 1))
-        OutPutFile.write('*Nset, nset=V3, instance=PART-{}-1\n'.format(cornerInstance))
+        OutPutFile.write('*Nset, nset=V3, instance=PART-1-1\n')
         OutPutFile.write(' {},\n'.format(V3 + 1))
-        OutPutFile.write('*Nset, nset=V4, instance=PART-{}-1\n'.format(cornerInstance))
+        OutPutFile.write('*Nset, nset=V4, instance=PART-1-1\n')
         OutPutFile.write(' {},\n'.format(V4 + 1))
-        OutPutFile.write('*Nset, nset=H1, instance=PART-{}-1\n'.format(cornerInstance))
+        OutPutFile.write('*Nset, nset=H1, instance=PART-1-1\n')
         OutPutFile.write(' {},\n'.format(H1 + 1))
-        OutPutFile.write('*Nset, nset=H2, instance=PART-{}-1\n'.format(cornerInstance))
+        OutPutFile.write('*Nset, nset=H2, instance=PART-1-1\n')
         OutPutFile.write(' {},\n'.format(H2 + 1))
-        OutPutFile.write('*Nset, nset=H3, instance=PART-{}-1\n'.format(cornerInstance))
+        OutPutFile.write('*Nset, nset=H3, instance=PART-1-1\n')
         OutPutFile.write(' {},\n'.format(H3 + 1))
-        OutPutFile.write('*Nset, nset=H4, instance=PART-{}-1\n'.format(cornerInstance))
+        OutPutFile.write('*Nset, nset=H4, instance=PART-1-1\n')
         OutPutFile.write(' {},\n'.format(H4 + 1))
         OutPutFile.close()
         ####################################################################
@@ -944,7 +968,7 @@ class Mesher:
         """simple function to write material definition in Input file
         needs to be adjusted for multiple phases"""
 
-        numberofgrains = self.numberOfGrains
+        numberofgrains = self.n_grains
         f = open(filePrefix + '/RVE_smooth.inp', 'a')
 
         f.write('**\n')

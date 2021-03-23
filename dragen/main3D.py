@@ -11,7 +11,7 @@ from tqdm import tqdm
 from dragen.generation.DiscreteRsa3D import DiscreteRsa3D
 from dragen.generation.DiscreteTesselation3D import Tesselation3D
 from dragen.utilities.RVE_Utils import RVEUtils
-from dragen.generation import mesher
+from dragen.generation.mesher import Mesher
 
 
 class DataTask3D:
@@ -29,9 +29,11 @@ class DataTask3D:
         if not gui_flag:
             main_dir = sys.argv[0][:-14]
             os.chdir(main_dir)
+            self.animation = True
         else:
             main_dir = sys.argv[0][:-31]
             os.chdir(main_dir)
+            self.animation = False
         self.file1 = file1
         self.file2 = file2
         self.utils_obj = RVEUtils(self.box_size, self.n_pts, self.bandwidth)
@@ -108,7 +110,7 @@ class DataTask3D:
         with open(store_path + '/discrete_input_vol.csv', 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(grains_df)
-        rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(animation=True)
+        rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(animation=self.animation)
 
         if rsa_status:
             discrete_tesselation_obj = Tesselation3D(self.box_size, self.n_pts,
@@ -117,13 +119,15 @@ class DataTask3D:
                                                      grains_df['c'].tolist(),
                                                      x_0_list, y_0_list, z_0_list,
                                                      self.shrink_factor, store_path)
-            rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa)
+            rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa, animation=self.animation)
 
         else:
             self.logger.info("The rsa did not succeed...")
             sys.exit()
 
         if rve_status:
-            np.save(store_path + '/rve_array_3D', rve)
-            #rve_df = RVEUtils.repair_periodicity_3D(rve)'''
+            rve_df = self.utils_obj.repair_periodicity_3D(rve)
+            mesher_obj = Mesher(rve_df)
+            mesher_obj.mesh_and_build_abaqus_model(store_path=store_path)
+
         self.logger.info("RVE generation process has successfully completed...")
