@@ -485,11 +485,6 @@ class RVEUtils:
         rve_hull = rve.loc[(rve.x == min_x) | (rve.y == min_y) | (rve.z == min_z) |
                            (rve.x == max_x) | (rve.y == max_y) | (rve.z == max_z)]
 
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(rve_hull.x, rve_hull.y, rve_hull.z, c=rve_hull.GrainID)
-        plt.show()
-
         # fixing Edges
         rve_edges = rve.loc[(
                             ((rve['x'] == min_x) & (rve['z'] == min_z)) |
