@@ -127,7 +127,10 @@ class DataTask3D:
 
         if rve_status:
             rve_df = self.utils_obj.repair_periodicity_3D(rve)
-            mesher_obj = Mesher(rve_df)
-            mesher_obj.mesh_and_build_abaqus_model(store_path=store_path)
+            mesher_obj = Mesher(rve_df, store_path=store_path)
+            mesher_obj.mesh_and_build_abaqus_model()
+
+
 
         self.logger.info("RVE generation process has successfully completed...")
+

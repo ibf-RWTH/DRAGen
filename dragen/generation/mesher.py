@@ -190,8 +190,6 @@ class Mesher:
 
         for i in range(self.n_grains):
 
-
-
             x_min = min(rve.x)
             y_min = min(rve.y)
             z_min = min(rve.z)
@@ -223,6 +221,10 @@ class Mesher:
                 grid = sub_grid
             else:
                 grid = sub_grid.merge(grid)
+                print(i, grid.cell_arrays.keys())
+
+        print('ende', grid.cell_arrays.keys())
+        #sys.exit()
         pv.save_meshio(self.store_path + '/rve-part.inp', grid)
         f = open(self.store_path + '/rve-part.inp', 'r')
         lines = f.readlines()
@@ -232,9 +234,9 @@ class Mesher:
         f.write('*Part, name=PART-1\n')
         for line in lines[startingLine:]:
             f.write(line)
-        for i in range(self.n_grains + 1):
+        for i in range(self.n_grains):
             nGrain = i + 1
-
+            print('in for nGrain=',nGrain, grid.cell_arrays.keys())
             cells = np.where(grid.cell_arrays['GrainID'] == nGrain)[0]
             f.write('*Elset, elset=Set-{}\n'.format(nGrain))
             for j, cell in enumerate(cells + 1):
@@ -242,13 +244,13 @@ class Mesher:
                     f.write('\n')
                 f.write(' {},'.format(cell))
             f.write('\n')
-        for i in range(self.n_grains + 1):
+        for i in range(self.n_grains):
             nGrain = i + 1
             f.write('** Section: Section - {}\n'.format(nGrain))
             f.write('*Solid Section, elset=Set-{}, material=Ferrite_{}\n'.format(nGrain, nGrain))
         f.close()
         os.remove(self.store_path + '/rve-part.inp')
-        print(periodic_df.head())
+        #print(periodic_df.head())
 
         self.make_assembly()         # Don't change the order
         self.pbc(rve, periodic_df)      # of these four
@@ -300,8 +302,8 @@ class Mesher:
         periodic_df = periodic_df.reset_index()
         periodic_df.index.rename('Eqn-Set', inplace=True)
         periodic_df = periodic_df.reset_index()
-        print(periodic_df.head())
-        print(min_x, max_x)
+        #print(periodic_df.head())
+        #print(min_x, max_x)
         ########## Define Corner Sets ###########
         corner_df = periodic_df.loc[((periodic_df['x'] == max_x) | (periodic_df['x'] == min_x)) &
                                     ((periodic_df['y'] == max_y) | (periodic_df['y'] == min_y)) &
@@ -311,35 +313,35 @@ class Mesher:
         V1_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == min_y) & (corner_df['z'] == max_z)]
         V1 = V1_df['pointNumber'].values[0]
         V1Eqn = V1_df['Eqn-Set'].values[0]
-        print(V1_df)
+        #print(V1_df)
         V2_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == min_y) & (corner_df['z'] == max_z)]
         V2 = V2_df['pointNumber'].values[0]
         V2Eqn = V2_df['Eqn-Set'].values[0]
-        print(V2_df)
+        #print(V2_df)
         V3_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == max_y) & (corner_df['z'] == max_z)]
         V3 = V3_df['pointNumber'].values[0]
         V3Eqn = V3_df['Eqn-Set'].values[0]
-        print(V3_df)
+        #print(V3_df)
         V4_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == max_y) & (corner_df['z'] == max_z)]
         V4 = V4_df['pointNumber'].values[0]
         V4Eqn = V4_df['Eqn-Set'].values[0]
-        print(V4_df)
+        #print(V4_df)
         H1_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == min_y) & (corner_df['z'] == min_z)]
         H1 = H1_df['pointNumber'].values[0]
         H1Eqn = H1_df['Eqn-Set'].values[0]
-        print(H1_df)
+        #print(H1_df)
         H2_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == min_y) & (corner_df['z'] == min_z)]
         H2 = H2_df['pointNumber'].values[0]
         H2Eqn = H2_df['Eqn-Set'].values[0]
-        print(H2_df)
+        #print(H2_df)
         H3_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == max_y) & (corner_df['z'] == min_z)]
         H3 = H3_df['pointNumber'].values[0]
         H3Eqn = H3_df['Eqn-Set'].values[0]
-        print(H3_df)
+        #print(H3_df)
         H4_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == max_y) & (corner_df['z'] == min_z)]
         H4 = H4_df['pointNumber'].values[0]
         H4Eqn = H4_df['Eqn-Set'].values[0]
-        print(H4_df)
+        #print(H4_df)
         ############ Define Edge Sets ###############
         edges_df = periodic_df.loc[(((periodic_df['x'] == max_x) | (periodic_df['x'] == min_x)) &
                                     ((periodic_df['y'] == max_y) | (periodic_df['y'] == min_y)) &
