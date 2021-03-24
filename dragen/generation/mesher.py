@@ -12,8 +12,10 @@ import logging
 
 class Mesher:
 
-    def __init__(self, rve: pd.DataFrame):
+    def __init__(self, rve: pd.DataFrame, store_path, animation=False):
         self.rve = rve
+        self.store_path = store_path
+        self.animation = animation
         self.x_max = int(max(rve.x))
         self.x_min = int(min(rve.x))
         self.y_max = int(max(rve.y))
@@ -21,61 +23,40 @@ class Mesher:
         self.z_max = int(max(rve.z))
         self.z_min = int(min(rve.z))
         self.n_grains = int(max(rve.GrainID))
-        #self.bin_size = rve.boxsize[0] / rve.pointsonedge[0]
-        #self.n_pts = rve.pointsonedge[0]
         self.n_pts = int(rve.n_pts[0])
         self.bin_size = rve.box_size[0] / self.n_pts
         self.logger = logging.getLogger("RVE-Gen")
 
-        x_range = list(set(self.rve.x))
-        x_range.sort()
-        x_range = [x - self.bin_size / 2 for x in x_range]
-        self.x_range = [x - x_range[0] for x in x_range]
-        self.x_range.append(x_range[-1] + self.bin_size / 2)
-
-        y_range = list(set(self.rve.y))
-        y_range.sort()
-        y_range = [y - self.bin_size / 2 for y in y_range]
-        self.y_range = [y - y_range[0] for y in y_range]
-        self.y_range.append(y_range[-1] + self.bin_size / 2)
-
-        z_range = list(set(self.rve.x))
-        z_range.sort()
-        z_range = [z - self.bin_size / 2 for z in z_range]
-        self.z_range = [z - z_range[0] for z in z_range]
-        self.z_range.append(z_range[-1] + self.bin_size / 2)
-
-
-    def gen_blocks(self) -> pv.StructuredGrid:
+    def gen_blocks(self) -> pv.UniformGrid:
 
         """this function generates a structured grid
         in py-vista according to the rve"""
+        grid = pv.UniformGrid()
 
-        '''bin_size = self.bin_size
-        pointsonedge = self.n_pts
-        x_range = np.linspace(self.x_min - int(bin_size / 2), self.x_max + int(bin_size / 2), pointsonedge + 1,
-                              endpoint=True)
-        y_range = np.linspace(self.y_min - int(bin_size / 2), self.y_max + int(bin_size / 2), pointsonedge + 1,
-                              endpoint=True)
-        z_range = np.linspace(self.z_min - int(bin_size / 2), self.z_max + int(bin_size / 2), pointsonedge + 1,
-                              endpoint=True)'''
+        # Set the grid dimensions: shape + 1 because we want to inject our values on
+        #   the CELL data
+        grid.dimensions = np.array((self.n_pts+1, self.n_pts+1, self.n_pts+1)) + 1
 
-        xx, yy, zz = np.meshgrid(self.x_range, self.y_range, self.z_range)
-        grid = pv.StructuredGrid(xx, yy, zz)
+        # Edit the spatial reference
+        grid.origin = (0, 0, 0)  # The bottom left corner of the data set
+        grid.spacing = (self.bin_size, self.bin_size, self.bin_size)  # These are the cell sizes along each axis
         return grid
 
-    def gen_grains(self, grid: pv.StructuredGrid) -> pv.StructuredGrid:
+    def gen_grains(self, grid: pv.UniformGrid) -> pv.UniformGrid:
 
         """the grainIDs are written on the cell_array"""
 
         rve = self.rve
         rve.sort_values(by=['x', 'y', 'z'], inplace=True)
-        grainIDs = rve.GrainID.values.astype(int)
-        grid.cell_arrays.append(grainIDs, name='GrainID')
+        # Add the data values to the cell data
+        grid.cell_arrays["GrainID"] = rve.GrainID  # Flatten the array!
 
+        # Now plot the grid!
+        if self.animation:
+            grid.plot(show_edges=True, screenshot=self.store_path+'/Figs.pyvista_mesh.png')
         return grid
 
-    def convert_to_mesh(self, grid: pv.StructuredGrid) -> tuple:
+    def convert_to_mesh(self, grid: pv.UniformGrid) -> tuple:
 
         """information about grainboundary elements of hex-mesh
         is extracted here and stored in pv.Polydata and
@@ -159,7 +140,7 @@ class Mesher:
         return facelabel
 
     @staticmethod
-    def smooth(tri: pv.PolyData, rve: pv.StructuredGrid, tri_df: pd.DataFrame, fl: list) -> pv.PolyData:
+    def smooth(tri: pv.PolyData, rve: pv.UniformGrid, tri_df: pd.DataFrame, fl: list) -> pv.PolyData:
 
         """this function is smoothing the surface
         mesh of the grain boundaries """
@@ -182,7 +163,7 @@ class Mesher:
         smooth_rve = pv.PolyData(smooth_points, tri)
         return smooth_rve
 
-    def build_abaqus_model(self, file_prefix: str, poly_data: pv.PolyData,
+    def build_abaqus_model(self, poly_data: pv.PolyData, rve: pv.UniformGrid,
                            fl: list, tri_df: pd.DataFrame = pd.DataFrame()) -> pv.UnstructuredGrid:
 
         """building the abaqus model here so far only single phase supported
@@ -195,7 +176,7 @@ class Mesher:
         tri = np.asarray(tri)
         smooth_points = poly_data.points
 
-        f = open(file_prefix + '/RVE_smooth.inp', 'w+')
+        f = open(self.store_path + '/RVE_smooth.inp', 'w+')
         f.write('*Heading\n')
         f.write('** Job name: Job-1 Model name: Job-1\n')
         f.write('** Generated by: DRAGen \n')
@@ -208,12 +189,15 @@ class Mesher:
         f.close()
 
         for i in range(self.n_grains):
-            x_min = min(self.x_range)
-            y_min = min(self.y_range)
-            z_min = min(self.z_range)
-            x_max = max(self.x_range)
-            y_max = max(self.y_range)
-            z_max = max(self.z_range)
+
+
+
+            x_min = min(rve.x)
+            y_min = min(rve.y)
+            z_min = min(rve.z)
+            x_max = max(rve.x)
+            y_max = max(rve.y)
+            z_max = max(rve.z)
             nGrain = i + 1
 
             tri_idx = fl_df.loc[(fl_df[0] == nGrain) | (fl_df[1] == nGrain)].index
@@ -239,12 +223,12 @@ class Mesher:
                 grid = sub_grid
             else:
                 grid = sub_grid.merge(grid)
-        pv.save_meshio(file_prefix + '/rve-part.inp', grid)
-        f = open(file_prefix + '/rve-part.inp', 'r')
+        pv.save_meshio(self.store_path + '/rve-part.inp', grid)
+        f = open(self.store_path + '/rve-part.inp', 'r')
         lines = f.readlines()
         f.close()
         startingLine = lines.index('*NODE\n')
-        f = open(file_prefix + '/RVE_smooth.inp', 'a')
+        f = open(self.store_path + '/RVE_smooth.inp', 'a')
         f.write('*Part, name=PART-1\n')
         for line in lines[startingLine:]:
             f.write(line)
@@ -263,21 +247,21 @@ class Mesher:
             f.write('** Section: Section - {}\n'.format(nGrain))
             f.write('*Solid Section, elset=Set-{}, material=Ferrite_{}\n'.format(nGrain, nGrain))
         f.close()
-        os.remove(file_prefix + '/rve-part.inp')
+        os.remove(self.store_path + '/rve-part.inp')
         print(periodic_df.head())
 
-        self.make_assembly(file_prefix)         # Don't change the order
-        self.pbc(file_prefix, periodic_df)      # of these four
-        self.write_material_def(file_prefix)    # functions here
-        self.write_step_def(file_prefix)        # it will lead to a faulty inputfile
+        self.make_assembly()         # Don't change the order
+        self.pbc(rve, periodic_df)      # of these four
+        self.write_material_def()    # functions here
+        self.write_step_def()        # it will lead to a faulty inputfile
 
         return grid
 
-    def make_assembly(self, file_prefix: str) -> None:
+    def make_assembly(self) -> None:
 
         """simple function to write the assembly definition in the input file"""
 
-        f = open(file_prefix + '/RVE_smooth.inp', 'a')
+        f = open(self.store_path + '/RVE_smooth.inp', 'a')
         f.write('*End Part\n')
         f.write('**\n')
         f.write('** ASSEMBLY\n')
@@ -297,18 +281,18 @@ class Mesher:
         f.write('*End Assembly\n')
         f.close()
 
-    def pbc(self, filePrefix: str, periodic_df: pd.DataFrame) -> None:
+    def pbc(self, rve: pv.UniformGrid, periodic_df: pd.DataFrame) -> None:
 
         """function to define the periodic boundary conditions
         if errors appear or equations are wrong check ppt presentation from ICAMS
         included in the docs folder called PBC_docs"""
 
-        min_x = min(self.x_range)
-        min_y = min(self.y_range)
-        min_z = min(self.z_range)
-        max_x = max(self.x_range)
-        max_y = max(self.y_range)
-        max_z = max(self.z_range)
+        min_x = min(rve.x)
+        min_y = min(rve.y)
+        min_z = min(rve.z)
+        max_x = max(rve.x)
+        max_y = max(rve.y)
+        max_z = max(rve.z)
         numberofgrains = self.n_grains
         ########## write Equation - sets ##########
         periodic_df = periodic_df.sort_values(by=['x', 'y', 'z'])
@@ -451,14 +435,14 @@ class Mesher:
         self.logger.info('FrontSet', len(FrontSet))
         self.logger.info('RearSet', len(RearSet))
 
-        OutPutFile = open(filePrefix + '/Nsets.inp', 'w')
+        OutPutFile = open(self.store_path + '/Nsets.inp', 'w')
         for i in periodic_df.index:
             OutPutFile.write('*Nset, nset=Eqn-Set-{}, instance=PART-1-1\n'.format(i + 1))
             OutPutFile.write(' {},\n'.format(int(periodic_df.loc[i]['pointNumber'] + 1)))
         OutPutFile.close()
 
         ############### Define Equations ###################################
-        OutPutFile = open(filePrefix + '/LeftToRight.inp', 'w')
+        OutPutFile = open(self.store_path + '/LeftToRight.inp', 'w')
 
         OutPutFile.write('**** X-DIR \n')
         for i in range(len(LeftSet)):
@@ -493,7 +477,7 @@ class Mesher:
             OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
         OutPutFile.close()
 
-        OutPutFile = open(filePrefix + '/BottomToTop.inp', 'w')
+        OutPutFile = open(self.store_path + '/BottomToTop.inp', 'w')
 
         OutPutFile.write('**** X-DIR \n')
         for i in range(len(BottomSet)):
@@ -528,7 +512,7 @@ class Mesher:
             OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',3, 1 \n')
         OutPutFile.close()
 
-        OutPutFile = open(filePrefix + '/FrontToRear.inp', 'w')
+        OutPutFile = open(self.store_path + '/FrontToRear.inp', 'w')
 
         OutPutFile.write('**** X-DIR \n')
         for i in range(len(RearSet)):
@@ -563,7 +547,7 @@ class Mesher:
             OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',3,1 \n')
         OutPutFile.close()
 
-        OutPutFile = open(filePrefix + '/Edges.inp', 'w')
+        OutPutFile = open(self.store_path + '/Edges.inp', 'w')
 
         # Edges in x-y Plane
         # right top edge to left top edge
@@ -848,7 +832,7 @@ class Mesher:
             OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
         OutPutFile.close()
 
-        OutPutFile = open(filePrefix + '/Corners.inp', 'w')
+        OutPutFile = open(self.store_path + '/Corners.inp', 'w')
 
         # V3 zu V4
         OutPutFile.write('**** X-DIR \n')
@@ -943,7 +927,7 @@ class Mesher:
         OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
         OutPutFile.close()
 
-        OutPutFile = open(filePrefix + '/VerticeSets.inp', 'w')
+        OutPutFile = open(self.store_path + '/VerticeSets.inp', 'w')
         OutPutFile.write('*Nset, nset=V1, instance=PART-1-1\n')
         OutPutFile.write(' {},\n'.format(V1 + 1))
         OutPutFile.write('*Nset, nset=V2, instance=PART-1-1\n')
@@ -963,13 +947,13 @@ class Mesher:
         OutPutFile.close()
         ####################################################################
 
-    def write_material_def(self, filePrefix) -> None:
+    def write_material_def(self) -> None:
 
         """simple function to write material definition in Input file
         needs to be adjusted for multiple phases"""
 
         numberofgrains = self.n_grains
-        f = open(filePrefix + '/RVE_smooth.inp', 'a')
+        f = open(self.store_path + '/RVE_smooth.inp', 'a')
 
         f.write('**\n')
         f.write('** MATERIALS\n')
@@ -982,13 +966,13 @@ class Mesher:
             f.write('{}.,3.\n'.format(i + 1))
         f.close()
 
-    def write_step_def(self, filePrefix) -> None:
+    def write_step_def(self) -> None:
 
         """simple function to write step definition
         variables should be introduced to give the user an option
         to modify amplidtude, and other parameters"""
 
-        f = open(filePrefix + '/RVE_smooth.inp', 'a')
+        f = open(self.store_path + '/RVE_smooth.inp', 'a')
         f.write('**\n')
         f.write('*Amplitude, name=Amp-1\n')
         f.write('             0.,              0.,           10.,        10.,\n')
@@ -1059,9 +1043,7 @@ class Mesher:
         f.write('*End Step\n')
         f.close()
 
-    @staticmethod
-    def plot_bot(rve_smooth_grid: pv.UnstructuredGrid, min_val: float, max_val: float, direction: int = 1,
-                 storepath='./',
+    def plot_bot(self, rve_smooth_grid: pv.UnstructuredGrid, min_val: float, max_val: float, direction: int = 1,
                  storename: str = 'default', display=True) -> None:
 
         """first approach for a visualization helper
@@ -1084,35 +1066,15 @@ class Mesher:
         if storename == 'default':
             plotter.show()
         elif storename != 'default' and display:
-            plotter.show(screenshot=storepath + storepath + storename + '.png')
+            plotter.show(screenshot=self.store_path + storename + '.png')
         else:
-            plotter.show(screenshot=storepath + storepath + storename + '.png', auto_close=True)
+            plotter.show(screenshot=self.store_path + storename + '.png', auto_close=True)
 
-    def mesh_and_build_abaqus_model(self, store_path: str) -> None:
-
+    def mesh_and_build_abaqus_model(self) -> None:
         GRID = self.gen_blocks()
         GRID = self.gen_grains(GRID)
         grain_boundaries_poly_data, tri_df = self.convert_to_mesh(GRID)
         face_label = self.gen_face_labels(tri_df)
         smooth_grain_boundaries = self.smooth(grain_boundaries_poly_data, GRID, tri_df, face_label)
-        tet_RVE_smooth = self.build_abaqus_model(file_prefix=store_path, poly_data=smooth_grain_boundaries,
-                                                        fl=face_label, tri_df=tri_df)
+        tet_RVE_smooth = self.build_abaqus_model(rve=GRID, poly_data=smooth_grain_boundaries, fl=face_label, tri_df=tri_df)
         tet_RVE_smooth.save('rve_mesh.vtk')
-
-if __name__ == '__main__':
-    rvePath = '../../outputData/2021-02-16_0/'
-    rveName = 'boxrve.h5'
-    RVE = pd.read_hdf(rvePath + rveName)
-    RVE = pd.DataFrame(RVE)
-    GRID = Mesher(RVE).gen_blocks()
-    GRID = Mesher(RVE).gen_grains(GRID)
-    grain_boundaries_poly_data, tri_df = Mesher(RVE).convert_to_mesh(GRID)
-
-    face_label = Mesher.gen_face_labels(tri_df)
-    smooth_grain_boundaries = Mesher.smooth(grain_boundaries_poly_data, GRID, tri_df, face_label)
-
-    tet_RVE_smooth = Mesher(RVE).build_abaqus_model(file_prefix=rvePath, poly_data=smooth_grain_boundaries,
-                                                    fl=face_label, tri_df=tri_df)
-    Mesher.plot_bot(tet_RVE_smooth, min_val=0, max_val=25, direction=2)
-
-
