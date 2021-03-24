@@ -169,7 +169,7 @@ class Mesher:
         """building the abaqus model here so far only single phase supported
         for dual or multiple phase material_def needs to be adjusted"""
 
-        grid = pv.UnstructuredGrid()
+        #grid = pv.UnstructuredGrid()
         periodic_df = pd.DataFrame()
         fl_df = pd.DataFrame(fl)
         tri = tri_df.drop(['facelabel', 'sorted_tris'], axis=1)
@@ -214,6 +214,7 @@ class Mesher:
             gridPointsDf['GrainID'] = nGrain
             periodic_df = pd.concat([periodic_df, gridPointsDf])
             ncells = sub_grid.n_cells
+            print(i, ncells)
             grainIDList = [i + 1]
             grainID_array = grainIDList * ncells
             sub_grid['GrainID'] = grainID_array
