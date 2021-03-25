@@ -10,9 +10,11 @@ if __name__ == "__main__":
     last_RVE = 1  # Specify the number of iterations
     dimension = 3
     # Optional arguments with default values:
-    # DataTask(box_size=50, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5, file1=None, file2=None, gui_flag=False):
+    # obj3D = DataTask3D()
+    obj3D = DataTask3D(box_size=30, n_pts=50, number_of_bands=6, bandwidth=1,
+                       shrink_factor=0.5, file1=None, file2=None, gui_flag=False)
     obj2D = DataTask2D()
-    obj3D = DataTask3D()
+
     try:
         if dimension == 2:
             grains_df = obj2D.initializations(dimension)
