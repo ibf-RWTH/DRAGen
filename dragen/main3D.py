@@ -29,7 +29,7 @@ class DataTask3D:
         if not gui_flag:
             main_dir = sys.argv[0][:-14]
             os.chdir(main_dir)
-            self.animation = False
+            self.animation = True
         else:
             main_dir = sys.argv[0][:-31]
             os.chdir(main_dir)
@@ -109,7 +109,23 @@ class DataTask3D:
         with open(store_path + '/discrete_input_vol.csv', 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(grains_df)
-        rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(animation=self.animation)
+
+        if self.number_of_bands > 0:
+            # initialize empty grid_array for bands called band_array
+            xyz = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
+            x_grid, y_grid, z_grid = np.meshgrid(xyz, xyz, xyz)
+            utils_obj_band = RVEUtils(self.box_size, self.n_pts,
+                                x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, bandwidth=self.bandwidth)
+            band_array = np.zeros((2 * self.n_pts, 2 * self.n_pts, 2 * self.n_pts))
+            band_array = utils_obj_band.gen_boundaries_3D(band_array)
+
+            for i in range(self.number_of_bands):
+                band_array = utils_obj_band.band_generator(band_array)
+
+            rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(band_array, animation=self.animation)
+
+        else:
+            rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(animation=self.animation)
 
         if rsa_status:
             discrete_tesselation_obj = Tesselation3D(self.box_size, self.n_pts,
