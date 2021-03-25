@@ -5,6 +5,7 @@ click==7.1.2
 cycler==0.10.0
 idna==2.10
 imageio==2.9.0
+joblib==1.0.1
 kiwisolver==1.2.0
 matplotlib==3.3.0
 meshio==4.3.11
@@ -24,10 +25,13 @@ pytz==2020.1
 pyvista==0.29.0
 requests==2.24.0
 requests-cache==0.5.2
+scikit-learn==0.24.1
+scipy==1.6.1
 scooby==0.5.6
 six==1.15.0
 tables==3.6.1
 tetgen==0.5.1
+threadpoolctl==2.1.0
 tqdm==4.48.0
 transforms3d==0.3.1
 urllib3==1.25.10

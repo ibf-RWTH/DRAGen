@@ -12,9 +12,10 @@ import logging
 
 class Mesher:
 
-    def __init__(self, rve: pd.DataFrame, store_path, animation=False):
+    def __init__(self, rve: pd.DataFrame, store_path,  phase_two_isotropic=True, animation=False):
         self.rve = rve
         self.store_path = store_path
+        self. phase_two_isotropic = phase_two_isotropic
         self.animation = animation
         self.x_max = int(max(rve.x))
         self.x_min = int(min(rve.x))
@@ -164,13 +165,11 @@ class Mesher:
         return smooth_rve
 
     def build_abaqus_model(self, poly_data: pv.PolyData, rve: pv.UniformGrid,
-                           fl: list, tri_df: pd.DataFrame = pd.DataFrame()) -> pv.UnstructuredGrid:
+                           fl: list, tri_df: pd.DataFrame = pd.DataFrame()) -> None:
 
         """building the abaqus model here so far only single phase supported
         for dual or multiple phase material_def needs to be adjusted"""
 
-        #grid = pv.UnstructuredGrid()
-        periodic_df = pd.DataFrame()
         fl_df = pd.DataFrame(fl)
         tri = tri_df.drop(['facelabel', 'sorted_tris'], axis=1)
         tri = np.asarray(tri)
@@ -206,13 +205,21 @@ class Mesher:
             tet = tetgen.TetGen(sub_surf)
             tet.tetrahedralize(order=1, mindihedral=10, minratio=1.5, supsteiner_level=1)
             sub_grid = tet.grid
-            gridPointsDf = pd.DataFrame(sub_grid.points.tolist(), columns=['x', 'y', 'z'])
 
-            gridPointsDf = gridPointsDf.loc[(gridPointsDf['x'] == x_max) | (gridPointsDf['x'] == x_min) |
-                                            (gridPointsDf['y'] == y_max) | (gridPointsDf['y'] == y_min) |
-                                            (gridPointsDf['z'] == z_max) | (gridPointsDf['z'] == z_min)]
-            gridPointsDf['GrainID'] = nGrain
-            periodic_df = pd.concat([periodic_df, gridPointsDf])
+            """
+            This following code block is only needed if all grains are generated as independent parts
+            and are merged together later. Or if cohesive contact definitions are defined.
+            A first attempt for cohesive contact defs led to convergence issues which is why this route
+            wasn't followed any further
+            """
+            #grain_hull_df = pd.DataFrame(sub_grid.points.tolist(), columns=['x', 'y', 'z'])
+            #grain_hull_df = gridPointsDf.loc[(gridPointsDf['x'] == x_max) | (gridPointsDf['x'] == x_min) |
+            #                                (gridPointsDf['y'] == y_max) | (gridPointsDf['y'] == y_min) |
+            #                                (gridPointsDf['z'] == z_max) | (gridPointsDf['z'] == z_min)]
+            #grain_hull_df['GrainID'] = nGrain
+            #grid_hull_df = pd.concat([grid_hull_df, grain_hull_df])
+
+
             ncells = sub_grid.n_cells
             print(i, ncells)
             grainIDList = [i + 1]
@@ -245,20 +252,38 @@ class Mesher:
                     f.write('\n')
                 f.write(' {},'.format(cell))
             f.write('\n')
+
+        phase1_idx = 0
+        phase2_idx = 0
         for i in range(self.n_grains):
             nGrain = i + 1
-            f.write('** Section: Section - {}\n'.format(nGrain))
-            f.write('*Solid Section, elset=Set-{}, material=Ferrite_{}\n'.format(nGrain, nGrain))
+            if self.rve.loc[rve['GrainID'] == nGrain].phaseID.values[0] == 1:
+                phase1_idx += 1
+                f.write('** Section: Section - {}\n'.format(nGrain))
+                f.write('*Solid Section, elset=Set-{}, material=Ferrite_{}\n'.format(nGrain, phase1_idx))
+            elif self.rve.loc[rve['GrainID'] == nGrain].phaseID.values[0] == 2:
+                if not self.phase_two_isotropic:
+                    phase2_idx += 1
+                    f.write('** Section: Section - {}\n'.format(nGrain))
+                    f.write('*Solid Section, elset=Set-{}, material=Martensite_{}\n'.format(nGrain, phase2_idx))
+                else:
+                    f.write('** Section: Section - {}\n'.format(nGrain))
+                    f.write('*Solid Section, elset=Set-{}, material=Martensite\n'.format(nGrain))
+
         f.close()
         os.remove(self.store_path + '/rve-part.inp')
-        #print(periodic_df.head())
+
+        '''this grid_hull_df needs to be removed if the upper block is used for the independent parts'''
+        grid_hull_df = pd.DataFrame(grid.points.tolist(), columns=['x', 'y', 'z'])
+        grid_hull_df = grid_hull_df.loc[(grid_hull_df['x'] == x_max) | (grid_hull_df['x'] == x_min) |
+                                        (grid_hull_df['y'] == y_max) | (grid_hull_df['y'] == y_min) |
+                                        (grid_hull_df['z'] == z_max) | (grid_hull_df['z'] == z_min)]
 
         self.make_assembly()         # Don't change the order
-        self.pbc(rve, periodic_df)      # of these four
+        self.pbc(rve, grid_hull_df)      # of these four
         self.write_material_def()    # functions here
         self.write_step_def()        # it will lead to a faulty inputfile
-
-        return grid
+        self.write_grain_data()
 
     def make_assembly(self) -> None:
 
@@ -284,7 +309,7 @@ class Mesher:
         f.write('*End Assembly\n')
         f.close()
 
-    def pbc(self, rve: pv.UniformGrid, periodic_df: pd.DataFrame) -> None:
+    def pbc(self, rve: pv.UniformGrid, grid_hull_df: pd.DataFrame) -> None:
 
         """function to define the periodic boundary conditions
         if errors appear or equations are wrong check ppt presentation from ICAMS
@@ -298,19 +323,18 @@ class Mesher:
         max_z = max(rve.z)
         numberofgrains = self.n_grains
         ########## write Equation - sets ##########
-        periodic_df = periodic_df.sort_values(by=['x', 'y', 'z'])
-        periodic_df.index.rename('pointNumber', inplace=True)
-        periodic_df = periodic_df.reset_index()
-        periodic_df.index.rename('Eqn-Set', inplace=True)
-        periodic_df = periodic_df.reset_index()
-        #print(periodic_df.head())
+        grid_hull_df = grid_hull_df.sort_values(by=['x', 'y', 'z'])
+        grid_hull_df.index.rename('pointNumber', inplace=True)
+        grid_hull_df = grid_hull_df.reset_index()
+        grid_hull_df.index.rename('Eqn-Set', inplace=True)
+        grid_hull_df = grid_hull_df.reset_index()
+        #print(grid_hull_df.head())
         #print(min_x, max_x)
         ########## Define Corner Sets ###########
-        corner_df = periodic_df.loc[((periodic_df['x'] == max_x) | (periodic_df['x'] == min_x)) &
-                                    ((periodic_df['y'] == max_y) | (periodic_df['y'] == min_y)) &
-                                    ((periodic_df['z'] == max_z) | (periodic_df['z'] == min_z))]
+        corner_df = grid_hull_df.loc[((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
+                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
+                                     ((grid_hull_df['z'] == max_z) | (grid_hull_df['z'] == min_z))]
 
-        cornerInstance = corner_df['GrainID'].values[0]
         V1_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == min_y) & (corner_df['z'] == max_z)]
         V1 = V1_df['pointNumber'].values[0]
         V1Eqn = V1_df['Eqn-Set'].values[0]
@@ -344,17 +368,17 @@ class Mesher:
         H4Eqn = H4_df['Eqn-Set'].values[0]
         #print(H4_df)
         ############ Define Edge Sets ###############
-        edges_df = periodic_df.loc[(((periodic_df['x'] == max_x) | (periodic_df['x'] == min_x)) &
-                                    ((periodic_df['y'] == max_y) | (periodic_df['y'] == min_y)) &
-                                    ((periodic_df['z'] != max_z) & (periodic_df['z'] != min_z))) |
+        edges_df = grid_hull_df.loc[(((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
+                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
+                                     ((grid_hull_df['z'] != max_z) & (grid_hull_df['z'] != min_z))) |
 
-                                   (((periodic_df['x'] == max_x) | (periodic_df['x'] == min_x)) &
-                                    ((periodic_df['y'] != max_y) & (periodic_df['y'] != min_y)) &
-                                    ((periodic_df['z'] == max_z) | (periodic_df['z'] == min_z))) |
+                                    (((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
+                                     ((grid_hull_df['y'] != max_y) & (grid_hull_df['y'] != min_y)) &
+                                     ((grid_hull_df['z'] == max_z) | (grid_hull_df['z'] == min_z))) |
 
-                                   (((periodic_df['x'] != max_x) & (periodic_df['x'] != min_x)) &
-                                    ((periodic_df['y'] == max_y) | (periodic_df['y'] == min_y)) &
-                                    ((periodic_df['z'] == max_z) | (periodic_df['z'] == min_z)))]
+                                    (((grid_hull_df['x'] != max_x) & (grid_hull_df['x'] != min_x)) &
+                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
+                                     ((grid_hull_df['z'] == max_z) | (grid_hull_df['z'] == min_z)))]
         # edges_df.sort_values(by=['x', 'y', 'z'], inplace=True)
 
         # Top front Edge
@@ -394,17 +418,17 @@ class Mesher:
         E_M3 = edges_df.loc[(edges_df['x'] == max_x) & (edges_df['z'] == min_z)]['Eqn-Set'].to_list()
 
         ######### Define Surface Sets #############
-        faces_df = periodic_df.loc[(((periodic_df['x'] == max_x) | (periodic_df['x'] == min_x)) &
-                                    ((periodic_df['y'] != max_y) & (periodic_df['y'] != min_y)) &
-                                    ((periodic_df['z'] != max_z) & (periodic_df['z'] != min_z))) |
+        faces_df = grid_hull_df.loc[(((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
+                                     ((grid_hull_df['y'] != max_y) & (grid_hull_df['y'] != min_y)) &
+                                     ((grid_hull_df['z'] != max_z) & (grid_hull_df['z'] != min_z))) |
 
-                                   (((periodic_df['x'] != max_x) & (periodic_df['x'] != min_x)) &
-                                    ((periodic_df['y'] != max_y) & (periodic_df['y'] != min_y)) &
-                                    ((periodic_df['z'] == max_z) | (periodic_df['z'] == min_z))) |
+                                    (((grid_hull_df['x'] != max_x) & (grid_hull_df['x'] != min_x)) &
+                                     ((grid_hull_df['y'] != max_y) & (grid_hull_df['y'] != min_y)) &
+                                     ((grid_hull_df['z'] == max_z) | (grid_hull_df['z'] == min_z))) |
 
-                                   (((periodic_df['x'] != max_x) & (periodic_df['x'] != min_x)) &
-                                    ((periodic_df['y'] == max_y) | (periodic_df['y'] == min_y)) &
-                                    ((periodic_df['z'] != max_z) & (periodic_df['z'] != min_z)))]
+                                    (((grid_hull_df['x'] != max_x) & (grid_hull_df['x'] != min_x)) &
+                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
+                                     ((grid_hull_df['z'] != max_z) & (grid_hull_df['z'] != min_z)))]
 
         # left set
         LeftSet = faces_df.loc[faces_df['x'] == min_x]['Eqn-Set'].to_list()
@@ -419,29 +443,29 @@ class Mesher:
         # rear set
         FrontSet = faces_df.loc[faces_df['z'] == max_z]['Eqn-Set'].to_list()
 
-        self.logger.info('E_B1', len(E_B1))
-        self.logger.info('E_B2', len(E_B2))
-        self.logger.info('E_B3', len(E_B3))
-        self.logger.info('E_B4', len(E_B4))
-        self.logger.info('E_M1', len(E_M1))
-        self.logger.info('E_M2', len(E_M2))
-        self.logger.info('E_M3', len(E_M3))
-        self.logger.info('E_M4', len(E_M4))
-        self.logger.info('E_T1', len(E_T1))
-        self.logger.info('E_T2', len(E_T2))
-        self.logger.info('E_T3', len(E_T3))
-        self.logger.info('E_T4', len(E_T4))
-        self.logger.info('LeftSet', len(LeftSet))
-        self.logger.info('RightSet', len(RightSet))
-        self.logger.info('BottomSet', len(BottomSet))
-        self.logger.info('TopSet', len(TopSet))
-        self.logger.info('FrontSet', len(FrontSet))
-        self.logger.info('RearSet', len(RearSet))
+        self.logger.info('E_B1 ' + str(len(E_B1)))
+        self.logger.info('E_B2 ' + str(len(E_B2)))
+        self.logger.info('E_B3 ' + str(len(E_B3)))
+        self.logger.info('E_B4 ' + str(len(E_B4)))
+        self.logger.info('E_M1 ' + str(len(E_M1)))
+        self.logger.info('E_M2 ' + str(len(E_M2)))
+        self.logger.info('E_M3 ' + str(len(E_M3)))
+        self.logger.info('E_M4 ' + str(len(E_M4)))
+        self.logger.info('E_T1 ' + str(len(E_T1)))
+        self.logger.info('E_T2 ' + str(len(E_T2)))
+        self.logger.info('E_T3 ' + str(len(E_T3)))
+        self.logger.info('E_T4 ' + str(len(E_T4)))
+        self.logger.info('LeftSet ' + str(len(LeftSet)))
+        self.logger.info('RightSet ' + str(len(RightSet)))
+        self.logger.info('BottomSet ' + str(len(BottomSet)))
+        self.logger.info('TopSet ' + str(len(TopSet)))
+        self.logger.info('FrontSet ' + str(len(FrontSet)))
+        self.logger.info('RearSet ' + str(len(RearSet)))
 
         OutPutFile = open(self.store_path + '/Nsets.inp', 'w')
-        for i in periodic_df.index:
+        for i in grid_hull_df.index:
             OutPutFile.write('*Nset, nset=Eqn-Set-{}, instance=PART-1-1\n'.format(i + 1))
-            OutPutFile.write(' {},\n'.format(int(periodic_df.loc[i]['pointNumber'] + 1)))
+            OutPutFile.write(' {},\n'.format(int(grid_hull_df.loc[i]['pointNumber'] + 1)))
         OutPutFile.close()
 
         ############### Define Equations ###################################
@@ -954,19 +978,47 @@ class Mesher:
 
         """simple function to write material definition in Input file
         needs to be adjusted for multiple phases"""
-
+        phase1_idx = 0
+        phase2_idx = 0
         numberofgrains = self.n_grains
+
+        phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains+1)]
         f = open(self.store_path + '/RVE_smooth.inp', 'a')
 
         f.write('**\n')
         f.write('** MATERIALS\n')
         f.write('**\n')
-        for i in range(0, numberofgrains + 1):
-            f.write('*Material, name=Ferrite_{}\n'.format(i + 1))
-            f.write('*Depvar\n')
-            f.write('    176,\n')
-            f.write('*User Material, constants=2\n')
-            f.write('{}.,3.\n'.format(i + 1))
+        for i in range(numberofgrains):
+            ngrain = i+1
+            if not self.phase_two_isotropic:
+                if phase[i] == 1:
+                    phase1_idx += 1
+                    f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
+                    f.write('*Depvar\n')
+                    f.write('    176,\n')
+                    f.write('*User Material, constants=2\n')
+                    f.write('{}.,3.\n'.format(ngrain))
+                elif phase[i] == 2:
+                    phase2_idx += 1
+                    f.write('*Material, name=Martensite_{}\n'.format(phase2_idx))
+                    f.write('*Depvar\n')
+                    f.write('    176,\n')
+                    f.write('*User Material, constants=2\n')
+                    f.write('{}.,4.\n'.format(ngrain))
+            else:
+                if phase[i] == 1:
+                    phase1_idx += 1
+                    f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
+                    f.write('*Depvar\n')
+                    f.write('    176,\n')
+                    f.write('*User Material, constants=2\n')
+                    f.write('{}.,3.\n'.format(phase1_idx))
+
+        if self.phase_two_isotropic:
+            f.write('**\n')
+            f.write('*Material, name=Martensite\n')
+            f.write('*Elastic\n')
+            f.write('0.21, 0.3\n')
         f.close()
 
     def write_step_def(self) -> None:
@@ -1046,6 +1098,31 @@ class Mesher:
         f.write('*End Step\n')
         f.close()
 
+    def write_grain_data(self) -> None:
+        f = open(self.store_path + '/graindata.inp', 'w+')
+        f.write('!MMM Crystal Plasticity Input File\n')
+        phase1_idx = 0
+        numberofgrains = self.n_grains
+        phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains + 1)]
+        grainsize = [np.cbrt(self.rve.loc[self.rve['GrainID'] == i].shape[0] *
+                             self.bin_size*3/4/np.pi) for i in range(1, numberofgrains + 1)]
+
+        for i in range(numberofgrains):
+            ngrain = i+1
+            if not self.phase_two_isotropic:
+                phi1 = int(np.random.rand() * 360)
+                Phi = int(np.random.rand() * 360)
+                phi2 = int(np.random.rand() * 360)
+                f.write('Grain: {}: {}: {}: {}: {}\n'.format(ngrain, phi1, Phi, phi2, grainsize[i]))
+            else:
+                if phase[i] == 1:
+                    phase1_idx += 1
+                    phi1 = int(np.random.rand() * 360)
+                    Phi = int(np.random.rand() * 360)
+                    phi2 = int(np.random.rand() * 360)
+                    f.write('Grain: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, Phi, phi2, grainsize[i]))
+        f.close()
+
     def plot_bot(self, rve_smooth_grid: pv.UnstructuredGrid, min_val: float, max_val: float, direction: int = 1,
                  storename: str = 'default', display=True) -> None:
 
@@ -1079,5 +1156,5 @@ class Mesher:
         grain_boundaries_poly_data, tri_df = self.convert_to_mesh(GRID)
         face_label = self.gen_face_labels(tri_df)
         smooth_grain_boundaries = self.smooth(grain_boundaries_poly_data, GRID, tri_df, face_label)
-        tet_RVE_smooth = self.build_abaqus_model(rve=GRID, poly_data=smooth_grain_boundaries, fl=face_label, tri_df=tri_df)
-        tet_RVE_smooth.save('rve_mesh.vtk')
+        self.build_abaqus_model(rve=GRID, poly_data=smooth_grain_boundaries, fl=face_label, tri_df=tri_df)
+

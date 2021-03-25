@@ -52,9 +52,9 @@ class DiscreteRsa3D:
         a = a[iterator]
         b = b[iterator]
         c = c[iterator]
-        ellipse = np.sqrt((x_grid - x_0) ** 2 / (a ** 2) +
-                          (y_grid - y_0) ** 2 / (b ** 2) +
-                          (z_grid - z_0) ** 2 / (c ** 2))
+        ellipse = (x_grid - x_0) ** 2 / (a ** 2) + \
+                  (y_grid - y_0) ** 2 / (b ** 2) + \
+                  (z_grid - z_0) ** 2 / (c ** 2)
         time_elapse = datetime.datetime.now() - t_0
         if self.debug:
             self.logger.info('time spent on ellipse{}: {}'.format(iterator, time_elapse.total_seconds()))

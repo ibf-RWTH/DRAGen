@@ -16,7 +16,7 @@ from dragen.generation.mesher import Mesher
 
 class DataTask3D:
 
-    def __init__(self, box_size=25, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5, file1=None, file2=None, gui_flag=False):
+    def __init__(self, box_size=22, n_pts=30, number_of_bands=0, bandwidth=3, shrink_factor=0.5, file1=None, file2=None, gui_flag=False):
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.n_pts = n_pts  # has to be even
@@ -29,7 +29,7 @@ class DataTask3D:
         if not gui_flag:
             main_dir = sys.argv[0][:-14]
             os.chdir(main_dir)
-            self.animation = True
+            self.animation = False
         else:
             main_dir = sys.argv[0][:-31]
             os.chdir(main_dir)
@@ -53,7 +53,7 @@ class DataTask3D:
         self.setup_logging()
         if not self.gui_flag:
             phase1 = './ExampleInput/ferrite_54_grains.csv'
-            phase2 = './ExampleInput/pearlite_22_grains.csv'
+            phase2 = './ExampleInput/pearlite_21_grains.csv'
         else:
             phase1 = self.file1
             phase2 = self.file2
@@ -89,11 +89,10 @@ class DataTask3D:
 
         grains_df.sort_values(by='final_volume', inplace=True, ascending=False)
         grains_df.reset_index(inplace=True, drop=True)
-        grains_df['grainID'] = grains_df.index
+        grains_df['GrainID'] = grains_df.index
         total_volume = sum(grains_df['final_volume'].values)
         estimated_boxsize = np.cbrt(total_volume)
-        self.logger.info("the total volume of your dataframe is {}.\n"
-                         "A boxsize of {} is recommended.".format(total_volume, estimated_boxsize) )
+        self.logger.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".format(total_volume, estimated_boxsize) )
 
         return grains_df
 
@@ -126,11 +125,14 @@ class DataTask3D:
             sys.exit()
 
         if rve_status:
-            rve_df = self.utils_obj.repair_periodicity_3D(rve)
-            mesher_obj = Mesher(rve_df, store_path=store_path)
+            periodic_rve_df = self.utils_obj.repair_periodicity_3D(rve)
+            periodic_rve_df['phaseID'] = 0
+            grains_df.sort_values(by=['GrainID'])
+            for i in range(len(grains_df)):
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == i+1, 'phaseID'] = grains_df['phaseID'][i]
+
+            mesher_obj = Mesher(periodic_rve_df, store_path=store_path, phase_two_isotropic=True, animation=False)
             mesher_obj.mesh_and_build_abaqus_model()
-
-
 
         self.logger.info("RVE generation process has successfully completed...")
 

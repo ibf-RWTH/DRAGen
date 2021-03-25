@@ -50,7 +50,9 @@ class Tesselation3D:
         b[iterator - 1] = b_i
         c[iterator - 1] = c_i
 
-        ellipse = (x_grid - x_0) ** 2 / (a_i ** 2) + (y_grid - y_0) ** 2 / (b_i ** 2) + (z_grid - z_0) ** 2 / (c_i ** 2)
+        ellipse = (x_grid - x_0) ** 2 / (a_i ** 2) + \
+                  (y_grid - y_0) ** 2 / (b_i ** 2) + \
+                  (z_grid - z_0) ** 2 / (c_i ** 2)
         return ellipse, a, b, c
 
     def tesselation_plotter(self, array, epoch):
