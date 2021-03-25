@@ -10,7 +10,9 @@ from mpl_toolkits.mplot3d import Axes3D
 class RVEUtils:
     """Common Representative Volume Element (RVE) operations."""
 
-    def __init__(self, box_size, n_pts, x_grid=None, y_grid=None, z_grid=None, bandwidth=0, debug=False) -> None:
+    def __init__(self, box_size, n_pts,
+                 x_grid=None, y_grid=None, z_grid=None,
+                 bandwidth=None, debug=False) -> None:
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.n_pts = n_pts
@@ -20,8 +22,8 @@ class RVEUtils:
         self.bandwidth = bandwidth
         self.debug = debug
 
-        self.step_size = box_size / n_pts
-        self.step_half = self.step_size / 2
+        self.bin_size = box_size / n_pts
+        self.step_half = self.bin_size / 2
 
     @staticmethod
     def read_input(file_name, dimension) -> tuple:
@@ -52,7 +54,7 @@ class RVEUtils:
         radius_b : Integer, radius along y-axis
         radius_b : Integer, radius along z-axis
         """
-        grid = np.around(np.arange(-self.box_size + self.step_half, self.box_size, self.step_size))
+        grid = np.around(np.arange(-self.box_size + self.step_half, self.box_size, self.bin_size))
         min_grid = min([n for n in grid if n > 0])
         x0 = list(grid).index(min_grid)
         grainx, grainy, grainz = np.meshgrid(grid, grid, grid)
@@ -64,34 +66,58 @@ class RVEUtils:
         self.logger.info("Volume for the given radii: {}".format(len(grainx[inside])))
         return len(grainx[inside])
 
-    def band_generator(self, xyz_grid, plane='xy'):
+    def band_generator(self, band_array: np.array, plane: str='xy'):
         """Creates a band of given bandwidth for given points in interval [step_half, box_size)
         with bin_size spacing along the axis.
         Parameters :
         xyz_grid : Array, list of points in interval [step_half, box_size) with bin_size spacing
         plane : String, default is 'xy'
+        Bandidentifier will be -200 in rve_array
         """
+        band_is_placed = False
         band_half = self.bandwidth / 2
-        rand_idx = int(np.random.rand() * len(xyz_grid))
-        band_center = xyz_grid[rand_idx]
-        x, y, z = np.meshgrid(xyz_grid, xyz_grid, xyz_grid)
+
+        empty_array = band_array.copy()
+        empty_array[empty_array == -200] = 0
+
         if plane == 'xy':
-            r = z
+            r = self.z_grid
         elif plane == 'yz':
-            r = x
+            r = self.x_grid
         elif plane == 'xz':
-            r = y
+            r = self.y_grid
         else:
             self.logger.error("Error: plane must be defined as xy, yz or xz! Default: xy")
             sys.exit(1)
-        left_bound = r >= band_center - band_half
-        right_bound = r <= band_center + band_half
-        self.logger.info("Band generator - Bandwidth: {}, Left bound: {} and Right bound: {}"
-                         .format(self.bandwidth, left_bound, right_bound))
-        left = set([a for a in zip(x[right_bound], y[right_bound], z[right_bound])])
-        right = set([a for a in zip(x[left_bound], y[left_bound], z[left_bound])])
 
-        return left.intersection(right)
+        while not band_is_placed:
+
+            # band_ center doesnt necessarily need to be an integer
+            band_center = int(self.bin_size + np.random.rand() * (self.box_size - self.bin_size))
+            print('center: ', band_center)
+            left_bound = band_center - band_half
+            right_bound = band_center + band_half
+            empty_array[(r > left_bound) & (r < right_bound) & (band_array == 0)] = 1
+
+            # get theoretical volume of current band and volume of bands that have previously been placed
+            band_vol_0_theo = np.count_nonzero(empty_array == 1)
+            rve_band_vol_old = np.count_nonzero(band_array == -200)
+
+            # place current band
+            band_array[(r >= left_bound) & (r <= right_bound) & (band_array == 0)] = -200
+
+            # get total volume of all bands
+            rve_band_vol_new = np.count_nonzero(band_array == -200)
+
+            # compare real volume and theoretical volume of current band if bands are exactly on top of
+            # each oter band_vol_0_theo = 0 which must be avoided
+            if ((rve_band_vol_old + band_vol_0_theo) == rve_band_vol_new) and not band_vol_0_theo == 0:
+
+                band_is_placed = True
+                self.logger.info("Band generator - Bandwidth: {}, Left bound: {} and Right bound: {}"
+                                 .format(self.bandwidth, left_bound, right_bound))
+
+        return band_array
 
     def make_periodic_2D(self, points_array, ellipse_points, iterator) -> np.ndarray:
         points_array_mod = np.zeros(points_array.shape)
@@ -367,8 +393,8 @@ class RVEUtils:
         xyz = np.linspace(-box_size / 2, box_size + box_size / 2, 2 * self.n_pts, endpoint=True)
         x_grid, y_grid, z_grid = np.meshgrid(xyz, xyz, xyz)
 
-        rve_x_idx, rve_y_idx, rve_z_idx = np.where(rve_array > 0)
-        boundary_x_idx, boundary_y_idx, boundary_z_idx = np.where(rve_array < 0)
+        rve_x_idx, rve_y_idx, rve_z_idx = np.where((rve_array > 0) | (rve_array == -200))
+        boundary_x_idx, boundary_y_idx, boundary_z_idx = np.where((rve_array < 0) & (rve_array > -200))
 
         rve_tuples = [*zip(rve_x_idx, rve_y_idx, rve_z_idx)]
         boundary_tuples = [*zip(boundary_x_idx, boundary_y_idx, boundary_z_idx)]
@@ -385,12 +411,13 @@ class RVEUtils:
                       for boundary_tuples_i in boundary_tuples]
 
         # generate pandas Dataframe of coordinates and grain IDs
-        rve_dict = {'x': rve_x, 'y': rve_y, 'z': rve_z, 'GrainID': rve_array[rve_array > 0]}
+        rve_dict = {'x': rve_x, 'y': rve_y, 'z': rve_z, 'GrainID': rve_array[(rve_array > 0) | (rve_array == -200)]}
         rve = pd.DataFrame(rve_dict)
         rve['box_size'] = box_size
         rve['n_pts'] = n_pts
 
-        boundary_dict = {'x': boundary_x, 'y': boundary_y, 'z': boundary_z, 'GrainID': rve_array[rve_array < 0]}
+        boundary_dict = {'x': boundary_x, 'y': boundary_y, 'z': boundary_z,
+                         'GrainID': rve_array[(rve_array < 0) & (rve_array > -200)]}
         boundary = pd.DataFrame(boundary_dict)
 
         # Extract points that are supposed to be added to the rve
