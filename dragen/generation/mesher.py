@@ -12,7 +12,7 @@ import logging
 
 class Mesher:
 
-    def __init__(self, rve: pd.DataFrame, store_path,  phase_two_isotropic=True, animation=False):
+    def __init__(self, rve: pd.DataFrame, store_path,  phase_two_isotropic=True, animation=True):
         self.rve = rve
         self.store_path = store_path
         self. phase_two_isotropic = phase_two_isotropic
@@ -48,13 +48,14 @@ class Mesher:
         """the grainIDs are written on the cell_array"""
 
         rve = self.rve
-        rve.sort_values(by=['x', 'y', 'z'], inplace=True)
+        rve.sort_values(by=['x', 'y', 'z'], inplace=True)  # This sorting is important for some weird reason
+
         # Add the data values to the cell data
         grid.cell_arrays["GrainID"] = rve.GrainID  # Flatten the array!
 
         # Now plot the grid!
         if self.animation:
-            grid.plot(show_edges=True, screenshot=self.store_path+'/Figs.pyvista_mesh.png')
+         grid.plot(show_edges=True, screenshot=self.store_path+'/Figs/pyvista_mesh.png', auto_close=True)
         return grid
 
     def convert_to_mesh(self, grid: pv.UniformGrid) -> tuple:
@@ -321,6 +322,8 @@ class Mesher:
         max_x = max(rve.x)
         max_y = max(rve.y)
         max_z = max(rve.z)
+        print(min_x, min_y, min_z)
+        print(max_x, max_y, max_z)
         numberofgrains = self.n_grains
         ########## write Equation - sets ##########
         grid_hull_df = grid_hull_df.sort_values(by=['x', 'y', 'z'])

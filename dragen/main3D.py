@@ -33,7 +33,7 @@ class DataTask3D:
         else:
             main_dir = sys.argv[0][:-31]
             os.chdir(main_dir)
-            self.animation = False
+            self.animation = True
         self.file1 = file1
         self.file2 = file2
         self.utils_obj = RVEUtils(self.box_size, self.n_pts, self.bandwidth)
@@ -143,9 +143,14 @@ class DataTask3D:
         if rve_status:
             periodic_rve_df = self.utils_obj.repair_periodicity_3D(rve)
             periodic_rve_df['phaseID'] = 0
+
             grains_df.sort_values(by=['GrainID'])
+
             for i in range(len(grains_df)):
-                periodic_rve_df.loc[periodic_rve_df['GrainID'] == i+1, 'phaseID'] = grains_df['phaseID'][i]
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1, 'phaseID'] = grains_df['phaseID'][i]
+            if self.number_of_bands > 0:
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = i + 2
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 2, 'phaseID'] = 2
 
             mesher_obj = Mesher(periodic_rve_df, store_path=store_path, phase_two_isotropic=True, animation=False)
             mesher_obj.mesh_and_build_abaqus_model()

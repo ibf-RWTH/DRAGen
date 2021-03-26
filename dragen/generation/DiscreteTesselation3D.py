@@ -58,7 +58,7 @@ class Tesselation3D:
     def tesselation_plotter(self, array, epoch):
         t_0 = datetime.datetime.now()
         n_grains = self.n_grains
-        rve_x, rve_y, rve_z = np.where((array >= 1) & (array == -200))
+        rve_x, rve_y, rve_z = np.where((array >= 1) | (array == -200))
         grain_tuples = [*zip(rve_x, rve_y, rve_z)]
         grains_x = [self.x_grid[grain_tuples_i[0]][grain_tuples_i[1]][grain_tuples_i[2]]
                     for grain_tuples_i in grain_tuples]
@@ -69,7 +69,7 @@ class Tesselation3D:
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array >= 1) & (array == -200))], s=1, vmin=-20,
+        ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array >= 1) | (array == -200))], s=1, vmin=-20,
                    vmax=n_grains, cmap='seismic')
 
         ax.set_xlim(-5, self.box_size + 5)
@@ -122,7 +122,7 @@ class Tesselation3D:
                 band_vol = np.count_nonzero(rve == -200)
                 band_ratio = band_vol/band_vol_0
                 if band_ratio > 0.5:
-                    rve[((periodic_grain == idx) & (rve == 0)) | (rve == -200)] = idx
+                    rve[((periodic_grain == idx) & (rve == 0)) | ((periodic_grain == idx) & (rve == -200))] = idx
                 else:
                     rve[((periodic_grain == idx) & (rve == 0))] = idx
                 freepoints = np.count_nonzero(rve == 0)

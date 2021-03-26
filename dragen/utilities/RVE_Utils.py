@@ -66,7 +66,7 @@ class RVEUtils:
         self.logger.info("Volume for the given radii: {}".format(len(grainx[inside])))
         return len(grainx[inside])
 
-    def band_generator(self, band_array: np.array, plane: str='yz'):
+    def band_generator(self, band_array: np.array, plane: str = 'xy'):
         """Creates a band of given bandwidth for given points in interval [step_half, box_size)
         with bin_size spacing along the axis.
         Parameters :
@@ -110,7 +110,7 @@ class RVEUtils:
             rve_band_vol_new = np.count_nonzero(band_array == -200)
 
             # compare real volume and theoretical volume of current band if bands are exactly on top of
-            # each oter band_vol_0_theo = 0 which must be avoided
+            # each other band_vol_0_theo = 0 which must be avoided
             if ((rve_band_vol_old + band_vol_0_theo) == rve_band_vol_new) and not band_vol_0_theo == 0:
 
                 band_is_placed = True
