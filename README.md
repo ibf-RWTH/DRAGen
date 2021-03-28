@@ -18,6 +18,6 @@ The results show that the generator can successfully reconstruct realistic micro
 
 * Manuel Henrich M. Sc. <manuel.henrich@iehk.rwth-aachen.de>
 * Maximilian Neite M. Sc. <maximilian.neite@iehk.rwth-aachen.de>
-* Niklas Fehlemann M. Sc. <niklas.fehlemann@rwth-aachen.de>
+* Niklas Fehlemann M. Sc. <niklas.fehlemann@iehk.rwth-aachen.de>
 * Orkun Karagüllü M. Sc. <orkun.karaguellue@iehk.rwth-aachen.de>
 
