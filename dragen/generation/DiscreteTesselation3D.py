@@ -28,7 +28,7 @@ class Tesselation3D:
         self.a_max = max(a)
         self.b_max = max(b)
         self.c_max = max(c)
-        self.final_volume = [4 / 3 * np.pi * a[i] * b[i] * c[i] / shrinkfactor for i in range(len(a))]
+        self.final_volume = [4 / 3 * np.pi * a[i] * b[i] * c[i] / shrinkfactor**3 for i in range(len(a))]
         xyz = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
         self.x_grid, self.y_grid, self.z_grid = np.meshgrid(xyz, xyz, xyz)
         self.rve_utils_object = RVEUtils(box_size, n_pts, self.x_grid, self.y_grid, self.z_grid, debug=debug)
@@ -43,7 +43,7 @@ class Tesselation3D:
         a_i = a[iterator - 1]
         b_i = b[iterator - 1]
         c_i = c[iterator - 1]
-        a_i = a_i + b_i / self.a_max * self.bin_size
+        a_i = a_i + a_i / self.a_max * self.bin_size
         b_i = b_i + b_i / self.b_max * self.bin_size
         c_i = c_i + c_i / self.c_max * self.bin_size
         a[iterator - 1] = a_i
