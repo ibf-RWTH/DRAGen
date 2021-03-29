@@ -120,17 +120,22 @@ class Tesselation3D:
                 grain[(ellipse <= 1) & (grain == 0)] = idx
                 periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipse, iterator=idx)
                 band_vol = np.count_nonzero(rve == -200)
-                band_ratio = band_vol/band_vol_0
-                if band_ratio > 0.5:  #0.5 is only examplary, has to be exchanged with variable which is representable
-                    rve[((periodic_grain == idx) & (rve == 0)) | ((periodic_grain == idx) & (rve == -200))] = idx
+
+                if band_vol_0 > 0:
+                    band_ratio = band_vol / band_vol_0
+                    if band_ratio > 0.5:  #0.5 is only examplary, has to be exchanged with variable which is representable
+                        rve[((periodic_grain == idx) & (rve == 0)) | ((periodic_grain == idx) & (rve == -200))] = idx
                 else:
                     rve[((periodic_grain == idx) & (rve == 0))] = idx
+
                 freepoints = np.count_nonzero(rve == 0)
                 grain_vol = np.count_nonzero(rve == idx) * self.bin_size ** 3
                 if freepoints == 0:
                     break
+                    
                 if grain_vol > self.final_volume[idx-1] and not repeat:
                     del grain_idx[i]
+
                 i += 1
             if not grain_idx:
                 repeat = True
