@@ -574,3 +574,30 @@ class RVEUtils:
                           ((rve['x'] == max_x) & (rve['y'] == max_y) & (rve['z'] == max_z))]
         rve.loc[corners.index, 'GrainID'] = corner1.GrainID.values
         return rve
+
+    def ellipsoid(self, a, b, c, x_0, y_0, z_0, slope=0):
+
+        """ellipsoid = 1/a**2 * (self.x_grid - x_0) ** 2 + \
+                    1/b**2 * ((self.y_grid - y_0) * np.cos(np.deg2rad(slope)) -
+                                 (self.z_grid - z_0) * np.sin(np.deg2rad(slope))) ** 2 + \
+                    1/c**2 * ((self.y_grid - y_0) * np.sin(np.deg2rad(slope)) +
+                                 (self.z_grid - z_0) * np.cos(np.deg2rad(slope))) ** 2""" #um x-Achse rotieren
+
+        """ellipsoid = 1/a**2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(slope)) +
+                              (self.z_grid - z_0) * np.sin(np.deg2rad(slope))) ** 2 + \
+                    1/b**2 * (self.y_grid - y_0) ** 2 + \
+                    1/c**2 * ((self.x_grid - x_0) * -np.sin(np.deg2rad(slope)) +
+                              (self.z_grid - z_0) * np.cos(np.deg2rad(slope))) ** 2""" #um y-Achse rotieren; da a=c keinen Einfluss
+
+        ellipsoid = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(slope)) -
+                                  (self.y_grid - y_0) * np.sin(np.deg2rad(slope))) ** 2 + \
+                    1 / b ** 2 * ((self.x_grid - x_0) * np.sin(np.deg2rad(slope)) +
+                                  (self.y_grid - y_0) * np.cos(np.deg2rad(slope))) ** 2 + \
+                    1 / c ** 2 * (self.z_grid - z_0) ** 2 #um z-Achse rotieren
+
+
+        """ellipsoid = (self.x_grid - x_0) ** 2 / (a ** 2) + \
+                  (self.y_grid - y_0) ** 2 / (b ** 2) + \
+                  (self.z_grid - z_0) ** 2 / (c ** 2)"""
+
+        return ellipsoid
