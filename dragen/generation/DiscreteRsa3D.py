@@ -126,22 +126,39 @@ class DiscreteRsa3D:
 
             free_points = np.count_nonzero(rsa == 0)
             band_points = np.count_nonzero(rsa == -200)
-            if (free_points_old + band_points_old - free_points -band_points != np.count_nonzero(periodic_grain)) | \
-                    (band_points/band_vol_0 < (1-bandratio)):
-                print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
-                print('ratio:', (band_points/band_vol_0 < bandratio))
-                rsa = backup_rsa.copy()
-                attempt = attempt + 1
+            if band_points_old>0:
+                if (free_points_old + band_points_old - free_points -band_points != np.count_nonzero(periodic_grain)) | \
+                        (band_points/band_vol_0 < (1-bandratio)):
+                    print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
+                    print('ratio:', (band_points/band_vol_0 < bandratio))
+                    rsa = backup_rsa.copy()
+                    attempt = attempt + 1
 
+                else:
+                    x_0_list.append(x0)
+                    y_0_list.append(y0)
+                    z_0_list.append(z0)
+                    i = i + 1
+                    attempt = 0
+                    if self.debug:
+                        time_elapse = datetime.datetime.now() - t_0
+                        self.logger.info('total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()) )
             else:
-                x_0_list.append(x0)
-                y_0_list.append(y0)
-                z_0_list.append(z0)
-                i = i + 1
-                attempt = 0
-                if self.debug:
-                    time_elapse = datetime.datetime.now() - t_0
-                    self.logger.info('total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()) )
+                if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)):
+                    print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
+                    rsa = backup_rsa.copy()
+                    attempt = attempt + 1
+
+                else:
+                    x_0_list.append(x0)
+                    y_0_list.append(y0)
+                    z_0_list.append(z0)
+                    i = i + 1
+                    attempt = 0
+                    if self.debug:
+                        time_elapse = datetime.datetime.now() - t_0
+                        self.logger.info(
+                            'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
         if len(x_0_list) == self.n_grains:
             status = True
         else:
