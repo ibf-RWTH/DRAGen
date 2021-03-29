@@ -121,7 +121,7 @@ class Tesselation3D:
                 periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipse, iterator=idx)
                 band_vol = np.count_nonzero(rve == -200)
                 band_ratio = band_vol/band_vol_0
-                if band_ratio > 0.5:
+                if band_ratio > 0.5:  #0.5 is only examplary, has to be exchanged with variable which is representable
                     rve[((periodic_grain == idx) & (rve == 0)) | ((periodic_grain == idx) & (rve == -200))] = idx
                 else:
                     rve[((periodic_grain == idx) & (rve == 0))] = idx
