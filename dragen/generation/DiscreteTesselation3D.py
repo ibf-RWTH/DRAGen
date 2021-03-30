@@ -125,6 +125,8 @@ class Tesselation3D:
                     band_ratio = band_vol / band_vol_0
                     if band_ratio > 0.5:  #0.5 is only examplary, has to be exchanged with variable which is representable
                         rve[((periodic_grain == idx) & (rve == 0)) | ((periodic_grain == idx) & (rve == -200))] = idx
+                    else:
+                        rve[((periodic_grain == idx) & (rve == 0))] = idx
                 else:
                     rve[((periodic_grain == idx) & (rve == 0))] = idx
 
