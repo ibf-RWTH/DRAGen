@@ -133,6 +133,7 @@ class DataTask3D:
                                                      grains_df['b'].tolist(),
                                                      grains_df['c'].tolist(),
                                                      x_0_list, y_0_list, z_0_list,
+                                                     grains_df['final_volume'].tolist(),
                                                      self.shrink_factor, store_path)
             rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa, animation=self.animation)
 
