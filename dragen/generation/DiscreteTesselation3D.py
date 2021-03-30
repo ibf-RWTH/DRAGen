@@ -8,7 +8,7 @@ from dragen.utilities.RVE_Utils import RVEUtils
 
 
 class Tesselation3D:
-    def __init__(self, box_size, n_pts, a, b, c, x_0, y_0, z_0, shrinkfactor, store_path, debug=False):
+    def __init__(self, box_size, n_pts, a, b, c, x_0, y_0, z_0, final_volume, shrinkfactor, store_path, debug=False):
 
         self.box_size = box_size
         self.n_pts = n_pts
@@ -28,7 +28,7 @@ class Tesselation3D:
         self.a_max = max(a)
         self.b_max = max(b)
         self.c_max = max(c)
-        self.final_volume = [4 / 3 * np.pi * a[i] * b[i] * c[i] / shrinkfactor**3 for i in range(len(a))]
+        self.final_volume = final_volume
         xyz = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
         self.x_grid, self.y_grid, self.z_grid = np.meshgrid(xyz, xyz, xyz)
         self.rve_utils_object = RVEUtils(box_size, n_pts, self.x_grid, self.y_grid, self.z_grid, debug=debug)
