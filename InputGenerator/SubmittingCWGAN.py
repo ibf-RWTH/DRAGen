@@ -2,6 +2,7 @@ import pandas as pd
 from InputGenerator.linking import Reconstructor
 from InputGenerator.C_WGAN_GP import WGANCGP
 import os
+import datetime
 
 SOURCE = r'../ExampleInput'
 os.chdir(SOURCE)
@@ -15,9 +16,13 @@ df3 = pd.read_csv('Input_RDxTD_AR.csv')
 df4 = pd.read_csv('Einschlüsse_TDxBN_AR.csv')
 df5 = pd.read_csv('Einschlüsse_RDxBN_AR.csv')
 df6 = pd.read_csv('Einschlüsse_RDxTD_AR.csv')
+os.chdir('../')
 
 # Set up CWGAN-GP with all data
-GAN = WGANCGP(df_list=[df1, df2, df3, df4, df5, df6], num_features=3, gen_iters=5000)
+store_path = 'OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(0)
+if not os.path.isdir(store_path):
+    os.makedirs(store_path)
+GAN = WGANCGP(df_list=[df1, df2, df3, df4, df5, df6], storepath=store_path, num_features=3, gen_iters=1000)
 
 # Run training for 5000 Its - 150.000 is default
 GAN.train()

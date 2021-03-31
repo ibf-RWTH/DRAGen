@@ -26,7 +26,7 @@ from InputGenerator import WGAN_BaseClass, gan_utils
 # Override __init__ and train
 class WGANCGP(WGAN_BaseClass.WGAN):
 
-    def __init__(self, df_list, num_features, batch_size=512, depth=2, width_d=128, width_g=128, p=0.0,
+    def __init__(self, df_list, num_features, storepath, batch_size=512, depth=2, width_d=128, width_g=128, p=0.0,
                  gen_iters=150000, learning_rate=0.00005, d_loop=5, z_dim=512,
                  embed_size=2, lambda_p=0.1, beta1=0.9, beta2=0.99,
                  n_eval=1000, optimizer='Adam', activationg='Relu',
@@ -34,6 +34,8 @@ class WGANCGP(WGAN_BaseClass.WGAN):
         super(WGANCGP, self).__init__(df=df_list[0], batch_size=batch_size, num_features=num_features, depth=depth,
                                       width_d=width_d, width_g=width_g, p=p, num_epochs=None, learning_rate=learning_rate,
                                       d_loop=d_loop, z_dim=z_dim, lipschitz_const=0.01)
+        self.storepath = storepath
+        print(self.storepath)
         self.backend = backend
         if self.backend != 'tensorized':
             print('WARNING: You`ve chosen a backend which is based on pykeops. Make sure all needed dependencies are'
@@ -148,10 +150,9 @@ class WGANCGP(WGAN_BaseClass.WGAN):
     def train(self, plot=False):
         # Write to disc
         try:
-            os.mkdir('Eval_{}'.format(self.dt_string))
+            os.mkdir(self.storepath + '/' + 'Eval_{}'.format(self.dt_string))
         except FileExistsError as e:
             print(e)
-        os.chdir('Eval_{}'.format(self.dt_string))
         self.write_specs()
         G_states = list()
         starttime = time.time()
@@ -243,7 +244,7 @@ class WGANCGP(WGAN_BaseClass.WGAN):
         complete_time = time.time() - starttime
         elapsed = str(datetime.timedelta(seconds=complete_time))
         try:
-            with open('Specs.txt', 'a') as specs:
+            with open(self.storepath + '/' + 'Eval_{}/'.format(self.dt_string) + 'Specs.txt', 'a') as specs:
                 specs.writelines('\n')
                 specs.writelines('Time {} \n'.format(elapsed))
         except:
@@ -272,10 +273,9 @@ class WGANCGP(WGAN_BaseClass.WGAN):
         plt.xticks(fontsize=20)
         plt.yticks(fontsize=20)
         plt.tight_layout()
-        plt.savefig('Wasserstein-Loss.png')
+        plt.savefig(self.storepath + '/' + 'Eval_{}/'.format(self.dt_string) + 'Wasserstein-Loss.png')
         plt.clf()
         plt.close()
-        os.chdir('../')
         print(os.getcwd())
 
     def plot_results(self, G, label, state=None):
@@ -303,14 +303,10 @@ class WGANCGP(WGAN_BaseClass.WGAN):
             ax.get_yaxis().set_label_coords(-0.45, 0.5)
         for ax in g.axes[:,1]:
             ax.get_yaxis().set_label_coords(0.5, -0.3)
-        g.savefig('PairplotLabel_{}_{}'.format(label, state))
+        g.savefig(self.storepath + '/' + 'Eval_{}/'.format(self.dt_string) + 'PairplotLabel_{}_{}'.format(label, state))
         plt.close()
 
     def evaluate(self, seeds=1):
-        try:
-            os.chdir('Eval_{}'.format(self.dt_string))
-        except FileNotFoundError as e:
-            print(e)
         for label in range(self.n_classes):
             min_list = list()
             losses = list()
@@ -349,10 +345,11 @@ class WGANCGP(WGAN_BaseClass.WGAN):
             plt.xticks(fontsize=20)
             plt.yticks(fontsize=20)
             plt.tight_layout()
-            plt.savefig('Sinkhorn-Loss_{}'.format(label))
+            plt.savefig(self.storepath + '/' + 'Eval_{}/'.format(self.dt_string) + 'Sinkhorn-Loss_{}'.format(label))
             self.SinkLosses.update({label: SinkLossMin})
             plt.clf()
             plt.close()
+            '''
             G_cpu = self.G_states[min_i].to('cpu')
             fake = G_cpu(noise, labels).detach()
             df_fake = pd.DataFrame(fake.data.numpy())
@@ -364,8 +361,9 @@ class WGANCGP(WGAN_BaseClass.WGAN):
                 min_value = df_real[feature_name].min()
                 df_fake_denormalized[feature_name] = ((df_fake[feature_name] + 1) * (max_value-min_value)) / 2+min_value
             df_fake_denormalized.to_csv('Data_Label_{}.csv'.format(label), index=False)
+            '''
         try:
-            with open('Specs.txt', 'a') as specs:
+            with open(self.storepath + '/' + 'Eval_{}/'.format(self.dt_string) + 'Specs.txt', 'a') as specs:
                 specs.writelines('\n')
                 specs.writelines('Results \n')
                 print(self.SinkLosses)
@@ -378,28 +376,31 @@ class WGANCGP(WGAN_BaseClass.WGAN):
         except FileNotFoundError as e:
             print(e)
         self.get_best_fit()
-        os.chdir('../')
 
     def get_best_fit(self):
         # Method to find best state generator after evaluation and save it
         for key, value in self.SinkLosses.items():
             state = self.G_states[int(value[0][0])]
             self.best_states.append(state)
-        with open('BestGenerators.p', 'wb') as f:
+        with open(self.storepath + '/' + 'Eval_{}/'.format(self.dt_string) + 'BestGenerators.p', 'wb') as f:
             pickle.dump(self.best_states, f)
 
     def sample_batch(self, label, size=1000):
         # Check if there is state data present.
         sample = None
-        if not glob.glob('Eval_*/'):
-            print('No Evaluation folder: Run training first')
+        if self.best_states:
+            noise = torch.randn((size, self.z_dim), device='cpu')
+            labels = torch.full((1, size), fill_value=label,
+                                dtype=torch.int64).view(size)
+            sample = self.best_states[label](noise, labels).detach()
+
+
         else:
-            paths = glob.glob('Eval_*/')
+            paths = glob.glob(self.storepath + '/' + 'Eval_*/')
             print(paths)
-            os.chdir(paths[0])
             if not self.best_states:
                 print('No states present - check for Files')
-                if not glob.glob("*.p"):
+                if not glob.glob(self.storepath + '/' + 'Eval_*/' + "*.p"):
                     print('No files present. Run Training first!')
                 else:
                     self.best_states = pickle.load(open('BestGenerators.p', 'rb'))
@@ -407,12 +408,6 @@ class WGANCGP(WGAN_BaseClass.WGAN):
                     labels = torch.full((1, size), fill_value=label,
                                         dtype=torch.int64).view(size)
                     sample = self.best_states[label](noise, labels).detach()
-            else:
-                noise = torch.randn((size, self.z_dim), device='cpu')
-                labels = torch.full((1, size), fill_value=label,
-                                    dtype=torch.int64).view(size)
-                sample = self.best_states[label](noise, labels).detach()
-        os.chdir('../')
 
         # Normalize and transfer to pandas df
         sample_df, _ = self.normalize_data(sample, label)
@@ -431,7 +426,7 @@ class WGANCGP(WGAN_BaseClass.WGAN):
         return df_fake_denormalized, df_real
 
     def write_specs(self):
-        with open('Specs.txt', 'w') as specs:
+        with open(self.storepath + '/' + 'Eval_{}/'.format(self.dt_string) + 'Specs.txt', 'w') as specs:
             # Network specs
             specs.writelines('depth: {} - width_d {} - width_g {} \n'.format(self.depth, self.width_d, self.width_g))
             specs.writelines('n_classes: {} - embed_size: {} \n'.format(self.n_classes, self.embed_size))
