@@ -1,5 +1,5 @@
 import sys
-from tkinter import ttk, messagebox, Toplevel, Tk, DoubleVar, Spinbox, Label, Button, W
+from tkinter import ttk, messagebox, Toplevel, Tk, DoubleVar, Spinbox, Label, Button, W, Checkbutton, BooleanVar
 import multiprocessing
 from tkinter.filedialog import askopenfilename
 
@@ -39,7 +39,9 @@ first_input_file = Button(root, text='Upload 1', command=open_file1)
 second_input_file = Button(root, text='Upload 2', command=open_file2)
 var = DoubleVar(value=1)  # initial value
 number_of_rve_input = Spinbox(root, from_=1, to=100, width=10, textvariable=var)
-
+gen_anim = BooleanVar() #Generating Animation
+gen_anim.set(False)
+cbox = Checkbutton(root, text = "Animation", variable = gen_anim)
 
 def rveGeneration(file1, file2):
     last_RVE = int(number_of_rve_input.get())
@@ -49,12 +51,12 @@ def rveGeneration(file1, file2):
 
     if dim == 2:
         obj = DataTask2D(int(box_size_input.get()), int(points_input.get()), int(bands_input.get()),
-                       float(bandwidth_input.get()),  float(pack_ratio_input.get()), file1, file2, True)
+                       float(bandwidth_input.get()),  float(pack_ratio_input.get()), file1, file2, gen_anim.get())
         grains_df = obj.initializations(dimension=dim)
     elif dim == 3:
         obj = DataTask3D(int(box_size_input.get()), int(points_input.get()), int(bands_input.get()),
                          float(bandwidth_input.get()), float(pack_ratio_input.get()),
-                         file1, file2, True)
+                         file1, file2, gen_anim.get())
 
         grains_df = obj.initializations(dimension=dim)
     for i in range(last_RVE):
@@ -118,6 +120,7 @@ class MainApplication(ttk.Frame):
         number_of_rve_input.grid(row=12, column=1)
         first_input_file.grid(row=14, column=1)
         second_input_file.grid(row=18, column=1)
+        cbox.grid(row=19,column=0)
 
         self.submit_btn = Button(root, text="Submit", command=self.validateData)
         self.submit_btn.grid(row=22, column=0, padx=5, pady=5)
