@@ -114,7 +114,6 @@ class CGenerator(nn.Module):
         self.activation = activation.lower()
         self.input_layer = nn.Linear(z_dim + embed_size, width)
         self.embed_layer = nn.Embedding(self.n_classes, embed_size)
-        self.embed_layer.weight.requires_grad = False
         self.linears = nn.ModuleList()
         for i in range(self.depth):
             self.linears.append(nn.Linear(self.width, self.width))

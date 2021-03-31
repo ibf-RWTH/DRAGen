@@ -62,6 +62,7 @@ class WGANCGP(WGAN_BaseClass.WGAN):
         self.data_list = list()  # List with single Datasets
         i = 0
         for df in self.df_list:
+            print(df.__len__())
             try:
                 self.data_list.append(gan_utils.GrainDataset(df=df, label=i))
                 i += 1
@@ -83,8 +84,8 @@ class WGANCGP(WGAN_BaseClass.WGAN):
         self.D = gan_utils.CDiscriminator(p=self.p, num_features=self.num_features, depth=self.depth,
                                           width=self.width_d, n_classes=self.n_classes,
                                           embed_size=self.embed_size, activation=self.activationD).to(self.device)
-        #print(self.G)
-        #print(self.D)
+        print(self.G)
+        print(self.D)
         self.optimizer = optimizer
         if optimizer == 'Adam':
             self.optimizerG = optim.Adam(self.G.parameters(), lr=self.lr, betas=(self.beta1, self.beta2))
@@ -231,7 +232,7 @@ class WGANCGP(WGAN_BaseClass.WGAN):
                     self.D_losses.append(D_loss.cpu().detach())
                     self.G_losses.append(G_fake_loss)
                     # Only referencing to the last g state
-                    state = copy.deepcopy(self.G.cpu())
+                    state = copy.deepcopy(self.G).cpu()
                     G_states.append(state)  # Save on CPU
                     print(
                         'Epochen {}/{}|Iterationen {}/{}| - Loss_D {}, Loss_G {}, Loss_D_real {}, '
@@ -394,20 +395,18 @@ class WGANCGP(WGAN_BaseClass.WGAN):
                                 dtype=torch.int64).view(size)
             sample = self.best_states[label](noise, labels).detach()
 
-
-        else:
-            paths = glob.glob(self.storepath + '/' + 'Eval_*/')
-            print(paths)
-            if not self.best_states:
-                print('No states present - check for Files')
-                if not glob.glob(self.storepath + '/' + 'Eval_*/' + "*.p"):
-                    print('No files present. Run Training first!')
-                else:
-                    self.best_states = pickle.load(open('BestGenerators.p', 'rb'))
+        dir_path = self.storepath
+        for root, dirs, files in os.walk(dir_path):
+            for file in files:
+                print(root)
+                print(file)
+                if file.endswith('.p'):
+                    self.best_states = pickle.load(open(root + '/' + file, 'rb'))
                     noise = torch.randn((size, self.z_dim), device='cpu')
                     labels = torch.full((1, size), fill_value=label,
                                         dtype=torch.int64).view(size)
                     sample = self.best_states[label](noise, labels).detach()
+                    break
 
         # Normalize and transfer to pandas df
         sample_df, _ = self.normalize_data(sample, label)
