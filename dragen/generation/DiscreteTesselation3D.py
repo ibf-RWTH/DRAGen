@@ -8,7 +8,7 @@ from dragen.utilities.RVE_Utils import RVEUtils
 
 
 class Tesselation3D:
-    def __init__(self, box_size, n_pts, a, b, c, x_0, y_0, z_0, final_volume, shrinkfactor, store_path, debug=False):
+    def __init__(self, box_size, n_pts, a, b, c, x_0, y_0, z_0, final_volume, shrinkfactor, band_ratio, store_path, debug=False):
 
         self.box_size = box_size
         self.n_pts = n_pts
@@ -19,6 +19,7 @@ class Tesselation3D:
         self.y_0 = y_0
         self.z_0 = z_0
         self.shrinkfactor = shrinkfactor
+        self.band_ratio = band_ratio
         self.store_path = store_path
         self.debug = debug
 
@@ -123,7 +124,7 @@ class Tesselation3D:
 
                 if band_vol_0 > 0:
                     band_ratio = band_vol / band_vol_0
-                    if band_ratio > 0.5:  #0.5 is only examplary, has to be exchanged with variable which is representable
+                    if band_ratio > self.band_ratio:  # Class property
                         rve[((periodic_grain == idx) & (rve == 0)) | ((periodic_grain == idx) & (rve == -200))] = idx
                     else:
                         rve[((periodic_grain == idx) & (rve == 0))] = idx
