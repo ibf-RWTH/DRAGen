@@ -8,12 +8,13 @@ from dragen.utilities.RVE_Utils import RVEUtils
 
 
 class Tesselation2D:
-    def __init__(self, box_size, n_pts, a, b, x_0, y_0, shrinkfactor, storepath):
+    def __init__(self, box_size, n_pts, a, b, slope, x_0, y_0, shrinkfactor, storepath):
 
         self.box_size = box_size
         self.n_pts = n_pts
         self.a = a
         self.b = b
+        self.slope = slope
         self.x_0 = x_0
         self.y_0 = y_0
         self.shrinkfactor = shrinkfactor
@@ -31,6 +32,7 @@ class Tesselation2D:
     def grow(self, iterator, a, b):
         x_grid = self.x_grid
         y_grid = self.y_grid
+        slope = self.slope[iterator - 1]
         x_0 = self.x_0[iterator-1]
         y_0 = self.y_0[iterator-1]
         a_i = a[iterator - 1]
@@ -42,7 +44,10 @@ class Tesselation2D:
             print(b_i)
         a[iterator - 1] = a_i
         b[iterator - 1] = b_i
-        ellipse = (x_grid - x_0) ** 2 / (a_i ** 2) + (y_grid - y_0) ** 2 / (b_i ** 2)
+
+        """ellipse = (x_grid - x_0) ** 2 / (a_i ** 2) + (y_grid - y_0) ** 2 / (b_i ** 2)"""
+
+        ellipse = self.rve_utils_object.ellipse(a_i, b_i, x_0, y_0, slope=slope)
 
         return ellipse, a, b
 
