@@ -15,7 +15,7 @@ class Tesselation3D:
         self.a = a
         self.b = b
         self.c = c
-        self.slope =slope
+        self.slope = slope
         self.x_0 = x_0
         self.y_0 = y_0
         self.z_0 = z_0

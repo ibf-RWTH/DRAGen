@@ -55,9 +55,11 @@ class DiscreteRsa3D:
         b = b[iterator]
         c = c[iterator]
         slope = slope[iterator]
+
         """ellipse = (x_grid - x_0) ** 2 / (a ** 2) + \
                   (y_grid - y_0) ** 2 / (b ** 2) + \
                   (z_grid - z_0) ** 2 / (c ** 2)"""
+
         ellipsoid = self.rve_utils_object.ellipsoid(a, b, c, x_0, y_0, z_0, slope=slope)
 
         time_elapse = datetime.datetime.now() - t_0
