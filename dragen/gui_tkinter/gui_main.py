@@ -2,6 +2,7 @@ import sys
 from tkinter import ttk, messagebox, Toplevel, Tk, DoubleVar, Spinbox, Label, Button, W, Checkbutton, BooleanVar
 import multiprocessing
 from tkinter.filedialog import askopenfilename
+from tkinter import Checkbutton, BooleanVar, IntVar,Radiobutton
 
 from dragen.main2D import DataTask2D
 from dragen.main3D import DataTask3D
@@ -34,7 +35,7 @@ pack_ratio_input = Spinbox(root, from_=0.2, to=0.7, width=10, increment=.1, text
 bands_input = Spinbox(root, from_=0, to=100, width=10)
 var = DoubleVar(value=3)  # initial value
 bandwidth_input = Spinbox(root, from_=1, to=100, width=10, increment=.1, textvariable=var)
-dimension_input = Spinbox(root, from_=2, to=3, width=10)
+#dimension_input = Spinbox(root, from_=2, to=3, width=10)
 first_input_file = Button(root, text='Upload 1', command=open_file1)
 second_input_file = Button(root, text='Upload 2', command=open_file2)
 var = DoubleVar(value=1)  # initial value
@@ -42,6 +43,10 @@ number_of_rve_input = Spinbox(root, from_=1, to=100, width=10, textvariable=var)
 gen_anim = BooleanVar() #Generating Animation
 gen_anim.set(False)
 cbox = Checkbutton(root, text = "Animation", variable = gen_anim)
+dimension_input=IntVar()
+dimension_input.set(3) #Choose between 2D/3D RVE Default:3D
+twoD_cbox= Radiobutton(root, text = "2D RVE", variable = dimension_input,value=2)
+thrD_cbox= Radiobutton(root, text = "3D RVE", variable = dimension_input,value=3)
 
 def rveGeneration(file1, file2):
     last_RVE = int(number_of_rve_input.get())
@@ -49,11 +54,11 @@ def rveGeneration(file1, file2):
     dim = int(dimension_input.get())
     n = Label(root, text="RVE generation in progress... 0%").grid(row=26, column=1, sticky=W, padx=3, pady=3)
 
-    if dim == 2:
+    if dimension_input.get()==2:
         obj = DataTask2D(int(box_size_input.get()), int(points_input.get()), int(bands_input.get()),
                        float(bandwidth_input.get()),  float(pack_ratio_input.get()), file1, file2, gen_anim.get())
         grains_df = obj.initializations(dimension=dim)
-    elif dim == 3:
+    elif dimension_input.get()==3:
         obj = DataTask3D(int(box_size_input.get()), int(points_input.get()), int(bands_input.get()),
                          float(bandwidth_input.get()), float(pack_ratio_input.get()),
                          file1, file2, gen_anim.get())
@@ -105,7 +110,7 @@ class MainApplication(ttk.Frame):
         c = Label(root, text="Packing ratio: ").grid(row=4, column=0, sticky=W, padx=5, pady=5)
         d = Label(root, text="Number of bands: ").grid(row=6, column=0, sticky=W, padx=5, pady=5)
         e = Label(root, text="Bandwidth: ").grid(row=8, column=0, sticky=W, padx=5, pady=5)
-        f = Label(root, text="Type 2 for 2D and 3 for 3D RVE: ").grid(row=10, column=0, sticky=W, padx=5, pady=5)
+        f = Label(root, text="Check for the desired RVE dimension: ").grid(row=10, column=0, sticky=W, padx=5, pady=5)
         o = Label(root, text="Number of RVEs required: ").grid(row=12, column=0, sticky=W, padx=5, pady=5)
         g = Label(root, text="Upload first input file*: ").grid(row=14, column=0, sticky=W, padx=5, pady=5)
         h = Label(root, text="Upload second input file: ").grid(row=18, column=0, sticky=W, padx=5, pady=5)
@@ -116,7 +121,9 @@ class MainApplication(ttk.Frame):
         pack_ratio_input.grid(row=4, column=1)
         bands_input.grid(row=6, column=1)
         bandwidth_input.grid(row=8, column=1)
-        dimension_input.grid(row=10, column=1)
+        twoD_cbox.grid(row=10, column=2)
+        thrD_cbox.grid(row=10, column=1)
+        #dimension_input.grid(row=10, column=1)
         number_of_rve_input.grid(row=12, column=1)
         first_input_file.grid(row=14, column=1)
         second_input_file.grid(row=18, column=1)
