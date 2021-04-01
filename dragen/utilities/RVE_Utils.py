@@ -46,11 +46,11 @@ class RVEUtils:
             for ang in data['Slope']:
                 slope.append(ang)
         else:
-            slope = [0]*len(radius_a)
+            slope = [0] * len(radius_a)
         if dimension == 3:
             return radius_a, radius_b, radius_c, slope
         elif dimension == 2:
-            return radius_a, radius_b
+            return radius_a, radius_b, slope
 
     def convert_volume(self, radius_a, radius_b, radius_c):
         """Compute the volume for the given radii.
@@ -579,6 +579,18 @@ class RVEUtils:
                           ((rve['x'] == max_x) & (rve['y'] == max_y) & (rve['z'] == max_z))]
         rve.loc[corners.index, 'GrainID'] = corner1.GrainID.values
         return rve
+
+    def ellipse(self, a, b, x_0, y_0, slope=0):
+
+        # without rotation
+        """ellipse = np.sqrt((x_grid - x_0) ** 2 / (a ** 2) + (y_grid - y_0) ** 2 / (b ** 2))"""
+
+        ellipse = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(slope))
+                                        - (self.y_grid - y_0) * np.sin(np.deg2rad(slope))) ** 2 +\
+                  1 / b ** 2 * ((self.x_grid - x_0) * np.sin(np.deg2rad(slope))
+                                          + (self.y_grid - y_0) * np.cos(np.deg2rad(slope))) ** 2
+
+        return ellipse
 
     def ellipsoid(self, a, b, c, x_0, y_0, z_0, slope=0):
 
