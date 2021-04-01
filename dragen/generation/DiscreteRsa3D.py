@@ -93,7 +93,7 @@ class DiscreteRsa3D:
 
     def run_rsa(self, banded_rsa_array=None, animation=False):
         status = False
-        bandratio = 0.3
+        bandratio = 0.95
 
         if banded_rsa_array is None:
             rsa = np.zeros((2 * self.n_pts, 2 * self.n_pts, 2 * self.n_pts), dtype=np.int32)
@@ -126,9 +126,10 @@ class DiscreteRsa3D:
 
             free_points = np.count_nonzero(rsa == 0)
             band_points = np.count_nonzero(rsa == -200)
-            if band_points_old>0:
-                if (free_points_old + band_points_old - free_points -band_points != np.count_nonzero(periodic_grain)) | \
-                        (band_points/band_vol_0 < (1-bandratio)):
+            if band_points_old > 0:
+                if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)) | \
+                        (band_points/band_vol_0 < bandratio):  # Auf 95% gesetzt, damit nur sehr wenig Band im RSA
+                    # belegt wird
                     print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
                     print('ratio:', (band_points/band_vol_0 < bandratio))
                     rsa = backup_rsa.copy()
