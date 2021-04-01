@@ -59,7 +59,7 @@ class DataTask3D:
             phase2 = self.file2
 
         self.logger.info("RVE generation process has started...")
-        phase1_a, phase1_b, phase1_c = self.utils_obj.read_input(phase1, dimension)
+        phase1_a, phase1_b, phase1_c, phase1_slope = self.utils_obj.read_input(phase1, dimension)
         final_volume_phase1 = [(4/3*phase1_a[i] * phase1_b[i] * phase1_c[i] * np.pi) for i in range(len(phase1_a))]
         phase1_a_shrinked = [phase1_a_i * self.shrink_factor for phase1_a_i in phase1_a]
         phase1_b_shrinked = [phase1_b_i * self.shrink_factor for phase1_b_i in phase1_b]
@@ -68,12 +68,13 @@ class DataTask3D:
         phase1_dict = {'a': phase1_a_shrinked,
                        'b': phase1_b_shrinked,
                        'c': phase1_c_shrinked,
+                       'slope': phase1_slope,
                        'final_volume': final_volume_phase1}
         grains_df = pd.DataFrame(phase1_dict)
         grains_df['phaseID'] = 1
 
         if phase2 is not None:
-            phase2_a, phase2_b, phase2_c = self.utils_obj.read_input(phase2, dimension)
+            phase2_a, phase2_b, phase2_c, phase2_slope = self.utils_obj.read_input(phase2, dimension)
             final_volume_phase2 = [(4/3*phase2_a[i] * phase2_b[i] * phase2_c[i] * np.pi) for i in range(len(phase2_a))]
             phase2_a_shrinked = [phase2_a_i * self.shrink_factor for phase2_a_i in phase2_a]
             phase2_b_shrinked = [phase2_b_i * self.shrink_factor for phase2_b_i in phase2_b]
@@ -81,6 +82,7 @@ class DataTask3D:
             phase2_dict = {'a': phase2_a_shrinked,
                            'b': phase2_b_shrinked,
                            'c': phase2_c_shrinked,
+                           'slope': phase2_slope,
                            'final_volume': final_volume_phase2}
 
             grains_phase2_df = pd.DataFrame(phase2_dict)
@@ -104,7 +106,8 @@ class DataTask3D:
         discrete_RSA_obj = DiscreteRsa3D(self.box_size, self.n_pts,
                                          grains_df['a'].tolist(),
                                          grains_df['b'].tolist(),
-                                         grains_df['c'].tolist(), store_path=store_path)
+                                         grains_df['c'].tolist(),
+                                         grains_df['slope'].tolist(), store_path=store_path)
 
         with open(store_path + '/discrete_input_vol.csv', 'w', newline='') as f:
             writer = csv.writer(f)
@@ -132,6 +135,7 @@ class DataTask3D:
                                                      grains_df['a'].tolist(),
                                                      grains_df['b'].tolist(),
                                                      grains_df['c'].tolist(),
+                                                     grains_df['slope'].tolist(),
                                                      x_0_list, y_0_list, z_0_list,
                                                      self.shrink_factor, store_path)
             rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa, animation=self.animation)
