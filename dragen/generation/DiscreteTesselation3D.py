@@ -99,7 +99,8 @@ class Tesselation3D:
         repeat = False
         packingratio = 0
         epoch = 0
-        band_vol_0 = np.count_nonzero(rsa == -200)
+        band_vol_0 = np.count_nonzero(rsa == -200)  # This volume is already affected by the First band ratio
+        # So total Band ratio is band_ratio_rsa * band_ratio_tesselator
 
         # load some variables
         a = self.a
@@ -157,6 +158,10 @@ class Tesselation3D:
 
         if packingratio == 100:
             status = True
+
+        # Save for further usage
+        print(rve.shape)
+        np.save(self.store_path + '/' + 'RVE_Numpy.npy', rve)
         return rve, status
 
 

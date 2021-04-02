@@ -19,9 +19,10 @@ from InputGenerator.linking import Reconstructor
 
 class DataTask3D:
 
-    def __init__(self, box_size=22, n_pts=30, number_of_bands=0, bandwidth=3, shrink_factor=0.5, band_ratio=1,
+    def __init__(self, box_size=22, n_pts=30, number_of_bands=0, bandwidth=3, shrink_factor=0.5, band_ratio_rsa=0.95,
+                 band_ratio_final=0.95,
                  file1=None, file2=None,
-                 gui_flag=False, gan_flag=False):
+                 gui_flag=True, gan_flag=False):
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.n_pts = n_pts  # has to be even
@@ -30,7 +31,8 @@ class DataTask3D:
         self.number_of_bands = number_of_bands
         self.bandwidth = bandwidth
         self.shrink_factor = np.cbrt(shrink_factor)
-        self.band_ratio = band_ratio
+        self.band_ratio_rsa = band_ratio_rsa            # Band Ratio for RSA
+        self.band_ratio_final = band_ratio_final        # Band ratio for Tesselator - final is br1 * br2
         self.gui_flag = gui_flag
         self.gan_flag = gan_flag
         if not gui_flag:
@@ -44,8 +46,10 @@ class DataTask3D:
         self.file1 = file1
         self.file2 = file2
         self.utils_obj = RVEUtils(self.box_size, self.n_pts, self.bandwidth)
+        if self.gan_flag:
+            self.GAN = self.run_cwgangp()
 
-    # Läuft einen Trainingsdurchgang und erzeugt ein Bot-Object
+    # Läuft einen Trainingsdurchgang und erzeugt ein GAN-Object
     def run_cwgangp(self):
         SOURCE = r'./ExampleInput'
         os.chdir(SOURCE)
@@ -65,28 +69,34 @@ class DataTask3D:
         store_path = 'OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(0)
         if not os.path.isdir(store_path):
             os.makedirs(store_path)
-        GAN = WGANCGP(df_list=[df1, df2, df3, df4, df5, df6], storepath=store_path, num_features=3, gen_iters=2000)
+        GAN = WGANCGP(df_list=[df1, df2, df3, df4, df5, df6], storepath=store_path, num_features=3, gen_iters=100)
 
         # Run training for 5000 Its - 150.000 is default
-        GAN.train()
+        #GAN.train()
 
         # Evaluate Afterwards
-        GAN.evaluate()
+        #GAN.evaluate()
 
-        # Sample Data from best epoch for Reconstruction-Algorithm
-        TDxBN = GAN.sample_batch(label=0, size=3500)
-        RDxBN = GAN.sample_batch(label=1, size=3500)
-        RDxTD = GAN.sample_batch(label=2, size=3500)
+        print('Created GAN-Object successfully!')
+        return GAN
+
+    def sample_gan_input(self, size=500):
+        TDxBN = self.GAN.sample_batch(label=0, size=1500)
+        RDxBN = self.GAN.sample_batch(label=1, size=1500)
+        RDxTD = self.GAN.sample_batch(label=2, size=1500)
 
         # Run the Reconstruction
         Bot = Reconstructor(TDxBN, RDxBN, RDxTD, drop=True)
-        Bot.run(n_points=1500)  # Could take a while with 500 points...
+        Bot.run(n_points=size)  # Could take a while with more than 500 points...
 
         # Plot the results as Bivariate KDE-Plots
-        Bot.plot_comparison(close=False)
+        # Bot.plot_comparison(close=False)
 
         # Generate RVE-Input for given Boxsize
-        Bot.get_rve_input(bs=self.box_size)
+        # Calculate the Boxsize based on Bands and original size
+        adjusted_size = np.cbrt(self.box_size**3 - self.band_ratio_rsa * self.number_of_bands * self.bandwidth *
+                                self.box_size**2)
+        Bot.get_rve_input(bs=adjusted_size)
         return Bot.rve_inp  # This is the RVE-Input data
 
     def setup_logging(self):
@@ -101,30 +111,12 @@ class DataTask3D:
         self.logger.setLevel(level=logging.DEBUG)
 
     def initializations(self, dimension):
+        # Important if you use the GAN
+        grains_df = None
         self.setup_logging()
         if not self.gui_flag and not self.gan_flag:
             phase1 = './ExampleInput/ferrite_54_grains.csv'
             phase2 = './ExampleInput/pearlite_21_grains.csv'
-        elif self.gan_flag:
-            self.logger.info("RVE generation process has started...")
-            phase1 = self.run_cwgangp()
-            phase2 = None
-
-            # Processing mit shrinken - directly here, because the output from the gan is a dataFrame
-            phase1_a = phase1['a'].tolist()
-            phase1_b = phase1['b'].tolist()
-            phase1_c = phase1['c'].tolist()
-            final_volume_phase1 = [(4 / 3 * phase1_a[i] * phase1_b[i] * phase1_c[i] * np.pi) for i in
-                                   range(len(phase1_a))]
-            phase1_a_shrinked = [phase1_a_i * self.shrink_factor for phase1_a_i in phase1_a]
-            phase1_b_shrinked = [phase1_b_i * self.shrink_factor for phase1_b_i in phase1_b]
-            phase1_c_shrinked = [phase1_c_i * self.shrink_factor for phase1_c_i in phase1_c]
-            phase1_dict = {'a': phase1_a_shrinked,
-                           'b': phase1_b_shrinked,
-                           'c': phase1_c_shrinked,
-                           'final_volume': final_volume_phase1}
-            grains_df = pd.DataFrame(phase1_dict)
-            grains_df['phaseID'] = 1
         else:
             phase1 = self.file1
             phase2 = self.file2
@@ -163,14 +155,14 @@ class DataTask3D:
                 grains_phase2_df['phaseID'] = 2
                 grains_df = pd.concat([grains_df, grains_phase2_df])
 
-        grains_df.sort_values(by='final_volume', inplace=True, ascending=False)
-        grains_df.reset_index(inplace=True, drop=True)
-        grains_df['GrainID'] = grains_df.index
-        total_volume = sum(grains_df['final_volume'].values)
-        estimated_boxsize = np.cbrt(total_volume)
-        self.logger.info(
-            "the total volume of your dataframe is {}. A boxsize of {} is recommended.".format(total_volume,
-                                                                                               estimated_boxsize))
+            grains_df.sort_values(by='final_volume', inplace=True, ascending=False)
+            grains_df.reset_index(inplace=True, drop=True)
+            grains_df['GrainID'] = grains_df.index
+            total_volume = sum(grains_df['final_volume'].values)
+            estimated_boxsize = np.cbrt(total_volume)
+            self.logger.info(
+                "the total volume of your dataframe is {}. A boxsize of {} is recommended.".format(total_volume,
+                                                                                                   estimated_boxsize))
 
         return grains_df
 
@@ -180,6 +172,30 @@ class DataTask3D:
             os.makedirs(store_path)
         if not os.path.isdir(store_path + '/Figs'):
             os.makedirs(store_path + '/Figs')   # Second if needed
+
+        if self.gan_flag:
+            self.logger.info("RVE generation process has started...")
+            phase1 = self.sample_gan_input(size=500)
+            phase2 = None
+
+            # Processing mit shrinken - directly here, because the output from the gan is a dataFrame
+            phase1_a = phase1['a'].tolist()
+            phase1_b = phase1['b'].tolist()
+            phase1_c = phase1['c'].tolist()
+            phase1_slope = phase1['slope']
+            final_volume_phase1 = [(4 / 3 * phase1_a[i] * phase1_b[i] * phase1_c[i] * np.pi) for i in
+                                   range(len(phase1_a))]
+            phase1_a_shrinked = [phase1_a_i * self.shrink_factor for phase1_a_i in phase1_a]
+            phase1_b_shrinked = [phase1_b_i * self.shrink_factor for phase1_b_i in phase1_b]
+            phase1_c_shrinked = [phase1_c_i * self.shrink_factor for phase1_c_i in phase1_c]
+            phase1_dict = {'a': phase1_a_shrinked,
+                           'b': phase1_b_shrinked,
+                           'c': phase1_c_shrinked,
+                           'slope': phase1_slope,
+                           'final_volume': final_volume_phase1}
+            grains_df = pd.DataFrame(phase1_dict)
+            grains_df['phaseID'] = 1
+
         discrete_RSA_obj = DiscreteRsa3D(self.box_size, self.n_pts,
                                          grains_df['a'].tolist(),
                                          grains_df['b'].tolist(),
@@ -202,11 +218,12 @@ class DataTask3D:
             for i in range(self.number_of_bands):
                 band_array = utils_obj_band.band_generator(band_array)
 
-            rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(band_array,
+            rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(self.band_ratio_rsa, band_array,
                                                                                      animation=self.animation)
 
         else:
-            rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(animation=self.animation)
+            rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(self.band_ratio_rsa,
+                                                                                     animation=self.animation)
 
         if rsa_status:
             discrete_tesselation_obj = Tesselation3D(self.box_size, self.n_pts,
