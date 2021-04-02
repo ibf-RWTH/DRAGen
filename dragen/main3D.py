@@ -141,7 +141,7 @@ class DataTask3D:
             phase1_dict = {'a': phase1_a_shrinked,
                            'b': phase1_b_shrinked,
                            'c': phase1_c_shrinked,
-                           'slope': phase1_slope
+                           'slope': phase1_slope,
                            'final_volume': final_volume_phase1}
             grains_df = pd.DataFrame(phase1_dict)
             grains_df['phaseID'] = 1

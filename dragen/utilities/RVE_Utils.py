@@ -539,7 +539,7 @@ class RVEUtils:
         bottom_to_top_rear_left = rve_edges.loc[(rve_edges['x'] == min_x) & (rve_edges['y'] == min_y)].copy()
         bottom_to_top_front_left = rve_edges.loc[(rve_edges['x'] == max_x) & (rve_edges['y'] == min_y)].copy()
         bottom_to_top_front_right = rve_edges.loc[(rve_edges['x'] == max_x) & (rve_edges['y'] == max_y)].copy()
-        bottom_to_top_rear_right =  rve_edges.loc[(rve_edges['x'] == min_x) & (rve_edges['y'] == max_y)].copy()
+        bottom_to_top_rear_right = rve_edges.loc[(rve_edges['x'] == min_x) & (rve_edges['y'] == max_y)].copy()
 
         rve.loc[bottom_to_top_front_left.index, 'GrainID'] = bottom_to_top_rear_left.GrainID.values
         rve.loc[bottom_to_top_front_right.index, 'GrainID'] = bottom_to_top_rear_left.GrainID.values
@@ -550,7 +550,7 @@ class RVEUtils:
         left_to_right_bottom_rear = rve_edges.loc[(rve_edges['x'] == min_x) & (rve_edges['z'] == min_z)].copy()
         left_to_right_top_rear = rve_edges.loc[(rve_edges['x'] == min_x) & (rve_edges['z'] == max_z)].copy()
         left_to_right_top_front = rve_edges.loc[(rve_edges['x'] == max_x) & (rve_edges['z'] == max_z)].copy()
-        left_to_right_bottom_front =  rve_edges.loc[(rve_edges['x'] == max_x) & (rve_edges['z'] == min_z)].copy()
+        left_to_right_bottom_front = rve_edges.loc[(rve_edges['x'] == max_x) & (rve_edges['z'] == min_z)].copy()
 
         rve.loc[left_to_right_top_rear.index, 'GrainID'] = left_to_right_bottom_rear.GrainID.values
         rve.loc[left_to_right_top_front.index, 'GrainID'] = left_to_right_bottom_rear.GrainID.values
