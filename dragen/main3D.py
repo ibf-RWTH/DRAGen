@@ -13,10 +13,15 @@ from dragen.generation.DiscreteTesselation3D import Tesselation3D
 from dragen.utilities.RVE_Utils import RVEUtils
 from dragen.generation.mesher import Mesher
 
+from InputGenerator.C_WGAN_GP import WGANCGP
+from InputGenerator.linking import Reconstructor
+
 
 class DataTask3D:
 
-    def __init__(self, box_size=22, n_pts=30, number_of_bands=0, bandwidth=3, shrink_factor=0.5, file1=None, file2=None, gui_flag=False):
+    def __init__(self, box_size=22, n_pts=30, number_of_bands=0, bandwidth=3, shrink_factor=0.5, band_ratio=1,
+                 file1=None, file2=None,
+                 gui_flag=False, gan_flag=False):
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.n_pts = n_pts  # has to be even
@@ -25,7 +30,9 @@ class DataTask3D:
         self.number_of_bands = number_of_bands
         self.bandwidth = bandwidth
         self.shrink_factor = np.cbrt(shrink_factor)
+        self.band_ratio = band_ratio
         self.gui_flag = gui_flag
+        self.gan_flag = gan_flag
         if not gui_flag:
             main_dir = sys.argv[0][:-14]
             os.chdir(main_dir)
@@ -37,6 +44,50 @@ class DataTask3D:
         self.file1 = file1
         self.file2 = file2
         self.utils_obj = RVEUtils(self.box_size, self.n_pts, self.bandwidth)
+
+    # Läuft einen Trainingsdurchgang und erzeugt ein Bot-Object
+    def run_cwgangp(self):
+        SOURCE = r'./ExampleInput'
+        os.chdir(SOURCE)
+
+        # Data:
+        df1 = pd.read_csv('Input_TDxBN_AR.csv')
+        df2 = pd.read_csv('Input_RDxBN_AR.csv')
+        df3 = pd.read_csv('Input_RDxTD_AR.csv')
+
+        # Einschlüsse
+        df4 = pd.read_csv('Einschlüsse_TDxBN_AR.csv')
+        df5 = pd.read_csv('Einschlüsse_RDxBN_AR.csv')
+        df6 = pd.read_csv('Einschlüsse_RDxTD_AR.csv')
+        os.chdir('../')
+
+        # Set up CWGAN-GP with all data
+        store_path = 'OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(0)
+        if not os.path.isdir(store_path):
+            os.makedirs(store_path)
+        GAN = WGANCGP(df_list=[df1, df2, df3, df4, df5, df6], storepath=store_path, num_features=3, gen_iters=2000)
+
+        # Run training for 5000 Its - 150.000 is default
+        GAN.train()
+
+        # Evaluate Afterwards
+        GAN.evaluate()
+
+        # Sample Data from best epoch for Reconstruction-Algorithm
+        TDxBN = GAN.sample_batch(label=0, size=3500)
+        RDxBN = GAN.sample_batch(label=1, size=3500)
+        RDxTD = GAN.sample_batch(label=2, size=3500)
+
+        # Run the Reconstruction
+        Bot = Reconstructor(TDxBN, RDxBN, RDxTD, drop=True)
+        Bot.run(n_points=1500)  # Could take a while with 500 points...
+
+        # Plot the results as Bivariate KDE-Plots
+        Bot.plot_comparison(close=False)
+
+        # Generate RVE-Input for given Boxsize
+        Bot.get_rve_input(bs=self.box_size)
+        return Bot.rve_inp  # This is the RVE-Input data
 
     def setup_logging(self):
         LOGS_DIR = 'Logs/'
@@ -51,50 +102,75 @@ class DataTask3D:
 
     def initializations(self, dimension):
         self.setup_logging()
-        if not self.gui_flag:
+        if not self.gui_flag and not self.gan_flag:
             phase1 = './ExampleInput/ferrite_54_grains.csv'
             phase2 = './ExampleInput/pearlite_21_grains.csv'
+        elif self.gan_flag:
+            self.logger.info("RVE generation process has started...")
+            phase1 = self.run_cwgangp()
+            phase2 = None
+
+            # Processing mit shrinken - directly here, because the output from the gan is a dataFrame
+            phase1_a = phase1['a'].tolist()
+            phase1_b = phase1['b'].tolist()
+            phase1_c = phase1['c'].tolist()
+            final_volume_phase1 = [(4 / 3 * phase1_a[i] * phase1_b[i] * phase1_c[i] * np.pi) for i in
+                                   range(len(phase1_a))]
+            phase1_a_shrinked = [phase1_a_i * self.shrink_factor for phase1_a_i in phase1_a]
+            phase1_b_shrinked = [phase1_b_i * self.shrink_factor for phase1_b_i in phase1_b]
+            phase1_c_shrinked = [phase1_c_i * self.shrink_factor for phase1_c_i in phase1_c]
+            phase1_dict = {'a': phase1_a_shrinked,
+                           'b': phase1_b_shrinked,
+                           'c': phase1_c_shrinked,
+                           'final_volume': final_volume_phase1}
+            grains_df = pd.DataFrame(phase1_dict)
+            grains_df['phaseID'] = 1
         else:
             phase1 = self.file1
             phase2 = self.file2
 
-        self.logger.info("RVE generation process has started...")
-        phase1_a, phase1_b, phase1_c, phase1_slope = self.utils_obj.read_input(phase1, dimension)
-        final_volume_phase1 = [(4/3*phase1_a[i] * phase1_b[i] * phase1_c[i] * np.pi) for i in range(len(phase1_a))]
-        phase1_a_shrinked = [phase1_a_i * self.shrink_factor for phase1_a_i in phase1_a]
-        phase1_b_shrinked = [phase1_b_i * self.shrink_factor for phase1_b_i in phase1_b]
-        phase1_c_shrinked = [phase1_c_i * self.shrink_factor for phase1_c_i in phase1_c]
+        # Bei GAN-Input braucht man das nicht, weil der Input DIREKT über ein df kommt - therefore if not gan
+        if not self.gan_flag:
+            self.logger.info("RVE generation process has started...")
+            phase1_a, phase1_b, phase1_c, phase1_slope = self.utils_obj.read_input(phase1, dimension)
+            final_volume_phase1 = [(4 / 3 * phase1_a[i] * phase1_b[i] * phase1_c[i] * np.pi) for i in range(len(phase1_a))]
+            phase1_a_shrinked = [phase1_a_i * self.shrink_factor for phase1_a_i in phase1_a]
+            phase1_b_shrinked = [phase1_b_i * self.shrink_factor for phase1_b_i in phase1_b]
+            phase1_c_shrinked = [phase1_c_i * self.shrink_factor for phase1_c_i in phase1_c]
 
-        phase1_dict = {'a': phase1_a_shrinked,
-                       'b': phase1_b_shrinked,
-                       'c': phase1_c_shrinked,
-                       'slope': phase1_slope,
-                       'final_volume': final_volume_phase1}
-        grains_df = pd.DataFrame(phase1_dict)
-        grains_df['phaseID'] = 1
+            phase1_dict = {'a': phase1_a_shrinked,
+                           'b': phase1_b_shrinked,
+                           'c': phase1_c_shrinked,
+                           'slope': phase1_slope
+                           'final_volume': final_volume_phase1}
+            grains_df = pd.DataFrame(phase1_dict)
+            grains_df['phaseID'] = 1
 
-        if phase2 is not None:
-            phase2_a, phase2_b, phase2_c, phase2_slope = self.utils_obj.read_input(phase2, dimension)
-            final_volume_phase2 = [(4/3*phase2_a[i] * phase2_b[i] * phase2_c[i] * np.pi) for i in range(len(phase2_a))]
-            phase2_a_shrinked = [phase2_a_i * self.shrink_factor for phase2_a_i in phase2_a]
-            phase2_b_shrinked = [phase2_b_i * self.shrink_factor for phase2_b_i in phase2_b]
-            phase2_c_shrinked = [phase2_c_i * self.shrink_factor for phase2_c_i in phase2_c]
-            phase2_dict = {'a': phase2_a_shrinked,
-                           'b': phase2_b_shrinked,
-                           'c': phase2_c_shrinked,
-                           'slope': phase2_slope,
-                           'final_volume': final_volume_phase2}
+            if phase2 is not None:
+                phase2_a, phase2_b, phase2_c, phase2_slope = self.utils_obj.read_input(phase2, dimension)
+                final_volume_phase2 = [(4 / 3 * phase2_a[i] * phase2_b[i] * phase2_c[i] * np.pi) for i in
+                                       range(len(phase2_a))]
+                phase2_a_shrinked = [phase2_a_i * self.shrink_factor for phase2_a_i in phase2_a]
+                phase2_b_shrinked = [phase2_b_i * self.shrink_factor for phase2_b_i in phase2_b]
+                phase2_c_shrinked = [phase2_c_i * self.shrink_factor for phase2_c_i in phase2_c]
+                phase2_dict = {'a': phase2_a_shrinked,
+                               'b': phase2_b_shrinked,
+                               'c': phase2_c_shrinked,
+                               'slope': phase2_slope,
+                               'final_volume': final_volume_phase2}
 
-            grains_phase2_df = pd.DataFrame(phase2_dict)
-            grains_phase2_df['phaseID'] = 2
-            grains_df = pd.concat([grains_df, grains_phase2_df])
+                grains_phase2_df = pd.DataFrame(phase2_dict)
+                grains_phase2_df['phaseID'] = 2
+                grains_df = pd.concat([grains_df, grains_phase2_df])
 
         grains_df.sort_values(by='final_volume', inplace=True, ascending=False)
         grains_df.reset_index(inplace=True, drop=True)
         grains_df['GrainID'] = grains_df.index
         total_volume = sum(grains_df['final_volume'].values)
         estimated_boxsize = np.cbrt(total_volume)
-        self.logger.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".format(total_volume, estimated_boxsize) )
+        self.logger.info(
+            "the total volume of your dataframe is {}. A boxsize of {} is recommended.".format(total_volume,
+                                                                                               estimated_boxsize))
 
         return grains_df
 
@@ -102,7 +178,8 @@ class DataTask3D:
         store_path = 'OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
         if not os.path.isdir(store_path):
             os.makedirs(store_path)
-            os.makedirs(store_path + '/Figs')
+        if not os.path.isdir(store_path + '/Figs'):
+            os.makedirs(store_path + '/Figs')   # Second if needed
         discrete_RSA_obj = DiscreteRsa3D(self.box_size, self.n_pts,
                                          grains_df['a'].tolist(),
                                          grains_df['b'].tolist(),
@@ -118,14 +195,15 @@ class DataTask3D:
             xyz = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
             x_grid, y_grid, z_grid = np.meshgrid(xyz, xyz, xyz)
             utils_obj_band = RVEUtils(self.box_size, self.n_pts,
-                                x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, bandwidth=self.bandwidth)
+                                      x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, bandwidth=self.bandwidth)
             band_array = np.zeros((2 * self.n_pts, 2 * self.n_pts, 2 * self.n_pts))
             band_array = utils_obj_band.gen_boundaries_3D(band_array)
 
             for i in range(self.number_of_bands):
                 band_array = utils_obj_band.band_generator(band_array)
 
-            rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(band_array, animation=self.animation)
+            rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(band_array,
+                                                                                     animation=self.animation)
 
         else:
             rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(animation=self.animation)
@@ -137,7 +215,8 @@ class DataTask3D:
                                                      grains_df['c'].tolist(),
                                                      grains_df['slope'].tolist(),
                                                      x_0_list, y_0_list, z_0_list,
-                                                     self.shrink_factor, store_path)
+                                                     grains_df['final_volume'].tolist(),
+                                                     self.shrink_factor, self.band_ratio, store_path)
             rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa, animation=self.animation)
 
         else:
@@ -160,4 +239,3 @@ class DataTask3D:
             mesher_obj.mesh_and_build_abaqus_model()
 
         self.logger.info("RVE generation process has successfully completed...")
-
