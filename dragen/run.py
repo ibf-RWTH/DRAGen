@@ -7,11 +7,11 @@ from dragen.main3D import DataTask3D
 
 
 if __name__ == "__main__":
-    last_RVE = 1  # Specify the number of iterations
+    last_RVE = 2  # Specify the number of iterations
     dimension = 3
     # Optional arguments with default values:
     # obj3D = DataTask3D()
-    obj3D = DataTask3D(box_size=20, n_pts=100, number_of_bands=1, bandwidth=6,
+    obj3D = DataTask3D(box_size=20, n_pts=30, number_of_bands=1, bandwidth=6,
                        shrink_factor=0.5, band_ratio_rsa=0.95, band_ratio_final=0.95, file1=None, file2=None,
                        gui_flag=False, gan_flag=True)
     obj2D = DataTask2D()
