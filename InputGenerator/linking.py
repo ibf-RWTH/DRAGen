@@ -333,18 +333,17 @@ class Reconstructor:
         inp_list = list()
         while grain_vol < max_volume:
             idx = np.random.randint(0, data.__len__())
-            grain = data[['a_final', 'b_final', 'c_final']].iloc[idx].tolist()
+            grain = data[['a_final', 'b_final', 'c_final', 'SlopeAB']].iloc[idx].tolist()
             data = data.drop(labels=data.index[idx], axis=0)
             vol = 4/3 * np.pi * grain[0] * grain[1] * grain[2]
             grain_vol += vol
-            inp_list.append([grain[0], grain[1], grain[2], vol])
-            #print(data.__len__())
+            inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
 
         # Del last if to big:
         if grain_vol >= max_volume:
             inp_list.pop(-1)
 
-        header = ['a', 'b', 'c', 'volume']
+        header = ['a', 'b', 'c', 'slope', 'volume']
         self.rve_inp = pd.DataFrame(inp_list, columns=header)
 
 
