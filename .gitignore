@@ -8,3 +8,4 @@ venv/
 *.png
 *.vtk
 /gui/
+/dragen/Experimental/

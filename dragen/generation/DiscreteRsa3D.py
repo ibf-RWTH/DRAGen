@@ -11,13 +11,14 @@ from dragen.utilities.RVE_Utils import RVEUtils
 
 class DiscreteRsa3D:
 
-    def __init__(self, box_size, n_pts, a, b, c, store_path, debug=False):
+    def __init__(self, box_size, n_pts, a, b, c, slope, store_path, debug=False):
 
         self.box_size = box_size
         self.n_pts = n_pts
         self.a = a
         self.b = b
         self.c = c
+        self.slope = slope
         self.store_path = store_path
         self.debug = debug
 
@@ -35,6 +36,7 @@ class DiscreteRsa3D:
         a = self.a
         b = self.b
         c = self.c
+        slope = self.slope
         unoccupied_pts_x, unoccupied_pts_y, unoccupied_pts_z = np.where(array == 0)
         unoccupied_tuples = [*zip(unoccupied_pts_x, unoccupied_pts_y, unoccupied_pts_z)]
         unoccupied_area_x = [self.x_grid[unoccupied_tuples_i[0]][unoccupied_tuples_i[1]][unoccupied_tuples_i[2]]
@@ -52,13 +54,18 @@ class DiscreteRsa3D:
         a = a[iterator]
         b = b[iterator]
         c = c[iterator]
-        ellipse = (x_grid - x_0) ** 2 / (a ** 2) + \
+        slope = slope[iterator]
+
+        """ellipse = (x_grid - x_0) ** 2 / (a ** 2) + \
                   (y_grid - y_0) ** 2 / (b ** 2) + \
-                  (z_grid - z_0) ** 2 / (c ** 2)
+                  (z_grid - z_0) ** 2 / (c ** 2)"""
+
+        ellipsoid = self.rve_utils_object.ellipsoid(a, b, c, x_0, y_0, z_0, slope=slope)
+
         time_elapse = datetime.datetime.now() - t_0
         if self.debug:
-            self.logger.info('time spent on ellipse{}: {}'.format(iterator, time_elapse.total_seconds()))
-        return ellipse, x_0, y_0, z_0
+            self.logger.info('time spent on ellipsoid{}: {}'.format(iterator, time_elapse.total_seconds()))
+        return ellipsoid, x_0, y_0, z_0
 
     def rsa_plotter(self, array, iterator, attempt):
         plt.ioff()
@@ -84,6 +91,7 @@ class DiscreteRsa3D:
         ax.set_xlabel('x (µm)')
         ax.set_ylabel('y (µm)')
         ax.set_zlabel('z (µm)')
+        #ax.view_init(90, 270)
         #plt.show()
         plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}.png'.format(iterator, attempt))
         plt.close(fig)
@@ -116,9 +124,9 @@ class DiscreteRsa3D:
             band_points_old = np.count_nonzero(rsa == -200)
             grain = rsa_boundaries.copy()
             backup_rsa = rsa.copy()
-            ellipse, x0, y0, z0 = self.gen_ellipsoid(rsa, iterator=i-1)
-            grain[(ellipse <= 1) & ((grain == 0) | (grain == -200))] = i
-            periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipse, iterator=i)
+            ellipsoid, x0, y0, z0 = self.gen_ellipsoid(rsa, iterator=i-1)
+            grain[(ellipsoid <= 1) & ((grain == 0) | (grain == -200))] = i
+            periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipsoid, iterator=i)
             rsa[(periodic_grain == i) & ((rsa == 0) | (rsa == -200))] = i
 
             if animation:

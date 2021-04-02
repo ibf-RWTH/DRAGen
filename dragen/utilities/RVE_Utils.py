@@ -27,12 +27,12 @@ class RVEUtils:
 
     @staticmethod
     def read_input(file_name, dimension) -> tuple:
-        """Reads the given input file and returns the volume along with radii list.
+        """Reads the given input file and returns the volume along with radii and slope list.
         Parameter :
         file_name : String, name of the input file
         """
         data = pd.read_csv(file_name)
-        radius_a, radius_b, radius_c = ([] for i in range(3))
+        radius_a, radius_b, radius_c, slope = ([] for i in range(4))
         if 'a' in data.head(0):
             for rad in data['a']:
                 radius_a.append(rad)
@@ -42,10 +42,15 @@ class RVEUtils:
         if 'c' in data.head(0):
             for rad in data['c']:
                 radius_c.append(rad)
+        if 'Slope' in data.head(0) and data['Slope'].count() != 0:
+            for ang in data['Slope']:
+                slope.append(ang)
+        else:
+            slope = [0] * len(radius_a)
         if dimension == 3:
-            return radius_a, radius_b, radius_c
+            return radius_a, radius_b, radius_c, slope
         elif dimension == 2:
-            return radius_a, radius_b
+            return radius_a, radius_b, slope
 
     def convert_volume(self, radius_a, radius_b, radius_c):
         """Compute the volume for the given radii.
@@ -574,3 +579,45 @@ class RVEUtils:
                           ((rve['x'] == max_x) & (rve['y'] == max_y) & (rve['z'] == max_z))]
         rve.loc[corners.index, 'GrainID'] = corner1.GrainID.values
         return rve
+
+    def ellipse(self, a, b, x_0, y_0, slope=0):
+
+        # without rotation
+        """ellipse = np.sqrt((x_grid - x_0) ** 2 / (a ** 2) + (y_grid - y_0) ** 2 / (b ** 2))"""
+
+        ellipse = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(slope))
+                                        - (self.y_grid - y_0) * np.sin(np.deg2rad(slope))) ** 2 +\
+                  1 / b ** 2 * ((self.x_grid - x_0) * np.sin(np.deg2rad(slope))
+                                          + (self.y_grid - y_0) * np.cos(np.deg2rad(slope))) ** 2
+
+        return ellipse
+
+    def ellipsoid(self, a, b, c, x_0, y_0, z_0, slope=0):
+
+        # rotation around x-axis
+        """ellipsoid = 1/a**2 * (self.x_grid - x_0) ** 2 + \
+                    1/b**2 * ((self.y_grid - y_0) * np.cos(np.deg2rad(slope)) -
+                                 (self.z_grid - z_0) * np.sin(np.deg2rad(slope))) ** 2 + \
+                    1/c**2 * ((self.y_grid - y_0) * np.sin(np.deg2rad(slope)) +
+                                 (self.z_grid - z_0) * np.cos(np.deg2rad(slope))) ** 2"""
+
+        # rotation around y-axis; with a=c no influence
+        """ellipsoid = 1/a**2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(slope)) +
+                              (self.z_grid - z_0) * np.sin(np.deg2rad(slope))) ** 2 + \
+                    1/b**2 * (self.y_grid - y_0) ** 2 + \
+                    1/c**2 * ((self.x_grid - x_0) * -np.sin(np.deg2rad(slope)) +
+                              (self.z_grid - z_0) * np.cos(np.deg2rad(slope))) ** 2"""
+
+        # rotation around z-axis
+        ellipsoid = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(slope)) -
+                                  (self.y_grid - y_0) * np.sin(np.deg2rad(slope))) ** 2 + \
+                    1 / b ** 2 * ((self.x_grid - x_0) * np.sin(np.deg2rad(slope)) +
+                                  (self.y_grid - y_0) * np.cos(np.deg2rad(slope))) ** 2 + \
+                    1 / c ** 2 * (self.z_grid - z_0) ** 2
+
+        # without rotation
+        """ellipsoid = (self.x_grid - x_0) ** 2 / (a ** 2) + \
+                  (self.y_grid - y_0) ** 2 / (b ** 2) + \
+                  (self.z_grid - z_0) ** 2 / (c ** 2)"""
+
+        return ellipsoid

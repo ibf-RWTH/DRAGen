@@ -7,12 +7,13 @@ from dragen.utilities.RVE_Utils import RVEUtils
 
 
 class DiscreteRsa2D:
-    def __init__(self, box_size, n_pts, a, b, store_path):
+    def __init__(self, box_size, n_pts, a, b, slope, store_path):
 
         self.box_size = box_size
         self.n_pts = n_pts
         self.a = a
         self.b = b
+        self.slope = slope
         self.store_path = store_path
 
         self.n_grains = len(a)
@@ -26,6 +27,7 @@ class DiscreteRsa2D:
         y_grid = self.y_grid
         a = self.a
         b = self.b
+        slope = self.slope
         unoccupied_pts_x, unoccupied_pts_y = np.where(array == 0)
         unoccupied_tuples = [*zip(unoccupied_pts_x, unoccupied_pts_y)]
         unoccupied_area_x = [self.x_grid[unoccupied_tuples_i[0]][unoccupied_tuples_i[1]] for unoccupied_tuples_i in
@@ -39,7 +41,10 @@ class DiscreteRsa2D:
         print('x_0_{}: {}, y_0_{}: {}'.format(iterator, x_0, iterator, y_0))
         a = a[iterator]
         b = b[iterator]
-        ellipse = np.sqrt((x_grid - x_0) ** 2 / (a ** 2) + (y_grid - y_0) ** 2 / (b ** 2))
+        slope = slope[iterator]
+
+        ellipse = self.rve_utils_object.ellipse(a, b, x_0, y_0, slope=slope)
+
         return ellipse, x_0, y_0
 
     def rsa_plotter(self, array, n_grains, iterator, attempt):

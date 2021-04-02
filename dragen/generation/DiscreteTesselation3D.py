@@ -8,13 +8,15 @@ from dragen.utilities.RVE_Utils import RVEUtils
 
 
 class Tesselation3D:
-    def __init__(self, box_size, n_pts, a, b, c, x_0, y_0, z_0, final_volume, shrinkfactor, band_ratio, store_path, debug=False):
+
+    def __init__(self, box_size, n_pts, a, b, c, slope, x_0, y_0, z_0, final_volume, shrinkfactor, band_ratio, store_path, debug=False):
 
         self.box_size = box_size
         self.n_pts = n_pts
         self.a = a
         self.b = b
         self.c = c
+        self.slope = slope
         self.x_0 = x_0
         self.y_0 = y_0
         self.z_0 = z_0
@@ -38,6 +40,7 @@ class Tesselation3D:
         x_grid = self.x_grid
         y_grid = self.y_grid
         z_grid = self.z_grid
+        slope = self.slope[iterator-1]
         x_0 = self.x_0[iterator-1]
         y_0 = self.y_0[iterator-1]
         z_0 = self.z_0[iterator-1]
@@ -51,10 +54,13 @@ class Tesselation3D:
         b[iterator - 1] = b_i
         c[iterator - 1] = c_i
 
-        ellipse = (x_grid - x_0) ** 2 / (a_i ** 2) + \
+        """ellipsoid = (x_grid - x_0) ** 2 / (a_i ** 2) + \
                   (y_grid - y_0) ** 2 / (b_i ** 2) + \
-                  (z_grid - z_0) ** 2 / (c_i ** 2)
-        return ellipse, a, b, c
+                  (z_grid - z_0) ** 2 / (c_i ** 2)"""
+
+        ellipsoid = self.rve_utils_object.ellipsoid(a_i, b_i, c_i, x_0, y_0, z_0, slope=slope)
+
+        return ellipsoid, a, b, c
 
     def tesselation_plotter(self, array, epoch):
         t_0 = datetime.datetime.now()
@@ -116,10 +122,10 @@ class Tesselation3D:
             np.random.shuffle(grain_idx)
             while i < len(grain_idx):
                 idx = grain_idx[i]
-                ellipse, a, b, c = self.grow(idx, a, b, c)
+                ellipsoid, a, b, c = self.grow(idx, a, b, c)
                 grain = rve_boundaries.copy()
-                grain[(ellipse <= 1) & (grain == 0)] = idx
-                periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipse, iterator=idx)
+                grain[(ellipsoid <= 1) & (grain == 0)] = idx
+                periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipsoid, iterator=idx)
                 band_vol = np.count_nonzero(rve == -200)
 
                 if band_vol_0 > 0:
@@ -135,7 +141,7 @@ class Tesselation3D:
                 grain_vol = np.count_nonzero(rve == idx) * self.bin_size ** 3
                 if freepoints == 0:
                     break
-                    
+
                 if grain_vol > self.final_volume[idx-1] and not repeat:
                     del grain_idx[i]
 
