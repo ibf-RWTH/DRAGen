@@ -29,7 +29,7 @@ GAN.train()
 
 # Evaluate Afterwards
 GAN.evaluate()
-
+breakpoint()
 # Sample Data from best epoch for Reconstruction-Algorithm
 TDxBN = GAN.sample_batch(label=0, size=1000)
 RDxBN = GAN.sample_batch(label=1, size=1000)
