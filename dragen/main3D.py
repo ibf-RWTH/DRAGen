@@ -19,7 +19,7 @@ from InputGenerator.linking import Reconstructor
 
 class DataTask3D:
 
-    def __init__(self, box_size=22, n_pts=30, number_of_bands=0, bandwidth=3, shrink_factor=0.5, band_ratio_rsa=0.95,
+    def __init__(self, box_size=30, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5, band_ratio_rsa=0.95,
                  band_ratio_final=0.95,
                  file1=None, file2=None,
                  gui_flag=True, gan_flag=False):
@@ -80,7 +80,7 @@ class DataTask3D:
         print('Created GAN-Object successfully!')
         return GAN
 
-    def sample_gan_input(self, size=500):
+    def sample_gan_input(self, size=1000):
         TDxBN = self.GAN.sample_batch(label=0, size=1500)
         RDxBN = self.GAN.sample_batch(label=1, size=1500)
         RDxTD = self.GAN.sample_batch(label=2, size=1500)
@@ -89,13 +89,10 @@ class DataTask3D:
         Bot = Reconstructor(TDxBN, RDxBN, RDxTD, drop=True)
         Bot.run(n_points=size)  # Could take a while with more than 500 points...
 
-        # Plot the results as Bivariate KDE-Plots
-        # Bot.plot_comparison(close=False)
-
-        # Generate RVE-Input for given Boxsize
         # Calculate the Boxsize based on Bands and original size
-        adjusted_size = np.cbrt(self.box_size**3 - self.band_ratio_rsa * self.number_of_bands * self.bandwidth *
+        adjusted_size = np.cbrt(self.box_size**3 - self.number_of_bands * self.bandwidth *
                                 self.box_size**2)
+
         Bot.get_rve_input(bs=adjusted_size)
         return Bot.rve_inp  # This is the RVE-Input data
 
@@ -175,7 +172,8 @@ class DataTask3D:
 
         if self.gan_flag:
             self.logger.info("RVE generation process has started...")
-            phase1 = self.sample_gan_input(size=500)
+            phase1 = self.sample_gan_input(size=800)
+            print(phase1)
             phase2 = None
 
             # Processing mit shrinken - directly here, because the output from the gan is a dataFrame
@@ -195,6 +193,15 @@ class DataTask3D:
                            'final_volume': final_volume_phase1}
             grains_df = pd.DataFrame(phase1_dict)
             grains_df['phaseID'] = 1
+
+            grains_df.sort_values(by='final_volume', inplace=True, ascending=False)
+            grains_df.reset_index(inplace=True, drop=True)
+            grains_df['GrainID'] = grains_df.index
+            total_volume = sum(grains_df['final_volume'].values)
+            estimated_boxsize = np.cbrt(total_volume)
+            self.logger.info(
+                "the total volume of your dataframe is {}. A boxsize of {} is recommended.".format(total_volume,
+                                                                                                   estimated_boxsize))
 
         discrete_RSA_obj = DiscreteRsa3D(self.box_size, self.n_pts,
                                          grains_df['a'].tolist(),

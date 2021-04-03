@@ -118,7 +118,7 @@ class DiscreteRsa3D:
 
         i = 1
         attempt = 0
-        while i < self.n_grains + 1 | attempt < 1000:
+        while i < self.n_grains + 1 | attempt < 5000:
             t_0 = datetime.datetime.now()
             free_points_old = np.count_nonzero(rsa == 0)
             band_points_old = np.count_nonzero(rsa == -200)

@@ -329,7 +329,7 @@ class Reconstructor:
         max_volume = bs*bs*bs
         grain_vol = 0
         data = self.result_df.copy()
-
+        print(data)
         inp_list = list()
         while grain_vol < max_volume:
             idx = np.random.randint(0, data.__len__())
