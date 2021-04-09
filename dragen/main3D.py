@@ -208,10 +208,8 @@ class DataTask3D:
                                          grains_df['b'].tolist(),
                                          grains_df['c'].tolist(),
                                          grains_df['slope'].tolist(), store_path=store_path)
-
-        with open(store_path + '/discrete_input_vol.csv', 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(grains_df)
+        # Write out the grain data
+        grains_df.to_csv(store_path + '/discrete_input_vol.csv', index=False)
 
         if self.number_of_bands > 0:
             # initialize empty grid_array for bands called band_array
@@ -259,6 +257,7 @@ class DataTask3D:
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = i + 2
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 2, 'phaseID'] = 2
 
+            # Mesher
             mesher_obj = Mesher(periodic_rve_df, store_path=store_path, phase_two_isotropic=True, animation=False)
             mesher_obj.mesh_and_build_abaqus_model()
 
