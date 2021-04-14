@@ -16,7 +16,8 @@ from dragen.generation import mesher
 
 class DataTask2D:
 
-    def __init__(self, box_size=50, n_pts=100, number_of_bands=0, bandwidth=3, shrink_factor=0.5, file1=None, file2=None, gui_flag=False):
+    def __init__(self, box_size=50, n_pts=100, number_of_bands=0, bandwidth=3, shrink_factor=0.5,
+                 file1=None, file2=None, gui_flag=False, anim_flag=False):
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.n_pts = n_pts  # has to be even
@@ -26,12 +27,15 @@ class DataTask2D:
         self.bandwidth = bandwidth
         self.shrink_factor = np.cbrt(shrink_factor)
         self.gui_flag = gui_flag
-        if not gui_flag:
-            main_dir = sys.argv[0][:-14]
+        self.anim_flag = anim_flag
+        if not anim_flag:
+            main_dir = sys.argv[0][:-31] # prior: -14
             os.chdir(main_dir)
+            self.animation = False
         else:
             main_dir = sys.argv[0][:-31]
             os.chdir(main_dir)
+            self.animation = True
         self.file1 = file1
         self.file2 = file2
         self.utils_obj = RVEUtils(self.box_size, self.n_pts, self.bandwidth)
