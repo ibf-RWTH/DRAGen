@@ -66,7 +66,7 @@ class DataTask2D:
             phase2 = self.file2
 
         self.logger.info("RVE generation process has started...")
-        phase1_a, phase1_b, phase1_slope = self.utils_obj.read_input(phase1, dimension)
+        phase1_a, phase1_b, phase1_slope, phase1_phi1, phase1_PHI, phase1_phi2 = self.utils_obj.read_input(phase1, dimension)
         final_volume_phase1 = [(phase1_a[i] * phase1_b[i] * np.pi) for i in range(len(phase1_a))]
         phase1_a_shrinked = [phase1_a_i * self.shrink_factor for phase1_a_i in phase1_a]
         phase1_b_shrinked = [phase1_b_i * self.shrink_factor for phase1_b_i in phase1_b]
@@ -74,12 +74,16 @@ class DataTask2D:
         phase1_dict = {'a': phase1_a_shrinked,
                        'b': phase1_b_shrinked,
                        'slope': phase1_slope,
+                       'phi1': phase1_phi1,
+                       'PHI': phase1_PHI,
+                       'phi2': phase1_phi2,
                        'final_volume': final_volume_phase1}
         grains_df = pd.DataFrame(phase1_dict)
         grains_df['phaseID'] = 1
+        print(grains_df)
 
         if phase2 is not None:
-            phase2_a, phase2_b, phase2_slope= self.utils_obj.read_input(phase2, dimension)
+            phase2_a, phase2_b, phase2_slope, phase2_phi1, phase2_PHI, phase2_phi2 = self.utils_obj.read_input(phase2, dimension)
             final_volume_phase2 = [(phase2_a[i] * phase2_b[i] * np.pi) for i in range(len(phase2_a))]
             phase2_a_shrinked = [phase2_a[i] * self.shrink_factor for i in range(len(phase2_a))]
             phase2_b_shrinked = [phase2_b[i] * self.shrink_factor for i in range(len(phase2_b))]
@@ -87,6 +91,9 @@ class DataTask2D:
             phase2_dict = {'a': phase2_a_shrinked,
                            'b': phase2_b_shrinked,
                            'slope': phase2_slope,
+                           'phi1': phase2_phi1,
+                           'PHI': phase2_PHI,
+                           'phi2': phase2_phi2,
                            'final_volume': final_volume_phase2}
 
             grains_phase2_df = pd.DataFrame(phase2_dict)
