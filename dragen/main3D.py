@@ -19,10 +19,10 @@ from InputGenerator.linking import Reconstructor
 
 class DataTask3D:
 
-    def __init__(self, box_size=30, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5, band_ratio_rsa=0.95,
-                 band_ratio_final=0.95,
+    def __init__(self, box_size=30, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5,
                  file1=None, file2=None,
-                 gui_flag=True, gan_flag=False):
+                 gui_flag=True, gan_flag=False,
+                 band_ratio_rsa=0.95, band_ratio_final=0.95):
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.n_pts = n_pts  # has to be even
