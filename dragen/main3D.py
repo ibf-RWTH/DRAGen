@@ -21,7 +21,7 @@ class DataTask3D:
 
     def __init__(self, box_size=30, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5,
                  file1=None, file2=None,
-                 gui_flag=True, gan_flag=False,
+                 gui_flag=True, anim_flag=False, gan_flag=False,
                  band_ratio_rsa=0.95, band_ratio_final=0.95):
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
@@ -34,8 +34,9 @@ class DataTask3D:
         self.band_ratio_rsa = band_ratio_rsa            # Band Ratio for RSA
         self.band_ratio_final = band_ratio_final        # Band ratio for Tesselator - final is br1 * br2
         self.gui_flag = gui_flag
+        self.anim_flag = anim_flag
         self.gan_flag = gan_flag
-        if not gui_flag:
+        if not anim_flag:
             main_dir = sys.argv[0][:-31] # setting main_dir to root_dir by checking path of current file
             os.chdir(main_dir)
             self.animation = False

@@ -57,13 +57,15 @@ def rveGeneration(file1, file2):
     if dimension_input.get() == 2:
         obj = DataTask2D(box_size=int(box_size_input.get()), n_pts=int(points_input.get()),
                          number_of_bands=int(bands_input.get()), bandwidth=float(bandwidth_input.get()),
-                         shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2, gui_flag=gen_anim.get())
+                         shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2,
+                         gui_flag=True, anim_flag=gen_anim.get())
         grains_df = obj.initializations(dimension=dim)
 
     elif dimension_input.get() == 3:
         obj = DataTask3D(box_size=int(box_size_input.get()), n_pts=int(points_input.get()),
                          number_of_bands=int(bands_input.get()), bandwidth=float(bandwidth_input.get()),
-                         shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2, gui_flag=gen_anim.get())
+                         shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2,
+                         gui_flag=True, anim_flag=gen_anim.get())
         grains_df = obj.initializations(dimension=dim)
 
     for i in range(last_RVE):
