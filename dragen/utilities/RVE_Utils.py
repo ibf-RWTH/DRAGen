@@ -48,12 +48,14 @@ class RVEUtils:
                 radius_b.append(rad)
         else:
             radius_b = radius_a
+            self.logger.info('No "b" in given .csv-Inputfile! Assumption: b = a')
 
         if 'c' in data.head(0) and data['c'].count() != 0:
             for rad in data['c']:
                 radius_c.append(rad)
         else:
             radius_c = radius_a
+            self.logger.info('No "c" in given .csv-Inputfile! Assumption: c = a')
 
         if 'Slope' in data.head(0) and data['Slope'].count() != 0:
             for ang in data['Slope']:
