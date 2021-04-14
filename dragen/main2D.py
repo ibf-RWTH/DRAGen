@@ -25,7 +25,7 @@ class DataTask2D:
         self.step_half = self.bin_size / 2
         self.number_of_bands = number_of_bands
         self.bandwidth = bandwidth
-        self.shrink_factor = np.cbrt(shrink_factor)
+        self.shrink_factor = np.sqrt(shrink_factor)
         self.gui_flag = gui_flag
         self.anim_flag = anim_flag
 
@@ -35,10 +35,11 @@ class DataTask2D:
             main_dir = sys.argv[0][:-31]  # setting main_dir to root_dir by checking path of current file
         os.chdir(main_dir)
 
-        if not anim_flag:
+        """if not anim_flag:
             self.animation = False
         else:
-            self.animation = True
+            self.animation = True"""
+        self.animation = anim_flag
 
         self.file1 = file1
         self.file2 = file2

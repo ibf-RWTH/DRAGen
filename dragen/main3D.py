@@ -43,10 +43,11 @@ class DataTask3D:
             main_dir = sys.argv[0][:-31]  # setting main_dir to root_dir by checking path of current file
         os.chdir(main_dir)
 
-        if not anim_flag:
+        """if not anim_flag:
             self.animation = False
         else:
-            self.animation = True
+            self.animation = True"""
+        self.animation = anim_flag
 
         self.file1 = file1
         self.file2 = file2
