@@ -1,5 +1,7 @@
 import sys
-from tkinter import ttk, messagebox, Toplevel, Tk, DoubleVar, Spinbox, Label, Button, W, Checkbutton, BooleanVar
+from tkinter import ttk, messagebox, Toplevel, Tk, DoubleVar, Spinbox, Label, Button, W, E, Checkbutton, BooleanVar, Text
+from tkinter import END
+from PIL import ImageTk, Image
 import multiprocessing
 from tkinter.filedialog import askopenfilename
 from tkinter import Checkbutton, BooleanVar, IntVar,Radiobutton
@@ -12,19 +14,29 @@ def open_file1():
     global name1
     name1 = askopenfilename(title="Select file", filetypes=(("CSV Files", "*.csv"),))
     if name1:
-        i = Label(root, text=name1).grid(row=16, column=1, sticky=W, padx=3, pady=3)
+        i.delete("1.0", END)
+        i.insert(END, name1)
 
 
 def open_file2():
     global name2
     name2 = askopenfilename(title="Select file", filetypes=(("CSV Files", "*.csv"),))
     if name2:
-        j = Label(root, text=name2).grid(row=20, column=1, sticky=W, padx=3, pady=3)
+        j.delete("1.0", END)
+        j.insert(END, name2)
 
 
 root = Tk()
 root.title("DRAGen - a RVE Generator Tool")
-root.geometry('550x480')  # (width x length)
+root.geometry('900x600')  # (width x length)
+#root.resizable(height=False, width=False)
+
+img = Image.open('./Logo.png')
+width, height = img.size
+img = img.resize((width//2, height//2))
+logo = ImageTk.PhotoImage(img)
+panel = Label(root, image=logo)
+panel.grid(row=1, column=5, columnspan=3, rowspan=20, sticky=W, padx=10, pady=3)
 
 var = DoubleVar(value=22)  # initial value
 box_size_input = Spinbox(root, from_=10, to=100, width=10, textvariable=var)
@@ -36,8 +48,8 @@ bands_input = Spinbox(root, from_=0, to=100, width=10)
 var = DoubleVar(value=3)  # initial value
 bandwidth_input = Spinbox(root, from_=1, to=100, width=10, increment=.1, textvariable=var)
 #dimension_input = Spinbox(root, from_=2, to=3, width=10)
-first_input_file = Button(root, text='Upload 1', command=open_file1)
-second_input_file = Button(root, text='Upload 2', command=open_file2)
+first_input_file = Button(root, text='Phase 1', command=open_file1)
+second_input_file = Button(root, text='Phase 2', command=open_file2)
 var = DoubleVar(value=1)  # initial value
 number_of_rve_input = Spinbox(root, from_=1, to=100, width=10, textvariable=var)
 gen_anim = BooleanVar() #Generating Animation
@@ -47,6 +59,14 @@ dimension_input=IntVar()
 dimension_input.set(3) #Choose between 2D/3D RVE Default:3D
 twoD_cbox= Radiobutton(root, text = "2D RVE", variable = dimension_input,value=2)
 thrD_cbox= Radiobutton(root, text = "3D RVE", variable = dimension_input,value=3)
+
+i = Text(root, height=1, width=40)
+i.grid(row=16, column=1, columnspan=4, sticky=W, padx=3, pady=3)
+i.insert(END,'Chose a csv-file for the first phase!')
+
+j = Text(root, height=1, width=40)
+j.grid(row=19, column=1, columnspan=4, sticky=W, padx=3, pady=3)
+j.insert(END, 'Chose a csv-file for the second phase!')
 
 def rveGeneration(file1, file2):
     last_RVE = int(number_of_rve_input.get())
@@ -109,7 +129,7 @@ class MainApplication(ttk.Frame):
         ttk.Frame.__init__(self, parent, *args, **kwargs)
         self.parent = parent
 
-        a = Label(root, text="Boxsize: ", anchor='w').grid(row=0, column=0, sticky=W, padx=5, pady=5)
+        a = Label(root, text="Boxsize: ", ).grid(row=0, column=0, sticky=W, padx=5, pady=5)
         b = Label(root, text="Number of points on edge: ").grid(row=2, column=0, sticky=W, padx=5, pady=5)
         c = Label(root, text="Packing ratio: ").grid(row=4, column=0, sticky=W, padx=5, pady=5)
         d = Label(root, text="Number of bands: ").grid(row=6, column=0, sticky=W, padx=5, pady=5)
@@ -118,20 +138,21 @@ class MainApplication(ttk.Frame):
         o = Label(root, text="Number of RVEs required: ").grid(row=12, column=0, sticky=W, padx=5, pady=5)
         g = Label(root, text="Upload first input file*: ").grid(row=14, column=0, sticky=W, padx=5, pady=5)
         h = Label(root, text="Upload second input file: ").grid(row=18, column=0, sticky=W, padx=5, pady=5)
+
         k = Label(root, text="* Required").grid(row=24, column=0, sticky=W, padx=5, pady=5)
 
-        box_size_input.grid(row=0, column=1)
-        points_input.grid(row=2, column=1)
-        pack_ratio_input.grid(row=4, column=1)
-        bands_input.grid(row=6, column=1)
-        bandwidth_input.grid(row=8, column=1)
-        twoD_cbox.grid(row=10, column=2)
-        thrD_cbox.grid(row=10, column=1)
+        box_size_input.grid(row=0, column=1, sticky=W, padx=5, pady=5)
+        points_input.grid(row=2, column=1, sticky=W, padx=5, pady=5)
+        pack_ratio_input.grid(row=4, column=1, sticky=W, padx=5, pady=5)
+        bands_input.grid(row=6, column=1, sticky=W, padx=5, pady=5)
+        bandwidth_input.grid(row=8, column=1, sticky=W, padx=5, pady=5)
+        twoD_cbox.grid(row=10, column=2, sticky=W, padx=5, pady=5)
+        thrD_cbox.grid(row=10, column=1, sticky=W, padx=5, pady=5)
         #dimension_input.grid(row=10, column=1)
-        number_of_rve_input.grid(row=12, column=1)
-        first_input_file.grid(row=14, column=1)
-        second_input_file.grid(row=18, column=1)
-        cbox.grid(row=19,column=0)
+        number_of_rve_input.grid(row=12, column=1, sticky=W, padx=5, pady=5)
+        first_input_file.grid(row=14, column=1, sticky=W, padx=5, pady=5)
+        second_input_file.grid(row=18, column=1, sticky=W, padx=5, pady=5)
+        cbox.grid(row=19,column=0, sticky=W, padx=5, pady=5)
 
         self.submit_btn = Button(root, text="Submit", command=self.validateData)
         self.submit_btn.grid(row=22, column=0, padx=5, pady=5)
