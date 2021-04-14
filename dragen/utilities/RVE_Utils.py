@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import logging
 import datetime
+from tkinter import messagebox
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -25,32 +26,61 @@ class RVEUtils:
         self.bin_size = box_size / n_pts
         self.step_half = self.bin_size / 2
 
-    @staticmethod
-    def read_input(file_name, dimension) -> tuple:
+    def read_input(self, file_name, dimension) -> tuple:
         """Reads the given input file and returns the volume along with radii and slope list.
         Parameter :
         file_name : String, name of the input file
         """
         data = pd.read_csv(file_name)
-        radius_a, radius_b, radius_c, slope = ([] for i in range(4))
-        if 'a' in data.head(0):
+        radius_a, radius_b, radius_c, slope, tex_phi1, tex_PHI, tex_phi2 = ([] for i in range(7))
+
+        if 'a' in data.head(0) and data['a'].count() != 0:
             for rad in data['a']:
                 radius_a.append(rad)
-        if 'b' in data.head(0):
+        else:
+            print('ERROR: No "a" in given .csv-Inputfile!')
+            messagebox.showinfo(message='No "a" in given .csv-Inputfile!', title='ERROR')
+            self.logger.info('ERROR: No "a" in given .csv-Inputfile!')
+            sys.exit()
+
+        if 'b' in data.head(0) and data['b'].count() != 0:
             for rad in data['b']:
                 radius_b.append(rad)
-        if 'c' in data.head(0):
+        else:
+            radius_b = radius_a
+
+        if 'c' in data.head(0) and data['c'].count() != 0:
             for rad in data['c']:
                 radius_c.append(rad)
+        else:
+            radius_c = radius_a
+
         if 'Slope' in data.head(0) and data['Slope'].count() != 0:
             for ang in data['Slope']:
                 slope.append(ang)
         else:
             slope = [0] * len(radius_a)
+
+        if 'phi1' in data.head(0) and data['phi1'].count() != 0 and 'PHI' in data.head(0) and data['PHI'].count() != 0 \
+                and 'phi2' in data.head(0) and data['phi2'].count() != 0:
+            for tex in data['phi1']:
+                tex_phi1.append(tex)
+            for tex in data['PHI']:
+                tex_PHI.append(tex)
+            for tex in data['phi2']:
+                tex_phi2.append(tex)
+        else:
+            i = 0
+            while i < len(radius_a):
+                tex_phi1.append(int(np.random.rand() * 360))
+                tex_PHI.append(int(np.random.rand() * 360))
+                tex_phi2.append(int(np.random.rand() * 360))
+                i = i+1
+
         if dimension == 3:
-            return radius_a, radius_b, radius_c, slope
+            return radius_a, radius_b, radius_c, slope, tex_phi1, tex_PHI, tex_phi2
         elif dimension == 2:
-            return radius_a, radius_b, slope
+            return radius_a, radius_b, slope, tex_phi1, tex_PHI, tex_phi2
 
     def convert_volume(self, radius_a, radius_b, radius_c):
         """Compute the volume for the given radii.
