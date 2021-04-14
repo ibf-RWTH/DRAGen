@@ -122,7 +122,7 @@ class DataTask3D:
         # Bei GAN-Input braucht man das nicht, weil der Input DIREKT über ein df kommt - therefore if not gan
         if not self.gan_flag:
             self.logger.info("RVE generation process has started...")
-            phase1_a, phase1_b, phase1_c, phase1_slope = self.utils_obj.read_input(phase1, dimension)
+            phase1_a, phase1_b, phase1_c, phase1_slope, phase1_phi1, phase1_PHI, phase1_phi2 = self.utils_obj.read_input(phase1, dimension)
             final_volume_phase1 = [(4 / 3 * phase1_a[i] * phase1_b[i] * phase1_c[i] * np.pi) for i in range(len(phase1_a))]
             phase1_a_shrinked = [phase1_a_i * self.shrink_factor for phase1_a_i in phase1_a]
             phase1_b_shrinked = [phase1_b_i * self.shrink_factor for phase1_b_i in phase1_b]
@@ -132,12 +132,15 @@ class DataTask3D:
                            'b': phase1_b_shrinked,
                            'c': phase1_c_shrinked,
                            'slope': phase1_slope,
+                           'phi1': phase1_phi1,
+                           'PHI': phase1_PHI,
+                           'phi2': phase1_phi2,
                            'final_volume': final_volume_phase1}
             grains_df = pd.DataFrame(phase1_dict)
             grains_df['phaseID'] = 1
 
             if phase2 is not None:
-                phase2_a, phase2_b, phase2_c, phase2_slope = self.utils_obj.read_input(phase2, dimension)
+                phase2_a, phase2_b, phase2_c, phase2_slope, phase2_phi1, phase2_PHI, phase2_phi2 = self.utils_obj.read_input(phase2, dimension)
                 final_volume_phase2 = [(4 / 3 * phase2_a[i] * phase2_b[i] * phase2_c[i] * np.pi) for i in
                                        range(len(phase2_a))]
                 phase2_a_shrinked = [phase2_a_i * self.shrink_factor for phase2_a_i in phase2_a]
@@ -147,6 +150,9 @@ class DataTask3D:
                                'b': phase2_b_shrinked,
                                'c': phase2_c_shrinked,
                                'slope': phase2_slope,
+                               'phi1': phase2_phi1,
+                               'PHI': phase2_PHI,
+                               'phi2': phase2_phi2,
                                'final_volume': final_volume_phase2}
 
                 grains_phase2_df = pd.DataFrame(phase2_dict)
