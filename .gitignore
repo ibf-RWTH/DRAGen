@@ -9,3 +9,7 @@ venv/
 *.vtk
 /gui/
 /dragen/Experimental/
+build/
+dist/
+/gui_main.spec
+/yourscript.spec
