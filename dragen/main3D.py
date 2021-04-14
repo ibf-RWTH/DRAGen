@@ -36,14 +36,18 @@ class DataTask3D:
         self.gui_flag = gui_flag
         self.anim_flag = anim_flag
         self.gan_flag = gan_flag
+
+        if not gui_flag:
+            main_dir = sys.argv[0][:-14]  # setting main_dir to root_dir by checking path of current file
+        else:
+            main_dir = sys.argv[0][:-31]  # setting main_dir to root_dir by checking path of current file
+        os.chdir(main_dir)
+
         if not anim_flag:
-            main_dir = sys.argv[0][:-31] # setting main_dir to root_dir by checking path of current file
-            os.chdir(main_dir)
             self.animation = False
         else:
-            main_dir = sys.argv[0][:-31]
-            os.chdir(main_dir)
             self.animation = True
+
         self.file1 = file1
         self.file2 = file2
         self.utils_obj = RVEUtils(self.box_size, self.n_pts, self.bandwidth)
