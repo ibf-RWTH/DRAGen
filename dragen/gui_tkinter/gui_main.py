@@ -54,16 +54,18 @@ def rveGeneration(file1, file2):
     dim = int(dimension_input.get())
     n = Label(root, text="RVE generation in progress... 0%").grid(row=26, column=1, sticky=W, padx=3, pady=3)
 
-    if dimension_input.get()==2:
-        obj = DataTask2D(int(box_size_input.get()), int(points_input.get()), int(bands_input.get()),
-                       float(bandwidth_input.get()),  float(pack_ratio_input.get()), file1, file2, gen_anim.get())
+    if dimension_input.get() == 2:
+        obj = DataTask2D(box_size=int(box_size_input.get()), n_pts=int(points_input.get()),
+                         number_of_bands=int(bands_input.get()), bandwidth=float(bandwidth_input.get()),
+                         shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2, gui_flag=True)#, NOTgui_flag=gen_anim.get())
         grains_df = obj.initializations(dimension=dim)
-    elif dimension_input.get()==3:
-        obj = DataTask3D(int(box_size_input.get()), int(points_input.get()), int(bands_input.get()),
-                         float(bandwidth_input.get()), float(pack_ratio_input.get()),
-                         file1, file2, gen_anim.get())
 
+    elif dimension_input.get() == 3:
+        obj = DataTask3D(box_size=int(box_size_input.get()), n_pts=int(points_input.get()),
+                         number_of_bands=int(bands_input.get()), bandwidth=float(bandwidth_input.get()),
+                         shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2, gui_flag=True)#, NOTgui_flag=gen_anim.get())
         grains_df = obj.initializations(dimension=dim)
+
     for i in range(last_RVE):
         progress_label = "RVE generation in progress... {}%".format(progress)
         n = Label(root, text=progress_label).grid(row=26, column=1, sticky=W, padx=3, pady=3)
