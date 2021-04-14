@@ -42,7 +42,7 @@ var = DoubleVar(value=1)  # initial value
 number_of_rve_input = Spinbox(root, from_=1, to=100, width=10, textvariable=var)
 gen_anim = BooleanVar() #Generating Animation
 gen_anim.set(False)
-cbox = Checkbutton(root, text = "Animation", variable = gen_anim)
+cbox = Checkbutton(root, text = "Visualization", variable = gen_anim)
 dimension_input=IntVar()
 dimension_input.set(3) #Choose between 2D/3D RVE Default:3D
 twoD_cbox= Radiobutton(root, text = "2D RVE", variable = dimension_input,value=2)
@@ -57,13 +57,13 @@ def rveGeneration(file1, file2):
     if dimension_input.get() == 2:
         obj = DataTask2D(box_size=int(box_size_input.get()), n_pts=int(points_input.get()),
                          number_of_bands=int(bands_input.get()), bandwidth=float(bandwidth_input.get()),
-                         shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2, gui_flag=True)#, NOTgui_flag=gen_anim.get())
+                         shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2, gui_flag=gen_anim.get())
         grains_df = obj.initializations(dimension=dim)
 
     elif dimension_input.get() == 3:
         obj = DataTask3D(box_size=int(box_size_input.get()), n_pts=int(points_input.get()),
                          number_of_bands=int(bands_input.get()), bandwidth=float(bandwidth_input.get()),
-                         shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2, gui_flag=True)#, NOTgui_flag=gen_anim.get())
+                         shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2, gui_flag=gen_anim.get())
         grains_df = obj.initializations(dimension=dim)
 
     for i in range(last_RVE):
