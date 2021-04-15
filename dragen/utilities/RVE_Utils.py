@@ -74,9 +74,9 @@ class RVEUtils:
         else:
             i = 0
             while i < len(radius_a):
-                tex_phi1.append(int(np.random.rand() * 360))
-                tex_PHI.append(int(np.random.rand() * 360))
-                tex_phi2.append(int(np.random.rand() * 360))
+                tex_phi1.append(round((np.random.rand() * 360), 2))
+                tex_PHI.append(round((np.random.rand() * 360), 2))
+                tex_phi2.append(round((np.random.rand() * 360), 2))
                 i = i+1
 
         if dimension == 3:
