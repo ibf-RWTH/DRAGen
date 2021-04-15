@@ -2,7 +2,7 @@
 
 This repository includes the official implementation of the paper [A Novel Approach to Discrete Representative Volume Element Automation and Generation-DRAGen](https://www.mdpi.com/1996-1944/13/8/1887). It is highly recommended to use Python versions 3.6 to 3.8. For Python 3.9 there are still some problems with PyVista.
 
-![logo](dragen/gui_tkinter/Logo.png)
+![logo](docs/GUI.PNG)
 
 ## Overview
 
