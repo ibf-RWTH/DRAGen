@@ -1,4 +1,5 @@
 import sys
+import os
 from tkinter import ttk, messagebox, Toplevel, Tk, DoubleVar, Spinbox, Label, Button, W, E, Text
 from tkinter import Checkbutton, BooleanVar, IntVar, Radiobutton, END
 from tkinter.filedialog import askopenfilename, askdirectory
@@ -38,7 +39,14 @@ root.geometry('900x700')  # (width x length)
 root.resizable(height=False, width=False)
 
 # set Logo
-img = Image.open('./Logo.png')
+exe = sys.argv[0][-3:]
+exe_flag = False
+if exe == 'exe':
+    exe_flag = True
+    img_path = os.path.abspath(os.getcwd()) + '/dragen/gui_tkinter'
+else:
+    img_path = '.'
+img = Image.open(img_path + '/Logo.png')
 width, height = img.size
 img = img.resize((width//3, height//3))
 logo = ImageTk.PhotoImage(img)
@@ -99,7 +107,7 @@ def rveGeneration(file1, file2):
         obj = DataTask2D(box_size=int(box_size_input.get()), n_pts=int(points_input.get()),
                          number_of_bands=int(bands_input.get()), bandwidth=float(bandwidth_input.get()),
                          shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2,
-                         store_path=root_dir_text, gui_flag=True, anim_flag=gen_visuals.get())
+                         store_path=str(root_dir_text), gui_flag=True, anim_flag=gen_visuals.get(), exe_flag=False)
         grains_df = obj.initializations(dimension=dim)
 
     elif dimension_input.get() == 3:
