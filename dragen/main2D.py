@@ -17,7 +17,7 @@ from dragen.generation import mesher
 class DataTask2D:
 
     def __init__(self, box_size=50, n_pts=100, number_of_bands=0, bandwidth=3, shrink_factor=0.5,
-                 file1=None, file2=None, gui_flag=False, anim_flag=False):
+                 file1=None, file2=None, store_path=None, gui_flag=False, anim_flag=False):
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.n_pts = n_pts  # has to be even
@@ -27,18 +27,19 @@ class DataTask2D:
         self.bandwidth = bandwidth
         self.shrink_factor = np.sqrt(shrink_factor)
         self.gui_flag = gui_flag
-        self.anim_flag = anim_flag
 
+        exe = sys.argv[0][-3:]
+        exe_flag = False
+        self.root_dir = './'
+        if exe == 'exe':
+            exe_flag = True
+            self.root_dir = store_path
         if not gui_flag:
-            main_dir = sys.argv[0][:-14]  # setting main_dir to root_dir by checking path of current file
-        else:
-            main_dir = sys.argv[0][:-31]  # setting main_dir to root_dir by checking path of current file
-        os.chdir(main_dir)
+            self.root_dir = sys.argv[0][:-14]  # setting root_dir to root_dir by checking path of current file
+        elif gui_flag and not exe_flag:
+            self.root_dir = sys.argv[0][:-31]  # setting root_dir to root_dir by checking path of current file
 
-        """if not anim_flag:
-            self.animation = False
-        else:
-            self.animation = True"""
+
         self.animation = anim_flag
 
         self.file1 = file1
@@ -46,7 +47,7 @@ class DataTask2D:
         self.utils_obj = RVEUtils(self.box_size, self.n_pts, self.bandwidth)
 
     def setup_logging(self):
-        LOGS_DIR = 'Logs/'
+        LOGS_DIR = self.root_dir + '/Logs/'
         if not os.path.isdir(LOGS_DIR):
             os.makedirs(LOGS_DIR)
         f_handler = logging.handlers.TimedRotatingFileHandler(
@@ -59,8 +60,8 @@ class DataTask2D:
     def initializations(self, dimension):
         self.setup_logging()
         if not self.gui_flag:
-            phase1 = './ExampleInput/ferrite_54_grains.csv'
-            phase2 = './ExampleInput/pearlite_22_grains.csv'
+            phase1 = self.root_dir + '/ExampleInput/ferrite_54_grains.csv'
+            phase2 = self.root_dir + '/ExampleInput/pearlite_22_grains.csv'
         else:
             phase1 = self.file1
             phase2 = self.file2
@@ -111,12 +112,12 @@ class DataTask2D:
         return grains_df
 
     def rve_generation(self, epoch, grains_df):
-        store_path = 'OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
+        store_path = self.root_dir + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
         if not os.path.isdir(store_path):
             os.makedirs(store_path)
             os.makedirs(store_path + '/Figs')
         discrete_RSA_obj = DiscreteRsa2D(self.box_size, self.n_pts, grains_df['a'].tolist(),
-                                         grains_df['b'].tolist(), grains_df['slope'].tolist(), store_path= store_path)
+                                         grains_df['b'].tolist(), grains_df['slope'].tolist(), store_path=store_path)
 
         with open(store_path + '/discrete_input_vol.csv', 'w', newline='') as f:
             writer = csv.writer(f)
