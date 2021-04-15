@@ -25,7 +25,7 @@ def open_file2():
 
 # initialize main_window
 root = Tk()
-root.title("DRAGen - a RVE Generator Tool")
+root.title("DRAGen - RVE Generator Tool")
 root.geometry('900x600')  # (width x length)
 root.resizable(height=False, width=False)
 
