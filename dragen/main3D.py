@@ -39,12 +39,11 @@ class DataTask3D:
 
         if exe_flag:
             self.root_dir = store_path
-            print(store_path)
         if not gui_flag:
             self.root_dir = sys.argv[0][:-14]  # setting root_dir to root_dir by checking path of current file
         elif gui_flag and not exe_flag:
             self.root_dir = store_path
-            print(store_path)
+
 
         self.logger.info('the exe_flag is: ' + str(exe_flag))
         self.logger.info('root was set to: ' + self.root_dir)

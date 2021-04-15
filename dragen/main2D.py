@@ -35,8 +35,7 @@ class DataTask2D:
         if not gui_flag:
             self.root_dir = sys.argv[0][:-14]  # setting root_dir to root_dir by checking path of current file
         elif gui_flag and not exe_flag:
-            self.root_dir = sys.argv[0][:-31]  # setting root_dir to root_dir by checking path of current file
-
+            self.root_dir = store_path
 
         self.animation = anim_flag
 
