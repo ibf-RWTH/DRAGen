@@ -270,7 +270,9 @@ class DataTask3D:
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 2, 'phaseID'] = 2
 
             # Mesher
-            mesher_obj = Mesher(periodic_rve_df, store_path=store_path, phase_two_isotropic=True, animation=False)
+            mesher_obj = Mesher(periodic_rve_df, store_path=store_path, phase_two_isotropic=True, animation=False,
+                                tex_phi1=grains_df['phi1'].tolist(), tex_PHI=grains_df['PHI'].tolist(),
+                                tex_phi2=grains_df['phi2'].tolist())
             mesher_obj.mesh_and_build_abaqus_model()
 
         self.logger.info("RVE generation process has successfully completed...")
