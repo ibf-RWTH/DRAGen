@@ -17,7 +17,7 @@ from dragen.generation import mesher
 class DataTask2D:
 
     def __init__(self, box_size=50, n_pts=100, number_of_bands=0, bandwidth=3, shrink_factor=0.5,
-                 file1=None, file2=None, store_path=None, gui_flag=False, anim_flag=False):
+                 file1=None, file2=None, store_path=None, gui_flag=False, anim_flag=False, exe_flag=False):
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.n_pts = n_pts  # has to be even
@@ -27,12 +27,10 @@ class DataTask2D:
         self.bandwidth = bandwidth
         self.shrink_factor = np.sqrt(shrink_factor)
         self.gui_flag = gui_flag
+        self.exe_flag = exe_flag
 
-        exe = sys.argv[0][-3:]
-        exe_flag = False
         self.root_dir = './'
-        if exe == 'exe':
-            exe_flag = True
+        if exe_flag:
             self.root_dir = store_path
         if not gui_flag:
             self.root_dir = sys.argv[0][:-14]  # setting root_dir to root_dir by checking path of current file
@@ -61,7 +59,7 @@ class DataTask2D:
         self.setup_logging()
         if not self.gui_flag:
             phase1 = self.root_dir + '/ExampleInput/ferrite_54_grains.csv'
-            phase2 = self.root_dir + '/ExampleInput/pearlite_22_grains.csv'
+            phase2 = self.root_dir + '/ExampleInput/pearlite_21_grains.csv'
         else:
             phase1 = self.file1
             phase2 = self.file2
