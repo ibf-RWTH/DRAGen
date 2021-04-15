@@ -12,14 +12,14 @@ from dragen.utilities.RVE_Utils import RVEUtils
 
 class DiscreteRsa3D:
 
-    def __init__(self, box_size, n_pts, a, b, c, slope, store_path, debug=False):
+    def __init__(self, box_size, n_pts, a, b, c, alpha, store_path, debug=False):
 
         self.box_size = box_size
         self.n_pts = n_pts
         self.a = a
         self.b = b
         self.c = c
-        self.slope = slope
+        self.alpha = alpha
         self.store_path = store_path
         self.debug = debug
 
@@ -37,6 +37,7 @@ class DiscreteRsa3D:
         a = self.a
         b = self.b
         c = self.c
+        alpha = self.alpha
         print(iterator)
         slope = self.slope
         unoccupied_pts_x, unoccupied_pts_y, unoccupied_pts_z = np.where(array == 0)
@@ -56,13 +57,13 @@ class DiscreteRsa3D:
         a = a[iterator]
         b = b[iterator]
         c = c[iterator]
-        slope = slope[iterator]
+        alpha = alpha[iterator]
 
         """ellipse = (x_grid - x_0) ** 2 / (a ** 2) + \
                   (y_grid - y_0) ** 2 / (b ** 2) + \
                   (z_grid - z_0) ** 2 / (c ** 2)"""
 
-        ellipsoid = self.rve_utils_object.ellipsoid(a, b, c, x_0, y_0, z_0, slope=slope)
+        ellipsoid = self.rve_utils_object.ellipsoid(a, b, c, x_0, y_0, z_0, alpha=alpha)
 
         time_elapse = datetime.datetime.now() - t_0
         if self.debug:

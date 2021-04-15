@@ -127,7 +127,7 @@ class DataTask3D:
         # Bei GAN-Input braucht man das nicht, weil der Input DIREKT über ein df kommt - therefore if not gan
         if not self.gan_flag:
             self.logger.info("RVE generation process has started...")
-            phase1_a, phase1_b, phase1_c, phase1_slope, phase1_phi1, phase1_PHI, phase1_phi2 = self.utils_obj.read_input(phase1, dimension)
+            phase1_a, phase1_b, phase1_c, phase1_alpha, phase1_phi1, phase1_PHI, phase1_phi2 = self.utils_obj.read_input(phase1, dimension)
             final_volume_phase1 = [(4 / 3 * phase1_a[i] * phase1_b[i] * phase1_c[i] * np.pi) for i in range(len(phase1_a))]
             phase1_a_shrinked = [phase1_a_i * self.shrink_factor for phase1_a_i in phase1_a]
             phase1_b_shrinked = [phase1_b_i * self.shrink_factor for phase1_b_i in phase1_b]
@@ -136,7 +136,7 @@ class DataTask3D:
             phase1_dict = {'a': phase1_a_shrinked,
                            'b': phase1_b_shrinked,
                            'c': phase1_c_shrinked,
-                           'slope': phase1_slope,
+                           'alpha': phase1_alpha,
                            'phi1': phase1_phi1,
                            'PHI': phase1_PHI,
                            'phi2': phase1_phi2,
@@ -145,7 +145,7 @@ class DataTask3D:
             grains_df['phaseID'] = 1
 
             if phase2 is not None:
-                phase2_a, phase2_b, phase2_c, phase2_slope, phase2_phi1, phase2_PHI, phase2_phi2 = self.utils_obj.read_input(phase2, dimension)
+                phase2_a, phase2_b, phase2_c, phase2_alpha, phase2_phi1, phase2_PHI, phase2_phi2 = self.utils_obj.read_input(phase2, dimension)
                 final_volume_phase2 = [(4 / 3 * phase2_a[i] * phase2_b[i] * phase2_c[i] * np.pi) for i in
                                        range(len(phase2_a))]
                 phase2_a_shrinked = [phase2_a_i * self.shrink_factor for phase2_a_i in phase2_a]
@@ -154,7 +154,7 @@ class DataTask3D:
                 phase2_dict = {'a': phase2_a_shrinked,
                                'b': phase2_b_shrinked,
                                'c': phase2_c_shrinked,
-                               'slope': phase2_slope,
+                               'alpha': phase2_alpha,
                                'phi1': phase2_phi1,
                                'PHI': phase2_PHI,
                                'phi2': phase2_phi2,
@@ -191,7 +191,7 @@ class DataTask3D:
             phase1_a = phase1['a'].tolist()
             phase1_b = phase1['b'].tolist()
             phase1_c = phase1['c'].tolist()
-            phase1_slope = phase1['slope']
+            phase1_alpha = phase1['alpha']
             final_volume_phase1 = [(4 / 3 * phase1_a[i] * phase1_b[i] * phase1_c[i] * np.pi) for i in
                                    range(len(phase1_a))]
             phase1_a_shrinked = [phase1_a_i * self.shrink_factor for phase1_a_i in phase1_a]
@@ -200,7 +200,7 @@ class DataTask3D:
             phase1_dict = {'a': phase1_a_shrinked,
                            'b': phase1_b_shrinked,
                            'c': phase1_c_shrinked,
-                           'slope': phase1_slope,
+                           'alpha': phase1_alpha,
                            'final_volume': final_volume_phase1}
             grains_df = pd.DataFrame(phase1_dict)
             grains_df['phaseID'] = 1
@@ -218,7 +218,7 @@ class DataTask3D:
                                          grains_df['a'].tolist(),
                                          grains_df['b'].tolist(),
                                          grains_df['c'].tolist(),
-                                         grains_df['slope'].tolist(), store_path=store_path)
+                                         grains_df['alpha'].tolist(), store_path=store_path)
         # Write out the grain data
         grains_df.to_csv(store_path + '/discrete_input_vol.csv', index=False)
 
@@ -246,7 +246,7 @@ class DataTask3D:
                                                      grains_df['a'].tolist(),
                                                      grains_df['b'].tolist(),
                                                      grains_df['c'].tolist(),
-                                                     grains_df['slope'].tolist(),
+                                                     grains_df['alpha'].tolist(),
                                                      x_0_list, y_0_list, z_0_list,
                                                      grains_df['final_volume'].tolist(),
                                                      self.shrink_factor, self.band_ratio_final, store_path)
@@ -312,7 +312,9 @@ class DataTask3D:
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 2, 'phaseID'] = 2
 
             # Mesher
-            mesher_obj = Mesher(periodic_rve_df, store_path=store_path, phase_two_isotropic=True, animation=False)
+            mesher_obj = Mesher(periodic_rve_df, store_path=store_path, phase_two_isotropic=True, animation=False,
+                                tex_phi1=grains_df['phi1'].tolist(), tex_PHI=grains_df['PHI'].tolist(),
+                                tex_phi2=grains_df['phi2'].tolist())
             mesher_obj.mesh_and_build_abaqus_model()
 
         self.logger.info("RVE generation process has successfully completed...")
