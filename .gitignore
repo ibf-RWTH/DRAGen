@@ -12,3 +12,4 @@ build/
 dist/
 /gui_main.spec
 /yourscript.spec
+/gui_main.exe.lnk
