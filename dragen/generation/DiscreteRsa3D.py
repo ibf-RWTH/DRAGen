@@ -5,6 +5,7 @@ import random
 import sys
 import datetime
 import logging
+from scipy.ndimage import convolve
 
 from dragen.utilities.RVE_Utils import RVEUtils
 
@@ -36,6 +37,7 @@ class DiscreteRsa3D:
         a = self.a
         b = self.b
         c = self.c
+        print(iterator)
         slope = self.slope
         unoccupied_pts_x, unoccupied_pts_y, unoccupied_pts_z = np.where(array == 0)
         unoccupied_tuples = [*zip(unoccupied_pts_x, unoccupied_pts_y, unoccupied_pts_z)]
@@ -82,8 +84,9 @@ class DiscreteRsa3D:
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array > 0) | (array == -200))], s=1, vmin=-20,  vmax=n_grains, cmap='seismic')
-        #ax.scatter(grains_x, grains_y, grains_z, c='r', s=1)
+        ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array > 0) | (array == -200))], s=1, vmin=-20,
+                   vmax=n_grains, cmap='seismic')
+        # ax.scatter(grains_x, grains_y, grains_z, c='r', s=1)
 
         ax.set_xlim(-5, self.box_size + 5)
         ax.set_ylim(-5, self.box_size + 5)
@@ -91,8 +94,8 @@ class DiscreteRsa3D:
         ax.set_xlabel('x (µm)')
         ax.set_ylabel('y (µm)')
         ax.set_zlabel('z (µm)')
-        #ax.view_init(90, 270)
-        #plt.show()
+        # ax.view_init(90, 270)
+        # plt.show()
         plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}.png'.format(iterator, attempt))
         plt.close(fig)
         time_elapse = datetime.datetime.now() - t_0
@@ -124,7 +127,7 @@ class DiscreteRsa3D:
             band_points_old = np.count_nonzero(rsa == -200)
             grain = rsa_boundaries.copy()
             backup_rsa = rsa.copy()
-            ellipsoid, x0, y0, z0 = self.gen_ellipsoid(rsa, iterator=i-1)
+            ellipsoid, x0, y0, z0 = self.gen_ellipsoid(rsa, iterator=i - 1)
             grain[(ellipsoid <= 1) & ((grain == 0) | (grain == -200))] = i
             periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipsoid, iterator=i)
             rsa[(periodic_grain == i) & ((rsa == 0) | (rsa == -200))] = i
@@ -136,9 +139,9 @@ class DiscreteRsa3D:
             band_points = np.count_nonzero(rsa == -200)
             if band_points_old > 0:
                 if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)) | \
-                        (band_points/band_vol_0 < bandratio):
+                        (band_points / band_vol_0 < bandratio):
                     print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
-                    print('ratio:', (band_points/band_vol_0 > bandratio))
+                    print('ratio:', (band_points / band_vol_0 > bandratio))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
 
@@ -150,7 +153,8 @@ class DiscreteRsa3D:
                     attempt = 0
                     if self.debug:
                         time_elapse = datetime.datetime.now() - t_0
-                        self.logger.info('total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()) )
+                        self.logger.info(
+                            'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
             else:
                 if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)):
                     print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
@@ -173,6 +177,79 @@ class DiscreteRsa3D:
             self.logger.info("Not all grains could be placed please decrease shrinkfactor!")
         return rsa, x_0_list, y_0_list, z_0_list, status
 
+    def run_rsa_inclusions(self, rve, animation=False):
+        """
+        RSA-Algorithm to place Inclusions in the RVE: The main difference between the inclusions and "normal" (e.g.
+        ferrite-grains is, that the inclusions don't grow and cannot be placed on grain boundaries, only directly in a
+        grain. This is because the inclusions serve as a initiation site for grains during the recrystallization.
+
+        The inclusions are sampled from the passed GAN-object directly and are assigned to one phase, which is purely
+        elastic (so identifier -200 and therefore phaseID = 2 at the moment (14.04.2021)
+
+        Parameters:
+            -rve: completely tesselated rve after the tesselation and before the mesher
+            -animation: Flag for animation
+
+        Behavior very similar to the "vanilla" rsa. The gen-ellipsoid method places where the array is 0. So create an
+        array which has 0's everywhere except for the grain boundaries. Use this for place-determination, place in the
+        normal rve
+
+        Creation of this 0/1 rve either with sobel-Filter/Convolution of the 3D-Array or with sets
+
+        The vanilla-RSA works with free_points_old - free_points == np.count_nonzero(grain_points)
+        """
+
+        # Startup
+        status = False
+        fil = np.asarray([[[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]],
+                          [[-1, -1, -1], [-1, 26, -1], [-1, -1, -1]],
+                          [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]])
+        coords = np.where(convolve(rve, fil, mode='reflect') > 0)  # Heart of the process
+        new_rve = np.zeros(shape=(self.n_pts * 2, self.n_pts * 2, self.n_pts * 2))
+        new_rve[coords] = 1000  # High value - Has 1000 for edges, and 0 elsewhere
+        new_rve = self.rve_utils_object.gen_boundaries_3D(new_rve)
+        inc_rve = rve.copy()
+
+        i = 1
+        attempt = 0
+        print(self.n_grains)
+        while i < self.n_grains | attempt < 200:
+            # TODO: Attempt rate per grain.
+            # TODO: Only a certain number of Inclusions per Grain
+            # TODO: Fix this weird oob-error
+            grain = new_rve.copy()
+            backup = inc_rve.copy()
+            print(i)
+            ellipsoid, x0, y0, z0 = self.gen_ellipsoid(new_rve, iterator=i-1)
+            grain[(ellipsoid <= 1) & ((grain == 0) | (grain == -200))] = -(200+i)
+            periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipsoid, iterator=-(200+i))
+
+            inc_rve[(periodic_grain == -(200+i)) & ((new_rve == 0) | (new_rve == -200))] = -(200 + i)  # -for Inclusions
+
+            # Checking
+            check = set(rve[np.where(inc_rve == -(200 + i))])
+            '''
+            # Plotting
+            fig = plt.figure(figsize=(20, 20))
+            ax = fig.add_subplot(111, projection='3d')
+            ax.voxels(inc_rve == -(200 + i), facecolors='black')
+            for g in check:
+                ax.voxels(inc_rve == g, facecolors='red', edgecolors='k', shade=True)
+            fig.savefig(self.store_path + '/' + 'TestVoxels3D_{}.png'.format(i))
+            '''
+
+            if check.__len__() > 1:
+                print('Inclusion cuts grain boundary! - Cutted Grains: {}'.format(check))
+                inc_rve = backup.copy()
+                attempt = attempt + 1
+            else:
+                print('Placed inclusion successfully in grain {}'.format(check))
+                i += 1
+            #print(np.unique(inc_rve))
+
+        status = True
+        return inc_rve, status
+
 
 if __name__ == '__main__':
     a = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
@@ -189,12 +266,3 @@ if __name__ == '__main__':
     np.save('./3D_x0_list', x_0_list, allow_pickle=True, fix_imports=True)
     np.save('./3D_y0_list', y_0_list, allow_pickle=True, fix_imports=True)
     np.save('./3D_z0_list', z_0_list, allow_pickle=True, fix_imports=True)
-
-
-
-
-
-
-
-
-

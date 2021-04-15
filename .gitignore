@@ -12,3 +12,7 @@ build/
 dist/
 /gui_main.spec
 /yourscript.spec
+.ipynb_checkpoints/
+dragen/.ipynb_checkpoints/
+dragen/.ipynb_checkpoints
+example

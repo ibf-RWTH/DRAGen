@@ -86,20 +86,20 @@ class DataTask3D:
         print('Created GAN-Object successfully!')
         return GAN
 
-    def sample_gan_input(self, size=1000):
-        TDxBN = self.GAN.sample_batch(label=0, size=1500)
-        RDxBN = self.GAN.sample_batch(label=1, size=1500)
-        RDxTD = self.GAN.sample_batch(label=2, size=1500)
+    def sample_gan_input(self, n_bands=0, bandwith=0, bs=20, labels=(), size=1000):
+        TDxBN = self.GAN.sample_batch(label=labels[0], size=size*2)
+        RDxBN = self.GAN.sample_batch(label=labels[1], size=size*2)
+        RDxTD = self.GAN.sample_batch(label=labels[2], size=size*2)
 
         # Run the Reconstruction
         Bot = Reconstructor(TDxBN, RDxBN, RDxTD, drop=True)
         Bot.run(n_points=size)  # Could take a while with more than 500 points...
 
         # Calculate the Boxsize based on Bands and original size
-        adjusted_size = np.cbrt(self.box_size**3 - self.number_of_bands * self.bandwidth *
-                                self.box_size**2)
+        adjusted_size = np.cbrt(bs**3 - n_bands * bandwith * bs**2)
 
         Bot.get_rve_input(bs=adjusted_size)
+        print(Bot.rve_inp)
         return Bot.rve_inp  # This is the RVE-Input data
 
     def setup_logging(self):
@@ -184,9 +184,8 @@ class DataTask3D:
 
         if self.gan_flag:
             self.logger.info("RVE generation process has started...")
-            phase1 = self.sample_gan_input(size=800)
-            print(phase1)
-            phase2 = None
+            phase1 = self.sample_gan_input(size=800, labels=[0,1,2], bandwith=self.bandwidth,
+                                           n_bands=self.number_of_bands, bs=self.box_size)
 
             # Processing mit shrinken - directly here, because the output from the gan is a dataFrame
             phase1_a = phase1['a'].tolist()
@@ -257,15 +256,58 @@ class DataTask3D:
             self.logger.info("The rsa did not succeed...")
             sys.exit()
 
+        if self.gan_flag:
+            # TODO: Implement inclusions here
+            adjusted_size = self.box_size * 0.5   # 10% as an example
+            inclusions = self.sample_gan_input(size=200, labels=(3,4,5), bs=adjusted_size, n_bands=0, bandwith=0)
+            # Processing mit shrinken - Das könnte mal in eine Funktion :)
+            inclusions_a = inclusions['a'].tolist()
+            inclusions_b = inclusions['b'].tolist()
+            inclusions_c = inclusions['c'].tolist()
+            inclusions_slope = inclusions['slope']
+            final_volume_inclusions = [(4 / 3 * inclusions_a[i] * inclusions_b[i] * inclusions_c[i] * np.pi) for i in
+                                        range(len(inclusions_a))]
+            inclusions_a_shrinked = [inclusions_a_i * self.shrink_factor for inclusions_a_i in inclusions_a]
+            inclusions_b_shrinked = [inclusions_b_i * self.shrink_factor for inclusions_b_i in inclusions_b]
+            inclusions_c_shrinked = [inclusions_c_i * self.shrink_factor for inclusions_c_i in inclusions_c]
+            inclusions_dict = {'a': inclusions_a_shrinked,
+                               'b': inclusions_b_shrinked,
+                               'c': inclusions_c_shrinked,
+                               'slope': inclusions_slope,
+                               'final_volume': final_volume_inclusions}
+            inclusions_df = pd.DataFrame(inclusions_dict)
+            inclusions_df['phaseID'] = 2
+
+            inclusions_df.sort_values(by='final_volume', inplace=True, ascending=False)
+            inclusions_df.reset_index(inplace=True, drop=True)
+            inclusions_df['GrainID'] = inclusions_df.index
+
+            # Todo: Implement the new-RSA here
+            discrete_RSA_inc_obj = DiscreteRsa3D(self.box_size, self.n_pts,
+                                             inclusions_df['a'].tolist(),
+                                             inclusions_df['b'].tolist(),
+                                             inclusions_df['c'].tolist(),
+                                             inclusions_df['slope'].tolist(), store_path=store_path)
+
+            rve, rve_status = discrete_RSA_inc_obj.run_rsa_inclusions(rve, animation=True)
+
+            # Concat both data
+            grains_df = pd.concat([grains_df, inclusions_df])
+            grains_df['GrainID'] = grains_df.index
+
         if rve_status:
+            # TODO: Hier gibt es Probleme mit den IDs denke ich bei den Einschlüssem
             periodic_rve_df = self.utils_obj.repair_periodicity_3D(rve)
             periodic_rve_df['phaseID'] = 0
 
             grains_df.sort_values(by=['GrainID'])
 
             for i in range(len(grains_df)):
+                # Set grain-ID to number of the grain
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1, 'phaseID'] = grains_df['phaseID'][i]
             if self.number_of_bands > 0:
+                # Set the points where == -200 to phase 2 and to grain ID i + 2
+                # TODO: Hier fehlen die Inclusions!! Das muss es sein.
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = i + 2
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 2, 'phaseID'] = 2
 

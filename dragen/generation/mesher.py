@@ -15,7 +15,7 @@ class Mesher:
     def __init__(self, rve: pd.DataFrame, store_path,  phase_two_isotropic=True, animation=True):
         self.rve = rve
         self.store_path = store_path
-        self. phase_two_isotropic = phase_two_isotropic
+        self.phase_two_isotropic = phase_two_isotropic
         self.animation = animation
         self.x_max = int(max(rve.x))
         self.x_min = int(min(rve.x))
