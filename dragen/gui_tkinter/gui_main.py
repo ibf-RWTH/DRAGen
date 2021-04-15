@@ -43,7 +43,11 @@ exe = sys.argv[0][-3:]
 exe_flag = False
 if exe == 'exe':
     exe_flag = True
-    img_path = os.path.abspath(os.getcwd()) + '/dragen/gui_tkinter'
+    cwd = os.path.abspath(os.getcwd())
+    if cwd[-4:] == 'dist':
+        img_path = cwd + '/../dragen/gui_tkinter'
+    else:
+        img_path = cwd + '/dragen/gui_tkinter'
 else:
     img_path = '.'
 img = Image.open(img_path + '/Logo.png')
@@ -107,14 +111,14 @@ def rveGeneration(file1, file2):
         obj = DataTask2D(box_size=int(box_size_input.get()), n_pts=int(points_input.get()),
                          number_of_bands=int(bands_input.get()), bandwidth=float(bandwidth_input.get()),
                          shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2,
-                         store_path=str(root_dir_text), gui_flag=True, anim_flag=gen_visuals.get(), exe_flag=False)
+                         store_path=str(root_dir), gui_flag=True, anim_flag=gen_visuals.get(), exe_flag=exe_flag)
         grains_df = obj.initializations(dimension=dim)
 
     elif dimension_input.get() == 3:
         obj = DataTask3D(box_size=int(box_size_input.get()), n_pts=int(points_input.get()),
                          number_of_bands=int(bands_input.get()), bandwidth=float(bandwidth_input.get()),
                          shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2,
-                         store_path=root_dir_text, gui_flag=True, anim_flag=gen_visuals.get())
+                         store_path=str(root_dir), gui_flag=True, anim_flag=gen_visuals.get(), exe_flag=exe_flag)
         grains_df = obj.initializations(dimension=dim)
 
     for i in range(last_RVE):
