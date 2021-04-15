@@ -45,12 +45,12 @@ if exe == 'exe':
     exe_flag = True
     cwd = os.path.abspath(os.getcwd())
     if cwd[-4:] == 'dist':
-        img_path = cwd + '/../dragen/gui_tkinter'
+        img_path = cwd + r"\\..\\dragen\\gui_tkinter"
     else:
-        img_path = cwd + '/dragen/gui_tkinter'
+        img_path = cwd + r"\\dragen\\gui_tkinter"
 else:
     img_path = '.'
-img = Image.open(img_path + '/Logo.png')
+img = Image.open(img_path + r'\\Logo.png')
 width, height = img.size
 img = img.resize((width//3, height//3))
 logo = ImageTk.PhotoImage(img)
