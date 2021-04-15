@@ -16,7 +16,7 @@ class Mesher:
                  phase_two_isotropic=True, animation=True):
         self.rve = rve
         self.store_path = store_path
-        self. phase_two_isotropic = phase_two_isotropic
+        self.phase_two_isotropic = phase_two_isotropic
         self.animation = animation
         self.tex_phi1 = tex_phi1
         self.tex_PHI = tex_PHI
@@ -1112,7 +1112,7 @@ class Mesher:
         numberofgrains = self.n_grains
         phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains + 1)]
         grainsize = [np.cbrt(self.rve.loc[self.rve['GrainID'] == i].shape[0] *
-                             self.bin_size*3/4/np.pi) for i in range(1, numberofgrains + 1)]
+                             self.bin_size**3*3/4/np.pi) for i in range(1, numberofgrains + 1)]
 
         for i in range(numberofgrains):
             ngrain = i+1
