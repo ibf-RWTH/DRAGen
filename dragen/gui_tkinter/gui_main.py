@@ -1,7 +1,7 @@
 import sys
-from tkinter import ttk, messagebox, Toplevel, Tk, DoubleVar, Spinbox, Label, Button, W, Text
+from tkinter import ttk, messagebox, Toplevel, Tk, DoubleVar, Spinbox, Label, Button, W, E, Text
 from tkinter import Checkbutton, BooleanVar, IntVar, Radiobutton, END
-from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import askopenfilename, askdirectory
 from PIL import ImageTk, Image
 import multiprocessing
 from dragen.main2D import DataTask2D
@@ -12,30 +12,38 @@ def open_file1():
     global name1
     name1 = askopenfilename(title="Select file", filetypes=(("CSV Files", "*.csv"),))
     if name1:
-        i.delete("1.0", END)
-        i.insert(END, name1)
+        phase_1_text.delete("1.0", END)
+        phase_1_text.insert(END, name1)
 
 
 def open_file2():
     global name2
     name2 = askopenfilename(title="Select file", filetypes=(("CSV Files", "*.csv"),))
     if name2:
-        j.delete("1.0", END)
-        j.insert(END, name2)
+        phase_2_text.delete("1.0", END)
+        phase_2_text.insert(END, name2)
+
+def get_root():
+    global root_dir
+    root_dir = askdirectory()
+    if root_dir:
+        root_dir_text.delete("1.0", END)
+        root_dir_text.insert(END, root_dir)
+
 
 # initialize main_window
 root = Tk()
 root.title("DRAGen - RVE Generator Tool")
-root.geometry('900x600')  # (width x length)
+root.geometry('900x700')  # (width x length)
 root.resizable(height=False, width=False)
 
 # set Logo
 img = Image.open('./Logo.png')
 width, height = img.size
-img = img.resize((width//2, height//2))
+img = img.resize((width//3, height//3))
 logo = ImageTk.PhotoImage(img)
 panel = Label(root, image=logo)
-panel.grid(row=1, column=5, columnspan=3, rowspan=20, sticky=W, padx=10, pady=3)
+panel.grid(row=1, column=5, columnspan=3, rowspan=20, sticky=E, padx=10, pady=3)
 
 # Define Default Values for variables box_size, npts, packingratio, etc...
 var = DoubleVar(value=22)  # initial value
@@ -51,6 +59,7 @@ bandwidth_input = Spinbox(root, from_=1, to=100, width=10, increment=.1, textvar
 # csv-Buttons
 first_input_file = Button(root, text='Phase 1', command=open_file1)
 second_input_file = Button(root, text='Phase 2', command=open_file2)
+root_dir_btn = Button(root, text='save files', command=get_root)
 
 var = DoubleVar(value=1)  # initial value
 number_of_rve_input = Spinbox(root, from_=1, to=100, width=10, textvariable=var)
@@ -67,13 +76,17 @@ twoD_cbox = Radiobutton(root, text="2D RVE", variable=dimension_input, value=2)
 thrD_cbox = Radiobutton(root, text="3D RVE", variable=dimension_input, value=3)
 
 # Set Default Text for filepath text boxes
-i = Text(root, height=1, width=40)
-i.grid(row=16, column=1, columnspan=4, sticky=W, padx=3, pady=3)
-i.insert(END, 'Chose a csv-file for the first phase!')
+phase_1_text = Text(root, height=1, width=40)
+phase_1_text.grid(row=16, column=1, columnspan=4, sticky=W, padx=3, pady=3)
+phase_1_text.insert(END, 'Chose a csv-file for the first phase!')
 
-j = Text(root, height=1, width=40)
-j.grid(row=19, column=1, columnspan=4, sticky=W, padx=3, pady=3)
-j.insert(END, 'Chose a csv-file for the second phase!')
+phase_2_text = Text(root, height=1, width=40)
+phase_2_text.grid(row=20, column=1, columnspan=4, sticky=W, padx=3, pady=3)
+phase_2_text.insert(END, 'Chose a csv-file for the second phase!')
+
+root_dir_text = Text(root, height=1, width=40)
+root_dir_text.grid(row=24, column=1, columnspan=4, sticky=W, padx=3, pady=3)
+root_dir_text.insert(END, 'Chose a directory to store the RVEs!')
 
 
 def rveGeneration(file1, file2):
@@ -86,14 +99,14 @@ def rveGeneration(file1, file2):
         obj = DataTask2D(box_size=int(box_size_input.get()), n_pts=int(points_input.get()),
                          number_of_bands=int(bands_input.get()), bandwidth=float(bandwidth_input.get()),
                          shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2,
-                         gui_flag=True, anim_flag=gen_visuals.get())
+                         store_path=root_dir_text, gui_flag=True, anim_flag=gen_visuals.get())
         grains_df = obj.initializations(dimension=dim)
 
     elif dimension_input.get() == 3:
         obj = DataTask3D(box_size=int(box_size_input.get()), n_pts=int(points_input.get()),
                          number_of_bands=int(bands_input.get()), bandwidth=float(bandwidth_input.get()),
                          shrink_factor=float(pack_ratio_input.get()), file1=file1, file2=file2,
-                         gui_flag=True, anim_flag=gen_visuals.get())
+                         store_path=root_dir_text, gui_flag=True, anim_flag=gen_visuals.get())
         grains_df = obj.initializations(dimension=dim)
 
     for i in range(last_RVE):
@@ -146,8 +159,9 @@ class MainApplication(ttk.Frame):
         o = Label(root, text="Number of RVEs required: ").grid(row=12, column=0, sticky=W, padx=5, pady=5)
         g = Label(root, text="Upload first input file*: ").grid(row=14, column=0, sticky=W, padx=5, pady=5)
         h = Label(root, text="Upload second input file: ").grid(row=18, column=0, sticky=W, padx=5, pady=5)
+        i = Label(root, text="Set Workdirectory: ").grid(row=22, column=0, sticky=W, padx=5, pady=5)
 
-        k = Label(root, text="* Required").grid(row=24, column=0, sticky=W, padx=5, pady=5)
+        l = Label(root, text="* Required").grid(row=24, column=0, sticky=W, padx=5, pady=5)
 
         box_size_input.grid(row=0, column=1, sticky=W, padx=5, pady=5)
         points_input.grid(row=2, column=1, sticky=W, padx=5, pady=5)
@@ -160,6 +174,7 @@ class MainApplication(ttk.Frame):
         first_input_file.grid(row=14, column=1, sticky=W, padx=5, pady=5)
         second_input_file.grid(row=18, column=1, sticky=W, padx=5, pady=5)
         visual_cbox.grid(row=19, column=0, sticky=W, padx=5, pady=5)
+        root_dir_btn.grid(row=22, column=1, sticky=W, padx=5, pady=5)
 
         self.submit_btn = Button(root, text="Submit", command=self.validateData)
         self.submit_btn.grid(row=25, column=1, padx=5, pady=5)
