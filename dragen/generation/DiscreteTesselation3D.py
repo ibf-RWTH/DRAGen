@@ -9,14 +9,14 @@ from dragen.utilities.RVE_Utils import RVEUtils
 
 class Tesselation3D:
 
-    def __init__(self, box_size, n_pts, a, b, c, slope, x_0, y_0, z_0, final_volume, shrinkfactor, band_ratio, store_path, debug=False):
+    def __init__(self, box_size, n_pts, a, b, c, alpha, x_0, y_0, z_0, final_volume, shrinkfactor, band_ratio, store_path, debug=False):
 
         self.box_size = box_size
         self.n_pts = n_pts
         self.a = a
         self.b = b
         self.c = c
-        self.slope = slope
+        self.alpha = alpha
         self.x_0 = x_0
         self.y_0 = y_0
         self.z_0 = z_0
@@ -40,7 +40,7 @@ class Tesselation3D:
         x_grid = self.x_grid
         y_grid = self.y_grid
         z_grid = self.z_grid
-        slope = self.slope[iterator-1]
+        alpha = self.alpha[iterator-1]
         x_0 = self.x_0[iterator-1]
         y_0 = self.y_0[iterator-1]
         z_0 = self.z_0[iterator-1]
@@ -58,7 +58,7 @@ class Tesselation3D:
                   (y_grid - y_0) ** 2 / (b_i ** 2) + \
                   (z_grid - z_0) ** 2 / (c_i ** 2)"""
 
-        ellipsoid = self.rve_utils_object.ellipsoid(a_i, b_i, c_i, x_0, y_0, z_0, slope=slope)
+        ellipsoid = self.rve_utils_object.ellipsoid(a_i, b_i, c_i, x_0, y_0, z_0, alpha=alpha)
 
         return ellipsoid, a, b, c
 

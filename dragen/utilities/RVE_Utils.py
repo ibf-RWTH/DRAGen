@@ -27,20 +27,20 @@ class RVEUtils:
         self.step_half = self.bin_size / 2
 
     def read_input(self, file_name, dimension) -> tuple:
-        """Reads the given input file and returns the volume along with radii and slope list.
+        """Reads the given input file and returns the volume along with radii, rotation angles and texture parameters.
         Parameter :
         file_name : String, name of the input file
         """
         data = pd.read_csv(file_name)
-        radius_a, radius_b, radius_c, slope, tex_phi1, tex_PHI, tex_phi2 = ([] for i in range(7))
+        radius_a, radius_b, radius_c, alpha, tex_phi1, tex_PHI, tex_phi2 = ([] for i in range(7))
 
         if 'a' in data.head(0) and data['a'].count() != 0:
             for rad in data['a']:
                 radius_a.append(rad)
         else:
             print('ERROR: No "a" in given .csv-Inputfile!')
-            messagebox.showinfo(message='No "a" in given .csv-Inputfile!', title='ERROR')
-            self.logger.info('ERROR: No "a" in given .csv-Inputfile!')
+            messagebox.showinfo(message='No "a" in given .csv-Inputfile! RVE-Generation was canceled!', title='ERROR')
+            self.logger.info('ERROR: No "a" in given .csv-Inputfile! RVE-Generation was canceled!')
             sys.exit()
 
         if 'b' in data.head(0) and data['b'].count() != 0:
@@ -57,11 +57,12 @@ class RVEUtils:
             radius_c = radius_a
             self.logger.info('No "c" in given .csv-Inputfile! Assumption: c = a')
 
-        if 'Slope' in data.head(0) and data['Slope'].count() != 0:
-            for ang in data['Slope']:
-                slope.append(ang)
+        if 'alpha' in data.head(0) and data['alpha'].count() != 0:
+            for ang in data['alpha']:
+                alpha.append(ang)
         else:
-            slope = [0] * len(radius_a)
+            alpha = [0] * len(radius_a)
+            self.logger.info('No "alpha" in given .csv-Inputfile! Assumption: alpha = 0, no rotation')
 
         if 'phi1' in data.head(0) and data['phi1'].count() != 0 and 'PHI' in data.head(0) and data['PHI'].count() != 0 \
                 and 'phi2' in data.head(0) and data['phi2'].count() != 0:
@@ -72,17 +73,18 @@ class RVEUtils:
             for tex in data['phi2']:
                 tex_phi2.append(tex)
         else:
+            self.logger.info('No texture parameters (phi1, PHI, phi2) in given .csv-Inputfile! Assumption: random texture')
             i = 0
             while i < len(radius_a):
-                tex_phi1.append(int(np.random.rand() * 360))
-                tex_PHI.append(int(np.random.rand() * 360))
-                tex_phi2.append(int(np.random.rand() * 360))
+                tex_phi1.append(round((np.random.rand() * 360), 2))
+                tex_PHI.append(round((np.random.rand() * 360), 2))
+                tex_phi2.append(round((np.random.rand() * 360), 2))
                 i = i+1
 
         if dimension == 3:
-            return radius_a, radius_b, radius_c, slope, tex_phi1, tex_PHI, tex_phi2
+            return radius_a, radius_b, radius_c, alpha, tex_phi1, tex_PHI, tex_phi2
         elif dimension == 2:
-            return radius_a, radius_b, slope, tex_phi1, tex_PHI, tex_phi2
+            return radius_a, radius_b, alpha, tex_phi1, tex_PHI, tex_phi2
 
     def convert_volume(self, radius_a, radius_b, radius_c):
         """Compute the volume for the given radii.
@@ -612,19 +614,19 @@ class RVEUtils:
         rve.loc[corners.index, 'GrainID'] = corner1.GrainID.values
         return rve
 
-    def ellipse(self, a, b, x_0, y_0, slope=0):
+    def ellipse(self, a, b, x_0, y_0, alpha=0):
 
         # without rotation
         """ellipse = np.sqrt((x_grid - x_0) ** 2 / (a ** 2) + (y_grid - y_0) ** 2 / (b ** 2))"""
 
-        ellipse = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(slope))
-                                        - (self.y_grid - y_0) * np.sin(np.deg2rad(slope))) ** 2 +\
-                  1 / b ** 2 * ((self.x_grid - x_0) * np.sin(np.deg2rad(slope))
-                                          + (self.y_grid - y_0) * np.cos(np.deg2rad(slope))) ** 2
+        ellipse = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(alpha))
+                                        - (self.y_grid - y_0) * np.sin(np.deg2rad(alpha))) ** 2 +\
+                  1 / b ** 2 * ((self.x_grid - x_0) * np.sin(np.deg2rad(alpha))
+                                          + (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2
 
         return ellipse
 
-    def ellipsoid(self, a, b, c, x_0, y_0, z_0, slope=0):
+    def ellipsoid(self, a, b, c, x_0, y_0, z_0, alpha=0):
 
         # rotation around x-axis
         """ellipsoid = 1/a**2 * (self.x_grid - x_0) ** 2 + \
@@ -641,10 +643,10 @@ class RVEUtils:
                               (self.z_grid - z_0) * np.cos(np.deg2rad(slope))) ** 2"""
 
         # rotation around z-axis
-        ellipsoid = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(slope)) -
-                                  (self.y_grid - y_0) * np.sin(np.deg2rad(slope))) ** 2 + \
-                    1 / b ** 2 * ((self.x_grid - x_0) * np.sin(np.deg2rad(slope)) +
-                                  (self.y_grid - y_0) * np.cos(np.deg2rad(slope))) ** 2 + \
+        ellipsoid = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(alpha)) -
+                                  (self.y_grid - y_0) * np.sin(np.deg2rad(alpha))) ** 2 + \
+                    1 / b ** 2 * ((self.x_grid - x_0) * np.sin(np.deg2rad(alpha)) +
+                                  (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2 + \
                     1 / c ** 2 * (self.z_grid - z_0) ** 2
 
         # without rotation

@@ -12,11 +12,15 @@ import logging
 
 class Mesher:
 
-    def __init__(self, rve: pd.DataFrame, store_path,  phase_two_isotropic=True, animation=True):
+    def __init__(self, rve: pd.DataFrame, store_path, tex_phi1, tex_PHI, tex_phi2,
+                 phase_two_isotropic=True, animation=True):
         self.rve = rve
         self.store_path = store_path
-        self. phase_two_isotropic = phase_two_isotropic
+        self.phase_two_isotropic = phase_two_isotropic
         self.animation = animation
+        self.tex_phi1 = tex_phi1
+        self.tex_PHI = tex_PHI
+        self.tex_phi2 = tex_phi2
         self.x_max = int(max(rve.x))
         self.x_min = int(min(rve.x))
         self.y_max = int(max(rve.y))
@@ -245,7 +249,7 @@ class Mesher:
             f.write(line)
         for i in range(self.n_grains):
             nGrain = i + 1
-            print('in for nGrain=',nGrain, grid.cell_arrays.keys())
+            print('in for nGrain=', nGrain, grid.cell_arrays.keys())
             cells = np.where(grid.cell_arrays['GrainID'] == nGrain)[0]
             f.write('*Elset, elset=Set-{}\n'.format(nGrain))
             for j, cell in enumerate(cells + 1):
@@ -1108,22 +1112,28 @@ class Mesher:
         numberofgrains = self.n_grains
         phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains + 1)]
         grainsize = [np.cbrt(self.rve.loc[self.rve['GrainID'] == i].shape[0] *
-                             self.bin_size*3/4/np.pi) for i in range(1, numberofgrains + 1)]
+                             self.bin_size**3*3/4/np.pi) for i in range(1, numberofgrains + 1)]
 
         for i in range(numberofgrains):
             ngrain = i+1
             if not self.phase_two_isotropic:
-                phi1 = int(np.random.rand() * 360)
-                Phi = int(np.random.rand() * 360)
-                phi2 = int(np.random.rand() * 360)
-                f.write('Grain: {}: {}: {}: {}: {}\n'.format(ngrain, phi1, Phi, phi2, grainsize[i]))
+                """phi1 = int(np.random.rand() * 360)
+                PHI = int(np.random.rand() * 360)
+                phi2 = int(np.random.rand() * 360)"""
+                phi1 = self.tex_phi1[i]
+                PHI = self.tex_PHI[i]
+                phi2 = self.tex_phi2[i]
+                f.write('Grain: {}: {}: {}: {}: {}\n'.format(ngrain, phi1, PHI, phi2, grainsize[i]))
             else:
                 if phase[i] == 1:
                     phase1_idx += 1
-                    phi1 = int(np.random.rand() * 360)
-                    Phi = int(np.random.rand() * 360)
-                    phi2 = int(np.random.rand() * 360)
-                    f.write('Grain: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, Phi, phi2, grainsize[i]))
+                    """phi1 = int(np.random.rand() * 360)
+                    PHI = int(np.random.rand() * 360)
+                    phi2 = int(np.random.rand() * 360)"""
+                    phi1 = self.tex_phi1[i]
+                    PHI = self.tex_PHI[i]
+                    phi2 = self.tex_phi2[i]
+                    f.write('Grain: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, PHI, phi2, grainsize[i]))
         f.close()
 
     def plot_bot(self, rve_smooth_grid: pv.UnstructuredGrid, min_val: float, max_val: float, direction: int = 1,
