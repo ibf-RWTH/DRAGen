@@ -20,8 +20,8 @@ from InputGenerator.linking import Reconstructor
 class DataTask3D:
 
     def __init__(self, box_size=30, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5,
-                 file1=None, file2=None,
-                 gui_flag=True, anim_flag=False, gan_flag=False,
+                 file1=None, file2=None, store_path=None,
+                 gui_flag=True, anim_flag=False, gan_flag=False, exe_flag=False,
                  band_ratio_rsa=0.95, band_ratio_final=0.95):
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
@@ -34,21 +34,20 @@ class DataTask3D:
         self.band_ratio_rsa = band_ratio_rsa            # Band Ratio for RSA
         self.band_ratio_final = band_ratio_final        # Band ratio for Tesselator - final is br1 * br2
         self.gui_flag = gui_flag
-        self.anim_flag = anim_flag
         self.gan_flag = gan_flag
+        self.root_dir = './'
 
+        if exe_flag:
+            self.root_dir = store_path
         if not gui_flag:
-            main_dir = sys.argv[0][:-14]  # setting main_dir to root_dir by checking path of current file
-        else:
-            main_dir = sys.argv[0][:-31]  # setting main_dir to root_dir by checking path of current file
-        os.chdir(main_dir)
+            self.root_dir = sys.argv[0][:-14]  # setting root_dir to root_dir by checking path of current file
+        elif gui_flag and not exe_flag:
+            self.root_dir = store_path
 
-        """if not anim_flag:
-            self.animation = False
-        else:
-            self.animation = True"""
+
+        self.logger.info('the exe_flag is: ' + str(exe_flag))
+        self.logger.info('root was set to: ' + self.root_dir)
         self.animation = anim_flag
-
         self.file1 = file1
         self.file2 = file2
         self.utils_obj = RVEUtils(self.box_size, self.n_pts, self.bandwidth)
@@ -57,22 +56,20 @@ class DataTask3D:
 
     # Läuft einen Trainingsdurchgang und erzeugt ein GAN-Object
     def run_cwgangp(self):
-        SOURCE = r'./ExampleInput'
-        os.chdir(SOURCE)
+        SOURCE = self.root_dir+'/ExampleInput'
 
         # Data:
-        df1 = pd.read_csv('Input_TDxBN_AR.csv')
-        df2 = pd.read_csv('Input_RDxBN_AR.csv')
-        df3 = pd.read_csv('Input_RDxTD_AR.csv')
+        df1 = pd.read_csv(SOURCE + '/Input_TDxBN_AR.csv')
+        df2 = pd.read_csv(SOURCE + '/Input_RDxBN_AR.csv')
+        df3 = pd.read_csv(SOURCE + '/Input_RDxTD_AR.csv')
 
-        # Einschlüsse
-        df4 = pd.read_csv('Einschlüsse_TDxBN_AR.csv')
-        df5 = pd.read_csv('Einschlüsse_RDxBN_AR.csv')
-        df6 = pd.read_csv('Einschlüsse_RDxTD_AR.csv')
-        os.chdir('../')
+        # Inclusions
+        df4 = pd.read_csv(SOURCE + '/Einschlüsse_TDxBN_AR.csv')
+        df5 = pd.read_csv(SOURCE + '/Einschlüsse_RDxBN_AR.csv')
+        df6 = pd.read_csv(SOURCE + '/Einschlüsse_RDxTD_AR.csv')
 
         # Set up CWGAN-GP with all data
-        store_path = 'OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(0)
+        store_path = self.root_dir + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(0)
         if not os.path.isdir(store_path):
             os.makedirs(store_path)
         GAN = WGANCGP(df_list=[df1, df2, df3, df4, df5, df6], storepath=store_path, num_features=3, gen_iters=100)
@@ -82,8 +79,8 @@ class DataTask3D:
 
         # Evaluate Afterwards
         #GAN.evaluate()
+        self.logger.info('Created GAN-Object successfully!')
 
-        print('Created GAN-Object successfully!')
         return GAN
 
     def sample_gan_input(self, n_bands=0, bandwith=0, bs=20, labels=(), size=1000):
@@ -103,7 +100,7 @@ class DataTask3D:
         return Bot.rve_inp  # This is the RVE-Input data
 
     def setup_logging(self):
-        LOGS_DIR = 'Logs/'
+        LOGS_DIR = self.root_dir + '/Logs/'
         if not os.path.isdir(LOGS_DIR):
             os.makedirs(LOGS_DIR)
         f_handler = logging.handlers.TimedRotatingFileHandler(
@@ -118,8 +115,8 @@ class DataTask3D:
         grains_df = None
         self.setup_logging()
         if not self.gui_flag and not self.gan_flag:
-            phase1 = './ExampleInput/ferrite_54_grains.csv'
-            phase2 = './ExampleInput/pearlite_21_grains.csv'
+            phase1 = self.root_dir + '/ExampleInput/ferrite_54_grains.csv'
+            phase2 = self.root_dir + '/ExampleInput/pearlite_21_grains.csv'
         else:
             phase1 = self.file1
             phase2 = self.file2
@@ -176,7 +173,7 @@ class DataTask3D:
         return grains_df
 
     def rve_generation(self, epoch, grains_df):
-        store_path = 'OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
+        store_path = self.root_dir + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
         if not os.path.isdir(store_path):
             os.makedirs(store_path)
         if not os.path.isdir(store_path + '/Figs'):
