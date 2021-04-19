@@ -28,6 +28,7 @@ class Mesher:
         self.z_max = int(max(rve.z))
         self.z_min = int(min(rve.z))
         self.n_grains = int(max(rve.GrainID))
+        print(self.n_grains)
         self.n_pts = int(rve.n_pts[0])
         self.bin_size = rve.box_size[0] / self.n_pts
         self.logger = logging.getLogger("RVE-Gen")
@@ -59,7 +60,7 @@ class Mesher:
 
         # Now plot the grid!
         if self.animation:
-         grid.plot(show_edges=True, screenshot=self.store_path+'/Figs/pyvista_mesh.png', auto_close=True)
+            grid.plot(show_edges=True, screenshot=self.store_path+'/Figs/pyvista_mesh.png', auto_close=True)
         return grid
 
     def convert_to_mesh(self, grid: pv.UniformGrid) -> tuple:

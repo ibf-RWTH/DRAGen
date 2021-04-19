@@ -11,7 +11,7 @@ if __name__ == "__main__":
     dimension = 3
     # Optional arguments with default values:
     # obj3D = DataTask3D()
-    obj3D = DataTask3D(box_size=15, n_pts=30, number_of_bands=1, bandwidth=5,
+    obj3D = DataTask3D(box_size=20, n_pts=40, number_of_bands=0, bandwidth=5,
                        shrink_factor=0.5, band_ratio_rsa=0.75, band_ratio_final=0.75, file1=None, file2=None,
                        gui_flag=False, gan_flag=True, anim_flag=True)
     obj2D = DataTask2D()

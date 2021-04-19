@@ -432,7 +432,7 @@ class RVEUtils:
         xyz = np.linspace(-box_size / 2, box_size + box_size / 2, 2 * self.n_pts, endpoint=True)
         x_grid, y_grid, z_grid = np.meshgrid(xyz, xyz, xyz)
 
-        rve_x_idx, rve_y_idx, rve_z_idx = np.where((rve_array > 0) | (rve_array == -200))  # TODO: Hier rein für Inclusions
+        rve_x_idx, rve_y_idx, rve_z_idx = np.where((rve_array > 0) | (rve_array == -200) | (rve_array < -200))  # Added for the inclusions
         boundary_x_idx, boundary_y_idx, boundary_z_idx = np.where((rve_array < 0) & (rve_array > -200))  # Zwischen -200 und 0
 
         rve_tuples = [*zip(rve_x_idx, rve_y_idx, rve_z_idx)]
@@ -450,7 +450,7 @@ class RVEUtils:
                       for boundary_tuples_i in boundary_tuples]
 
         # generate pandas Dataframe of coordinates and grain IDs
-        rve_dict = {'x': rve_x, 'y': rve_y, 'z': rve_z, 'GrainID': rve_array[(rve_array > 0) | (rve_array == -200)]}   # TODO: Auch hier müsste ein kleiner gleich -200 rein
+        rve_dict = {'x': rve_x, 'y': rve_y, 'z': rve_z, 'GrainID': rve_array[(rve_array > 0) | (rve_array == -200) | (rve_array < -200)]}   # Also smaller -200 for inclusions
         rve = pd.DataFrame(rve_dict)
         rve['box_size'] = box_size
         rve['n_pts'] = n_pts
@@ -612,6 +612,7 @@ class RVEUtils:
                           ((rve['x'] == max_x) & (rve['y'] == min_y) & (rve['z'] == max_z)) |
                           ((rve['x'] == max_x) & (rve['y'] == max_y) & (rve['z'] == max_z))]
         rve.loc[corners.index, 'GrainID'] = corner1.GrainID.values
+        print('Ran repairing successfully!')
         return rve
 
     def ellipse(self, a, b, x_0, y_0, alpha=0):

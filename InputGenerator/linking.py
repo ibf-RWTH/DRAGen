@@ -341,11 +341,17 @@ class Reconstructor:
             inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
 
         # Del last if to big and more than one value:
-        if grain_vol >= max_volume and inp_list.__len__() > 5:
+        if grain_vol >= max_volume and inp_list.__len__() > 1:
             inp_list.pop(-1)
 
-        header = ['a', 'b', 'c', 'slope', 'volume']
+        header = ['a', 'b', 'c', 'alpha', 'volume']
         self.rve_inp = pd.DataFrame(inp_list, columns=header)
+
+        # Add temporary euler angles
+        self.rve_inp['phi1'] = (np.random.rand(self.rve_inp.__len__()) * 360)
+        self.rve_inp['PHI'] = (np.random.rand(self.rve_inp.__len__()) * 360)
+        self.rve_inp['phi2'] = (np.random.rand(self.rve_inp.__len__()) * 360)
+        print(self.rve_inp)
 
 
 

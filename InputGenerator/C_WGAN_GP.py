@@ -387,6 +387,7 @@ class WGANCGP(WGAN_BaseClass.WGAN):
             pickle.dump(self.best_states, f)
 
     def sample_batch(self, label, size=1000):
+        print('Hier')
         # Check if there is state data present.
         sample = None
         if self.best_states:
@@ -395,7 +396,7 @@ class WGANCGP(WGAN_BaseClass.WGAN):
                                 dtype=torch.int64).view(size)
             sample = self.best_states[label](noise, labels).detach()
 
-        dir_path = 'OutputData/'
+        dir_path = '../OutputData/'
         for root, dirs, files in os.walk(dir_path):
             for file in files:
                 if file.endswith('.p'):

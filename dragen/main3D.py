@@ -188,7 +188,7 @@ class DataTask3D:
             phase1_a = phase1['a'].tolist()
             phase1_b = phase1['b'].tolist()
             phase1_c = phase1['c'].tolist()
-            phase1_alpha = phase1['alpha']
+            phase1_alpha = phase1['alpha'].tolist()
             final_volume_phase1 = [(4 / 3 * phase1_a[i] * phase1_b[i] * phase1_c[i] * np.pi) for i in
                                    range(len(phase1_a))]
             phase1_a_shrinked = [phase1_a_i * self.shrink_factor for phase1_a_i in phase1_a]
@@ -198,6 +198,9 @@ class DataTask3D:
                            'b': phase1_b_shrinked,
                            'c': phase1_c_shrinked,
                            'alpha': phase1_alpha,
+                           'phi1': phase1['phi1'].tolist(),
+                           'PHI': phase1['PHI'].tolist(),
+                           'phi2': phase1['phi2'].tolist(),
                            'final_volume': final_volume_phase1}
             grains_df = pd.DataFrame(phase1_dict)
             grains_df['phaseID'] = 1
@@ -254,14 +257,14 @@ class DataTask3D:
             sys.exit()
 
         if self.gan_flag:
-            # TODO: Implement inclusions here
-            adjusted_size = self.box_size * 0.5   # 10% as an example
+            # TODO: Das sollte über eine Inclusions Flag gehen
+            adjusted_size = self.box_size * np.cbrt(0.15)   # 10% as an example
             inclusions = self.sample_gan_input(size=200, labels=(3,4,5), bs=adjusted_size, n_bands=0, bandwith=0)
             # Processing mit shrinken - Das könnte mal in eine Funktion :)
             inclusions_a = inclusions['a'].tolist()
             inclusions_b = inclusions['b'].tolist()
             inclusions_c = inclusions['c'].tolist()
-            inclusions_slope = inclusions['slope']
+            inclusions_slope = inclusions['alpha'].tolist()
             final_volume_inclusions = [(4 / 3 * inclusions_a[i] * inclusions_b[i] * inclusions_c[i] * np.pi) for i in
                                         range(len(inclusions_a))]
             inclusions_a_shrinked = [inclusions_a_i * self.shrink_factor for inclusions_a_i in inclusions_a]
@@ -270,7 +273,10 @@ class DataTask3D:
             inclusions_dict = {'a': inclusions_a_shrinked,
                                'b': inclusions_b_shrinked,
                                'c': inclusions_c_shrinked,
-                               'slope': inclusions_slope,
+                               'alpha': inclusions_slope,
+                               'phi1': inclusions['phi1'].tolist(),
+                               'PHI': inclusions['PHI'].tolist(),
+                               'phi2': inclusions['phi2'].tolist(),
                                'final_volume': final_volume_inclusions}
             inclusions_df = pd.DataFrame(inclusions_dict)
             inclusions_df['phaseID'] = 2
@@ -279,36 +285,42 @@ class DataTask3D:
             inclusions_df.reset_index(inplace=True, drop=True)
             inclusions_df['GrainID'] = inclusions_df.index
 
-            # Todo: Implement the new-RSA here
             discrete_RSA_inc_obj = DiscreteRsa3D(self.box_size, self.n_pts,
                                              inclusions_df['a'].tolist(),
                                              inclusions_df['b'].tolist(),
                                              inclusions_df['c'].tolist(),
-                                             inclusions_df['slope'].tolist(), store_path=store_path)
+                                             inclusions_df['alpha'].tolist(), store_path=store_path)
 
             rve, rve_status = discrete_RSA_inc_obj.run_rsa_inclusions(rve, animation=True)
 
-            # Concat both data
-            grains_df = pd.concat([grains_df, inclusions_df])
+            grains_df.reset_index(inplace=True, drop=True)
             grains_df['GrainID'] = grains_df.index
 
         if rve_status:
-            # TODO: Hier gibt es Probleme mit den IDs denke ich bei den Einschlüssem
             periodic_rve_df = self.utils_obj.repair_periodicity_3D(rve)
             periodic_rve_df['phaseID'] = 0
+            # An den NaN-Werten in dem DF liegt es nicht!
 
             grains_df.sort_values(by=['GrainID'])
 
             for i in range(len(grains_df)):
                 # Set grain-ID to number of the grain
+                # Denn Grain-ID ist entweder >0 oder -200 oder >-200
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1, 'phaseID'] = grains_df['phaseID'][i]
-            if self.number_of_bands > 0:
-                # Set the points where == -200 to phase 2 and to grain ID i + 2
-                # TODO: Hier fehlen die Inclusions!! Das muss es sein.
-                periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = i + 2
-                periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 2, 'phaseID'] = 2
 
-            # Mesher
+            # For the inclusions:
+            if self.gan_flag:
+                # Zuweisung der negativen grain-ID's
+                for j in range(len(inclusions_df)):
+                    periodic_rve_df.loc[periodic_rve_df['GrainID'] == -(200 + j + 1), 'GrainID'] = (i + j + 2)
+                    periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + j + 2), 'phaseID'] = 2
+
+            if self.number_of_bands > 0:    # FIXME: Das funktioniert aktuell nur mit GAN, sonst gibt es kein j!
+                # Set the points where == -200 to phase 2 and to grain ID i + 2
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = (i + j + 3)
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + j + 3), 'phaseID'] = 2
+
+            # Start the Mesher
             mesher_obj = Mesher(periodic_rve_df, store_path=store_path, phase_two_isotropic=True, animation=False,
                                 tex_phi1=grains_df['phi1'].tolist(), tex_PHI=grains_df['PHI'].tolist(),
                                 tex_phi2=grains_df['phi2'].tolist())

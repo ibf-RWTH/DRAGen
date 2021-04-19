@@ -38,8 +38,7 @@ class DiscreteRsa3D:
         b = self.b
         c = self.c
         alpha = self.alpha
-        print(iterator)
-        slope = self.slope
+
         unoccupied_pts_x, unoccupied_pts_y, unoccupied_pts_z = np.where(array == 0)
         unoccupied_tuples = [*zip(unoccupied_pts_x, unoccupied_pts_y, unoccupied_pts_z)]
         unoccupied_area_x = [self.x_grid[unoccupied_tuples_i[0]][unoccupied_tuples_i[1]][unoccupied_tuples_i[2]]
@@ -54,6 +53,9 @@ class DiscreteRsa3D:
         y_0 = unoccupied_area_y[idx]
         z_0 = unoccupied_area_z[idx]
         print('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
+        #print('Iterator', iterator)
+        #print(a)
+        #print('Länge von a', a.__len__())
         a = a[iterator]
         b = b[iterator]
         c = c[iterator]
@@ -185,7 +187,7 @@ class DiscreteRsa3D:
         grain. This is because the inclusions serve as a initiation site for grains during the recrystallization.
 
         The inclusions are sampled from the passed GAN-object directly and are assigned to one phase, which is purely
-        elastic (so identifier -200 and therefore phaseID = 2 at the moment (14.04.2021)
+        elastic (so identifier smaller -200 and therefore phaseID = 2 at the moment (14.04.2021)
 
         Parameters:
             -rve: completely tesselated rve after the tesselation and before the mesher
@@ -205,7 +207,7 @@ class DiscreteRsa3D:
         fil = np.asarray([[[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]],
                           [[-1, -1, -1], [-1, 26, -1], [-1, -1, -1]],
                           [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]])
-        coords = np.where(convolve(rve, fil, mode='reflect') > 0)  # Heart of the process
+        coords = np.where(convolve(rve, fil, mode='reflect') > 0)  # Edge kernel for
         new_rve = np.zeros(shape=(self.n_pts * 2, self.n_pts * 2, self.n_pts * 2))
         new_rve[coords] = 1000  # High value - Has 1000 for edges, and 0 elsewhere
         new_rve = self.rve_utils_object.gen_boundaries_3D(new_rve)
@@ -213,14 +215,11 @@ class DiscreteRsa3D:
 
         i = 1
         attempt = 0
-        print(self.n_grains)
-        while i < self.n_grains | attempt < 200:
+        while (i < self.n_grains+1) & (attempt < 5000):
             # TODO: Attempt rate per grain.
-            # TODO: Only a certain number of Inclusions per Grain
-            # TODO: Fix this weird oob-error
+            # FIXME: Was passiert, wenn er nicht alle platziert bekommt? - Es könnte dann im Mesher Probleme geben
             grain = new_rve.copy()
             backup = inc_rve.copy()
-            print(i)
             ellipsoid, x0, y0, z0 = self.gen_ellipsoid(new_rve, iterator=i-1)
             grain[(ellipsoid <= 1) & ((grain == 0) | (grain == -200))] = -(200+i)
             periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipsoid, iterator=-(200+i))
@@ -250,6 +249,14 @@ class DiscreteRsa3D:
 
         status = True
         return inc_rve, status
+
+
+    def run_rsa_clustered(self, percentage, banded_rsa_array, animation=False):
+        """
+        Parameters:
+            percentage: percentage of initial Volume filled with given grains (e.g. Martensite
+
+        """
 
 
 if __name__ == '__main__':
