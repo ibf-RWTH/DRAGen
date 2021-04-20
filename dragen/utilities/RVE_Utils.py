@@ -619,10 +619,15 @@ class RVEUtils:
         # without rotation
         """ellipse = np.sqrt((x_grid - x_0) ** 2 / (a ** 2) + (y_grid - y_0) ** 2 / (b ** 2))"""
 
-        ellipse = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(alpha))
+        """ellipse = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(alpha))
                                         - (self.y_grid - y_0) * np.sin(np.deg2rad(alpha))) ** 2 +\
                   1 / b ** 2 * ((self.x_grid - x_0) * np.sin(np.deg2rad(alpha))
-                                          + (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2
+                                          + (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2"""
+
+        ellipse = 1 / (a ** 2) * ((self.x_grid - x_0) * np.cos(np.deg2rad(alpha))
+                                + (self.y_grid - y_0) * np.sin(np.deg2rad(alpha))) ** 2 + \
+                  1 / (b ** 2) * (-(self.x_grid - x_0) * np.sin(np.deg2rad(alpha))
+                                + (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2
 
         return ellipse
 
@@ -643,9 +648,9 @@ class RVEUtils:
                               (self.z_grid - z_0) * np.cos(np.deg2rad(slope))) ** 2"""
 
         # rotation around z-axis
-        ellipsoid = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(alpha)) -
+        ellipsoid = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(alpha)) +
                                   (self.y_grid - y_0) * np.sin(np.deg2rad(alpha))) ** 2 + \
-                    1 / b ** 2 * ((self.x_grid - x_0) * np.sin(np.deg2rad(alpha)) +
+                    1 / b ** 2 * (-(self.x_grid - x_0) * np.sin(np.deg2rad(alpha)) +
                                   (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2 + \
                     1 / c ** 2 * (self.z_grid - z_0) ** 2
 
