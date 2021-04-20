@@ -620,10 +620,15 @@ class RVEUtils:
         # without rotation
         """ellipse = np.sqrt((x_grid - x_0) ** 2 / (a ** 2) + (y_grid - y_0) ** 2 / (b ** 2))"""
 
-        ellipse = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(alpha))
+        """ellipse = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(alpha))
                                         - (self.y_grid - y_0) * np.sin(np.deg2rad(alpha))) ** 2 +\
                   1 / b ** 2 * ((self.x_grid - x_0) * np.sin(np.deg2rad(alpha))
-                                          + (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2
+                                          + (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2"""
+
+        ellipse = 1 / (a ** 2) * ((self.x_grid - x_0) * np.cos(np.deg2rad(alpha))
+                                + (self.y_grid - y_0) * np.sin(np.deg2rad(alpha))) ** 2 + \
+                  1 / (b ** 2) * (-(self.x_grid - x_0) * np.sin(np.deg2rad(alpha))
+                                + (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2
 
         return ellipse
 
@@ -644,9 +649,9 @@ class RVEUtils:
                               (self.z_grid - z_0) * np.cos(np.deg2rad(slope))) ** 2"""
 
         # rotation around z-axis
-        ellipsoid = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(alpha)) -
+        ellipsoid = 1 / a ** 2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(alpha)) +
                                   (self.y_grid - y_0) * np.sin(np.deg2rad(alpha))) ** 2 + \
-                    1 / b ** 2 * ((self.x_grid - x_0) * np.sin(np.deg2rad(alpha)) +
+                    1 / b ** 2 * (-(self.x_grid - x_0) * np.sin(np.deg2rad(alpha)) +
                                   (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2 + \
                     1 / c ** 2 * (self.z_grid - z_0) ** 2
 
@@ -656,3 +661,30 @@ class RVEUtils:
                   (self.z_grid - z_0) ** 2 / (c ** 2)"""
 
         return ellipsoid
+
+    def shrink_df(self, df, shrink_factor):
+        phase1_a = df['a'].tolist()
+        phase1_b = df['b'].tolist()
+        phase1_c = df['c'].tolist()
+        phase1_alpha = df['alpha'].tolist()
+        final_volume_phase1 = [(4 / 3 * phase1_a[i] * phase1_b[i] * phase1_c[i] * np.pi) for i in
+                               range(len(phase1_a))]
+        phase1_a_shrinked = [phase1_a_i * shrink_factor for phase1_a_i in phase1_a]
+        phase1_b_shrinked = [phase1_b_i * shrink_factor for phase1_b_i in phase1_b]
+        phase1_c_shrinked = [phase1_c_i * shrink_factor for phase1_c_i in phase1_c]
+        phase1_dict = {'a': phase1_a_shrinked,
+                       'b': phase1_b_shrinked,
+                       'c': phase1_c_shrinked,
+                       'alpha': phase1_alpha,
+                       'phi1': df['phi1'].tolist(),
+                       'PHI': df['PHI'].tolist(),
+                       'phi2': df['phi2'].tolist(),
+                       'final_volume': final_volume_phase1}
+        grains_df = pd.DataFrame(phase1_dict)
+
+        # Sortiert und resetet Index bereits
+        grains_df.sort_values(by='final_volume', inplace=True, ascending=False)
+        grains_df.reset_index(inplace=True, drop=True)
+        grains_df['GrainID'] = grains_df.index
+
+        return grains_df

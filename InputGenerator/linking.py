@@ -330,9 +330,8 @@ class Reconstructor:
         grain_vol = 0
         data = self.result_df.copy()
         inp_list = list()
-        print(max_volume)
         while grain_vol < max_volume:
-            print(grain_vol)
+            # Fixme: Check if the axis is to big for the RVE-boxsize
             idx = np.random.randint(0, data.__len__())
             grain = data[['a_final', 'b_final', 'c_final', 'SlopeAB']].iloc[idx].tolist()
             data = data.drop(labels=data.index[idx], axis=0)
@@ -351,7 +350,6 @@ class Reconstructor:
         self.rve_inp['phi1'] = (np.random.rand(self.rve_inp.__len__()) * 360)
         self.rve_inp['PHI'] = (np.random.rand(self.rve_inp.__len__()) * 360)
         self.rve_inp['phi2'] = (np.random.rand(self.rve_inp.__len__()) * 360)
-        print(self.rve_inp)
 
 
 
