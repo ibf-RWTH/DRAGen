@@ -8,6 +8,7 @@ from tkinter import messagebox
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+
 class RVEUtils:
     """Common Representative Volume Element (RVE) operations."""
 
@@ -73,13 +74,14 @@ class RVEUtils:
             for tex in data['phi2']:
                 tex_phi2.append(tex)
         else:
-            self.logger.info('No texture parameters (phi1, PHI, phi2) in given .csv-Inputfile! Assumption: random texture')
+            self.logger.info(
+                'No texture parameters (phi1, PHI, phi2) in given .csv-Inputfile! Assumption: random texture')
             i = 0
             while i < len(radius_a):
                 tex_phi1.append(round((np.random.rand() * 360), 2))
                 tex_PHI.append(round((np.random.rand() * 360), 2))
                 tex_phi2.append(round((np.random.rand() * 360), 2))
-                i = i+1
+                i = i + 1
 
         if dimension == 3:
             return radius_a, radius_b, radius_c, alpha, tex_phi1, tex_PHI, tex_phi2
@@ -151,7 +153,6 @@ class RVEUtils:
             # compare real volume and theoretical volume of current band if bands are exactly on top of
             # each other band_vol_0_theo = 0 which must be avoided
             if ((rve_band_vol_old + band_vol_0_theo) == rve_band_vol_new) and not band_vol_0_theo == 0:
-
                 band_is_placed = True
                 self.logger.info("Band generator - Bandwidth: {}, Left bound: {} and Right bound: {}"
                                  .format(self.bandwidth, left_bound, right_bound))
@@ -164,11 +165,11 @@ class RVEUtils:
 
         for i in range(1, 9):
             points_array_copy = np.zeros(points_array.shape)
-            points_array_copy[(ellipse_points <= 1) & (points_array == -1*i)] = -100-i
+            points_array_copy[(ellipse_points <= 1) & (points_array == -1 * i)] = -100 - i
             if i % 2 != 0:
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
-                points_array_mod[np.where(points_array_copy == -100-i)] = iterator
+                points_array_mod[np.where(points_array_copy == -100 - i)] = iterator
             elif (i == 2) | (i == 6):
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
                 points_array_mod[np.where(points_array_copy == -100 - i)] = iterator
@@ -181,39 +182,39 @@ class RVEUtils:
         points_array_mod = np.zeros(points_array.shape)
         points_array_mod[points_array == iterator] = iterator
         t_0 = datetime.datetime.now()
-        for i in range(1, 27): #move points in x,y and z dir
+        for i in range(1, 27):  # move points in x,y and z dir
             points_array_copy = np.zeros(points_array.shape)
-            points_array_copy[(ellipse_points <= 1) & (points_array == -1*i)] = -100-i
+            points_array_copy[(ellipse_points <= 1) & (points_array == -1 * i)] = -100 - i
             if (i == 1) | (i == 3) | (i == 7) | (i == 9) | \
                     (i == 18) | (i == 20) | (i == 24) | (i == 26):  # move points in x,y and z direction
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
-                points_array_mod[points_array_copy == -100-i] = iterator
+                points_array_mod[points_array_copy == -100 - i] = iterator
             elif (i == 10) | (i == 12) | (i == 15) | (i == 17):  # move points in x and y direction
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
-                points_array_mod[points_array_copy == -100-i] = iterator
+                points_array_mod[points_array_copy == -100 - i] = iterator
             elif (i == 4) | (i == 6) | (i == 21) | (i == 23):  # move points in x and z direction
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
-                points_array_mod[points_array_copy == -100-i] = iterator
+                points_array_mod[points_array_copy == -100 - i] = iterator
             elif (i == 2) | (i == 8) | (i == 19) | (i == 25):  # move points in y and z direction
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
-                points_array_mod[points_array_copy == -100-i] = iterator
-            elif (i == 13) | (i == 14) :  # move points in x direction
+                points_array_mod[points_array_copy == -100 - i] = iterator
+            elif (i == 13) | (i == 14):  # move points in x direction
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
-                points_array_mod[points_array_copy == -100-i] = iterator
+                points_array_mod[points_array_copy == -100 - i] = iterator
             elif (i == 11) | (i == 16):  # move points in y direction
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                points_array_mod[points_array_copy == -100-i] = iterator
+                points_array_mod[points_array_copy == -100 - i] = iterator
             elif (i == 5) | (i == 22):  # move points in z direction
                 points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
-                points_array_mod[points_array_copy == -100-i] = iterator
-        time_elapse = datetime.datetime.now()-t_0
+                points_array_mod[points_array_copy == -100 - i] = iterator
+        time_elapse = datetime.datetime.now() - t_0
         if self.debug:
-            self.logger.info('time spent on periodicity for grain {}: {}'.format(iterator, time_elapse.total_seconds()) )
+            self.logger.info('time spent on periodicity for grain {}: {}'.format(iterator, time_elapse.total_seconds()))
         return points_array_mod
 
     def gen_boundaries_2D(self, points_array) -> np.ndarray:
@@ -376,11 +377,11 @@ class RVEUtils:
 
         drop_idx = additional_pts[(additional_pts['GrainID'] == -1) &
                                   ((additional_pts['x'] > new_max_x) |
-                                  (additional_pts['y'] > new_max_y))].index
+                                   (additional_pts['y'] > new_max_y))].index
         additional_pts.drop(drop_idx, inplace=True)
 
         drop_idx = additional_pts[((additional_pts['GrainID'] == -2) &
-                                  (additional_pts['y'] > new_max_y))].index
+                                   (additional_pts['y'] > new_max_y))].index
         additional_pts.drop(drop_idx, inplace=True)
 
         drop_idx = additional_pts[((additional_pts['GrainID'] == -8) &
@@ -432,8 +433,10 @@ class RVEUtils:
         xyz = np.linspace(-box_size / 2, box_size + box_size / 2, 2 * self.n_pts, endpoint=True)
         x_grid, y_grid, z_grid = np.meshgrid(xyz, xyz, xyz)
 
-        rve_x_idx, rve_y_idx, rve_z_idx = np.where((rve_array > 0) | (rve_array == -200) | (rve_array < -200))  # Added for the inclusions
-        boundary_x_idx, boundary_y_idx, boundary_z_idx = np.where((rve_array < 0) & (rve_array > -200))  # Zwischen -200 und 0
+        rve_x_idx, rve_y_idx, rve_z_idx = np.where(
+            (rve_array > 0) | (rve_array == -200) | (rve_array < -200))  # Added for the inclusions
+        boundary_x_idx, boundary_y_idx, boundary_z_idx = np.where(
+            (rve_array < 0) & (rve_array > -200))  # Zwischen -200 und 0
 
         rve_tuples = [*zip(rve_x_idx, rve_y_idx, rve_z_idx)]
         boundary_tuples = [*zip(boundary_x_idx, boundary_y_idx, boundary_z_idx)]
@@ -450,7 +453,8 @@ class RVEUtils:
                       for boundary_tuples_i in boundary_tuples]
 
         # generate pandas Dataframe of coordinates and grain IDs
-        rve_dict = {'x': rve_x, 'y': rve_y, 'z': rve_z, 'GrainID': rve_array[(rve_array > 0) | (rve_array == -200) | (rve_array < -200)]}   # Also smaller -200 for inclusions
+        rve_dict = {'x': rve_x, 'y': rve_y, 'z': rve_z, 'GrainID': rve_array[
+            (rve_array > 0) | (rve_array == -200) | (rve_array < -200)]}  # Also smaller -200 for inclusions
         rve = pd.DataFrame(rve_dict)
         rve['box_size'] = box_size
         rve['n_pts'] = n_pts
@@ -460,25 +464,24 @@ class RVEUtils:
         boundary = pd.DataFrame(boundary_dict)
 
         # Extract points that are supposed to be added to the rve
-        new_max_x = min(boundary[boundary['GrainID'] == -26].x)     # several numbers are possible -26 just works
-        new_max_y = min(boundary[boundary['GrainID'] == -26].y)     # for all three directions
-        new_max_z = min(boundary[boundary['GrainID'] == -26].z)     # therefore it's the most intuitive choice
+        new_max_x = min(boundary[boundary['GrainID'] == -26].x)  # several numbers are possible -26 just works
+        new_max_y = min(boundary[boundary['GrainID'] == -26].y)  # for all three directions
+        new_max_z = min(boundary[boundary['GrainID'] == -26].z)  # therefore it's the most intuitive choice
 
+        # these boundaries contain the new cornerpoints:
+        additional_corner_pts = boundary[(boundary['GrainID'] == -26)  # top_front_right (-26)
+        ].copy()
 
-                                                                         # these boundaries contain the new cornerpoints:
-        additional_corner_pts = boundary[(boundary['GrainID'] == -26)    # top_front_right (-26)
-                                         ].copy()
-
-                                                                        # these boundaries contain the new edgepoints:
-        additional_edge_pts = boundary[(boundary['GrainID'] == -17) |   # bottom_to_top_front_right (-17)
-                                       (boundary['GrainID'] == -23) |   # left_to_right_top_front (-23)
-                                       (boundary['GrainID'] == -25)     # rear_to_front_top_right (-25)
+        # these boundaries contain the new edgepoints:
+        additional_edge_pts = boundary[(boundary['GrainID'] == -17) |  # bottom_to_top_front_right (-17)
+                                       (boundary['GrainID'] == -23) |  # left_to_right_top_front (-23)
+                                       (boundary['GrainID'] == -25)  # rear_to_front_top_right (-25)
                                        ].copy()
 
-                                                                        # these boundaries contain the new edgepoints:
-        additional_face_pts = boundary[(boundary['GrainID'] == -14) |   # left_to_right_bottom_front (-6)
-                                       (boundary['GrainID'] == -16) |   # rear_to_front_bottom_right (-8)
-                                       (boundary['GrainID'] == -22)     # bottom_to_top_front_left (-12)
+        # these boundaries contain the new edgepoints:
+        additional_face_pts = boundary[(boundary['GrainID'] == -14) |  # left_to_right_bottom_front (-6)
+                                       (boundary['GrainID'] == -16) |  # rear_to_front_bottom_right (-8)
+                                       (boundary['GrainID'] == -22)  # bottom_to_top_front_left (-12)
 
                                        ].copy()
 
@@ -499,7 +502,6 @@ class RVEUtils:
                                                (additional_edge_pts['z'] > new_max_z)))].index
 
         additional_edge_pts.drop(drop_idx_edges, inplace=True)
-
 
         drop_idx_faces = additional_face_pts[((additional_face_pts['GrainID'] == -14) &
                                               (additional_face_pts['x'] > new_max_x)) |
@@ -553,20 +555,20 @@ class RVEUtils:
 
         # fixing Edges
         rve_edges = rve.loc[(
-                            ((rve['x'] == min_x) & (rve['z'] == min_z)) |
-                            ((rve['x'] == max_x) & (rve['z'] == min_z)) |
-                            ((rve['x'] == min_x) & (rve['z'] == max_z)) |
-                            ((rve['x'] == max_x) & (rve['z'] == max_z))) |
+                                    ((rve['x'] == min_x) & (rve['z'] == min_z)) |
+                                    ((rve['x'] == max_x) & (rve['z'] == min_z)) |
+                                    ((rve['x'] == min_x) & (rve['z'] == max_z)) |
+                                    ((rve['x'] == max_x) & (rve['z'] == max_z))) |
                             (
-                            ((rve['y'] == min_y) & (rve['z'] == min_z)) |
-                            ((rve['y'] == max_y) & (rve['z'] == min_z)) |
-                            ((rve['y'] == min_y) & (rve['z'] == max_z)) |
-                            ((rve['y'] == max_y) & (rve['z'] == max_z))) |
+                                    ((rve['y'] == min_y) & (rve['z'] == min_z)) |
+                                    ((rve['y'] == max_y) & (rve['z'] == min_z)) |
+                                    ((rve['y'] == min_y) & (rve['z'] == max_z)) |
+                                    ((rve['y'] == max_y) & (rve['z'] == max_z))) |
                             (
-                            ((rve['x'] == min_x) & (rve['y'] == min_y)) |
-                            ((rve['x'] == max_x) & (rve['y'] == min_y)) |
-                            ((rve['x'] == min_x) & (rve['y'] == max_y)) |
-                            ((rve['x'] == max_x) & (rve['y'] == max_y)))].copy()
+                                    ((rve['x'] == min_x) & (rve['y'] == min_y)) |
+                                    ((rve['x'] == max_x) & (rve['y'] == min_y)) |
+                                    ((rve['x'] == min_x) & (rve['y'] == max_y)) |
+                                    ((rve['x'] == max_x) & (rve['y'] == max_y)))].copy()
 
         # bottom_to_top_rear_left is mirrored on bottom_to_top_front_left,
         # bottom_to_top_front_right and bottom_to_top_rear_right
@@ -626,9 +628,9 @@ class RVEUtils:
                                           + (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2"""
 
         ellipse = 1 / (a ** 2) * ((self.x_grid - x_0) * np.cos(np.deg2rad(alpha))
-                                + (self.y_grid - y_0) * np.sin(np.deg2rad(alpha))) ** 2 + \
+                                  + (self.y_grid - y_0) * np.sin(np.deg2rad(alpha))) ** 2 + \
                   1 / (b ** 2) * (-(self.x_grid - x_0) * np.sin(np.deg2rad(alpha))
-                                + (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2
+                                  + (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2
 
         return ellipse
 
@@ -688,3 +690,22 @@ class RVEUtils:
         grains_df['GrainID'] = grains_df.index
 
         return grains_df
+
+    def rearange_grain_ids_bands(self, bands_df, grains_df, rsa):
+        """
+        Rearanges the grains in an RVE in ascending order
+        Needed because the band_grains are placed with ID lower -1000, but there is no need for this
+        Band-Grains are added after the normal Grains and are labeled from 1 to xx
+        """
+        start = grains_df['GrainID'].max() + 1  # First occupied value
+        print(grains_df)
+        print(bands_df)
+        rsa = rsa.copy()
+        print(start)
+        for i in bands_df['GrainID']:
+            j = i + 1
+            rsa[np.where(rsa == -(1000 + j))] = start + j
+
+        print(np.asarray(np.unique(rsa, return_counts=True)).T)
+        return rsa
+

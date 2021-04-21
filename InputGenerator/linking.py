@@ -325,19 +325,27 @@ class Reconstructor:
             self.slope_dict.update({'{}'.format(names[i]): (LinearRegression().fit(all[i][0], all[i][1]).coef_,
                                                             LinearRegression().fit(all[i][2], all[i][3]).coef_)})
 
-    def get_rve_input(self, bs):
+    def get_rve_input(self, bs, maximum=None):
         max_volume = bs*bs*bs
         grain_vol = 0
         data = self.result_df.copy()
         inp_list = list()
         while grain_vol < max_volume:
-            # Fixme: Check if the axis is to big for the RVE-boxsize
             idx = np.random.randint(0, data.__len__())
             grain = data[['a_final', 'b_final', 'c_final', 'SlopeAB']].iloc[idx].tolist()
             data = data.drop(labels=data.index[idx], axis=0)
-            vol = 4/3 * np.pi * grain[0] * grain[1] * grain[2]
-            grain_vol += vol
-            inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
+            if maximum is None:
+                vol = 4/3 * np.pi * grain[0] * grain[1] * grain[2]
+                grain_vol += vol
+                inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
+            else:
+                if (grain[0] > maximum) or (grain[1] > maximum) or (grain[2] > maximum):
+                    pass
+                else:
+                    # Only append if smaller
+                    vol = 4 / 3 * np.pi * grain[0] * grain[1] * grain[2]
+                    grain_vol += vol
+                    inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
 
         # Del last if to big and more than one value:
         if grain_vol >= max_volume and inp_list.__len__() > 1:

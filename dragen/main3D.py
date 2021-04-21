@@ -15,6 +15,7 @@ from dragen.generation.mesher import Mesher
 
 from InputGenerator.C_WGAN_GP import WGANCGP
 from InputGenerator.linking import Reconstructor
+# TODO: Hier alles raus was GAN ist!
 
 
 class DataTask3D:
@@ -257,7 +258,6 @@ class DataTask3D:
             sys.exit()
 
         if self.gan_flag:
-            # TODO: Das sollte über eine Inclusions Flag gehen
             adjusted_size = self.box_size * np.cbrt(0.15)   # 10% as an example
             inclusions = self.sample_gan_input(size=200, labels=(3,4,5), bs=adjusted_size, n_bands=0, bandwith=0)
             # Processing mit shrinken - Das könnte mal in eine Funktion :)
@@ -315,7 +315,7 @@ class DataTask3D:
                     periodic_rve_df.loc[periodic_rve_df['GrainID'] == -(200 + j + 1), 'GrainID'] = (i + j + 2)
                     periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + j + 2), 'phaseID'] = 2
 
-            if self.number_of_bands > 0:    # FIXME: Das funktioniert aktuell nur mit GAN, sonst gibt es kein j!
+            if self.number_of_bands > 0:
                 # Set the points where == -200 to phase 2 and to grain ID i + 2
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = (i + j + 3)
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + j + 3), 'phaseID'] = 2
