@@ -14,6 +14,25 @@ DRAGen is an approach for generating Representative Volume Elements (RVEs) based
 
 The results show that the generator can successfully reconstruct realistic microstructures with elongated grains and martensite bands from given input data sets.
 
+## Input data
+summary:
+* a: grain radius (mandatory)
+* b: grain radius (optional, default = a )
+* c: grain radius (optional, default = a)
+* alpha: grain slope in xy-plane (optional, default = 0)
+* beta: grain slope in other plane (not yet implemented)
+* phi1: euler Angle (optional, default: random)
+* PHI: euler Angle (optional, default: random)
+* phi2: euler Angle (optional, default: random)
+
+DRAGen takes .csv files as input. Theses files must contain at least one radius for each grain. This radius has to be called a in the header.
+optional paramater are:
+b & c as second and third radius of each grain (ellipsoids are created). "a" is assumed to be oriented with the rolling direction and is aligned with x
+"b" is aligned wit y and "c" with z.
+If a slope relative to x is detected (rotation around z-axis) "alpha" can be used to implement this slope on the grains.
+"beta" will be implemented in the future and will be a rotation around x or y.
+The texture can be defined with the parameters "phi1", "PHI" and "phi2"
+
 ## Input generator
 
 One additional feature of our system is the generation of statistically representative microstructur using **Generative Adversarial Networks**, a method from the field of deep learning. With our CWGAN-GP, it is possible to generate an unlimited amount of vaild synthetical microstructure. Possible for "normal" grain data, inclusions and even damage (coming soon!). For more information, see our article on the basic idea of using a WGAN (https://www.mdpi.com/1996-1944/13/19/4236) and our IDDRG post on the CWGAN-GP (coming shortly after publishing).
