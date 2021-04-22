@@ -9,7 +9,7 @@ This repository includes the official implementation of the paper [A Novel Appro
 DRAGen is an approach for generating Representative Volume Elements (RVEs) based on a Random Sequential Addition (RSA)-Algorithm for discrete volumes and the tessellation using a discrete tessellation function. The input data are gathered from the analysis of electron backscatter diffraction (EBSD) pictures via MATLAB toolbox MTEX and introduced to the model. Subsequently, the generator follows the below mentioned steps:
 
 * Randomly generating ellipsoids in volume (RSA)
-* Filling empty spaces between ellipsoids(Discrete Tessellation)
+* Filling empty spaces between ellipsoids (Discrete Tessellation)
 * Validation of the newly created digital microstructure with input data
 
 The results show that the generator can successfully reconstruct realistic microstructures with elongated grains and martensite bands from given input data sets.
