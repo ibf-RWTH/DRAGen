@@ -19,19 +19,19 @@ summary:
 * a: grain radius (mandatory)
 * b: grain radius (optional, default = a )
 * c: grain radius (optional, default = a)
-* alpha: grain slope in xy-plane (optional, default = 0)
+* alpha: grain slope in x-y-plane (optional, default = 0)
 * beta: grain slope in other plane (not yet implemented)
 * phi1: euler Angle (optional, default: random)
 * PHI: euler Angle (optional, default: random)
 * phi2: euler Angle (optional, default: random)
 
 DRAGen takes .csv files as input. Theses files must contain at least one radius for each grain. This radius has to be called a in the header.
-optional paramater are:
-b & c as second and third radius of each grain (ellipsoids are created). "a" is assumed to be oriented with the rolling direction and is aligned with x
-"b" is aligned wit y and "c" with z.
-If a slope relative to x is detected (rotation around z-axis) "alpha" can be used to implement this slope on the grains.
-"beta" will be implemented in the future and will be a rotation around x or y.
-The texture can be defined with the parameters "phi1", "PHI" and "phi2"
+optional parameters are:
+"b" & "c" as second and third radius of each grain (ellipsoids are created). "a" is assumed to be oriented with the rolling direction and is aligned with x-axis,
+"b" is aligned with y-axis and "c" with z-axis.
+If a slope relative to x-axis is detected (rotation in x-y-plane, around z-axis), "alpha" can be used to implement this slope on the grains.
+"beta" will be implemented in the future and will be a rotation around x- or y-axis.
+The texture can be defined with the parameters "phi1", "PHI" and "phi2".
 
 ## Input generator
 
