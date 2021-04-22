@@ -231,6 +231,7 @@ class DiscreteRsa3D:
 
         # Init
         band_vol_0 = np.count_nonzero(rsa == -200)  # Zähle -200 für initiales Gefüge
+        print('Initiales, nicht belegbares Volumen:', band_vol_0)
         rsa_boundaries = rsa.copy()
         x_0_list = list()
         y_0_list = list()
@@ -262,11 +263,8 @@ class DiscreteRsa3D:
             band_points = np.count_nonzero(rsa == -200)
             if band_points_old > 0:
                 if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)) | \
-                        (band_points / band_vol_0 < 1.0):  # Fixme: Fehler
-                                                           # Fixme: Prozentbereich nach außen muss möglich sein
-                    print('Kein Schnittpunkt mit Korn? ',
-                          free_points_old - free_points != np.count_nonzero(periodic_grain))
-                    print('Kein Schnittpunkt mit Außenbereich?', (band_points / band_vol_0 == 1.0))
+                        (band_points / band_vol_0 < 0.95):  # Fixme: Prozentbereich nach außen muss möglich sein (95%)
+                    print('Schnittpunkt mit Außenbereich?', (band_points / band_vol_0 != 1.0))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
 

@@ -160,7 +160,7 @@ class Tesselation3D:
             status = True
 
         # Save for further usage
-        print(np.asarray(np.unique(rve, return_counts=True)).T)
+        #print(np.asarray(np.unique(rve, return_counts=True)).T)
         np.save(self.store_path + '/' + 'RVE_Numpy.npy', rve)
         return rve, status
 
