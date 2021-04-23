@@ -16,15 +16,14 @@ The results show that the generator can successfully reconstruct realistic micro
 
 ## Input data
 
-* a: grain radius (**mandatory**)
+<!--* a: grain radius (**mandatory**)
 * b: grain radius (optional, default = a )
 * c: grain radius (optional, default = a)
 * alpha: grain slope in x-y-plane (optional, default = 0)
 * beta: grain slope in other plane (not yet implemented)
 * phi1: euler angle (optional, default: random)
 * PHI: euler angle (optional, default: random)
-* phi2: euler angle (optional, default: random)
-<br>
+* phi2: euler angle (optional, default: random)<br>-->
 
 
 | Header: | a | b | c | alpha | beta | phi1 | PHI | phi2 |
