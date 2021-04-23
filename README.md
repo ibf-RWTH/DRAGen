@@ -29,7 +29,7 @@ The results show that the generator can successfully reconstruct realistic micro
 
 | Header: | a | b | c | alpha | beta | phi1 | PHI | phi2 |
 | --- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Description:** | grain radius | grain radius | grain radius | grain slope<br>x-y-plane | _soon_ | euler angle | euler angle | euler angle |
+| **Description:** | grain radius | grain radius | grain radius | grain slope<br>x-y-plane | _soon_ | euler ang. | euler ang. | euler ang. |
 | **Required:** | mandatory | optional | optional | optional | _soon_ | optional | optional | optional |
 | **Default:** |  | a | a | 0 | _soon_ | random | random | random |
 
