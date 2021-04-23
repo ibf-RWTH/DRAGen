@@ -29,9 +29,9 @@ The results show that the generator can successfully reconstruct realistic micro
 
 | Header: | a | b | c | alpha | beta | phi1 | PHI | phi2 |
 | --- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Description:** | grain radius | grain radius | grain radius | grain slope,<br>x-y-plane | _not yet_ | euler angle | euler angle | euler angle |
-| **Required:** | mandatory | optional | optional | optional | _not yet_ | optional | optional | optional |
-| **Default:** |  | a | a | 0 | _not yet_ | random | random | random |
+| **Description:** | grain radius | grain radius | grain radius | grain slope<br>x-y-plane | _soon_ | euler angle | euler angle | euler angle |
+| **Required:** | mandatory | optional | optional | optional | _soon_ | optional | optional | optional |
+| **Default:** |  | a | a | 0 | _soon_ | random | random | random |
 
 <br>
 DRAGen takes .csv files as input. Theses files must contain <ins>at least one radius</ins> for each grain. This radius has to be called <em>a</em> in the header.
@@ -41,7 +41,7 @@ DRAGen takes .csv files as input. Theses files must contain <ins>at least one ra
 _b_ is aligned with y-axis and _c_ with z-axis.<br>
 2. If a slope relative to x-axis is detected (rotation in x-y-plane, around z-axis), _alpha_ can be used to implement this slope on the grains.<br>
 _beta_ will be implemented in the future and will be a rotation around x- or y-axis.<br>
-3. The texture can be defined with the parameters _phi1_, _PHI_ and _phi2_.</p>
+3. The texture can be defined with the parameters _phi1_, _PHI_ and _phi2_.
 
 ## Input generator
 
