@@ -29,9 +29,9 @@ The results show that the generator can successfully reconstruct realistic micro
 
 | Header: | a | b | c | alpha | beta | phi1 | PHI | phi2 |
 | --- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Description:** | grain radius | grain radius | grain radius | grain slope, x-y-plane | _not yet_ | euler angle | euler angle | euler angle |
+| **Description:** | grain radius | grain radius | grain radius | grain slope,<br>x-y-plane | _not yet_ | euler angle | euler angle | euler angle |
 | **Required:** | mandatory | optional | optional | optional | _not yet_ | optional | optional | optional |
-| **Default value:** |  | a | a | 0 | _not yet_ | random | random | random |
+| **Default:** |  | a | a | 0 | _not yet_ | random | random | random |
 
 <br>
 DRAGen takes .csv files as input. Theses files must contain <ins>at least one radius</ins> for each grain. This radius has to be called <em>a</em> in the header.
