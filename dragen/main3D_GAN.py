@@ -16,27 +16,34 @@ from dragen.generation.mesher import Mesher
 from InputGenerator.C_WGAN_GP import WGANCGP
 from InputGenerator.linking import Reconstructor
 
-# TODO: Inclusions und Bänder jeweils mit Flag versehen!
-# TODO: Passe die Logger anzeigen an! In der Art: "So und soviele Körner als Ferrite gesamplet etc.
 class DataTask3D:
 
     def __init__(self, box_size=30, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5,
                  file1=None, file2=None, store_path=None,
-                 gui_flag=True, anim_flag=False, gan_flag=False, exe_flag=False,
-                 band_ratio_rsa=0.95, band_ratio_final=0.95):
+                 gui_flag=True, anim_flag=False, gan_flag=False, exe_flag=False, inclusions_flag=True,
+                 band_filling=0.99, phase_ratio=0.95, inclusions_ratio=0.01):
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.n_pts = n_pts  # has to be even
         self.bin_size = self.box_size / self.n_pts
         self.step_half = self.bin_size / 2
-        self.number_of_bands = number_of_bands
-        self.bandwidth = bandwidth
         self.shrink_factor = np.cbrt(shrink_factor)
-        self.band_ratio_rsa = band_ratio_rsa  # Band Ratio for RSA
-        self.band_ratio_final = band_ratio_final  # Band ratio for Tesselator - final is br1 * br2
         self.gui_flag = gui_flag
         self.gan_flag = gan_flag
+        self.inclusions_flag = inclusions_flag if self.gan_flag else False  # geht nicht ohne GAN
         self.root_dir = './'
+
+        """
+        Aktueller Parametersatz für GAN:
+        Parameters:
+                 
+        
+        """
+        self.number_of_bands = number_of_bands
+        self.bandwidth = bandwidth
+        self.band_filling = band_filling           # Percentage of Filling for the banded structure
+        self.phase_ratio = phase_ratio            # 1 means all ferrite, 0 means all Martensite
+        self.inclusion_ratio = inclusions_ratio        # Space occupied by inclusions
 
         if exe_flag:
             self.root_dir = store_path
@@ -190,9 +197,9 @@ class DataTask3D:
         """
         self.logger.info("RVE generation process has started with Band-creation")
         self.logger.info("The total volume of the RVE is {0}*{0}*{0} = {1}".format(self.box_size, self.box_size**3))
-        # TODO: Sizefaktor muss wenn kleiner 1 bei den anderen ausgeglichen werden
-        adjusted_size = np.cbrt((self.number_of_bands * self.bandwidth * self.box_size ** 2)*0.95)
-        phase1 = self.sample_gan_input(size=800, labels=[3, 4, 5], adjusted_size=adjusted_size, maximum=self.bandwidth*0.75)
+        adjusted_size = np.cbrt((self.number_of_bands * self.bandwidth * self.box_size ** 2)*self.band_filling)
+        phase1 = self.sample_gan_input(size=800, labels=[3, 4, 5], adjusted_size=adjusted_size,
+                                       maximum=self.bandwidth)
         bands_df = self.utils_obj.shrink_df(phase1, self.shrink_factor)
         bands_df['phaseID'] = 2
         self.logger.info('Sampled {} Martensite-Points for band-Creation!'.format(bands_df.__len__()))
@@ -230,7 +237,7 @@ class DataTask3D:
                              "islands")
             # Ferrite:
             adjusted_size_ferrite = np.cbrt((self.box_size ** 3 - self.number_of_bands * self.bandwidth *
-                                            self.box_size ** 2) * 0.9)
+                                            self.box_size ** 2) * self.phase_ratio)
             phase1 = self.sample_gan_input(size=800, labels=[0, 1, 2], adjusted_size=adjusted_size_ferrite)
             grains_df = self.utils_obj.shrink_df(phase1, self.shrink_factor)
             grains_df['phaseID'] = 1  # Ferrite_Grains
@@ -238,7 +245,7 @@ class DataTask3D:
             self.logger.info('The total volume is: {}'.format(np.sum(grains_df['final_volume'].values)))
             # Martensite
             adjusted_size_martensite = np.cbrt((self.box_size ** 3 - self.number_of_bands * self.bandwidth *
-                                               self.box_size ** 2) * 0.1)
+                                               self.box_size ** 2) * (1-self.phase_ratio))
             phase2 = self.sample_gan_input(size=800, labels=[3, 4, 5], adjusted_size=adjusted_size_martensite)
             grains_df_2 = self.utils_obj.shrink_df(phase2, self.shrink_factor)
             grains_df_2['phaseID'] = 2  # Martensite_Islands
@@ -295,7 +302,7 @@ class DataTask3D:
                                                      whole_df['alpha'].tolist(),
                                                      x_0_list, y_0_list, z_0_list,
                                                      whole_df['final_volume'].tolist(),
-                                                     self.shrink_factor, self.band_ratio_final, store_path)
+                                                     self.shrink_factor, 1, store_path)
 
             rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa, animation=self.animation)
             # Change the band_ids to -200
@@ -314,9 +321,9 @@ class DataTask3D:
         grain boundary. Labels are lower -200
         -------------------------------------------------------------------------
         """
-        if self.gan_flag and rve_status:
+        if rve_status and self.inclusions_flag:
             self.logger.info("RVE generation process reaches final steps: Placing inclusions in the matrix")
-            adjusted_size = self.box_size * np.cbrt(0.01)  # 1% as an example
+            adjusted_size = self.box_size * np.cbrt(self.inclusion_ratio)  # 1% as an example
             inclusions = self.sample_gan_input(size=200, labels=(3, 4, 5), adjusted_size=adjusted_size)
             # Processing mit shrinken - Das könnte mal in eine Funktion :)
             inclusions_df = self.utils_obj.shrink_df(inclusions, self.shrink_factor)
@@ -347,7 +354,7 @@ class DataTask3D:
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1, 'phaseID'] = grains_df['phaseID'][i]
 
             # For the inclusions:
-            if self.gan_flag:
+            if self.inclusions_flag:
                 # Zuweisung der negativen grain-ID's
                 for j in range(len(inclusions_df)):
                     periodic_rve_df.loc[periodic_rve_df['GrainID'] == -(200 + j + 1), 'GrainID'] = (i + j + 2)
@@ -356,10 +363,14 @@ class DataTask3D:
             print(periodic_rve_df)
             print(periodic_rve_df['GrainID'].value_counts())
 
-            if self.number_of_bands > 0:
+            if self.number_of_bands > 0 and self.inclusions_flag:
                 # Set the points where == -200 to phase 2 and to grain ID i + j + 3
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = (i + j + 3)
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + j + 3), 'phaseID'] = 2
+            else:
+                # Set the points where == -200 to phase 2 and to grain ID i + 2
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = (i + 2)
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
 
 
             # Start the Mesher

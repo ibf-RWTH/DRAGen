@@ -107,7 +107,7 @@ class RVEUtils:
         self.logger.info("Volume for the given radii: {}".format(len(grainx[inside])))
         return len(grainx[inside])
 
-    def band_generator(self, band_array: np.array, plane: str = 'xy'):
+    def band_generator(self, band_array: np.array, plane: str = 'xz'):
         """Creates a band of given bandwidth for given points in interval [step_half, box_size)
         with bin_size spacing along the axis.
         Parameters :

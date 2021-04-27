@@ -11,9 +11,10 @@ if __name__ == "__main__":
     dimension = 3
     # Optional arguments with default values:
     # obj3D = DataTask3D()
-    obj3D = DataTask3D(box_size=20, n_pts=40, number_of_bands=1, bandwidth=5,
-                       shrink_factor=0.5, band_ratio_rsa=0.75, band_ratio_final=0.75, file1=None, file2=None,
-                       gui_flag=False, gan_flag=True, anim_flag=True)
+    obj3D = DataTask3D(box_size=25, n_pts=50, number_of_bands=1, bandwidth=5,
+                       shrink_factor=0.5, file1=None, file2=None,
+                       gui_flag=False, gan_flag=True, anim_flag=True, inclusions_flag=True, inclusions_ratio=0.01,
+                       band_filling=1, phase_ratio=0.95)
     obj2D = DataTask2D()
 
     try:

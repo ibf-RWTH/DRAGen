@@ -263,7 +263,7 @@ class DiscreteRsa3D:
             band_points = np.count_nonzero(rsa == -200)
             if band_points_old > 0:
                 if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)) | \
-                        (band_points / band_vol_0 < 0.95):  # Fixme: Prozentbereich nach außen muss möglich sein (95%)
+                        (band_points / band_vol_0 < 0.95):  # Prozentbereich nach außen muss möglich sein (95%)
                     print('Schnittpunkt mit Außenbereich?', (band_points / band_vol_0 != 1.0))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
@@ -341,8 +341,6 @@ class DiscreteRsa3D:
         i = 1
         attempt = 0
         while (i < self.n_grains + 1) & (attempt < 5000):
-            # FIXME: Was passiert, wenn er nicht alle platziert bekommt? - Es könnte dann im Mesher Probleme geben
-            # Fixme: Irgendwie scheint der auch Inclusions ineinander zu platzieren, dass dürfte eigentlich nicht passieren
             grain = new_rve.copy()
             backup = inc_rve.copy()
             ellipsoid, x0, y0, z0 = self.gen_ellipsoid(new_rve, iterator=i - 1)
@@ -353,8 +351,7 @@ class DiscreteRsa3D:
                         200 + i)  # -for Inclusions
 
             # Checking
-            check = set(rve[np.where(inc_rve == -(
-                        200 + i))])  # Fixme: er legt sie ins inc_rve, aber man prüft nur das normale rve, daher inclusions ineinander
+            check = set(rve[np.where(inc_rve == -(200 + i))])
 
             if check.__len__() > 1:
                 print('Inclusion cuts grain boundary! - Cutted Grains: {}'.format(check))
