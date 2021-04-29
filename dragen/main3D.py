@@ -22,7 +22,7 @@ class DataTask3D:
 
     def __init__(self, box_size=30, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5,
                  file1=None, file2=None, store_path=None,
-                 gui_flag=True, anim_flag=False, gan_flag=False, exe_flag=False,
+                 gui_flag=False, anim_flag=False, gan_flag=False, exe_flag=False,
                  band_ratio_rsa=0.95, band_ratio_final=0.95):
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
