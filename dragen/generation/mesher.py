@@ -45,7 +45,8 @@ class Mesher:
 
         # Edit the spatial reference
         grid.origin = (0, 0, 0)  # The bottom left corner of the data set
-        grid.spacing = (self.bin_size, self.bin_size, self.bin_size)  # These are the cell sizes along each axis
+        # These are the cell sizes along each axis in the gui µm were entered here they are transforemed to mm
+        grid.spacing = (self.bin_size/1000, self.bin_size/1000, self.bin_size/1000)
         return grid
 
     def gen_grains(self, grid: pv.UniformGrid) -> pv.UniformGrid:

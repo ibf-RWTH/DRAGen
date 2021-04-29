@@ -13,6 +13,9 @@ dist/
 /gui_main.spec
 /yourscript.spec
 /gui_main.exe.lnk
+/DRAGen.spec
+/dragen/gui_tkinter/Icon.png
+/dragen/gui_tkinter/Logo.ico
 
 .ipynb_checkpoints/
 dragen/.ipynb_checkpoints/
