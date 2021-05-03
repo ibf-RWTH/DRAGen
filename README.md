@@ -47,7 +47,10 @@ _beta_ will be implemented in the future and will be a rotation around x- or y-a
 One additional feature of our system is the generation of statistically representative microstructur using **Generative Adversarial Networks**, a method from the field of deep learning. With our CWGAN-GP, it is possible to generate an unlimited amount of vaild synthetical microstructure. Possible for "normal" grain data, inclusions and even damage (coming soon!). For more information, see our article on the basic idea of using a WGAN (https://www.mdpi.com/1996-1944/13/19/4236) and our IDDRG post on the CWGAN-GP (coming shortly after publishing).
 
 ## soon to come
-Release of beta v.1.0
+Release of beta v.1.
+
+<details>
+<summary><b>Show more<b></summary>
 
 ## Contact
 
@@ -55,4 +58,4 @@ Release of beta v.1.0
 * Maximilian Neite M. Sc. <maximilian.neite@iehk.rwth-aachen.de>
 * Niklas Fehlemann M. Sc. <niklas.fehlemann@iehk.rwth-aachen.de>
 * Orkun Karagüllü M. Sc. <orkun.karaguellue@iehk.rwth-aachen.de>
-
+</details>
