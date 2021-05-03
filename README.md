@@ -14,6 +14,9 @@ DRAGen is an approach for generating Representative Volume Elements (RVEs) based
 
 The results show that the generator can successfully reconstruct realistic microstructures with elongated grains and martensite bands from given input data sets.
 
+<details>
+<summary><b>Show more...<b></summary>
+
 ## Input data
 
 <!--* a: grain radius (**mandatory**)
@@ -49,8 +52,6 @@ One additional feature of our system is the generation of statistically represen
 ## soon to come
 Release of beta v.1.
 
-<details>
-<summary><b>Show more<b></summary>
 
 ## Contact
 
