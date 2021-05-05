@@ -7,39 +7,38 @@ import sys
 from dragen.utilities.RVE_Utils import RVEUtils
 
 
-class Tesselation3D:
+class Tesselation3D(RVEUtils):
 
-    def __init__(self, box_size, n_pts, a, b, c, alpha, x_0, y_0, z_0, final_volume, shrinkfactor, band_ratio, store_path, debug=False):
+    def __init__(self, box_size, n_pts, grains_df, shrinkfactor, band_ratio, store_path, debug=False):
 
         self.box_size = box_size
         self.n_pts = n_pts
-        self.a = a
-        self.b = b
-        self.c = c
-        self.alpha = alpha
-        self.x_0 = x_0
-        self.y_0 = y_0
-        self.z_0 = z_0
+        self.grains_df = grains_df
+        self.a = grains_df['a'].tolist()
+        self.b = grains_df['b'].tolist()
+        self.c = grains_df['c'].tolist()
+        self.alpha = grains_df['alpha'].tolist()
+        self.x_0 = grains_df['x_0'].tolist()
+        self.y_0 = grains_df['y_0'].tolist()
+        self.z_0 = grains_df['z_0'].tolist()
+        self.final_volume = grains_df['final_discrete_volume'].tolist()
         self.shrinkfactor = shrinkfactor
         self.band_ratio = band_ratio
         self.store_path = store_path
         self.debug = debug
 
         self.logger = logging.getLogger("RVE-Gen")
-        self.n_grains = len(a)
+        self.n_grains = len(self.a)
         self.bin_size = box_size / n_pts
-        self.a_max = max(a)
-        self.b_max = max(b)
-        self.c_max = max(c)
-        self.final_volume = final_volume
-        xyz = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
-        self.x_grid, self.y_grid, self.z_grid = np.meshgrid(xyz, xyz, xyz)
-        self.rve_utils_object = RVEUtils(box_size, n_pts, self.x_grid, self.y_grid, self.z_grid, debug=debug)
+        self.a_max = max(self.a)
+        self.b_max = max(self.b)
+        self.c_max = max(self.c)
+        super().__init__(box_size, n_pts)
+        self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
+
 
     def grow(self, iterator, a, b, c):
-        x_grid = self.x_grid
-        y_grid = self.y_grid
-        z_grid = self.z_grid
+
         alpha = self.alpha[iterator-1]
         x_0 = self.x_0[iterator-1]
         y_0 = self.y_0[iterator-1]
@@ -54,11 +53,7 @@ class Tesselation3D:
         b[iterator - 1] = b_i
         c[iterator - 1] = c_i
 
-        """ellipsoid = (x_grid - x_0) ** 2 / (a_i ** 2) + \
-                  (y_grid - y_0) ** 2 / (b_i ** 2) + \
-                  (z_grid - z_0) ** 2 / (c_i ** 2)"""
-
-        ellipsoid = self.rve_utils_object.ellipsoid(a_i, b_i, c_i, x_0, y_0, z_0, alpha=alpha)
+        ellipsoid = super().ellipsoid(a_i, b_i, c_i, x_0, y_0, z_0, alpha=alpha)
 
         return ellipsoid, a, b, c
 
@@ -66,7 +61,9 @@ class Tesselation3D:
         t_0 = datetime.datetime.now()
         n_grains = self.n_grains
         rve_x, rve_y, rve_z = np.where((array >= 1) | (array == -200))
+
         grain_tuples = [*zip(rve_x, rve_y, rve_z)]
+
         grains_x = [self.x_grid[grain_tuples_i[0]][grain_tuples_i[1]][grain_tuples_i[2]]
                     for grain_tuples_i in grain_tuples]
         grains_y = [self.y_grid[grain_tuples_i[0]][grain_tuples_i[1]][grain_tuples_i[2]]
@@ -110,8 +107,8 @@ class Tesselation3D:
         rve = rsa
 
         # define boundaries and empty rve array
-        empty_rve = np.zeros((2 * self.n_pts, 2 * self.n_pts, 2 * self.n_pts), dtype=np.int32)
-        empty_rve = self.rve_utils_object.gen_boundaries_3D(empty_rve)
+        empty_rve = super().gen_array()
+        empty_rve = super().gen_boundaries_3D(empty_rve)
         rve_boundaries = empty_rve.copy()  # empty rve grid with defined boundaries
         vol_0 = np.count_nonzero(empty_rve == 0)
 
@@ -119,6 +116,7 @@ class Tesselation3D:
         grain_idx = [i for i in range(1, n_grains + 1)]
         grain_idx_backup = grain_idx.copy()
         while freepoints > 0:
+            freepoints_old = freepoints
             i = 0
             np.random.shuffle(grain_idx)
             while i < len(grain_idx):
@@ -126,7 +124,7 @@ class Tesselation3D:
                 ellipsoid, a, b, c = self.grow(idx, a, b, c)
                 grain = rve_boundaries.copy()
                 grain[(ellipsoid <= 1) & (grain == 0)] = idx
-                periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipsoid, iterator=idx)
+                periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=idx)
                 band_vol = np.count_nonzero(rve == -200)
 
                 if band_vol_0 > 0:
@@ -142,8 +140,8 @@ class Tesselation3D:
                 grain_vol = np.count_nonzero(rve == idx) * self.bin_size ** 3
                 if freepoints == 0:
                     break
-
-                if grain_vol > self.final_volume[idx-1] and not repeat:
+                delta_grow = freepoints_old - freepoints
+                if (grain_vol > self.final_volume[idx-1] and not repeat) or delta_grow == 0:
                     del grain_idx[i]
 
                 i += 1
@@ -162,6 +160,10 @@ class Tesselation3D:
         # Save for further usage
         #print(np.asarray(np.unique(rve, return_counts=True)).T)
         np.save(self.store_path + '/' + 'RVE_Numpy.npy', rve)
+        grains_df = super().get_final_disc_vol_3D(self.grains_df, rve)
+        grains_df['final_discrete_volume'].to_csv(self.store_path +
+                                                  '/Generation_Data/discrete_output_vol.csv', index=False)
+
         return rve, status
 
 
