@@ -2,12 +2,11 @@ import os
 import sys
 import datetime
 import numpy as np
-import csv
+
 import logging
 import logging.handlers
 import pandas as pd
 
-from tqdm import tqdm
 from dragen.generation.DiscreteRsa3D import DiscreteRsa3D
 from dragen.generation.DiscreteTesselation3D import Tesselation3D
 from dragen.utilities.RVE_Utils import RVEUtils
@@ -16,7 +15,7 @@ from dragen.generation.mesher import Mesher
 from InputGenerator.C_WGAN_GP import WGANCGP
 from InputGenerator.linking import Reconstructor
 
-class DataTask3D:
+class DataTask3D_GAN:
 
     def __init__(self, box_size=30, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5,
                  file1=None, file2=None, store_path=None,
@@ -200,7 +199,7 @@ class DataTask3D:
         adjusted_size = np.cbrt((self.number_of_bands * self.bandwidth * self.box_size ** 2)*self.band_filling)
         phase1 = self.sample_gan_input(size=800, labels=[3, 4, 5], adjusted_size=adjusted_size,
                                        maximum=self.bandwidth)
-        bands_df = self.utils_obj.shrink_df(phase1, self.shrink_factor)
+        bands_df = self.utils_obj.process_df(phase1, self.shrink_factor, 1)
         bands_df['phaseID'] = 2
         self.logger.info('Sampled {} Martensite-Points for band-Creation!'.format(bands_df.__len__()))
         self.logger.info('The total volume is: {}'.format(np.sum(bands_df['final_volume'].values)))
@@ -239,7 +238,7 @@ class DataTask3D:
             adjusted_size_ferrite = np.cbrt((self.box_size ** 3 - self.number_of_bands * self.bandwidth *
                                             self.box_size ** 2) * self.phase_ratio)
             phase1 = self.sample_gan_input(size=800, labels=[0, 1, 2], adjusted_size=adjusted_size_ferrite)
-            grains_df = self.utils_obj.shrink_df(phase1, self.shrink_factor)
+            grains_df = self.utils_obj.process_df(phase1, self.shrink_factor, 1)
             grains_df['phaseID'] = 1  # Ferrite_Grains
             self.logger.info('Sampled {} Ferrite-Points for the matrix!'.format(grains_df.__len__()))
             self.logger.info('The total volume is: {}'.format(np.sum(grains_df['final_volume'].values)))
@@ -247,7 +246,7 @@ class DataTask3D:
             adjusted_size_martensite = np.cbrt((self.box_size ** 3 - self.number_of_bands * self.bandwidth *
                                                self.box_size ** 2) * (1-self.phase_ratio))
             phase2 = self.sample_gan_input(size=800, labels=[3, 4, 5], adjusted_size=adjusted_size_martensite)
-            grains_df_2 = self.utils_obj.shrink_df(phase2, self.shrink_factor)
+            grains_df_2 = self.utils_obj.process_df(phase2, self.shrink_factor, 1)
             grains_df_2['phaseID'] = 2  # Martensite_Islands
             self.logger.info('Sampled {} Martensite-Islands for the matrix!'.format(grains_df_2.__len__()))
             self.logger.info('The total volume is: {}'.format(np.sum(grains_df_2['final_volume'].values)))
@@ -261,6 +260,7 @@ class DataTask3D:
             # Write out the grain data
             grains_df.to_csv(store_path + '/discrete_input_vol.csv', index=False)
 
+            # TODO hier musst du gucken mit dem neuen process data frame util das RSA obj nimmt jetzt einen dataframe
             discrete_RSA_obj = DiscreteRsa3D(self.box_size, self.n_pts,
                                              grains_df['a'].tolist(),
                                              grains_df['b'].tolist(),
@@ -291,6 +291,7 @@ class DataTask3D:
             rsa = self.utils_obj.rearange_grain_ids_bands(bands_df=bands_df,
                                                           grains_df=grains_df,
                                                           rsa=rsa)
+            # TODO hier musst du gucken mit dem neuen process data frame util das tess obj nimmt jetzt einen dataframe
             # Concat all the data
             whole_df = pd.concat([grains_df, bands_df])
             whole_df.reset_index(inplace=True, drop=True)
@@ -326,7 +327,7 @@ class DataTask3D:
             adjusted_size = self.box_size * np.cbrt(self.inclusion_ratio)  # 1% as an example
             inclusions = self.sample_gan_input(size=200, labels=(3, 4, 5), adjusted_size=adjusted_size)
             # Processing mit shrinken - Das könnte mal in eine Funktion :)
-            inclusions_df = self.utils_obj.shrink_df(inclusions, self.shrink_factor)
+            inclusions_df = self.utils_obj.process_df(inclusions, self.shrink_factor, 1)
             inclusions_df['phaseID'] = 2  # Inclusions also elastic
             self.logger.info('Sampled {} inclusions for the RVE'.format(inclusions_df.__len__()))
             self.logger.info('The total volume is: {}'.format(np.sum(inclusions_df['final_volume'].values)))
@@ -375,8 +376,7 @@ class DataTask3D:
 
             # Start the Mesher
             mesher_obj = Mesher(periodic_rve_df, store_path=store_path, phase_two_isotropic=True, animation=False,
-                                tex_phi1=grains_df['phi1'].tolist(), tex_PHI=grains_df['PHI'].tolist(),
-                                tex_phi2=grains_df['phi2'].tolist())
+                                grains_df=grains_df)
             mesher_obj.mesh_and_build_abaqus_model()
 
         self.logger.info("RVE generation process has successfully completed...")
