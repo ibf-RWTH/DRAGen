@@ -116,7 +116,7 @@ class Tesselation3D(RVEUtils):
         grain_idx = [i for i in range(1, n_grains + 1)]
         grain_idx_backup = grain_idx.copy()
         while freepoints > 0:
-            freepoints_old = freepoints
+            freepoints_old = freepoints   # Zum Abgleich
             i = 0
             np.random.shuffle(grain_idx)
             while i < len(grain_idx):
@@ -140,11 +140,23 @@ class Tesselation3D(RVEUtils):
                 grain_vol = np.count_nonzero(rve == idx) * self.bin_size ** 3
                 if freepoints == 0:
                     break
-                delta_grow = freepoints_old - freepoints
-                if (grain_vol > self.final_volume[idx-1] and not repeat) or delta_grow == 0:
-                    del grain_idx[i]
 
-                i += 1
+                '''
+                Grow control: 
+                1.) If a grain reaches Maximum Volume, the index gets deleted
+                2.) If a grain is not growing in reality (difference between freepoints and freepoints_old), the 
+                grain is deleted. This avoids background growing and dumb results
+                Counting (i = i + 1) up only if no deletion happens
+                '''
+                delta_grow = freepoints_old - freepoints
+                if (grain_vol > self.final_volume[idx-1] and not repeat):
+                    del grain_idx[i]
+                elif delta_grow == 0:    # Kein Wachstum, daher löschen der Indizes
+                    del grain_idx[i]
+                    del grain_idx_backup[i]
+                else:
+                    i += 1
+
             if not grain_idx:
                 repeat = True
                 grain_idx = grain_idx_backup.copy()
