@@ -3,8 +3,7 @@ import matplotlib.pyplot as plt
 import random
 import logging
 
-from dragen.utilities.RVE_Utils import RVEUtils
-
+from dragen.utilities.RVE_Utils import *
 
 class DiscreteRsa2D:
     def __init__(self, box_size, n_pts, a, b, alpha, store_path):
@@ -20,7 +19,7 @@ class DiscreteRsa2D:
         self.logger = logging.getLogger("RVE-Gen")
         xy = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
         self.x_grid, self.y_grid = np.meshgrid(xy, xy)
-        self.rve_utils_object = RVEUtils(box_size, n_pts, self.x_grid, self.y_grid)
+        self.rve_utils_object = RVEUtils()
 
     def gen_ellipsoid(self, array, iterator):
         x_grid = self.x_grid

@@ -7,17 +7,18 @@ import logging
 import logging.handlers
 import pandas as pd
 
-from tqdm import tqdm
 from dragen.generation.DiscreteRsa2D import DiscreteRsa2D
 from dragen.generation.DescreteTesselation2D import Tesselation2D
 from dragen.utilities.RVE_Utils import RVEUtils
-from dragen.generation import mesher
 
+# TODO insert new rve utils like array gen and grid gen etc.
 
-class DataTask2D:
+class DataTask2D(RVEUtils):
 
-    def __init__(self, box_size=50, n_pts=100, number_of_bands=0, bandwidth=3, shrink_factor=0.5,
-                 file1=None, file2=None, store_path=None, gui_flag=False, anim_flag=False, exe_flag=False):
+    def __init__(self, box_size: int, n_pts: int, number_of_bands: int, bandwidth: float, shrink_factor: float = 0.5,
+                 band_ratio_rsa: float = 0.95, band_ratio_final: float = 0.95, file1=None, file2=None, store_path=None,
+                 gui_flag=False, anim_flag=False, gan_flag=False, exe_flag=False):
+
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.n_pts = n_pts  # has to be even
@@ -26,10 +27,13 @@ class DataTask2D:
         self.number_of_bands = number_of_bands
         self.bandwidth = bandwidth
         self.shrink_factor = np.sqrt(shrink_factor)
+        self.band_ratio_rsa = band_ratio_rsa  # Band Ratio for RSA
+        self.band_ratio_final = band_ratio_final  # Band ratio for Tesselator - final is br1 * br2
         self.gui_flag = gui_flag
         self.exe_flag = exe_flag
 
         self.root_dir = './'
+
         if exe_flag:
             self.root_dir = store_path
         if not gui_flag:
@@ -37,11 +41,15 @@ class DataTask2D:
         elif gui_flag and not exe_flag:
             self.root_dir = store_path
 
+        self.logger.info('the exe_flag is: ' + str(exe_flag))
+        self.logger.info('root was set to: ' + self.root_dir)
         self.animation = anim_flag
-
         self.file1 = file1
         self.file2 = file2
-        self.utils_obj = RVEUtils(self.box_size, self.n_pts, self.bandwidth)
+
+        self.x_grid, self.y_grid, = super().gen_grid()[:2]
+
+        super().__init__(box_size, n_pts, self.x_grid, self.y_grid, bandwidth, debug=False)
 
     def setup_logging(self):
         LOGS_DIR = self.root_dir + '/Logs/'
