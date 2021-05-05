@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import random
 import sys
 import datetime
@@ -9,8 +8,7 @@ from scipy.ndimage import convolve
 
 from dragen.utilities.RVE_Utils import RVEUtils
 
-
-class DiscreteRsa3D:
+class DiscreteRsa3D(RVEUtils):
 
     def __init__(self, box_size, n_pts, a, b, c, alpha, store_path, debug=False):
 
@@ -24,16 +22,12 @@ class DiscreteRsa3D:
         self.debug = debug
 
         self.logger = logging.getLogger("RVE-Gen")
-        xyz = np.linspace(-box_size / 2, box_size + box_size / 2, 2 * self.n_pts, endpoint=True)
-        self.x_grid, self.y_grid, self.z_grid = np.meshgrid(xyz, xyz, xyz)
         self.n_grains = len(a)
-        self.rve_utils_object = RVEUtils(box_size, n_pts, self.x_grid, self.y_grid, self.z_grid, debug=debug)
+        super().__init__(box_size, n_pts)
+        self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
 
     def gen_ellipsoid(self, array, iterator):
         t_0 = datetime.datetime.now()
-        x_grid = self.x_grid
-        y_grid = self.y_grid
-        z_grid = self.z_grid
         a = self.a
         b = self.b
         c = self.c
@@ -65,7 +59,7 @@ class DiscreteRsa3D:
                   (y_grid - y_0) ** 2 / (b ** 2) + \
                   (z_grid - z_0) ** 2 / (c ** 2)"""
 
-        ellipsoid = self.rve_utils_object.ellipsoid(a, b, c, x_0, y_0, z_0, alpha=alpha)
+        ellipsoid = super().ellipsoid(a, b, c, x_0, y_0, z_0, alpha=alpha)
 
         time_elapse = datetime.datetime.now() - t_0
         if self.debug:
@@ -111,13 +105,14 @@ class DiscreteRsa3D:
         if self.debug:
             self.logger.info('time spent on plotter for grain {}: {}'.format(iterator, time_elapse.total_seconds()))
 
-    def run_rsa(self, band_ratio_rsa, banded_rsa_array=None, animation=False, x0_alt=None, y0_alt=None, z0_alt=None):
+    def run_rsa(self, band_ratio_rsa=None, banded_rsa_array=None,
+                animation=False, x0_alt=None, y0_alt=None, z0_alt=None):
         status = False
         bandratio = band_ratio_rsa
 
         if banded_rsa_array is None:
-            rsa = np.zeros((2 * self.n_pts, 2 * self.n_pts, 2 * self.n_pts), dtype=np.int32)
-            rsa = self.rve_utils_object.gen_boundaries_3D(rsa)
+            rsa = super().gen_array()
+            rsa = super().gen_boundaries_3D(rsa)
 
         else:
             rsa = banded_rsa_array
@@ -139,7 +134,7 @@ class DiscreteRsa3D:
             backup_rsa = rsa.copy()
             ellipsoid, x0, y0, z0 = self.gen_ellipsoid(rsa, iterator=i - 1)
             grain[(ellipsoid <= 1) & ((grain == 0) | (grain == -200))] = i
-            periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipsoid, iterator=i)
+            periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=i)
             rsa[(periodic_grain == i) & ((rsa == 0) | (rsa == -200))] = i
 
             if animation:
@@ -252,7 +247,7 @@ class DiscreteRsa3D:
             ellipsoid, x0, y0, z0 = self.gen_ellipsoid(rsa, iterator=i - 1)
             grain[(ellipsoid <= 1) & ((grain == 0) | (grain == -200))] = -(1000 + i)
             # print(np.unique(grain))
-            periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipsoid, iterator=-(1000 + i))
+            periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=-(1000 + i))
             # print(np.unique(periodic_grain))
             rsa[(periodic_grain == -(1000 + i)) & ((rsa == 0) | (rsa == -200))] = -(1000 + i)
 
@@ -333,9 +328,9 @@ class DiscreteRsa3D:
                           [[-1, -1, -1], [-1, 26, -1], [-1, -1, -1]],
                           [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]])
         coords = np.where(convolve(rve, fil, mode='reflect') > 0)  # Edge kernel for grain boundary detection
-        new_rve = np.zeros(shape=(self.n_pts * 2, self.n_pts * 2, self.n_pts * 2))
+        new_rve = super().gen_array()
         new_rve[coords] = 1000  # High value - Has 1000 for edges, and 0 elsewhere
-        new_rve = self.rve_utils_object.gen_boundaries_3D(new_rve)
+        new_rve = super().gen_boundaries_3D(new_rve)
         inc_rve = rve.copy()
 
         i = 1
@@ -345,7 +340,7 @@ class DiscreteRsa3D:
             backup = inc_rve.copy()
             ellipsoid, x0, y0, z0 = self.gen_ellipsoid(new_rve, iterator=i - 1)
             grain[(ellipsoid <= 1) & ((grain == 0) | (grain == -200))] = -(200 + i)
-            periodic_grain = self.rve_utils_object.make_periodic_3D(grain, ellipsoid, iterator=-(200 + i))
+            periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=-(200 + i))
 
             inc_rve[(periodic_grain == -(200 + i)) & ((new_rve == 0) | (new_rve == -200))] = -(
                         200 + i)  # -for Inclusions
