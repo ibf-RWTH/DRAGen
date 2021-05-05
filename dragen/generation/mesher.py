@@ -12,15 +12,16 @@ import logging
 
 class Mesher:
 
-    def __init__(self, rve: pd.DataFrame, store_path, tex_phi1, tex_PHI, tex_phi2,
+    def __init__(self, rve: pd.DataFrame, grains_df: pd.DataFrame, store_path,
                  phase_two_isotropic=True, animation=True):
         self.rve = rve
+        self.grains_df = grains_df
         self.store_path = store_path
         self.phase_two_isotropic = phase_two_isotropic
         self.animation = animation
-        self.tex_phi1 = tex_phi1
-        self.tex_PHI = tex_PHI
-        self.tex_phi2 = tex_phi2
+        self.tex_phi1 = grains_df['phi1'].tolist()
+        self.tex_PHI = grains_df['PHI'].to_list()
+        self.tex_phi2 = grains_df['phi2'].tolist()
         self.x_max = int(max(rve.x))
         self.x_min = int(min(rve.x))
         self.y_max = int(max(rve.y))
@@ -28,9 +29,8 @@ class Mesher:
         self.z_max = int(max(rve.z))
         self.z_min = int(min(rve.z))
         self.n_grains = int(max(rve.GrainID))
-        print(self.n_grains)
         self.n_pts = int(rve.n_pts[0])
-        self.bin_size = rve.box_size[0] / self.n_pts
+        self.bin_size = rve.box_size[0] / (self.n_pts+1) ## test
         self.logger = logging.getLogger("RVE-Gen")
 
     def gen_blocks(self) -> pv.UniformGrid:
@@ -237,6 +237,11 @@ class Mesher:
             else:
                 grid = sub_grid.merge(grid)
                 print(i, grid.cell_arrays.keys())
+            # TODO grain_vol is in mm³ at the moment --> convert it to µm³
+            grain_vol = sub_grid.volume
+            self.grains_df.loc[self.grains_df['GrainID'] == i+1, 'final_conti_vol'] = grain_vol
+
+        self.grains_df['final_conti_vol'].to_csv(self.store_path + '/Generation_Data/conti_output_vol.csv', index=False)
 
         print('ende', grid.cell_arrays.keys())
         #sys.exit()
