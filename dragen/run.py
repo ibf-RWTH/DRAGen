@@ -4,6 +4,16 @@ import os
 
 from dragen.main2D import DataTask2D
 from dragen.main3D import DataTask3D
+from postprocessing.voldistribution import *
+
+class run:
+    def __init__(self, box_size=20, n_pts=40, number_of_bands=1, bandwidth=5,
+                       shrink_factor=0.5, band_ratio_rsa=0.75, band_ratio_final=0.75, file1=None, file2=None,
+                       gui_flag=False, gan_flag=True):
+        pass
+
+    def run(self):
+        pass
 
 
 if __name__ == "__main__":
@@ -11,10 +21,17 @@ if __name__ == "__main__":
     dimension = 3
     # Optional arguments with default values:
     # obj3D = DataTask3D()
-    obj3D = DataTask3D(box_size=30, n_pts=50, number_of_bands=1, bandwidth=5,
-                       shrink_factor=0.5, band_ratio_rsa=0.75, band_ratio_final=0.75, file1=None, file2=None,
-                       gui_flag=False, gan_flag=False)
-    obj2D = DataTask2D()
+    obj3D = DataTask3D(box_size=22, n_pts=34, number_of_bands=0, bandwidth=5,
+                       shrink_factor=0.5, band_ratio_rsa=0.75, band_ratio_final=0.75,
+                       file1='../ExampleInput/ferrite_54_grains.csv',
+                       file2='../ExampleInput/pearlite_21_grains.csv',
+                       gui_flag=False, gan_flag=True, anim_flag=False)
+
+    obj2D = DataTask2D(box_size=20, n_pts=40, number_of_bands=1, bandwidth=5,
+                       shrink_factor=0.5, band_ratio_rsa=0.75, band_ratio_final=0.75,
+                       file1='../ExampleInput/ferrite_54_grains.csv',
+                       file2='../ExampleInput/pearlite_21_grains.csv',
+                       gui_flag=False, gan_flag=True, anim_flag=True)
 
     try:
         if dimension == 2:
@@ -23,9 +40,12 @@ if __name__ == "__main__":
                 obj2D.rve_generation(i, grains_df)
             sys.exit()
         elif dimension == 3:
-            grains_df = obj3D.initializations(dimension)
             for i in range(last_RVE):
-                obj3D.rve_generation(i, grains_df)
+                grains_df, store_path = obj3D.initializations(dimension, epoch=i)
+                obj3D.rve_generation(grains_df, store_path)
+                PostProcVol_obj = PostProcVol(store_path, dim_flag=3)
+                PostProcVol_obj.gen_in_out_lists()
+                PostProcVol_obj.gen_plots()
             sys.exit()
         else:
             LOGS_DIR = 'Logs/'
