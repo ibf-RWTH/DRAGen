@@ -102,6 +102,50 @@ class RVEUtils:
                                              "tex_phi1", "tex_PHI", "tex_phi2"])
             return grain_df
 
+    def sample_input_3D(self, data, bs) -> pd.DataFrame:
+        max_volume = bs * bs * bs
+        grain_vol = 0
+        data = data.copy()
+        inp_list = list()
+        while grain_vol < max_volume:
+            idx = np.random.randint(0, data.__len__())
+            grain = data[["a", "b", "c", "alpha", "phi1", "PHI", "phi2"]].iloc[idx].tolist()
+            data = data.drop(labels=data.index[idx], axis=0)
+            vol = 4 / 3 * np.pi * grain[0] * grain[1] * grain[2]
+            grain_vol += vol
+            inp_list.append([grain[0], grain[1], grain[2], grain[3], grain[4], grain[5], grain[6]])
+
+        # Del last if to big and more than one value:
+        if grain_vol >= max_volume and inp_list.__len__() > 1:
+            inp_list.pop(-1)
+
+        header = ["a", "b", "c", "alpha", "phi1", "PHI", "phi2"]
+        df = pd.DataFrame(inp_list, columns=header)
+
+        return df
+
+    def sample_input_2D(self, data, bs) -> pd.DataFrame:
+        max_volume = bs*bs
+        grain_vol = 0
+        data = data.copy()
+        inp_list = list()
+        while grain_vol < max_volume:
+            idx = np.random.randint(0, data.__len__())
+            grain = data[["radius_a", "radius_b", "alpha", "tex_phi1", "tex_PHI", "tex_phi2"]].iloc[idx].tolist()
+            data = data.drop(labels=data.index[idx], axis=0)
+            vol = np.pi * grain[0] * grain[1]
+            grain_vol += vol
+            inp_list.append([grain[0], grain[1], grain[2], grain[3], grain[4], grain[5]])
+
+        # Del last if to big and more than one value:
+        if grain_vol >= max_volume and inp_list.__len__() > 1:
+            inp_list.pop(-1)
+
+        header = ["a", "b", "c", "alpha", "phi1", "PHI", "phi2"]
+        df = pd.DataFrame(inp_list, columns=header)
+
+        return df
+
     def convert_volume_3D(self, radius_a, radius_b, radius_c):
         """Compute the volume for the given radii.
         Parameters :

@@ -17,8 +17,8 @@ from dragen.postprocessing.voldistribution import PostProcVol
 class DataTask3D(RVEUtils):
 
     def __init__(self, box_size: int, n_pts: int, number_of_bands: int, bandwidth: float, shrink_factor: float = 0.5,
-                 band_ratio_rsa: float = 0.95, band_ratio_final: float = 0.95, file1=None, file2=None, store_path=None,
-                 gui_flag=False, anim_flag=False, gan_flag=False, exe_flag=False):
+                 band_ratio_rsa: float = 0.95, band_ratio_final: float = 0.95, phase_ratio: float = 1.0, file1=None,
+                 file2=None, store_path=None, gui_flag=False, anim_flag=False, gan_flag=False, exe_flag=False):
 
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
@@ -27,9 +27,10 @@ class DataTask3D(RVEUtils):
         self.step_half = self.bin_size / 2
         self.number_of_bands = number_of_bands
         self.bandwidth = bandwidth
+        self.phase_ratio = phase_ratio
         self.shrink_factor = float(np.cbrt(shrink_factor))
-        self.band_ratio_rsa = band_ratio_rsa            # Band Ratio for RSA
-        self.band_ratio_final = band_ratio_final        # Band ratio for Tesselator - final is br1 * br2
+        self.band_ratio_rsa = band_ratio_rsa  # Band Ratio for RSA
+        self.band_ratio_final = band_ratio_final  # Band ratio for Tesselator - final is br1 * br2
         self.gui_flag = gui_flag
         self.gan_flag = gan_flag
         self.root_dir = './'
@@ -74,12 +75,20 @@ class DataTask3D(RVEUtils):
 
         self.logger.info("RVE generation process has started...")
         phase1_df = super().read_input(phase1_csv, dimension)
-        phase1_df['phaseID'] = 1
-        grains_df = phase1_df.copy()
+        # Phase Ratio calculation
+        adjusted_size = np.cbrt((self.box_size ** 3 -
+                                 (self.box_size ** 2 - self.number_of_bands * self.bandwidth * self.box_size)
+                                 * self.phase_ratio))
+        grains_df = super().sample_input_3D(phase1_df, bs=adjusted_size)
+        grains_df['phaseID'] = 1
 
         if phase2_csv is not None:
             phase2_df = super().read_input(phase2_csv, dimension)
-            phase1_df['phaseID'] = 2
+            adjusted_size = np.cbrt((self.box_size ** 3 -
+                                     (self.box_size ** 2 - self.number_of_bands * self.bandwidth * self.box_size)
+                                     * (1-self.phase_ratio)))
+            phase2_df = super().sample_input_3D(phase2_df, bs=adjusted_size)
+            phase2_df['phaseID'] = 2
             grains_df = pd.concat([grains_df, phase2_df])
 
         grains_df = super().process_df(grains_df, self.shrink_factor)
@@ -100,8 +109,8 @@ class DataTask3D(RVEUtils):
         if not os.path.isdir(self.gen_path):
             os.makedirs(self.gen_path)  # Second if needed
 
-        grains_df.to_csv(self.gen_path+'/grain_data.csv', index=False)
-        grains_df['final_conti_volume'].to_csv(self.gen_path+'/conti_input_vol.csv', index=False)
+        grains_df.to_csv(self.gen_path + '/grain_data.csv', index=False)
+        grains_df['final_conti_volume'].to_csv(self.gen_path + '/conti_input_vol.csv', index=False)
         grains_df['final_discrete_volume'].to_csv(self.gen_path + '/discrete_input_vol.csv', index=False)
 
         return grains_df, self.store_path
@@ -116,7 +125,6 @@ class DataTask3D(RVEUtils):
 
         if self.number_of_bands > 0:
             # initialize empty grid_array for bands called band_array
-
 
             band_array = super().gen_array()
             band_array = super().gen_boundaries_3D(band_array)
@@ -171,6 +179,3 @@ class DataTask3D(RVEUtils):
         PostProcVol(store_path, dim_flag=3).gen_plots()
 
         return store_path
-
-
-
