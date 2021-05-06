@@ -45,6 +45,10 @@ _b_ is aligned with y-axis and _c_ with z-axis.<br>
 _beta_ will be implemented in the future and will be a rotation around x- or y-axis.<br>
 3. The texture can be defined with the parameters _phi1_, _PHI_ and _phi2_.
 
+## Output Data
+
+In v.1., the output files are Abaqus input files designed for the use with the ICAMS-Crystal-plysticity model. Therefore, the subroutine-files are needed for a successfull analysis. It is distiguished between a purely elastic phase (Phase 2, Martensite) and a plastic phase (Phase 1, Ferrite). Extensions to more then two phases are in the making.
+
 ## Input generator
 
 One additional feature of our system is the generation of statistically representative microstructur using **Generative Adversarial Networks**, a method from the field of deep learning. With our CWGAN-GP, it is possible to generate an unlimited amount of vaild synthetical microstructure. Possible for "normal" grain data, inclusions and even damage (coming soon!). For more information, see our article on the basic idea of using a WGAN (https://www.mdpi.com/1996-1944/13/19/4236) and our IDDRG post on the CWGAN-GP (coming shortly after publishing).
