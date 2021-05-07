@@ -9,7 +9,8 @@ from dragen.utilities.RVE_Utils import RVEUtils
 
 class Tesselation3D(RVEUtils):
 
-    def __init__(self, box_size, n_pts, grains_df, shrinkfactor, band_ratio, store_path, debug=False):
+    def __init__(self, box_size, n_pts, grains_df, shrinkfactor, band_ratio, store_path, debug=False, infobox_obj=None,
+                 progress_obj=None):
 
         self.box_size = box_size
         self.n_pts = n_pts
@@ -26,6 +27,8 @@ class Tesselation3D(RVEUtils):
         self.band_ratio = band_ratio
         self.store_path = store_path
         self.debug = debug
+        self.infobox_obj = infobox_obj
+        self.progress_obj = progress_obj
 
         self.logger = logging.getLogger("RVE-Gen")
         self.n_grains = len(self.a)
@@ -90,6 +93,8 @@ class Tesselation3D(RVEUtils):
             self.logger.info('time spent on plotter for epoch {}: {}'.format(epoch, time_elapse.total_seconds()))
 
     def run_tesselation(self, rsa, animation=True):
+        self.infobox_obj.add_text('starting Tesselation')
+        self.progress_obj.setValue(0)
 
         # set some variables
         status = False
@@ -159,12 +164,18 @@ class Tesselation3D(RVEUtils):
 
             if not grain_idx:
                 repeat = True
+                self.infobox_obj.add_text('grain growth had to be reset at {}% of volume filling'.format(packingratio))
+                if packingratio < 90:
+                    self.infobox_obj.add_text('your microstructure data does not conatin \n '
+                                              'enough data to fill this boxsize\n'
+                                              'please decrease the boxsize for reasonable results')
                 grain_idx = grain_idx_backup.copy()
             if animation:
                 self.tesselation_plotter(rve, epoch)
             epoch += 1
             packingratio = (1 - freepoints / vol_0) * 100
-            print('packingratio:', packingratio, '%')
+            # print('packingratio:', packingratio, '%')
+            self.progress_obj.setValue(packingratio)
 
         if packingratio == 100:
             status = True
