@@ -114,10 +114,12 @@ class RVEUtils:
             vol = 4 / 3 * np.pi * grain[0] * grain[1] * grain[2]
             grain_vol += vol
             inp_list.append([grain[0], grain[1], grain[2], grain[3], grain[4], grain[5], grain[6]])
+            if len(data) == 0:
+                break
 
-        # Del last if to big and more than one value:
-        if grain_vol >= max_volume and inp_list.__len__() > 1:
-            inp_list.pop(-1)
+        # Del last if to big and more than one value: causes big errors for small dataframes
+        #if grain_vol > max_volume and inp_list.__len__() > 1:
+        #    inp_list.pop(-1)
 
         header = ["a", "b", "c", "alpha", "phi1", "PHI", "phi2"]
         df = pd.DataFrame(inp_list, columns=header)
