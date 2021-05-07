@@ -6,7 +6,7 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtGui import QPixmap
-from ScrollLabel import ScrollLabel
+from dragen.pyqt_gui.ScrollLabel import ScrollLabel
 
 from dragen.pyqt_gui.worker import Worker
 
@@ -88,7 +88,7 @@ class Window(QMainWindow, QFileDialog):
         visualization_label = QLabel('Plot Generation Process')
         self.threeDcheckBox.setChecked(False)
 
-        self.Logo = QPixmap("../gui_tkinter/Logo.png")
+        self.Logo = QPixmap("../thumbnails/Logo.png")
         self.Logo = self.Logo.scaled(self.Logo.size()/2)
         self.Logo_label = QLabel()
         self.Logo_label.setPixmap(self.Logo)
