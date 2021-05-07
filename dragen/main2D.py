@@ -72,7 +72,7 @@ class DataTask2D(RVEUtils):
             phase2 = self.file2
 
         self.logger.info("RVE generation process has started...")
-        phase1_a, phase1_b, phase1_alpha, phase1_phi1, phase1_PHI, phase1_phi2 = self.utils_obj.read_input(phase1, dimension)
+        phase1_a, phase1_b, phase1_alpha, phase1_phi1, phase1_PHI, phase1_phi2 = super().read_input(phase1, dimension)
         final_volume_phase1 = [(phase1_a[i] * phase1_b[i] * np.pi) for i in range(len(phase1_a))]
         phase1_a_shrinked = [phase1_a_i * self.shrink_factor for phase1_a_i in phase1_a]
         phase1_b_shrinked = [phase1_b_i * self.shrink_factor for phase1_b_i in phase1_b]
@@ -89,7 +89,7 @@ class DataTask2D(RVEUtils):
         print(grains_df)
 
         if phase2 is not None:
-            phase2_a, phase2_b, phase2_alpha, phase2_phi1, phase2_PHI, phase2_phi2 = self.utils_obj.read_input(phase2, dimension)
+            phase2_a, phase2_b, phase2_alpha, phase2_phi1, phase2_PHI, phase2_phi2 = super().read_input(phase2, dimension)
             final_volume_phase2 = [(phase2_a[i] * phase2_b[i] * np.pi) for i in range(len(phase2_a))]
             phase2_a_shrinked = [phase2_a[i] * self.shrink_factor for i in range(len(phase2_a))]
             phase2_b_shrinked = [phase2_b[i] * self.shrink_factor for i in range(len(phase2_b))]
