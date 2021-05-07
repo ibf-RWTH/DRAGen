@@ -10,7 +10,7 @@ from dragen.utilities.RVE_Utils import RVEUtils
 
 class DiscreteRsa3D(RVEUtils):
 
-    def __init__(self, box_size, n_pts, a, b, c, alpha, store_path, debug=False):
+    def __init__(self, box_size, n_pts, a, b, c, alpha, store_path, debug=False, infobox_obj=None, progress_obj=None):
 
         self.box_size = box_size
         self.n_pts = n_pts
@@ -20,10 +20,13 @@ class DiscreteRsa3D(RVEUtils):
         self.alpha = alpha
         self.store_path = store_path
         self.debug = debug
-
+        self.infobox_obj = infobox_obj
+        self.progress_obj = progress_obj
         self.logger = logging.getLogger("RVE-Gen")
         self.n_grains = len(a)
+
         super().__init__(box_size, n_pts)
+
         self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
 
     def gen_ellipsoid(self, array, iterator):
@@ -46,7 +49,8 @@ class DiscreteRsa3D(RVEUtils):
         x_0 = unoccupied_area_x[idx]
         y_0 = unoccupied_area_y[idx]
         z_0 = unoccupied_area_z[idx]
-        print('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
+        #self.infobox_obj.add_text('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
+        #print('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
         # print('Iterator', iterator)
         # print(a)
         # print('Länge von a', a.__len__())
@@ -107,6 +111,7 @@ class DiscreteRsa3D(RVEUtils):
 
     def run_rsa(self, band_ratio_rsa=None, banded_rsa_array=None,
                 animation=False, x0_alt=None, y0_alt=None, z0_alt=None):
+        self.infobox_obj.add_text('starting RSA')
         status = False
         bandratio = band_ratio_rsa
 
@@ -145,8 +150,8 @@ class DiscreteRsa3D(RVEUtils):
             if band_points_old > 0:
                 if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)) | \
                         (band_points / band_vol_0 < bandratio):
-                    print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
-                    print('ratio:', (band_points / band_vol_0 > bandratio))
+                    #print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
+                    #print('ratio:', (band_points / band_vol_0 > bandratio))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
 
@@ -162,7 +167,7 @@ class DiscreteRsa3D(RVEUtils):
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
             else:
                 if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)):
-                    print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
+                    #print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
 
@@ -176,6 +181,8 @@ class DiscreteRsa3D(RVEUtils):
                         time_elapse = datetime.datetime.now() - t_0
                         self.logger.info(
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
+            progress = int((float(len(x_0_list))/self.n_grains * 100))
+            self.progress_obj.setValue(progress)
 
         if (len(x_0_list) == self.n_grains) or (i - 1) == self.n_grains:
             status = True
