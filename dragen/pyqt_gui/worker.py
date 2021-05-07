@@ -1,10 +1,6 @@
-import time
-
 from PyQt5.QtCore import QObject, pyqtSignal
-from PyQt5.QtWidgets import QProgressBar
-
 from dragen.run import Run
-from dragen.pyqt_gui.ScrollLabel import ScrollLabel
+
 
 class Worker(QObject):
     finished = pyqtSignal()

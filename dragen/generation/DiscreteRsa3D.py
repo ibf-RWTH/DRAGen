@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import random
-import sys
 import datetime
 import logging
 from scipy.ndimage import convolve

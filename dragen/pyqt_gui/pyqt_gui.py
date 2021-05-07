@@ -3,10 +3,8 @@
 """Main Window-Style application."""
 
 import sys
-import time
-from PyQt5 import QtCore
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtGui import QPixmap
 from ScrollLabel import ScrollLabel
 

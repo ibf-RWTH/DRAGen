@@ -3,7 +3,6 @@ import os
 import sys
 import logging
 
-from PyQt5.QtWidgets import QMessageBox, QProgressBar
 from dragen.main2D import DataTask2D
 from dragen.main3D import DataTask3D
 from dragen.postprocessing.voldistribution import PostProcVol

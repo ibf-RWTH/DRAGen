@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import datetime
 import logging
-import sys
 
 from dragen.utilities.RVE_Utils import RVEUtils
 
