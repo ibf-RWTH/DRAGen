@@ -17,8 +17,9 @@ from dragen.postprocessing.voldistribution import PostProcVol
 class DataTask3D(RVEUtils):
 
     def __init__(self, box_size: int, n_pts: int, number_of_bands: int, bandwidth: float, shrink_factor: float = 0.5,
-                 band_ratio_rsa: float = 0.95, band_ratio_final: float = 0.95, phase_ratio: float = 1.0, file1=None,
-                 file2=None, store_path=None, gui_flag=False, anim_flag=False, gan_flag=False, exe_flag=False):
+                 band_ratio_rsa: float = 0.95, band_ratio_final: float = 0.95, phase_ratio: float = None, file1=None,
+                 file2=None, store_path=None, gui_flag=False, anim_flag=False, gan_flag=False, exe_flag=False,
+                 infobox_obj=None, progess_obj=None):
 
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
@@ -37,6 +38,8 @@ class DataTask3D(RVEUtils):
         self.store_path = None
         self.fig_path = None
         self.gen_path = None
+        self.infobox_obj = infobox_obj
+        self.progress_obj = progess_obj
 
         if exe_flag:
             self.root_dir = store_path
@@ -77,16 +80,16 @@ class DataTask3D(RVEUtils):
         phase1_df = super().read_input(phase1_csv, dimension)
         # Phase Ratio calculation
         adjusted_size = np.cbrt((self.box_size ** 3 -
-                                 (self.box_size ** 2 - self.number_of_bands * self.bandwidth * self.box_size)
-                                 * self.phase_ratio))
+                                (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
+                                * self.phase_ratio)
         grains_df = super().sample_input_3D(phase1_df, bs=adjusted_size)
         grains_df['phaseID'] = 1
 
         if phase2_csv is not None:
             phase2_df = super().read_input(phase2_csv, dimension)
             adjusted_size = np.cbrt((self.box_size ** 3 -
-                                     (self.box_size ** 2 - self.number_of_bands * self.bandwidth * self.box_size)
-                                     * (1-self.phase_ratio)))
+                                    (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
+                                    * (1-self.phase_ratio))
             phase2_df = super().sample_input_3D(phase2_df, bs=adjusted_size)
             phase2_df['phaseID'] = 2
             grains_df = pd.concat([grains_df, phase2_df])
@@ -121,7 +124,10 @@ class DataTask3D(RVEUtils):
                                          grains_df['a'].tolist(),
                                          grains_df['b'].tolist(),
                                          grains_df['c'].tolist(),
-                                         grains_df['alpha'].tolist(), store_path=store_path)
+                                         grains_df['alpha'].tolist(),
+                                         store_path=store_path,
+                                         infobox_obj=self.infobox_obj,
+                                         progress_obj=self.progress_obj)
 
         if self.number_of_bands > 0:
             # initialize empty grid_array for bands called band_array
@@ -146,7 +152,8 @@ class DataTask3D(RVEUtils):
 
         if rsa_status:
             discrete_tesselation_obj = Tesselation3D(self.box_size, self.n_pts, grains_df,
-                                                     self.shrink_factor, self.band_ratio_final, store_path)
+                                                     self.shrink_factor, self.band_ratio_final, store_path,
+                                                     infobox_obj=self.infobox_obj, progress_obj=self.progress_obj)
             rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa, animation=self.animation)
 
         else:
@@ -172,10 +179,14 @@ class DataTask3D(RVEUtils):
 
             # Start the Mesher
             mesher_obj = Mesher(periodic_rve_df, grains_df, store_path=store_path,
-                                phase_two_isotropic=True, animation=False)
+                                phase_two_isotropic=True, animation=False,
+                                infobox_obj=self.infobox_obj, progress_obj=self.progress_obj)
             mesher_obj.mesh_and_build_abaqus_model()
 
-        self.logger.info("RVE generation process has successfully completed...")
         PostProcVol(store_path, dim_flag=3).gen_plots()
+        self.infobox_obj.add_text('checkout the evaluation report of the rve stored at:')
+        self.infobox_obj.add_text('{}/Postprocessing'.format(self.store_path))
+        self.logger.info("RVE generation process has successfully completed...")
+
 
         return store_path
