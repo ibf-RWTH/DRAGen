@@ -47,7 +47,15 @@ _beta_ will be implemented in the future and will be a rotation around x- or y-a
 
 ## Output Data
 
-In v.1., the output files are Abaqus input files designed for the use with the ICAMS-Crystal-plysticity model. Therefore, the subroutine-files are needed for a successfull analysis. It is distiguished between a purely elastic phase (Phase 2, Martensite) and a plastic phase (Phase 1, Ferrite). Extensions to more then two phases are in the making.
+In v.1., the output files are Abaqus input files designed for the use with the ICAMS-Crystal-plysticity model. Therefore, the subroutine-files are needed for a successfull analysis.
+
+* Periodic boundary conditions (PBC): BottomToTop.inp, FrontToRear.inp, LeftToRight.inp, Corners.inp, Edges.inp, Nsets.inp, VerticeSets.inp
+* RVE: RVE_smooth.inp
+* CP-model data (euler angles and grain size): graindata.inp
+* RVE in arry: RVE_Numpy.npy (not needed at the moment!)
+
+It is distiguished between a purely elastic phase (Phase 2, Martensite) and a plastic phase (Phase 1, Ferrite). Extensions to more then two phases are in the making.
+
 
 ## Input generator
 
