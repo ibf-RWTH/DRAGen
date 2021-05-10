@@ -737,8 +737,8 @@ class RVEUtils:
         df['final_conti_volume'] = final_conti_volume
         # Sortiert und resetet Index bereits
         df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
-
-
+        df.reset_index(inplace=True, drop=True)
+        df['GrainID'] = df.index
         return df
 
     def rearange_grain_ids_bands(self, bands_df, grains_df, rsa):
@@ -760,7 +760,7 @@ class RVEUtils:
         print(np.asarray(np.unique(rsa, return_counts=True)).T)
         return rsa
 
-    def get_final_disc_vol_3D(self, grains_df: pd.DataFrame, rve: np.ndarray ) -> pd.DataFrame:
+    def get_final_disc_vol_3D(self, grains_df: pd.DataFrame, rve: np.ndarray) -> pd.DataFrame:
 
         disc_vols = np.zeros((1, grains_df.shape[0])).flatten().tolist()
         for i in range(len(grains_df)):
