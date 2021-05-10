@@ -163,13 +163,13 @@ class DataTask3D(RVEUtils):
             # An den NaN-Werten in dem DF liegt es nicht!
 
             grains_df.sort_values(by=['GrainID'])
-            debug_df = grains_df.copy()
+            #debug_df = grains_df.copy()
             for i in range(len(grains_df)):
                 # Set grain-ID to number of the grain
                 # Denn Grain-ID ist entweder >0 oder -200 oder >-200
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1, 'phaseID'] = grains_df['phaseID'][i]
-                debug_df.loc[debug_df.index == i, 'vol_rve_df'] = \
-                    len(periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1])*self.bin_size**3
+                #debug_df.loc[debug_df.index == i, 'vol_rve_df'] = \
+                #    len(periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1])*self.bin_size**3
 
 
 
@@ -179,27 +179,38 @@ class DataTask3D(RVEUtils):
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
 
             # Start the Mesher
-            debug_df.to_csv('debug_grains_df.csv', index=False)
+            #debug_df.to_csv('debug_grains_df.csv', index=False)
             mesher_obj = Mesher(periodic_rve_df, grains_df, store_path=store_path,
                                 phase_two_isotropic=True, animation=self.animation,
                                 infobox_obj=self.infobox_obj, progress_obj=self.progress_obj)
             mesher_obj.mesh_and_build_abaqus_model()
+        return store_path
 
-        post_proc_obj = PostProcVol(store_path, dim_flag=3)
+    def post_processing(self):
+        obj = PostProcVol(self.store_path, dim_flag=3)
         phase1_ratio_conti_in, phase1_ref_r_conti_in, phase1_ratio_discrete_in, phase1_ref_r_discrete_in, \
         phase2_ratio_conti_in, phase2_ref_r_conti_in, phase2_ratio_discrete_in, phase2_ref_r_discrete_in, \
         phase1_ratio_conti_out, phase1_ref_r_conti_out, phase1_ratio_discrete_out, phase1_ref_r_discrete_out, \
-        phase2_ratio_conti_out, phase2_ref_r_conti_out, phase2_ratio_discrete_out, phase2_ref_r_discrete_out =\
-        post_proc_obj.gen_in_out_lists()
-        post_proc_obj.gen_pie_chart_phases(phase1_ratio_conti_in, phase2_ratio_conti_in, title='Conti Input Phase Distribution')
-        post_proc_obj.gen_pie_chart_phases(phase1_ratio_discrete_in, phase2_ratio_discrete_in, title='Discrete Input Phase Distribution')
-        post_proc_obj.gen_pie_chart_phases(phase1_ratio_conti_out, phase2_ratio_conti_out, title='Conti Output Phase Distribution')
-        post_proc_obj.gen_pie_chart_phases(phase1_ratio_discrete_out, phase2_ratio_discrete_out, title='Discrete Output Phase Distribution')
+        phase2_ratio_conti_out, phase2_ref_r_conti_out, phase2_ratio_discrete_out, phase2_ref_r_discrete_out = \
+            obj.gen_in_out_lists()
 
 
-        self.infobox_obj.emit('checkout the evaluation report of the rve stored at:')
-        self.infobox_obj.emit('{}/Postprocessing'.format(self.store_path))
+        print(phase2_ratio_conti_in)
+        if phase2_ratio_conti_in != 0:
+
+            obj.gen_pie_chart_phases(phase1_ratio_conti_in, phase2_ratio_conti_in, 'input_conti')
+            obj.gen_pie_chart_phases(phase1_ratio_conti_out, phase2_ratio_conti_out, 'output_conti')
+            obj.gen_pie_chart_phases(phase1_ratio_discrete_in, phase2_ratio_discrete_in, 'input_discrete')
+            obj.gen_pie_chart_phases(phase1_ratio_discrete_out, phase2_ratio_discrete_out, 'output_discrete')
+
+            obj.gen_plots(phase1_ref_r_discrete_in, phase1_ref_r_discrete_out, 'phase 1 discrete', 'phase1vs2_discrete',
+                          phase2_ref_r_discrete_in, phase2_ref_r_discrete_out, 'phase 2 discrete')
+            obj.gen_plots(phase1_ref_r_conti_in, phase1_ref_r_conti_out, 'phase 1 conti', 'phase1vs2_conti',
+                          phase2_ref_r_conti_in, phase2_ref_r_conti_out, 'phase 2 conti')
+            self.infobox_obj.emit('checkout the evaluation report of the rve stored at:\n'
+                                  '{}/Postprocessing'.format(self.store_path))
+        else:
+            obj.gen_plots(phase1_ref_r_conti_in, phase1_ref_r_conti_out, 'conti', 'discrete_vs_conti',
+                          phase1_ref_r_discrete_in, phase1_ref_r_discrete_out, 'discrete')
+
         self.logger.info("RVE generation process has successfully completed...")
-
-
-        return store_path
