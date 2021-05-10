@@ -72,9 +72,7 @@ class Run:
             for i in range(self.number_of_rves):
                 grains_df, store_path = obj3D.initializations(self.dimension, epoch=i)
                 obj3D.rve_generation(grains_df, store_path)
-                #PostProcVol_obj = PostProcVol(store_path, dim_flag=3)
-                #PostProcVol_obj.gen_in_out_lists()
-                #PostProcVol_obj.gen_plots()
+                obj3D.post_processing()
 
         else:
             LOGS_DIR = 'Logs/'
