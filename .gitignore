@@ -21,3 +21,4 @@ dist/
 dragen/.ipynb_checkpoints/
 dragen/.ipynb_checkpoints
 example
+/dragen/DRAGen.spec
