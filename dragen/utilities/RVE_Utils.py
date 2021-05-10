@@ -761,13 +761,15 @@ class RVEUtils:
         return rsa
 
     def get_final_disc_vol_3D(self, grains_df: pd.DataFrame, rve: np.ndarray) -> pd.DataFrame:
-
+        grains_df.sort_values(by=['GrainID'], inplace=True)
         disc_vols = np.zeros((1, grains_df.shape[0])).flatten().tolist()
         for i in range(len(grains_df)):
-            grainID = grains_df.GrainID[i]
-            disc_vols[i] = np.count_nonzero(rve == grainID) * self.bin_size**3
+            #grainID = grains_df.GrainID[i]
+
+            disc_vols[i] = np.count_nonzero(rve == i+1) * self.bin_size**3
 
         grains_df['final_discrete_volume'] = disc_vols
+        grains_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
 
         return grains_df
 
