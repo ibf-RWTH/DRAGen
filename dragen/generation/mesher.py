@@ -19,7 +19,7 @@ class Mesher:
         self.infobox_obj = infobox_obj
         self.progress_obj = progress_obj
         self.tex_phi1 = grains_df['phi1'].tolist()
-        self.tex_PHI = grains_df['PHI'].to_list()
+        self.tex_PHI = grains_df['PHI'].tolist()
         self.tex_phi2 = grains_df['phi2'].tolist()
         self.x_max = int(max(rve.x))
         self.x_min = int(min(rve.x))
@@ -56,11 +56,18 @@ class Mesher:
         rve.sort_values(by=['x', 'y', 'z'], inplace=True)  # This sorting is important for some weird reason
 
         # Add the data values to the cell data
-        grid.cell_arrays["GrainID"] = rve.GrainID  # Flatten the array!
+        grid.cell_arrays["GrainID"] = rve.GrainID
+        grid.cell_arrays["phaseID"] = rve.phaseID
 
         # Now plot the grid!
         if self.animation:
-            grid.plot(show_edges=True, screenshot=self.store_path+'/Figs/pyvista_mesh.png', auto_close=True)
+            plotter = pv.Plotter()
+            plotter.add_mesh(grid, scalars='phaseID', stitle='RVE-phases',
+                             show_edges=True, interpolate_before_map=True)
+            plotter.add_axes()
+            plotter.show(interactive=True, auto_close=False, window_size=[800, 600],
+                         screenshot=self.store_path+'/Figs/pyvista_mesh.png')
+
         return grid
 
     def convert_to_mesh(self, grid: pv.UniformGrid) -> tuple:
@@ -228,7 +235,7 @@ class Mesher:
 
             ncells = sub_grid.n_cells
             print(i, ncells)
-            self.progress_obj.setValue(75+(100*(i+1)/self.n_grains/4))
+            self.progress_obj.emit(75+(100*(i+1)/self.n_grains/4))
             grainIDList = [i + 1]
             grainID_array = grainIDList * ncells
             sub_grid['GrainID'] = grainID_array
@@ -237,14 +244,14 @@ class Mesher:
             else:
                 if len(grid.cell_arrays.keys()) == 0:
                     # print(i, grid.cell_arrays.keys())
-                    self.infobox_obj.add_text('uuups! I lost the grainID_key! please increase the resolution')
+                    self.infobox_obj.emit('uuups! I lost the grainID_key! please increase the resolution')
                     break
                 grid = sub_grid.merge(grid)
             grain_vol = sub_grid.volume
             self.logger.info(str(grain_vol*10**9))
-            self.grains_df.loc[self.grains_df['GrainID'] == i, 'final_conti_vol'] = grain_vol*10**9
+            self.grains_df.loc[self.grains_df['GrainID'] == i, 'meshed_conti_volume'] = grain_vol*10**9
 
-        self.grains_df['final_conti_vol'].to_csv(self.store_path + '/Generation_Data/conti_output_vol.csv', index=False)
+        self.grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
 
         print('ende', grid.cell_arrays.keys())
         #sys.exit()
@@ -1174,16 +1181,16 @@ class Mesher:
             plotter.show(screenshot=self.store_path + storename + '.png', auto_close=True)
 
     def mesh_and_build_abaqus_model(self) -> None:
-        self.progress_obj.setValue(0)
-        self.infobox_obj.add_text('starting mesher')
+        self.progress_obj.emit(0)
+        self.infobox_obj.emit('starting mesher')
         GRID = self.gen_blocks()
-        self.progress_obj.setValue(25)
+        self.progress_obj.emit(25)
         GRID = self.gen_grains(GRID)
         grain_boundaries_poly_data, tri_df = self.convert_to_mesh(GRID)
-        self.progress_obj.setValue(50)
+        self.progress_obj.emit(50)
         face_label = self.gen_face_labels(tri_df)
         smooth_grain_boundaries = self.smooth(grain_boundaries_poly_data, GRID, tri_df, face_label)
-        self.progress_obj.setValue(75)
+        self.progress_obj.emit(75)
         self.build_abaqus_model(rve=GRID, poly_data=smooth_grain_boundaries, fl=face_label, tri_df=tri_df)
-        self.progress_obj.setValue(100)
+        self.progress_obj.emit(100)
 
