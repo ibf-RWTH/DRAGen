@@ -17,9 +17,18 @@ class Window(QMainWindow, QFileDialog):
     def __init__(self, parent=None):
         """Initializer."""
         super(Window, self).__init__(parent)
-        self.setWindowIcon(QIcon('../thumbnails/Drache.ico'))
+
         self.setWindowTitle('DRAGen')
 
+
+        print(sys.argv[0][-3:])
+        if sys.argv[0][-3:] == 'exe':  # current file location is path + DRAGen.exe
+            self.thumbnail_path = sys.argv[0][:-11] + "\\thumbnails\\"
+        else:  # current file location is path + pyqt_gui.py
+            self.thumbnail_path = sys.argv[0][:-12] + "\\..\\thumbnails\\"
+            print(self.thumbnail_path)
+
+        self.setWindowIcon(QIcon(self.thumbnail_path + '\\Drache.ico'))
         self.mdi = QMdiArea()
         self.setCentralWidget(self.mdi)
         self._initUI()
@@ -90,7 +99,7 @@ class Window(QMainWindow, QFileDialog):
         visualization_label = QLabel('Plot Generation Process')
         self.threeDcheckBox.setChecked(False)
 
-        self.Logo = QPixmap("../thumbnails/Logo.png")
+        self.Logo = QPixmap(self.thumbnail_path + "\\Logo.png")
         self.Logo = self.Logo.scaled(self.Logo.size()/2)
         self.Logo_label = QLabel()
         self.Logo_label.setPixmap(self.Logo)
