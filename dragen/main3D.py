@@ -77,20 +77,20 @@ class DataTask3D(RVEUtils):
         phase2_csv = self.file2
 
         self.logger.info("RVE generation process has started...")
-        phase1_df = super().read_input(phase1_csv, dimension)
+        phase1_input_df = super().read_input(phase1_csv, dimension)
         # Phase Ratio calculation
         adjusted_size = np.cbrt((self.box_size ** 3 -
                                 (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
                                 * self.phase_ratio)
-        grains_df = super().sample_input_3D(phase1_df, bs=adjusted_size)
+        grains_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
         grains_df['phaseID'] = 1
 
         if phase2_csv is not None:
-            phase2_df = super().read_input(phase2_csv, dimension)
+            phase2_input_df = super().read_input(phase2_csv, dimension)
             adjusted_size = np.cbrt((self.box_size ** 3 -
                                     (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
                                     * (1-self.phase_ratio))
-            phase2_df = super().sample_input_3D(phase2_df, bs=adjusted_size)
+            phase2_df = super().sample_input_3D(phase2_input_df, bs=adjusted_size)
             phase2_df['phaseID'] = 2
             grains_df = pd.concat([grains_df, phase2_df])
 
@@ -112,10 +112,7 @@ class DataTask3D(RVEUtils):
         if not os.path.isdir(self.gen_path):
             os.makedirs(self.gen_path)  # Second if needed
 
-        grains_df.to_csv(self.gen_path + '/grain_data.csv', index=False)
-        grains_df['final_conti_volume'].to_csv(self.gen_path + '/conti_input_vol.csv', index=False)
-        grains_df['final_discrete_volume'].to_csv(self.gen_path + '/discrete_input_vol.csv', index=False)
-
+        grains_df.to_csv(self.gen_path + '/grain_data_input.csv', index=False)
         return grains_df, self.store_path
 
     def rve_generation(self, grains_df, store_path) -> str:
@@ -166,11 +163,15 @@ class DataTask3D(RVEUtils):
             # An den NaN-Werten in dem DF liegt es nicht!
 
             grains_df.sort_values(by=['GrainID'])
-
+            debug_df = grains_df.copy()
             for i in range(len(grains_df)):
                 # Set grain-ID to number of the grain
                 # Denn Grain-ID ist entweder >0 oder -200 oder >-200
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1, 'phaseID'] = grains_df['phaseID'][i]
+                debug_df.loc[debug_df.index == i, 'vol_rve_df'] = \
+                    len(periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1])*self.bin_size**3
+
+
 
             if self.number_of_bands > 0:
                 # Set the points where == -200 to phase 2 and to grain ID i + 2
@@ -178,14 +179,26 @@ class DataTask3D(RVEUtils):
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
 
             # Start the Mesher
+            debug_df.to_csv('debug_grains_df.csv', index=False)
             mesher_obj = Mesher(periodic_rve_df, grains_df, store_path=store_path,
-                                phase_two_isotropic=True, animation=False,
+                                phase_two_isotropic=True, animation=self.animation,
                                 infobox_obj=self.infobox_obj, progress_obj=self.progress_obj)
             mesher_obj.mesh_and_build_abaqus_model()
 
-        PostProcVol(store_path, dim_flag=3).gen_plots()
-        self.infobox_obj.add_text('checkout the evaluation report of the rve stored at:')
-        self.infobox_obj.add_text('{}/Postprocessing'.format(self.store_path))
+        post_proc_obj = PostProcVol(store_path, dim_flag=3)
+        phase1_ratio_conti_in, phase1_ref_r_conti_in, phase1_ratio_discrete_in, phase1_ref_r_discrete_in, \
+        phase2_ratio_conti_in, phase2_ref_r_conti_in, phase2_ratio_discrete_in, phase2_ref_r_discrete_in, \
+        phase1_ratio_conti_out, phase1_ref_r_conti_out, phase1_ratio_discrete_out, phase1_ref_r_discrete_out, \
+        phase2_ratio_conti_out, phase2_ref_r_conti_out, phase2_ratio_discrete_out, phase2_ref_r_discrete_out =\
+        post_proc_obj.gen_in_out_lists()
+        post_proc_obj.gen_pie_chart_phases(phase1_ratio_conti_in, phase2_ratio_conti_in, title='Conti Input Phase Distribution')
+        post_proc_obj.gen_pie_chart_phases(phase1_ratio_discrete_in, phase2_ratio_discrete_in, title='Discrete Input Phase Distribution')
+        post_proc_obj.gen_pie_chart_phases(phase1_ratio_conti_out, phase2_ratio_conti_out, title='Conti Output Phase Distribution')
+        post_proc_obj.gen_pie_chart_phases(phase1_ratio_discrete_out, phase2_ratio_discrete_out, title='Discrete Output Phase Distribution')
+
+
+        self.infobox_obj.emit('checkout the evaluation report of the rve stored at:')
+        self.infobox_obj.emit('{}/Postprocessing'.format(self.store_path))
         self.logger.info("RVE generation process has successfully completed...")
 
 
