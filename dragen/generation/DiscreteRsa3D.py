@@ -110,7 +110,7 @@ class DiscreteRsa3D(RVEUtils):
 
     def run_rsa(self, band_ratio_rsa=None, banded_rsa_array=None,
                 animation=False, x0_alt=None, y0_alt=None, z0_alt=None):
-        self.infobox_obj.add_text('starting RSA')
+        self.infobox_obj.emit('starting RSA')
         status = False
         bandratio = band_ratio_rsa
 
@@ -130,7 +130,8 @@ class DiscreteRsa3D(RVEUtils):
 
         i = 1
         attempt = 0
-        while i < self.n_grains + 1 | attempt < 5000:
+        free_points = np.count_nonzero(rsa == 0)
+        while i < self.n_grains + 1 | attempt < free_points:
             t_0 = datetime.datetime.now()
             free_points_old = np.count_nonzero(rsa == 0)
             band_points_old = np.count_nonzero(rsa == -200)
@@ -181,7 +182,7 @@ class DiscreteRsa3D(RVEUtils):
                         self.logger.info(
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
             progress = int((float(len(x_0_list))/self.n_grains * 100))
-            self.progress_obj.setValue(progress)
+            self.progress_obj.emit(progress)
 
         if (len(x_0_list) == self.n_grains) or (i - 1) == self.n_grains:
             status = True
