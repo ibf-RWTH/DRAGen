@@ -155,9 +155,8 @@ class Tesselation3D(RVEUtils):
                 delta_grow = freepoints_old - freepoints
                 if (grain_vol > self.final_volume[idx-1] and not repeat):
                     del grain_idx[i]
-                elif delta_grow == 0 and not repeat:    # Kein Wachstum, daher löschen der Indizes
+                elif delta_grow == 0: # and not repeat:    # TODO and not repeat beobachten
                     del grain_idx[i]
-                    #del grain_idx_backup[i] ## TODO Niklas warum löschst du hier die backup?!?
                 else:
                     i += 1
 
