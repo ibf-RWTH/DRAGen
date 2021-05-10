@@ -92,8 +92,8 @@ class Tesselation3D(RVEUtils):
             self.logger.info('time spent on plotter for epoch {}: {}'.format(epoch, time_elapse.total_seconds()))
 
     def run_tesselation(self, rsa, animation=True):
-        self.infobox_obj.add_text('starting Tesselation')
-        self.progress_obj.setValue(0)
+        self.infobox_obj.emit('starting Tesselation')
+        self.progress_obj.emit(0)
 
         # set some variables
         status = False
@@ -155,26 +155,26 @@ class Tesselation3D(RVEUtils):
                 delta_grow = freepoints_old - freepoints
                 if (grain_vol > self.final_volume[idx-1] and not repeat):
                     del grain_idx[i]
-                elif delta_grow == 0:    # Kein Wachstum, daher löschen der Indizes
+                elif delta_grow == 0 and not repeat:    # Kein Wachstum, daher löschen der Indizes
                     del grain_idx[i]
-                    del grain_idx_backup[i]
+                    #del grain_idx_backup[i] ## TODO Niklas warum löschst du hier die backup?!?
                 else:
                     i += 1
 
             if not grain_idx:
                 repeat = True
-                self.infobox_obj.add_text('grain growth had to be reset at {}% of volume filling'.format(packingratio))
+                self.infobox_obj.emit('grain growth had to be reset at {}% of volume filling'.format(packingratio))
                 if packingratio < 90:
-                    self.infobox_obj.add_text('your microstructure data does not conatin \n '
-                                              'enough data to fill this boxsize\n'
-                                              'please decrease the boxsize for reasonable results')
+                    self.infobox_obj.emit('your microstructure data does not contain \n'
+                                          'enough data to fill this boxsize\n'
+                                          'please decrease the boxsize for reasonable results')
                 grain_idx = grain_idx_backup.copy()
             if animation:
                 self.tesselation_plotter(rve, epoch)
             epoch += 1
             packingratio = (1 - freepoints / vol_0) * 100
             # print('packingratio:', packingratio, '%')
-            self.progress_obj.setValue(packingratio)
+            self.progress_obj.emit(packingratio)
 
         if packingratio == 100:
             status = True
@@ -183,8 +183,7 @@ class Tesselation3D(RVEUtils):
         #print(np.asarray(np.unique(rve, return_counts=True)).T)
         np.save(self.store_path + '/' + 'RVE_Numpy.npy', rve)
         grains_df = super().get_final_disc_vol_3D(self.grains_df, rve)
-        grains_df['final_discrete_volume'].to_csv(self.store_path +
-                                                  '/Generation_Data/discrete_output_vol.csv', index=False)
+        grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_discrete.csv', index=False)
 
         return rve, status
 
