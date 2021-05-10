@@ -1,11 +1,9 @@
 # DRAGen
-
-This repository includes the official implementation of the paper [A Novel Approach to Discrete Representative Volume Element Automation and Generation-DRAGen](https://www.mdpi.com/1996-1944/13/8/1887). It is highly recommended to use Python versions 3.6 to 3.8. For Python 3.9 there are still some problems with PyVista.
-
+**D**iscrete **R**VE **A**utomation and **Gen**eration
+## Overview
 ![logo](docs/GUI.PNG)
 
-## Overview
-
+This repository includes the official implementation of the paper [A Novel Approach to Discrete Representative Volume Element Automation and Generation-DRAGen](https://www.mdpi.com/1996-1944/13/8/1887). 
 DRAGen is an approach for generating Representative Volume Elements (RVEs) based on a Random Sequential Addition (RSA)-Algorithm for discrete volumes and the tessellation using a discrete tessellation function. The input data are gathered from the analysis of electron backscatter diffraction (EBSD) pictures via MATLAB toolbox MTEX and introduced to the model. Subsequently, the generator follows the below mentioned steps:
 
 * Randomly generating ellipsoids in volume (RSA)
@@ -13,6 +11,17 @@ DRAGen is an approach for generating Representative Volume Elements (RVEs) based
 * Validation of the newly created digital microstructure with input data
 
 The results show that the generator can successfully reconstruct realistic microstructures with elongated grains and martensite bands from given input data sets.
+
+For developing it is highly recommended to use Python versions 3.6 to 3.8. For Python 3.9 Pyvista is not fully supported.
+If further questions appear please check the lower section or get in touch with us.
+
+
+
+
+
+## Download
+https://rwth-aachen.sciebo.de/s/szEAcuXubht1Gyv
+
 
 <details>
 <summary><b>Show more...<b></summary>
@@ -47,22 +56,22 @@ _beta_ will be implemented in the future and will be a rotation around x- or y-a
 
 ## Output Data
 
-In v.1., the output files are Abaqus input files designed for the use with the ICAMS-Crystal-plysticity model. Therefore, the subroutine-files are needed for a successfull analysis.
+In V.1.0_b, the output files are Abaqus input files designed for the use with the ICAMS-Crystal-plysticity model. Therefore, the subroutine-files are needed for a successfull analysis.
 
 * Periodic boundary conditions (PBC): BottomToTop.inp, FrontToRear.inp, LeftToRight.inp, Corners.inp, Edges.inp, Nsets.inp, VerticeSets.inp
 * RVE: RVE_smooth.inp
 * CP-model data (euler angles and grain size): graindata.inp
 * RVE in arry: RVE_Numpy.npy (not needed at the moment!)
 
-It is distiguished between a purely elastic phase (Phase 2, Martensite) and a plastic phase (Phase 1, Ferrite). Extensions to more then two phases are in the making.
+It is distiguished between a plastic phase (Phase 1, e.g. Ferrite) purely elastic phase (Phase 2, e.g. Martensite) and . Extensions to more then two phases are in the making.
 
 
 ## Input generator
 
 One additional feature of our system is the generation of statistically representative microstructur using **Generative Adversarial Networks**, a method from the field of deep learning. With our CWGAN-GP, it is possible to generate an unlimited amount of vaild synthetical microstructure. Possible for "normal" grain data, inclusions and even damage (coming soon!). For more information, see our article on the basic idea of using a WGAN (https://www.mdpi.com/1996-1944/13/19/4236) and our IDDRG post on the CWGAN-GP (coming shortly after publishing).
 
-## soon to come
-Release of beta v.1.
+## Latest Version
+* DRAGen.V.1.0_b
 
 
 ## Contact
