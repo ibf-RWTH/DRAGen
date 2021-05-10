@@ -181,8 +181,14 @@ class Window(QMainWindow, QFileDialog):
         self.addToolBar(self.tools)
         self.tools.addAction('Exit', self.close)
         self.action_submit = QAction('submit', self.tools)
+        self.action_import_phase = QAction('import phase data', self.tools)
+        self.action_save_data = QAction('save data', self.tools)
         self.tools.addAction(self.action_submit)
+        self.tools.addAction(self.action_import_phase)
+        self.tools.addAction(self.action_save_data)
         self.action_submit.triggered.connect(self.submit)
+        self.action_import_phase.triggered.connect(self.getfiles)
+        self.action_save_data.triggered.connect(self.save_files)
 
     def _createStatusBar(self):
         self.status = QStatusBar()
@@ -249,6 +255,7 @@ class Window(QMainWindow, QFileDialog):
             msg.setWindowTitle("Error")
             msg.setDetailedText("input data file is missing")
             msg.exec_()
+            return
 
         if len(phase2_path) == 0:
             phase2_path = None
@@ -271,6 +278,7 @@ class Window(QMainWindow, QFileDialog):
             msg.setWindowTitle("Error")
             msg.setDetailedText("The file you imported was of the type: {}".format(str(phase1_path[-4:])))
             msg.exec_()
+            return
 
         if self.twoDcheckBox.isChecked():
             dimension = 2
@@ -285,6 +293,7 @@ class Window(QMainWindow, QFileDialog):
             msg.setInformativeText("Check one of the checkboxes stating\n 2D - RVE or 3D - RVE")
             msg.setWindowTitle("Error")
             msg.exec_()
+            return
 
         if len(store_path) == 0:
             msg = QMessageBox()
@@ -292,12 +301,22 @@ class Window(QMainWindow, QFileDialog):
             msg.setText("Please choose a directory to store the outputdata in")
             msg.setWindowTitle("Error")
             msg.exec_()
+            return
 
         if self.visualization.isChecked():
             visualization_flag = True
 
         if phase1_path is not None:
             import_flag = True
+
+        if phase2_path is not None and phase_ratio == 1:
+            msg = QMessageBox()
+            reply = msg.question(self,'Warning','The second phase file you chose will not be considered in the RVE.\n'
+                                 'Are you sure that you want to keep the phase_ratio at 1.0?', msg.Yes | msg.No)
+            if reply == msg.Yes:
+                pass
+            else:
+                return
 
         if len(store_path) > 0:
             store_path_flag = True
