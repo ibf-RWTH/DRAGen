@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
@@ -14,6 +15,7 @@ class PostProcVol:
 
         if not os.path.isdir(output_path + '/Postprocessing'):
             os.mkdir(output_path + '/Postprocessing')
+        matplotlib.use('Qt5Agg')
 
     def gen_in_out_lists(self) -> tuple:
 
@@ -125,59 +127,58 @@ class PostProcVol:
 
         plt.savefig(self.store_path + '/phase_distribution_{}.png'.format(title))
 
-    def gen_plots(self, input, output) -> None:
+    def gen_plots(self, input, output, title, filename, input_opt=None, output_opt=None, title_opt=None, ) -> None:
 
-        kde_disc_in = KernelDensity(bandwidth=.25, kernel='gaussian')
-        kde_disc_out = KernelDensity(bandwidth=.25, kernel='gaussian')
-        kde_conti_in = KernelDensity(bandwidth=.25, kernel='gaussian')
-        kde_conti_out = KernelDensity(bandwidth=.25, kernel='gaussian')
-
-        kde_disc_in.fit(np.reshape(self.discrete_input_list, (-1, 1)))
-        kde_disc_out.fit(np.reshape(self.discrete_output_list, (-1, 1)))
-        kde_conti_in.fit(np.reshape(self.conti_input_list, (-1, 1)))
-        kde_conti_out.fit(np.reshape(self.conti_output_list, (-1, 1)))
+        kde_1_in = KernelDensity(bandwidth=.25, kernel='gaussian')
+        kde_1_out = KernelDensity(bandwidth=.25, kernel='gaussian')
+        kde_1_in.fit(np.reshape(input, (-1, 1)))
+        kde_1_out.fit(np.reshape(output, (-1, 1)))
 
         # capture x-lim
-        max_x = int(max(self.conti_input_list))
-        max_x = max_x + 0.25 * max_x
-        x_d = np.linspace(0, max_x, 50000)
+        max_x = 1.25 * 1.25 * max([int(max(input)), int(max(output))])
+        if input_opt is not None and output_opt is not None:
+            max_x = 1.25 * max([int(max(input)), int(max(output)), int(max(input_opt)), int(max(output_opt))])
 
+        x_d = np.linspace(0, max_x, 50000)
         # score_samples returns the log of the probability density
-        logdens_d_in = kde_disc_in.score_samples(x_d[:, None])
-        logdens_d_out = kde_disc_out.score_samples(x_d[:, None])
-        logdens_c_in = kde_conti_in.score_samples(x_d[:, None])
-        logdens_c_out = kde_conti_out.score_samples(x_d[:, None])
+        logdens_1_in = kde_1_in.score_samples(x_d[:, None])
+        logdens_1_out = kde_1_out.score_samples(x_d[:, None])
 
         ##
         fig = plt.figure(figsize=(11, 8))
 
         ax = fig.add_subplot(1, 1, 1)
-
-        ax.set_xlabel('time [s]')
-        ax.set_ylabel('signal')
-
-        ax.plot(x_d, np.exp(logdens_d_in), '--r', label='discrete volume input data')
-        ax.plot(x_d, np.exp(logdens_c_in), 'r', label='continuous volume input data')
-
-        ax.plot(x_d, np.exp(logdens_d_out), '--k', label='discrete volume output data')
-        ax.plot(x_d, np.exp(logdens_c_out), 'k', label='continuous volume output data')
-
+        ax.plot(x_d, np.exp(logdens_1_in), 'r', label='input data '+title)
+        ax.plot(x_d, np.exp(logdens_1_out), 'k', label='output data '+title)
         plt.xlabel('Grain Radius of Reference Sphere (µm)', fontsize=20)
-
         plt.ylabel('Normalized Density ( - ) ', fontsize=20)
-
         # caputure max y-lim
-        max_log_dens = [max(np.exp(logdens_c_in)), max(np.exp(logdens_c_out)),
-                        max(np.exp(logdens_d_in)), max(np.exp(logdens_d_out))]
-        max_y = max(max_log_dens)
-        max_y = max_y + 0.25 * max_y
+        max_log_dens = [max(np.exp(logdens_1_in)), max(np.exp(logdens_1_out))]
 
+
+
+
+        if input_opt is not None and output_opt is not None:
+            kde_2_in = KernelDensity(bandwidth=.25, kernel='gaussian')
+            kde_2_out = KernelDensity(bandwidth=.25, kernel='gaussian')
+            kde_2_in.fit(np.reshape(input_opt, (-1, 1)))
+            kde_2_out.fit(np.reshape(output_opt, (-1, 1)))
+            logdens_2_in = kde_2_in.score_samples(x_d[:, None])
+            logdens_2_out = kde_2_out.score_samples(x_d[:, None])
+            ax.plot(x_d, np.exp(logdens_2_in), '--r', label='input data ' + title_opt)
+            ax.plot(x_d, np.exp(logdens_2_out), '--k', label='output data ' + title_opt)
+            # caputure max new y-lim
+            max_log_dens = [max(np.exp(logdens_1_in)), max(np.exp(logdens_1_out)),
+                            max(np.exp(logdens_2_in)), max(np.exp(logdens_2_out))]
+
+        max_y = max(max_log_dens)
+        max_y = 1.25 * max_y
         plt.xlim(0, max_x)
         plt.ylim(0, max_y)
         plt.xticks(fontsize=20)
         plt.yticks(fontsize=20)
         plt.legend(fontsize=12)
-        plt.savefig(self.store_path + '/vol_distribution.png')
+        plt.savefig(self.store_path + '/vol_distribution_{}.png'.format(filename))
 
 
 if __name__ == "__main__":
@@ -196,3 +197,9 @@ if __name__ == "__main__":
     obj.gen_pie_chart_phases(phase1_ratio_conti_out, phase2_ratio_conti_out, 'output_conti')
     obj.gen_pie_chart_phases(phase1_ratio_discrete_in, phase2_ratio_discrete_in, 'input_discrete')
     obj.gen_pie_chart_phases(phase1_ratio_discrete_out, phase2_ratio_discrete_out, 'output_discrete')
+
+    obj.gen_plots(phase1_ref_r_discrete_in, phase1_ref_r_discrete_out, 'phase 1 discrete', 'phase1vs2_discrete',
+                  phase2_ref_r_discrete_in, phase2_ref_r_discrete_out, 'phase 2 discrete')
+    obj.gen_plots(phase1_ref_r_conti_in, phase1_ref_r_conti_out, 'phase 1 conti', 'phase1vs2_conti',
+                  phase2_ref_r_conti_in, phase2_ref_r_conti_out, 'phase 2 conti')
+
