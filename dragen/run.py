@@ -14,8 +14,7 @@ class Run:
                  dimension: int, visualization_flag: bool, file1: str = None, file2: str = None,
                  phase_ratio: float = None, store_path: str = None,
                  shrink_factor: float = 0.5, band_ratio_rsa: float = 0.75, band_ratio_final: float = 0.75,
-                 gui_flag: bool = False, gan_flag: bool = False, info_box_obj: ScrollLabel = None,
-                 progress_obj=None):
+                 gui_flag: bool = False, gan_flag: bool = False, info_box_obj=None, progress_obj=None):
 
         self.box_size = box_size
         self.resolution = resolution
@@ -44,35 +43,38 @@ class Run:
         if n_pts % 2 != 0:
             n_pts += 1
 
-        self.infobox_obj.add_text("the chosen resolution lead to {}^{} points in the grid".format(str(n_pts),
+        self.infobox_obj.emit("the chosen resolution lead to {}^{} points in the grid".format(str(n_pts),
                               str(self.dimension)))
 
-        obj3D = DataTask3D(box_size=self.box_size, n_pts=int(n_pts), number_of_bands=self.number_of_bands,
-                           bandwidth=self.band_width, shrink_factor=self.shrink_factor,
-                           band_ratio_rsa=self.band_ratio_rsa, band_ratio_final=self.band_ratio_final,
-                           file1=self.file1, file2=self.file2, phase_ratio=self.phase_ratio, store_path=self.store_path,
-                           gui_flag=True, gan_flag=self.gan_flag, anim_flag=self.visualization_flag,
-                           infobox_obj=self.infobox_obj, progess_obj = self.progress_obj)
 
-        obj2D = DataTask2D(box_size=self.box_size, n_pts=n_pts, number_of_bands=self.number_of_bands,
-                           bandwidth=self.band_width, shrink_factor=self.shrink_factor,
-                           band_ratio_rsa=self.band_ratio_rsa, band_ratio_final=self.band_ratio_final,
-                           file1=self.file1,
-                           file2=self.file2,
-                           gui_flag=True, gan_flag=self.gan_flag, anim_flag=self.visualization_flag)
 
         if self.dimension == 2:
+            obj2D = DataTask2D(box_size=self.box_size, n_pts=n_pts, number_of_bands=self.number_of_bands,
+                               bandwidth=self.band_width, shrink_factor=self.shrink_factor,
+                               band_ratio_rsa=self.band_ratio_rsa, band_ratio_final=self.band_ratio_final,
+                               file1=self.file1,
+                               file2=self.file2,
+                               gui_flag=True, gan_flag=self.gan_flag, anim_flag=self.visualization_flag)
+
+
             grains_df = obj2D.initializations(self.dimension)
             for i in range(self.number_of_rves):
                 obj2D.rve_generation(i, grains_df)
 
         elif self.dimension == 3:
+            obj3D = DataTask3D(box_size=self.box_size, n_pts=int(n_pts), number_of_bands=self.number_of_bands,
+                               bandwidth=self.band_width, shrink_factor=self.shrink_factor,
+                               band_ratio_rsa=self.band_ratio_rsa, band_ratio_final=self.band_ratio_final,
+                               file1=self.file1, file2=self.file2, phase_ratio=self.phase_ratio,
+                               store_path=self.store_path,
+                               gui_flag=True, gan_flag=self.gan_flag, anim_flag=self.visualization_flag,
+                               infobox_obj=self.infobox_obj, progess_obj=self.progress_obj)
             for i in range(self.number_of_rves):
                 grains_df, store_path = obj3D.initializations(self.dimension, epoch=i)
                 obj3D.rve_generation(grains_df, store_path)
-                PostProcVol_obj = PostProcVol(store_path, dim_flag=3)
-                PostProcVol_obj.gen_in_out_lists()
-                PostProcVol_obj.gen_plots()
+                #PostProcVol_obj = PostProcVol(store_path, dim_flag=3)
+                #PostProcVol_obj.gen_in_out_lists()
+                #PostProcVol_obj.gen_plots()
 
         else:
             LOGS_DIR = 'Logs/'
