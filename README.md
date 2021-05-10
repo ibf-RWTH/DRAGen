@@ -1,7 +1,8 @@
-# DRAGen
-**D**iscrete **R**VE **A**utomation and **Gen**eration
-## Overview
-![logo](docs/GUI.PNG)
+<h1> DRAGen - <ins>D</ins>iscrete <ins>R</ins>VE <ins>A</ins>utomation and <ins>Gen</ins>eration</h1>
+<!--**D**iscrete **R**VE **A**utomation and **Gen**eration-->
+
+<!--## Overview-->
+<!--![logo](docs/GUI.PNG)-->
 
 This repository includes the official implementation of the paper [A Novel Approach to Discrete Representative Volume Element Automation and Generation-DRAGen](https://www.mdpi.com/1996-1944/13/8/1887). 
 DRAGen is an approach for generating Representative Volume Elements (RVEs) based on a Random Sequential Addition (RSA)-Algorithm for discrete volumes and the tessellation using a discrete tessellation function. The input data are gathered from the analysis of electron backscatter diffraction (EBSD) pictures via MATLAB toolbox MTEX and introduced to the model. Subsequently, the generator follows the below mentioned steps:
@@ -12,8 +13,10 @@ DRAGen is an approach for generating Representative Volume Elements (RVEs) based
 
 The results show that the generator can successfully reconstruct realistic microstructures with elongated grains and martensite bands from given input data sets.
 
-For developing it is highly recommended to use Python versions 3.6 to 3.8. For Python 3.9 Pyvista is not fully supported.
-If further questions appear please check the lower section or get in touch with us.
+![logo](docs/GUI.PNG)
+
+_Note: For developing it is highly recommended to use Python versions 3.6 to 3.8. For Python 3.9 Pyvista is not fully supported._<br>
+**If further questions appear please check the lower section or get in touch with us.**
 
 
 
@@ -59,8 +62,8 @@ _beta_ will be implemented in the future and will be a rotation around x- or y-a
 In V.1.0_b, the output files are Abaqus input files designed for the use with the ICAMS-Crystal-plysticity model. Therefore, the subroutine-files are needed for a successfull analysis.
 
 * Periodic boundary conditions (PBC): BottomToTop.inp, FrontToRear.inp, LeftToRight.inp, Corners.inp, Edges.inp, Nsets.inp, VerticeSets.inp
-* RVE: RVE_smooth.inp
 * CP-model data (euler angles and grain size): graindata.inp
+* RVE: RVE_smooth.inp
 * RVE in arry: RVE_Numpy.npy (not needed at the moment!)
 
 It is distiguished between a plastic phase (Phase 1, e.g. Ferrite) purely elastic phase (Phase 2, e.g. Martensite) and . Extensions to more then two phases are in the making.
