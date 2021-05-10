@@ -5,7 +5,7 @@
 import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import Qt, QThread
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QIcon
 from dragen.pyqt_gui.ScrollLabel import ScrollLabel
 
 from dragen.pyqt_gui.worker import Worker
@@ -17,7 +17,9 @@ class Window(QMainWindow, QFileDialog):
     def __init__(self, parent=None):
         """Initializer."""
         super(Window, self).__init__(parent)
+        self.setWindowIcon(QIcon('../thumbnails/Drache.ico'))
         self.setWindowTitle('DRAGen')
+
         self.mdi = QMdiArea()
         self.setCentralWidget(self.mdi)
         self._initUI()
@@ -26,7 +28,7 @@ class Window(QMainWindow, QFileDialog):
         self._createMenu()
         self._createToolBar()
         self._createStatusBar()
-        box_size_label = QLabel('RVE - Size')
+        box_size_label = QLabel('RVE-Size (µm)')
         self.box_size_Edit = QSpinBox()
         self.box_size_Edit.setMinimum(10)
         self.box_size_Edit.setValue(20)
@@ -46,7 +48,7 @@ class Window(QMainWindow, QFileDialog):
         self.n_bands_Edit = QSpinBox()
         self.n_bands_Edit.setMinimum(0)
 
-        band_width_label = QLabel('Band Thickness')
+        band_width_label = QLabel('Band Thickness (µm)')
         self.band_width_Edit = QDoubleSpinBox()
         self.band_width_Edit.setMinimum(1)
         self.band_width_Edit.setMaximum(self.box_size_Edit.value() / 10)
@@ -249,9 +251,9 @@ class Window(QMainWindow, QFileDialog):
                 self.info_box.add_text("and from:\n{}".format(phase1_path))
         elif phase1_path[-4:] == '.csv':
             gan_flag = False
-            self.info_box.set_text("microstructure imported from {}".format(phase1_path))
+            self.info_box.set_text("microstructure imported from\n{}".format(phase1_path))
             if phase2_path is not None:
-                self.info_box.add_text("and from {}".format(phase2_path))
+                self.info_box.add_text("and from\n{}".format(phase2_path))
         else:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
@@ -294,14 +296,14 @@ class Window(QMainWindow, QFileDialog):
             self.info_box.add_text('Staring the generation of {} RVEs'.format(n_rves))
             self.thread = QThread()
             self.worker = Worker(box_size, resolution, n_rves, n_bands, band_width, dimension, visualization_flag,
-                                 phase1_path, phase2_path, phase_ratio, store_path, gui_flag=True, gan_flag=gan_flag,
-                                 info_box_obj=self.info_box, progress_obj = self.progress)
+                                 phase1_path, phase2_path, phase_ratio, store_path, gui_flag=True, gan_flag=gan_flag)
             self.worker.moveToThread(self.thread)
             self.thread.started.connect(self.worker.run)
             self.worker.finished.connect(self.thread.quit)
             self.worker.finished.connect(self.worker.deleteLater)
             self.thread.finished.connect(self.thread.deleteLater)
             self.worker.progress.connect(self.progress_event)
+            self.worker.info_box.connect(self.info_box.add_text)
             self.thread.start()
             self.action_submit.setEnabled(False)
             self.status.showMessage('generation running...')
@@ -323,9 +325,5 @@ class ThreadClass(QThread):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     win = Window()
-    #win.setFixedWidth(win.width())
-    #win.setFixedHeight(int(win.height()*1.2))
-    win.setFixedWidth(625)
-    win.setFixedHeight(600)
     win.show()
     sys.exit(app.exec_())
