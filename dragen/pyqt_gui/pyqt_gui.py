@@ -67,6 +67,10 @@ class Window(QMainWindow, QFileDialog):
         phase1_label = QLabel('csv-file phase1')
         self.phase1_text_Edit = QLineEdit()
 
+        phase1_button = QPushButton()
+        phase1_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\folder.png")))
+        phase1_button.clicked.connect(self.phase1_button_handler)
+
         self.phase_ratio = None
         phase_ratio_label = QLabel('phase ratio of phase 1')
         self.phase_ratio_Edit = QDoubleSpinBox()
@@ -80,10 +84,18 @@ class Window(QMainWindow, QFileDialog):
         phase2_label = QLabel('csv-file phase2')
         self.phase2_text_Edit = QLineEdit()
 
+        phase2_button = QPushButton()
+        phase2_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\folder.png")))
+        phase2_button.clicked.connect(self.phase2_button_handler)
+
         self.save_files = None
         save_files_label = QLabel('save files at:')
         self.save_files_Edit = QLineEdit()
         self.save_files_Edit.setText("C:/temp")
+
+        save_button = QPushButton()
+        save_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\folder.png")))
+        save_button.clicked.connect(self.save_button_handler)
 
         self.twoDcheckBox = QCheckBox()
         twoDcheckBox_label = QLabel('2D - RVE')
@@ -126,16 +138,19 @@ class Window(QMainWindow, QFileDialog):
         grid.addWidget(self.band_width_Edit, 5, 1)
 
         grid.addWidget(phase1_label, 6, 0)
-        grid.addWidget(self.phase1_text_Edit, 6, 1, 1, 3)
+        grid.addWidget(self.phase1_text_Edit, 6, 1, 1, 2)
+        grid.addWidget(phase1_button, 6, 3)
 
         grid.addWidget(phase_ratio_label, 7, 0)
         grid.addWidget(self.phase_ratio_Edit, 7, 1)
 
         grid.addWidget(phase2_label, 8, 0)
-        grid.addWidget(self.phase2_text_Edit, 8, 1, 1, 3)
+        grid.addWidget(self.phase2_text_Edit, 8, 1, 1, 2)
+        grid.addWidget(phase2_button, 8, 3)
 
         grid.addWidget(save_files_label, 9, 0)
-        grid.addWidget(self.save_files_Edit, 9, 1, 1, 3)
+        grid.addWidget(self.save_files_Edit, 9, 1, 1, 2)
+        grid.addWidget(save_button, 9, 3)
 
         # check boxes
         grid.addWidget(twoDcheckBox_label, 1, 2)
@@ -200,6 +215,24 @@ class Window(QMainWindow, QFileDialog):
 
     def bandwidth_handler(self):
         self.band_width_Edit.setMaximum(self.box_size_Edit.value()/10)
+
+    def phase1_button_handler(self):
+        dlg = QFileDialog()
+        dlg.setFileMode(QFileDialog.AnyFile)
+        if dlg.exec_():
+            self.filepath_phase1 = dlg.selectedFiles()
+            self.phase1_text_Edit.setText(self.filepath_phase1[0])
+
+    def phase2_button_handler(self):
+        dlg = QFileDialog()
+        dlg.setFileMode(QFileDialog.AnyFile)
+        if dlg.exec_():
+            self.filepath_phase2 = dlg.selectedFiles()
+            self.phase2_text_Edit.setText(self.filepath_phase2[0])
+
+    def save_button_handler(self):
+        self.save_files = QFileDialog.getExistingDirectory(self)
+        self.save_files_Edit.setText(str(self.save_files))
 
     def dimension_handler(self, state):
         # checking if state is checked
