@@ -68,7 +68,7 @@ class Window(QMainWindow, QFileDialog):
         self.phase1_text_Edit = QLineEdit()
 
         phase1_button = QPushButton()
-        phase1_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\folder.png")))
+        phase1_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\folder_win10.png")))
         phase1_button.clicked.connect(self.phase1_button_handler)
 
         self.phase_ratio = None
@@ -85,7 +85,7 @@ class Window(QMainWindow, QFileDialog):
         self.phase2_text_Edit = QLineEdit()
 
         phase2_button = QPushButton()
-        phase2_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\folder.png")))
+        phase2_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\folder_win10.png")))
         phase2_button.clicked.connect(self.phase2_button_handler)
 
         self.save_files = None
@@ -94,7 +94,7 @@ class Window(QMainWindow, QFileDialog):
         self.save_files_Edit.setText("C:/temp")
 
         save_button = QPushButton()
-        save_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\folder.png")))
+        save_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\folder_win10.png")))
         save_button.clicked.connect(self.save_button_handler)
 
         self.twoDcheckBox = QCheckBox()
