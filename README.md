@@ -81,8 +81,8 @@ One additional feature of our system is the generation of statistically represen
 
 * DRAGen Support <DRAGen@iehk.rwth-aachen.de>
 
-Please use one of the following keywords your issue as e-mail subject
-* general problems
+Please use one of the following keywords for your issue as e-mail subject:
+* General problems
 * RSA error
 * Tesselation error
 * Mesher error
