@@ -67,9 +67,11 @@ class Window(QMainWindow, QFileDialog):
         phase1_label = QLabel('csv-file phase1')
         self.phase1_text_Edit = QLineEdit()
 
-        phase1_button = QPushButton()
-        phase1_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\folder_win10.png")))
-        phase1_button.clicked.connect(self.phase1_button_handler)
+        self.phase1_button = QPushButton()
+        self.phase1_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\Folder-Generic-Silver-icon.png")))
+        #self.phase1_button.setText('...')
+        #self.phase1_button.setFixedWidth(15)
+        self.phase1_button.clicked.connect(self.button_handler)
 
         self.phase_ratio = None
         phase_ratio_label = QLabel('phase ratio of phase 1')
@@ -84,18 +86,18 @@ class Window(QMainWindow, QFileDialog):
         phase2_label = QLabel('csv-file phase2')
         self.phase2_text_Edit = QLineEdit()
 
-        phase2_button = QPushButton()
-        phase2_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\folder_win10.png")))
-        phase2_button.clicked.connect(self.phase2_button_handler)
+        self.phase2_button = QPushButton()
+        self.phase2_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\Folder-Generic-Silver-icon.png")))
+        self.phase2_button.clicked.connect(self.button_handler)
 
         self.save_files = None
         save_files_label = QLabel('save files at:')
         self.save_files_Edit = QLineEdit()
         self.save_files_Edit.setText("C:/temp")
 
-        save_button = QPushButton()
-        save_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\folder_win10.png")))
-        save_button.clicked.connect(self.save_button_handler)
+        self.save_button = QPushButton()
+        self.save_button.setIcon(QIcon(QPixmap(self.thumbnail_path + "\\Folder-Generic-Silver-icon.png")))
+        self.save_button.clicked.connect(self.button_handler)
 
         self.twoDcheckBox = QCheckBox()
         twoDcheckBox_label = QLabel('2D - RVE')
@@ -139,29 +141,29 @@ class Window(QMainWindow, QFileDialog):
 
         grid.addWidget(phase1_label, 6, 0)
         grid.addWidget(self.phase1_text_Edit, 6, 1, 1, 2)
-        grid.addWidget(phase1_button, 6, 3)
+        grid.addWidget(self.phase1_button, 6, 3)
 
         grid.addWidget(phase_ratio_label, 7, 0)
         grid.addWidget(self.phase_ratio_Edit, 7, 1)
 
         grid.addWidget(phase2_label, 8, 0)
         grid.addWidget(self.phase2_text_Edit, 8, 1, 1, 2)
-        grid.addWidget(phase2_button, 8, 3)
+        grid.addWidget(self.phase2_button, 8, 3)
 
         grid.addWidget(save_files_label, 9, 0)
         grid.addWidget(self.save_files_Edit, 9, 1, 1, 2)
-        grid.addWidget(save_button, 9, 3)
+        grid.addWidget(self.save_button, 9, 3)
 
         # check boxes
-        grid.addWidget(twoDcheckBox_label, 1, 2)
-        grid.addWidget(self.twoDcheckBox, 1, 3)
+        grid.addWidget(twoDcheckBox_label, 1, 2, alignment=Qt.AlignRight)
+        grid.addWidget(self.twoDcheckBox, 1, 3, alignment=Qt.AlignRight)
         self.twoDcheckBox.setDisabled(True) # TODO set to disabled while 2D branch still not ready
 
-        grid.addWidget(threeDcheckBox_label, 2, 2)
-        grid.addWidget(self.threeDcheckBox, 2, 3)
+        grid.addWidget(threeDcheckBox_label, 2, 2, alignment=Qt.AlignRight)
+        grid.addWidget(self.threeDcheckBox, 2, 3, alignment=Qt.AlignRight)
 
-        grid.addWidget(visualization_label, 3, 2)
-        grid.addWidget(self.visualization, 3, 3)
+        grid.addWidget(visualization_label, 3, 2, alignment=Qt.AlignRight)
+        grid.addWidget(self.visualization, 3, 3, alignment=Qt.AlignRight)
 
         grid.addWidget(self.Logo_label, 1, 4, 12, 3)
         init_text = """Generation has not yet started"""
@@ -188,22 +190,24 @@ class Window(QMainWindow, QFileDialog):
     def _createMenu(self):
         self.menu = self.menuBar().addMenu("&Menu")
         self.menu.addAction('&Exit', self.close)
-        self.menu.addAction('&Import microstructure', self.getfiles)
-        self.menu.addAction('&save files', self.save_files)
+        self.menu.addAction('&Import phase data', self.getfiles)
+        self.menu.addAction('&Save files', self.save_files)
 
     def _createToolBar(self):
         self.tools = QToolBar()
         self.addToolBar(self.tools)
-        self.tools.addAction('Exit', self.close)
-        self.action_submit = QAction('submit', self.tools)
-        self.action_import_phase = QAction('import phase data', self.tools)
-        self.action_save_data = QAction('save data', self.tools)
-        self.tools.addAction(self.action_submit)
+        self.tools.addAction('&Exit', self.close)
+        self.action_submit = QAction('&Submit', self.tools)
+        self.action_import_phase = QAction('Import phase data', self.tools)
+        self.action_save_data = QAction('Save data', self.tools)
+
         self.tools.addAction(self.action_import_phase)
         self.tools.addAction(self.action_save_data)
-        self.action_submit.triggered.connect(self.submit)
+        self.tools.addAction(self.action_submit)
+
         self.action_import_phase.triggered.connect(self.getfiles)
         self.action_save_data.triggered.connect(self.save_files)
+        self.action_submit.triggered.connect(self.submit)
 
     def _createStatusBar(self):
         self.status = QStatusBar()
@@ -216,19 +220,24 @@ class Window(QMainWindow, QFileDialog):
     def bandwidth_handler(self):
         self.band_width_Edit.setMaximum(self.box_size_Edit.value()/10)
 
-    def phase1_button_handler(self):
-        dlg = QFileDialog()
-        dlg.setFileMode(QFileDialog.AnyFile)
-        if dlg.exec_():
-            self.filepath_phase1 = dlg.selectedFiles()
-            self.phase1_text_Edit.setText(self.filepath_phase1[0])
+    def button_handler(self):
 
-    def phase2_button_handler(self):
-        dlg = QFileDialog()
-        dlg.setFileMode(QFileDialog.AnyFile)
-        if dlg.exec_():
-            self.filepath_phase2 = dlg.selectedFiles()
-            self.phase2_text_Edit.setText(self.filepath_phase2[0])
+        if self.sender() == self.phase1_button:
+            dlg = QFileDialog()
+            dlg.setFileMode(QFileDialog.AnyFile)
+            if dlg.exec_():
+                self.filepath_phase1 = dlg.selectedFiles()
+                self.phase1_text_Edit.setText(self.filepath_phase1[0])
+        elif self.sender() == self.phase2_button:
+            dlg = QFileDialog()
+            dlg.setFileMode(QFileDialog.AnyFile)
+            if dlg.exec_():
+                self.filepath_phase2 = dlg.selectedFiles()
+                self.phase2_text_Edit.setText(self.filepath_phase2[0])
+        elif self.sender() == self.save_button:
+            self.save_files = QFileDialog.getExistingDirectory(self)
+            self.save_files_Edit.setText(str(self.save_files))
+
 
     def save_button_handler(self):
         self.save_files = QFileDialog.getExistingDirectory(self)
