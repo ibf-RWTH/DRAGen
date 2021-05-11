@@ -65,8 +65,17 @@ class Mesher:
             plotter.add_mesh(grid, scalars='phaseID', stitle='RVE-phases',
                              show_edges=True, interpolate_before_map=True)
             plotter.add_axes()
-            plotter.show(interactive=True, auto_close=False, window_size=[800, 600],
-                         screenshot=self.store_path+'/Figs/pyvista_mesh.png')
+            plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
+                         screenshot=self.store_path+'/Figs/pyvista_Hex_Mesh_phases.png')
+            plotter.close()
+
+            plotter = pv.Plotter()
+            plotter.add_mesh(grid, scalars='GrainID', stitle='RVE-Grains',
+                             show_edges=True, interpolate_before_map=True)
+            plotter.add_axes()
+            plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
+                         screenshot=self.store_path + '/Figs/pyvista_Hex_Mesh_phases.png')
+            plotter.close()
 
         return grid
 
