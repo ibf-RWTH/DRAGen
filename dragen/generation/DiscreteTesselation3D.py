@@ -84,6 +84,7 @@ class Tesselation3D(RVEUtils):
         ax.set_xlabel('x (µm)')
         ax.set_ylabel('y (µm)')
         ax.set_zlabel('z (µm)')
+        # ax.view_init(90, 270) #facing against z-direction (counterclockwise rotation)
         # plt.show()
         plt.savefig(self.store_path + '/Figs/3D_Tesselation_Epoch_{}.png'.format(epoch))
         plt.close(fig)
