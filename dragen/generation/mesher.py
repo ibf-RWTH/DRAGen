@@ -61,20 +61,20 @@ class Mesher:
 
         # Now plot the grid!
         if self.animation:
-            plotter = pv.Plotter()
-            plotter.add_mesh(grid, scalars='phaseID', stitle='RVE-phases',
+            plotter = pv.Plotter(off_screen=True)
+            plotter.add_mesh(grid, scalars='phaseID', stitle='Phase IDs',
                              show_edges=True, interpolate_before_map=True)
             plotter.add_axes()
             plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
                          screenshot=self.store_path+'/Figs/pyvista_Hex_Mesh_phases.png')
             plotter.close()
 
-            plotter = pv.Plotter()
-            plotter.add_mesh(grid, scalars='GrainID', stitle='RVE-Grains',
+            plotter = pv.Plotter(off_screen=True)
+            plotter.add_mesh(grid, scalars='GrainID', stitle='Grain IDs',
                              show_edges=True, interpolate_before_map=True)
             plotter.add_axes()
             plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
-                         screenshot=self.store_path + '/Figs/pyvista_Hex_Mesh_phases.png')
+                         screenshot=self.store_path + '/Figs/pyvista_Hex_Mesh_grains.png')
             plotter.close()
 
         return grid
@@ -254,7 +254,7 @@ class Mesher:
                 if len(grid.cell_arrays.keys()) == 0:
                     # print(i, grid.cell_arrays.keys())
                     self.infobox_obj.emit('uuups! I lost the grainID_key! please increase the resolution')
-                    break
+                    return
                 grid = sub_grid.merge(grid)
             grain_vol = sub_grid.volume
             self.logger.info(str(grain_vol*10**9))
@@ -263,6 +263,10 @@ class Mesher:
         self.grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
 
         print('ende', grid.cell_arrays.keys())
+        if len(grid.cell_arrays.keys()) == 0:
+            print(i, grid.cell_arrays.keys())
+            self.infobox_obj.emit('uuups! I lost the grainID_key! please increase the resolution')
+            return
         #sys.exit()
         pv.save_meshio(self.store_path + '/rve-part.inp', grid)
         f = open(self.store_path + '/rve-part.inp', 'r')
