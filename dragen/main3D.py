@@ -210,7 +210,8 @@ class DataTask3D(RVEUtils):
             self.infobox_obj.emit('checkout the evaluation report of the rve stored at:\n'
                                   '{}/Postprocessing'.format(self.store_path))
         else:
-            obj.gen_plots(phase1_ref_r_conti_in, phase1_ref_r_conti_out, 'conti', 'discrete_vs_conti',
-                          phase1_ref_r_discrete_in, phase1_ref_r_discrete_out, 'discrete')
+            obj.gen_plots(phase1_ref_r_conti_in, phase1_ref_r_conti_out, 'conti', 'in_vs_out_conti')
+            obj.gen_plots(phase1_ref_r_discrete_in, phase1_ref_r_discrete_out, 'discrete', 'in_vs_out_discrete')
+
 
         self.logger.info("RVE generation process has successfully completed...")
