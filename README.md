@@ -77,10 +77,18 @@ One additional feature of our system is the generation of statistically represen
 * DRAGen.V.1.0_b
 
 
-## Contact
+## Support
 
-* Manuel Henrich M. Sc. <manuel.henrich@iehk.rwth-aachen.de>
-* Maximilian Neite M. Sc. <maximilian.neite@iehk.rwth-aachen.de>
-* Niklas Fehlemann M. Sc. <niklas.fehlemann@iehk.rwth-aachen.de>
-* Orkun Karagüllü M. Sc. <orkun.karaguellue@iehk.rwth-aachen.de>
+* DRAGen Support <DRAGen@iehk.rwth-aachen.de>
+
+Please use one of the following keywords for your issue as e-mail subject:
+* General problems
+* RSA error
+* Tesselation error
+* Mesher error
+* Substructure
+* Inclusions
+* Bands
+
+
 </details>
