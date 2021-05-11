@@ -15,7 +15,7 @@ class PostProcVol:
 
         if not os.path.isdir(output_path + '/Postprocessing'):
             os.mkdir(output_path + '/Postprocessing')
-        matplotlib.use('Qt5Agg')
+
 
     def gen_in_out_lists(self) -> tuple:
 
@@ -119,13 +119,13 @@ class PostProcVol:
         sizes = [phase1_ratio, phase2_ratio]
         explode = (0.1, 0)
 
-        fig1, ax1 = plt.subplots()
-        ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
+        plt.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
                 shadow=True, startangle=90)
-        ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         plt.title(title)
 
         plt.savefig(self.store_path + '/phase_distribution_{}.png'.format(title))
+        plt.close()
 
     def gen_plots(self, input, output, title, filename, input_opt=None, output_opt=None, title_opt=None, ) -> None:
 
@@ -148,14 +148,12 @@ class PostProcVol:
         fig = plt.figure(figsize=(11, 8))
 
         ax = fig.add_subplot(1, 1, 1)
-        ax.plot(x_d, np.exp(logdens_1_in), 'r', label='input data '+title)
-        ax.plot(x_d, np.exp(logdens_1_out), 'k', label='output data '+title)
+        ax.plot(x_d, np.exp(logdens_1_in), 'k', label='input data '+title)
+        ax.plot(x_d, np.exp(logdens_1_out), '--k', label='output data '+title)
         plt.xlabel('Grain Radius of Reference Sphere (µm)', fontsize=20)
         plt.ylabel('Normalized Density ( - ) ', fontsize=20)
         # caputure max y-lim
         max_log_dens = [max(np.exp(logdens_1_in)), max(np.exp(logdens_1_out))]
-
-
 
 
         if input_opt is not None and output_opt is not None:
@@ -165,8 +163,8 @@ class PostProcVol:
             kde_2_out.fit(np.reshape(output_opt, (-1, 1)))
             logdens_2_in = kde_2_in.score_samples(x_d[:, None])
             logdens_2_out = kde_2_out.score_samples(x_d[:, None])
-            ax.plot(x_d, np.exp(logdens_2_in), '--r', label='input data ' + title_opt)
-            ax.plot(x_d, np.exp(logdens_2_out), '--k', label='output data ' + title_opt)
+            ax.plot(x_d, np.exp(logdens_2_in), 'r', label='input data ' + title_opt)
+            ax.plot(x_d, np.exp(logdens_2_out), '--r', label='output data ' + title_opt)
             # caputure max new y-lim
             max_log_dens = [max(np.exp(logdens_1_in)), max(np.exp(logdens_1_out)),
                             max(np.exp(logdens_2_in)), max(np.exp(logdens_2_out))]
@@ -179,27 +177,13 @@ class PostProcVol:
         plt.yticks(fontsize=20)
         plt.legend(fontsize=12)
         plt.savefig(self.store_path + '/vol_distribution_{}.png'.format(filename))
+        plt.close()
+
 
 
 if __name__ == "__main__":
     outputPath = 'C:/temp/OutputData/2021-05-10_0'
     dim_flag = 3
     obj = PostProcVol(outputPath, dim_flag)
-    phase1_ratio_conti_in, phase1_ref_r_conti_in, phase1_ratio_discrete_in, phase1_ref_r_discrete_in, \
-    phase2_ratio_conti_in, phase2_ref_r_conti_in, phase2_ratio_discrete_in, phase2_ref_r_discrete_in, \
-    phase1_ratio_conti_out, phase1_ref_r_conti_out, phase1_ratio_discrete_out, phase1_ref_r_discrete_out, \
-    phase2_ratio_conti_out, phase2_ref_r_conti_out, phase2_ratio_discrete_out, phase2_ref_r_discrete_out = \
-        obj.gen_in_out_lists()
-    print(phase1_ratio_conti_out, phase2_ratio_conti_out)
-    print(phase1_ratio_discrete_out, phase2_ratio_discrete_out)
-
-    obj.gen_pie_chart_phases(phase1_ratio_conti_in, phase2_ratio_conti_in, 'input_conti')
-    obj.gen_pie_chart_phases(phase1_ratio_conti_out, phase2_ratio_conti_out, 'output_conti')
-    obj.gen_pie_chart_phases(phase1_ratio_discrete_in, phase2_ratio_discrete_in, 'input_discrete')
-    obj.gen_pie_chart_phases(phase1_ratio_discrete_out, phase2_ratio_discrete_out, 'output_discrete')
-
-    obj.gen_plots(phase1_ref_r_discrete_in, phase1_ref_r_discrete_out, 'phase 1 discrete', 'phase1vs2_discrete',
-                  phase2_ref_r_discrete_in, phase2_ref_r_discrete_out, 'phase 2 discrete')
-    obj.gen_plots(phase1_ref_r_conti_in, phase1_ref_r_conti_out, 'phase 1 conti', 'phase1vs2_conti',
-                  phase2_ref_r_conti_in, phase2_ref_r_conti_out, 'phase 2 conti')
+    obj.gen_stack_plot()
 
