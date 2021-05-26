@@ -1,10 +1,13 @@
+import numpy as np
 import matplotlib.pyplot as plt
 import random
+import datetime
+import logging
+from scipy.ndimage import convolve
 
+from dragen.utilities.RVE_Utils import RVEUtils
 
-from dragen.utilities.RVE_Utils import *
-
-class DiscreteRsa2D:
+class DiscreteRsa2D(RVEUtils):
     def __init__(self, box_size, n_pts, a, b, alpha, store_path):
 
         self.box_size = box_size
@@ -13,16 +16,15 @@ class DiscreteRsa2D:
         self.b = b
         self.alpha = alpha
         self.store_path = store_path
-
-        self.n_grains = len(a)
         self.logger = logging.getLogger("RVE-Gen")
-        xy = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
-        self.x_grid, self.y_grid = np.meshgrid(xy, xy)
-        self.rve_utils_object = RVEUtils()
+        self.n_grains = len(a)
+
+        super().__init__(box_size, n_pts)
+
+        self.x_grid, self.y_grid = super().gen_grid2D()
 
     def gen_ellipsoid(self, array, iterator):
-        x_grid = self.x_grid
-        y_grid = self.y_grid
+        t_0 = datetime.datetime.now()
         a = self.a
         b = self.b
         alpha = self.alpha
@@ -41,12 +43,12 @@ class DiscreteRsa2D:
         b = b[iterator]
         alpha = alpha[iterator]
 
-        ellipse = self.rve_utils_object.ellipse(a, b, x_0, y_0, alpha=alpha)
+        ellipse = super().ellipse(a, b, x_0, y_0, alpha=alpha)
 
         return ellipse, x_0, y_0
 
     def rsa_plotter(self, array, n_grains, iterator, attempt):
-        rsa_x, rsa_y = np.where(array >= 1)
+        rsa_x, rsa_y = np.where((array >= 1) | (array == -200) | (array < -200))
         outside_x, outside_y = np.where(array < 0)
         unoccupied_pts_x, unoccupied_pts_y = np.where(array == 0)
 
@@ -82,8 +84,8 @@ class DiscreteRsa2D:
         y_0_list = list()
         i = 1
         attempt = 0
-        rsa = np.zeros((2 * self.n_pts, 2 * self.n_pts), dtype=np.int32)
-        rsa = self.rve_utils_object.gen_boundaries_2D(rsa)
+        rsa = super().gen_array_2D()
+        rsa = super().gen_boundaries_2D(rsa)
         rsa_boundaries = rsa.copy()
 
         free_points = np.count_nonzero(rsa == 0)
@@ -92,7 +94,7 @@ class DiscreteRsa2D:
             grain = rsa_boundaries.copy()
             ellipse, x0, y0 = self.gen_ellipsoid(rsa, iterator=i - 1)
             grain[(ellipse <= 1) & (grain == 0)] = i
-            periodic_grain = self.rve_utils_object.make_periodic_2D(grain, ellipse, iterator=i)
+            periodic_grain = super().make_periodic_2D(grain, ellipse, iterator=i)
             rsa[(periodic_grain == i) & (rsa == 0)] = i
 
             if animation:
