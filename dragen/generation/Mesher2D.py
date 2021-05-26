@@ -103,7 +103,7 @@ class Mesher_2D(RVEUtils):
         connected = np.unique(lines[cids].ravel())
         return np.delete(connected, np.argwhere(connected == index))
 
-    def laplace_2D(self, lines, points, line_labels, x_max, y_max, n_iter=10, alpha=0.1):
+    def laplace_2D(self, lines, points, n_iter=10, alpha=0.1):
 
         check_line10 = None
         check_line11 = None
@@ -277,7 +277,7 @@ class Mesher_2D(RVEUtils):
         print(line_labels)
         print(line_labels.shape)
 
-        smooth = self.laplace_2D(all_lines, tri_mesh2d.points, line_labels, x_max, y_max)
+        smooth = self.laplace_2D(all_lines, tri_mesh2d.points, alpha=0.25, n_iter=1)
         tri_mesh2d.points = smooth
 
         return tri_mesh2d
