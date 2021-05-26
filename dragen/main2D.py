@@ -161,8 +161,8 @@ class DataTask2D(RVEUtils):
 
             # Start the Mesher
             # debug_df.to_csv('debug_grains_df.csv', index=False)
-            periodic_rve_df.to_csv('./test_rve.csv')
-            grains_df.to_csv('./grains_df.csv')
+            # periodic_rve_df.to_csv('./test_rve.csv') lines are kept for debugging purposes
+            # grains_df.to_csv('./grains_df.csv')
             mesher_obj = Mesher_2D(periodic_rve_df, grains_df, store_path=store_path)
             mesh = mesher_obj.run_mesher_2D()
             BuildAbaqus2D(mesh, periodic_rve_df, grains_df, store_path).run()
