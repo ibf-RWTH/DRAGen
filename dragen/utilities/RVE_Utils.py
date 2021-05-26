@@ -27,10 +27,19 @@ class RVEUtils:
         array = np.zeros((2 * self.n_pts, 2 * self.n_pts, 2 * self.n_pts))
         return array
 
+    def gen_array_2D(self) -> np.zeros:
+        array = np.zeros((2 * self.n_pts, 2 * self.n_pts))
+        return array
+
     def gen_grid(self):
         xyz = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
         x_grid, y_grid, z_grid = np.meshgrid(xyz, xyz, xyz)
         return x_grid, y_grid, z_grid
+
+    def gen_grid2D(self):
+        xy = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
+        x_grid, y_grid = np.meshgrid(xy, xy)
+        return x_grid, y_grid
 
     def read_input(self, file_name, dimension) -> pd.DataFrame:
         """Reads the given input file and returns the volume along with radii, rotation angles and texture parameters.
@@ -97,9 +106,10 @@ class RVEUtils:
 
             return grain_df
         elif dimension == 2:
-            grain_df = pd.DataFrame(data=[radius_a, radius_b, alpha, tex_phi1, tex_PHI, tex_phi2],
-                                    columns=["radius_a", "radius_b", "alpha",
-                                             "tex_phi1", "tex_PHI", "tex_phi2"])
+            grain_dict = {"a": radius_a, "b": radius_b, "alpha": alpha,
+                          "phi1": tex_phi1, "PHI": tex_PHI, "phi2": tex_phi2}
+            grain_df = pd.DataFrame(data=grain_dict,
+                                    columns=["a", "b", "alpha", "phi1", "PHI", "phi2"])
             return grain_df
 
     def sample_input_3D(self, data, bs) -> pd.DataFrame:
@@ -133,17 +143,19 @@ class RVEUtils:
         inp_list = list()
         while grain_vol < max_volume:
             idx = np.random.randint(0, data.__len__())
-            grain = data[["radius_a", "radius_b", "alpha", "tex_phi1", "tex_PHI", "tex_phi2"]].iloc[idx].tolist()
+            grain = data[["a", "b", "alpha", "phi1", "PHI", "phi2"]].iloc[idx].tolist()
             data = data.drop(labels=data.index[idx], axis=0)
             vol = np.pi * grain[0] * grain[1]
             grain_vol += vol
             inp_list.append([grain[0], grain[1], grain[2], grain[3], grain[4], grain[5]])
+            if len(data) == 0:
+                break
 
         # Del last if to big and more than one value:
         if grain_vol >= max_volume and inp_list.__len__() > 1:
             inp_list.pop(-1)
 
-        header = ["a", "b", "c", "alpha", "phi1", "PHI", "phi2"]
+        header = ["a", "b", "alpha", "phi1", "PHI", "phi2"]
         df = pd.DataFrame(inp_list, columns=header)
 
         return df
@@ -160,6 +172,20 @@ class RVEUtils:
         inside = ellipsoid <= 1
         array[inside] = 1
         d_vol = np.count_nonzero(array)*self.bin_size**3
+        self.logger.info("Volume for the given radii: {}".format(d_vol))
+        return d_vol
+
+    def convert_volume_2D(self, radius_a, radius_b):
+        """Compute the volume for the given radii.
+        Parameters :
+        radius_a : Integer, radius along x-axis
+        radius_b : Integer, radius along y-axis
+        """
+        array = self.gen_array_2D()
+        ellipse = self.ellipse(radius_a, radius_b,  0, 0)
+        inside = ellipse <= 1
+        array[inside] = 1
+        d_vol = np.count_nonzero(array)*self.bin_size**2
         self.logger.info("Volume for the given radii: {}".format(d_vol))
         return d_vol
 
@@ -275,7 +301,7 @@ class RVEUtils:
 
     def gen_boundaries_2D(self, points_array) -> np.ndarray:
         box_size = self.box_size
-        x_grid, y_grid = self.gen_grid()[0:2]
+        x_grid, y_grid = self.gen_grid2D()
         points_array[np.where((x_grid > box_size) & (y_grid > box_size))] = -1
         points_array[(x_grid < box_size) & (y_grid > box_size)] = -2
         points_array[(x_grid < 0) & (y_grid > box_size)] = -3
@@ -671,7 +697,7 @@ class RVEUtils:
         return rve
 
     def ellipse(self, a, b, x_0, y_0, alpha=0):
-        x_grid, y_grid = self.gen_grid()[:2]
+        x_grid, y_grid = self.gen_grid2D()
         # without rotation
         """ellipse = np.sqrt((x_grid - x_0) ** 2 / (a ** 2) + (y_grid - y_0) ** 2 / (b ** 2))"""
 
@@ -734,6 +760,32 @@ class RVEUtils:
         df['a'] = a_shrinked
         df['b'] = b_shrinked
         df['c'] = c_shrinked
+        df['final_conti_volume'] = final_conti_volume
+        # Sortiert und resetet Index bereits
+        df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
+        df.reset_index(inplace=True, drop=True)
+        df['GrainID'] = df.index
+        return df
+
+    def process_df_2D(self, df, shrink_factor: float) -> pd.DataFrame:
+        discrete_vol = list()
+        df.reset_index(inplace=True, drop=True)
+        df['GrainID'] = df.index
+        a = df['a'].tolist()
+        b = df['b'].tolist()
+
+        final_conti_volume = [(a[i] * b[i] * np.pi) for i in range(len(a))]
+
+        for i in range(len(df)):
+            discrete_vol.append(self.convert_volume_2D(df['a'][i], df['b'][i]))
+        df['final_discrete_volume'] = discrete_vol
+
+        a_shrinked = [a_i * shrink_factor for a_i in a]
+        b_shrinked = [b_i * shrink_factor for b_i in b]
+
+        df['a'] = a_shrinked
+        df['b'] = b_shrinked
+
         df['final_conti_volume'] = final_conti_volume
         # Sortiert und resetet Index bereits
         df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
