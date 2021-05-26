@@ -5,7 +5,7 @@ import logging
 from dragen.utilities.RVE_Utils import RVEUtils
 
 
-class Tesselation2D:
+class Tesselation2D(RVEUtils):
     def __init__(self, box_size, n_pts, a, b, alpha, x_0, y_0, shrinkfactor, storepath):
 
         self.box_size = box_size
@@ -23,13 +23,11 @@ class Tesselation2D:
         self.a_max = max(a)
         self.b_max = max(b)
         self.final_volume = [np.pi * a[i] * b[i] / shrinkfactor**2 for i in range(len(a))]
-        xy = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
-        self.x_grid, self.y_grid = np.meshgrid(xy, xy)
-        self.rve_utils_object = RVEUtils(box_size, n_pts, self.x_grid, self.y_grid)
+        super().__init__(box_size, n_pts)
+
+        self.x_grid, self.y_grid= super().gen_grid2D()
 
     def grow(self, iterator, a, b):
-        x_grid = self.x_grid
-        y_grid = self.y_grid
         alpha = self.alpha[iterator - 1]
         x_0 = self.x_0[iterator-1]
         y_0 = self.y_0[iterator-1]
@@ -43,9 +41,7 @@ class Tesselation2D:
         a[iterator - 1] = a_i
         b[iterator - 1] = b_i
 
-        """ellipse = (x_grid - x_0) ** 2 / (a_i ** 2) + (y_grid - y_0) ** 2 / (b_i ** 2)"""
-
-        ellipse = self.rve_utils_object.ellipse(a_i, b_i, x_0, y_0, alpha=alpha)
+        ellipse = super().ellipse(a_i, b_i, x_0, y_0, alpha=alpha)
 
         return ellipse, a, b
 
@@ -86,7 +82,7 @@ class Tesselation2D:
         # load some variables
         rve = rsa
         empty_rve = np.zeros((2 * self.n_pts, 2 * self.n_pts), dtype=np.int32)
-        empty_rve = self.rve_utils_object.gen_boundaries_2D(empty_rve)
+        empty_rve = super().gen_boundaries_2D(empty_rve)
         rve_boundaries = empty_rve.copy()  # empty rve grid with defined boundaries
 
         vol_0 = np.count_nonzero(empty_rve == 0)
@@ -95,6 +91,7 @@ class Tesselation2D:
         grain_idx = [i for i in range(1, n_grains+1)]
         grain_idx_backup = grain_idx.copy()
         while freepoints > 0:
+            freepoints_old = freepoints   # Zum Abgleich
             i = 0
             np.random.shuffle(grain_idx)
             while i < len(grain_idx):
@@ -102,26 +99,37 @@ class Tesselation2D:
                 grain = rve_boundaries.copy()
                 ellipse, a, b = self.grow(idx, a, b)
                 grain[(ellipse <= 1) & (grain == 0)] = idx
-                periodic_grain = self.rve_utils_object.make_periodic_2D(grain, ellipse, iterator=idx)
+                periodic_grain = super().make_periodic_2D(grain, ellipse, iterator=idx)
                 rve[(periodic_grain == idx) & (rve == 0)] = idx
                 freepoints = np.count_nonzero(rve == 0)
                 grain_vol = np.count_nonzero(rve == idx)*self.bin_size**2
                 if freepoints == 0:
                     break
-                if grain_vol > self.final_volume[idx-1] and not repeat:
-                    self.logger.info('grain_{} reached final volume and was deleted '
-                                     'from growth list'.format(grain_idx[i]))
-                    del grain_idx[i]
-                i += 1
-            if len(grain_idx) == 0:
-                print('restore')
-                grain_idx = grain_idx_backup.copy()
-                repeat = True
-                self.logger.info('grain_idx was restored since all grains reached final volume'
-                                 'Boxsize should probably be decreased or shrinkfactor increased'
-                                 'use animation to check if how much space is used by the grains')
 
-            self.tesselation_plotter(rve, self.storepath, epoch)
+                '''
+                Grow control: 
+                1.) If a grain reaches Maximum Volume, the index gets deleted
+                2.) If a grain is not growing in reality (difference between freepoints and freepoints_old), the 
+                grain is deleted. This avoids background growing and dumb results
+                Counting (i = i + 1) up only if no deletion happens
+                '''
+                delta_grow = freepoints_old - freepoints
+                if (grain_vol > self.final_volume[idx-1] and not repeat):
+                    del grain_idx[i]
+                elif delta_grow == 0:
+                    del grain_idx[i]
+                else:
+                    i += 1
+
+            if not grain_idx:
+                repeat = True
+                #self.infobox_obj.emit('grain growth had to be reset at {}% of volume filling'.format(packingratio))
+                #if packingratio < 90:
+                #    self.infobox_obj.emit('your microstructure data does not contain \n'
+                #                          'enough data to fill this boxsize\n'
+                #                          'please decrease the boxsize for reasonable results')
+                grain_idx = grain_idx_backup.copy()
+
             epoch += 1
             packingratio = (1-freepoints/vol_0)*100
             print('packingratio:', packingratio, '%')
