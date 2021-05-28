@@ -119,12 +119,13 @@ class PostProcVol:
         sizes = [phase1_ratio, phase2_ratio]
         explode = (0.1, 0)
 
-        plt.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
+        fig1, ax1 = plt.subplots()
+        ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
                 shadow=True, startangle=90)
-        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-        plt.title(title)
+        ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        ax1.set_title(title)
 
-        plt.savefig(self.store_path + '/phase_distribution_{}.png'.format(title))
+        fig1.savefig(self.store_path + '/phase_distribution_{}.png'.format(title))
         plt.close()
 
     def gen_plots(self, input, output, title, filename, input_opt=None, output_opt=None, title_opt=None, ) -> None:
