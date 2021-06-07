@@ -16,7 +16,7 @@ dist/
 /DRAGen.spec
 /dragen/gui_tkinter/Icon.png
 /dragen/gui_tkinter/Logo.ico
-
+/trr_dragen_saveings
 .ipynb_checkpoints/
 dragen/.ipynb_checkpoints/
 dragen/.ipynb_checkpoints

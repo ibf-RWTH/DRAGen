@@ -399,6 +399,7 @@ class WGANCGP(WGAN_BaseClass.WGAN):
         for root, dirs, files in os.walk(dir_path):
             for file in files:
                 if file.endswith('.p'):
+                    print(file, root, dirs)
                     self.best_states = pickle.load(open(root + '/' + file, 'rb'))
                     noise = torch.randn((size, self.z_dim), device='cpu')
                     labels = torch.full((1, size), fill_value=label,
