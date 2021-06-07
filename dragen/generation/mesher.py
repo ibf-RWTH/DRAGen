@@ -266,7 +266,7 @@ class Mesher:
                     return
                 grid = sub_grid.merge(grid)
             grain_vol = sub_grid.volume
-            self.logger.info(str(grain_vol*10**9))
+            #self.logger.info(str(grain_vol*10**9))
             self.grains_df.loc[self.grains_df['GrainID'] == i, 'meshed_conti_volume'] = grain_vol*10**9
 
         self.grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
@@ -490,6 +490,7 @@ class Mesher:
         # rear set
         FrontSet = faces_df.loc[faces_df['z'] == max_z]['Eqn-Set'].to_list()
 
+        '''
         self.logger.info('E_B1 ' + str(len(E_B1)))
         self.logger.info('E_B2 ' + str(len(E_B2)))
         self.logger.info('E_B3 ' + str(len(E_B3)))
@@ -508,6 +509,7 @@ class Mesher:
         self.logger.info('TopSet ' + str(len(TopSet)))
         self.logger.info('FrontSet ' + str(len(FrontSet)))
         self.logger.info('RearSet ' + str(len(RearSet)))
+        '''
 
         OutPutFile = open(self.store_path + '/Nsets.inp', 'w')
         for i in grid_hull_df.index:
