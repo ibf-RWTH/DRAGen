@@ -406,7 +406,7 @@ class DataTask3D_GAN(RVEUtils):
             rve, rve_status = discrete_RSA_inc_obj.run_rsa_inclusions(rve, animation=True)
             print(np.asarray(np.unique(rve, return_counts=True)).T)
             # print(grains_df)
-            
+
         """
         -------------------------------------------------------------------------
         CREATE INPUT FOR NUMERICAL SOLVER!

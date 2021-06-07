@@ -9,7 +9,7 @@ from dragen.utilities.RVE_Utils import RVEUtils
 class Tesselation3D(RVEUtils):
 
     def __init__(self, box_size, n_pts, grains_df, shrinkfactor, band_ratio, store_path, debug=False, infobox_obj=None,
-                 progress_obj=None):
+                 progress_obj=None, gui=True):
 
         self.box_size = box_size
         self.n_pts = n_pts
@@ -92,9 +92,10 @@ class Tesselation3D(RVEUtils):
         if self.debug:
             self.logger.info('time spent on plotter for epoch {}: {}'.format(epoch, time_elapse.total_seconds()))
 
-    def run_tesselation(self, rsa, animation=True):
-        self.infobox_obj.emit('starting Tesselation')
-        self.progress_obj.emit(0)
+    def run_tesselation(self, rsa, animation=True, gui=True, band_idx_start=None, grain_df=None):
+        if gui:
+            self.infobox_obj.emit('starting Tesselation')
+            self.progress_obj.emit(0)
 
         # set some variables
         status = False
@@ -110,6 +111,11 @@ class Tesselation3D(RVEUtils):
         c = self.c
         n_grains = len(self.a)
         rve = rsa
+        if band_idx_start is None:
+            band_idx = []
+        else:
+            band_idx = [i for i in range(band_idx_start, n_grains+1)]
+            print(band_idx)
 
         # define boundaries and empty rve array
         empty_rve = super().gen_array()
@@ -153,37 +159,56 @@ class Tesselation3D(RVEUtils):
                 grain is deleted. This avoids background growing and dumb results
                 Counting (i = i + 1) up only if no deletion happens
                 '''
+                # TODO: Aus irgendeinem Grund funktioniert das immer noch nicht mit den Bandpunkten.
+                # Als Workaround werden alle Bandpunkte nach 8 Epochen gelöscht, damit funktioniert es
                 delta_grow = freepoints_old - freepoints
-                if (grain_vol > self.final_volume[idx-1] and not repeat):
-                    del grain_idx[i]
-                elif delta_grow == 0: # and not repeat:    # TODO and not repeat beobachten
-                    del grain_idx[i]
+                if (idx in band_idx) and (epoch == 8):
+                    #print('Del because of epoch')
+                    grain_idx.remove(idx)
+                    grain_idx_backup.remove(idx)
+                elif (grain_vol > self.final_volume[idx-1]) and not repeat:
+                    grain_idx.remove(idx)
+                    if idx in band_idx:
+                        #print('Del from Backup')
+                        grain_idx_backup.remove(idx)
+                elif delta_grow == 0: # and not repeat:    # and not repeat beobachten
+                    grain_idx.remove(idx)
+                    #grain_idx_backup.remove(idx)
                 else:
                     i += 1
 
             if not grain_idx:
                 repeat = True
-                self.infobox_obj.emit('grain growth had to be reset at {}% of volume filling'.format(packingratio))
+                if gui:
+                    self.infobox_obj.emit('grain growth had to be reset at {}% of volume filling'.format(packingratio))
                 if packingratio < 90:
-                    self.infobox_obj.emit('your microstructure data does not contain \n'
-                                          'enough data to fill this boxsize\n'
-                                          'please decrease the boxsize for reasonable results')
+                    if gui:
+                        self.infobox_obj.emit('your microstructure data does not contain \n'
+                                              'enough data to fill this boxsize\n'
+                                              'please decrease the boxsize for reasonable results')
                 grain_idx = grain_idx_backup.copy()
             if animation:
                 self.tesselation_plotter(rve, epoch)
             epoch += 1
             packingratio = (1 - freepoints / vol_0) * 100
             # print('packingratio:', packingratio, '%')
-            self.progress_obj.emit(packingratio)
+            if gui:
+                self.progress_obj.emit(packingratio)
+            else:
+                # TODO: Entweder Gui oder logger?
+                print(packingratio)
 
         if packingratio == 100:
             status = True
 
         # Save for further usage
-        #print(np.asarray(np.unique(rve, return_counts=True)).T)
         np.save(self.store_path + '/' + 'RVE_Numpy.npy', rve)
-        grains_df = super().get_final_disc_vol_3D(self.grains_df, rve)
-        grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_discrete.csv', index=False)
+        if grain_df is None:
+            grains_df = super().get_final_disc_vol_3D(self.grains_df, rve)
+            grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_discrete.csv', index=False)
+        else:
+            grain_df = super().get_final_disc_vol_3D(grain_df, rve)
+            grain_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_discrete.csv', index=False)
 
         return rve, status
 

@@ -49,7 +49,7 @@ class DiscreteRsa3D(RVEUtils):
         y_0 = unoccupied_area_y[idx]
         z_0 = unoccupied_area_z[idx]
         #self.infobox_obj.add_text('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
-        #print('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
+        print('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
         # print('Iterator', iterator)
         # print(a)
         # print('Länge von a', a.__len__())
@@ -109,8 +109,9 @@ class DiscreteRsa3D(RVEUtils):
             self.logger.info('time spent on plotter for grain {}: {}'.format(iterator, time_elapse.total_seconds()))
 
     def run_rsa(self, band_ratio_rsa=None, banded_rsa_array=None,
-                animation=False, x0_alt=None, y0_alt=None, z0_alt=None):
-        self.infobox_obj.emit('starting RSA')
+                animation=False, x0_alt=None, y0_alt=None, z0_alt=None, gui=True):
+        if gui:
+            self.infobox_obj.emit('starting RSA')
         status = False
         bandratio = band_ratio_rsa
 
@@ -167,7 +168,7 @@ class DiscreteRsa3D(RVEUtils):
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
             else:
                 if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)):
-                    #print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
+                    print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
 
@@ -182,7 +183,8 @@ class DiscreteRsa3D(RVEUtils):
                         self.logger.info(
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
             progress = int((float(len(x_0_list))/self.n_grains * 100))
-            self.progress_obj.emit(progress)
+            if gui:
+                self.progress_obj.emit(progress)
 
         if (len(x_0_list) == self.n_grains) or (i - 1) == self.n_grains:
             status = True
@@ -214,7 +216,7 @@ class DiscreteRsa3D(RVEUtils):
         status = False
 
         if banded_rsa_array is None:
-            print('These cluster-rsa needs a defined band ')
+            self.logger.info('This cluster-rsa needs a defined band ')
         else:
             rsa = banded_rsa_array
 
@@ -266,7 +268,6 @@ class DiscreteRsa3D(RVEUtils):
             if band_points_old > 0:
                 if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)) | \
                         (band_points / band_vol_0 < 0.95):  # Prozentbereich nach außen muss möglich sein (95%)
-                    print('Schnittpunkt mit Außenbereich?', (band_points / band_vol_0 != 1.0))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
 

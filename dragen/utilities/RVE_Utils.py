@@ -172,7 +172,7 @@ class RVEUtils:
         inside = ellipsoid <= 1
         array[inside] = 1
         d_vol = np.count_nonzero(array)*self.bin_size**3
-        self.logger.info("Volume for the given radii: {}".format(d_vol))
+        #self.logger.info("Volume for the given radii: {}".format(d_vol))
         return d_vol
 
     def convert_volume_2D(self, radius_a, radius_b):
