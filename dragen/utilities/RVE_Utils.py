@@ -189,7 +189,7 @@ class RVEUtils:
         self.logger.info("Volume for the given radii: {}".format(d_vol))
         return d_vol
 
-    def band_generator(self, band_array: np.array, plane: str = 'xz'):
+    def band_generator(self, band_array: np.array, bandwidth=None, plane: str = 'xz'):
         """Creates a band of given bandwidth for given points in interval [step_half, box_size)
         with bin_size spacing along the axis.
         Parameters :
@@ -198,7 +198,10 @@ class RVEUtils:
         Bandidentifier will be -200 in rve_array
         """
         band_is_placed = False
-        band_half = self.bandwidth / 2
+        if bandwidth == None:
+            band_half = self.bandwidth / 2
+        else:
+            band_half = bandwidth/2
 
         empty_array = band_array.copy()
         empty_array[empty_array == -200] = 0

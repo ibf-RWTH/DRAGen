@@ -5,11 +5,10 @@ Functions for writing output fo Spectral Solver: 3 Files:
     .config - Material and phases
 """
 import numpy as np
+import pandas as pd
 
 
 def make_config(store_path, n_grains, grains_df, band=True) -> None:
-    print(grains_df[['GrainID']])
-    print(n_grains)
     """
     Five Parts:
         homogenization
@@ -60,8 +59,7 @@ def make_config(store_path, n_grains, grains_df, band=True) -> None:
         mat.writelines('elasticity hooke \n')
         mat.writelines('plasticity phenopowerlaw \n\n')
 
-        output_list = 'resistance_slip shearrate_slip resolvedstress_slip totalshear resistance_twin shearrate_twin ' \
-                      'resolvedstress_twin totalvolfrac'.split(' ')
+        output_list = 'resistance_slip shearrate_slip resolvedstress_slip accumulatedshear_slip'.split(' ')
         for out in output_list:
             mat.writelines('(output)  {}\n'.format(out))
         mat.writelines('\n')
@@ -79,8 +77,7 @@ def make_config(store_path, n_grains, grains_df, band=True) -> None:
         mat.writelines('elasticity hooke \n')
         mat.writelines('plasticity phenopowerlaw \n\n')
 
-        output_list = 'resistance_slip shearrate_slip resolvedstress_slip totalshear resistance_twin shearrate_twin ' \
-                      'resolvedstress_twin totalvolfrac'.split(' ')
+        output_list = 'resistance_slip shearrate_slip resolvedstress_slip accumulatedshear_slip'.split(' ')
         for out in output_list:
             mat.writelines('(output)  {}\n'.format(out))
         mat.writelines('\n')
@@ -140,10 +137,11 @@ def make_config(store_path, n_grains, grains_df, band=True) -> None:
                     GrainNo = '[Grain' + str(v + 1) + ']'
                 else:
                     GrainNo = '[Grain0' + str(v + 1) + ']'
-                angles = np.random.random(size=3) * 360
+                angles = np.random.random(size=2) * 360
+                angles2 = np.random.random(size=2) * 180
                 mat.writelines(GrainNo + '\n')
                 mat.writelines('(gauss)  phi1 {}    Phi {}    phi2 {}   scatter 0.0   fraction 1.0\n'
-                               .format(angles[0], angles[1], angles[2]))
+                               .format(angles[0], angles2[0], angles[1]))
         else:
             for v in range(n_grains):
                 if v + 1 < 10:
@@ -153,9 +151,10 @@ def make_config(store_path, n_grains, grains_df, band=True) -> None:
                 else:
                     GrainNo = '[Grain0' + str(v + 1) + ']'
                 angles = np.random.random(size=3) * 360
+                angles2 = np.random.random(size=2) * 180
                 mat.writelines(GrainNo + '\n')
                 mat.writelines('(gauss)  phi1 {}    Phi {}    phi2 {}   scatter 0.0   fraction 1.0\n'
-                               .format(angles[0], angles[1], angles[2]))
+                               .format(angles[0], angles2[1], angles[2]))
 
 
 def make_geom(rve, grid_size, spacing, n_grains, store_path) -> None:
@@ -194,12 +193,49 @@ def make_load(store_path) -> None:
     # 1 Last am Ende
     with open(store_path + '/' + 'loadX.load', 'w') as load:
         load.writelines(
-            'fdot 1.0e-2 0 0  0 * 0  0 * 0  stress  * * *   * 0 *   * 0 *  time 10  incs 100')     # rot 0.70710678 -0.70710678 0.0  0.70710678 0.70710678 0.0  0.0 0.0 1.0')
+            'fdot * 0 0  0 2.0e-2 0  0 0 *  stress  0 * *   * * *   * * 0  time 10  incs 100')     # rot 0.70710678 -0.70710678 0.0  0.70710678 0.70710678 0.0  0.0 0.0 1.0')
+
+
+def make_load_from_defgrad(file_path, store_path):
+    '''
+    TODO:
+    '''
+    defgrad_dataframe = pd.read_csv(file_path, sep='\t', header=0)
+
+    # Step 1: Correct the F11 - F33 cols
+    defgrad_dataframe['F11_new'] = defgrad_dataframe['F11'] - 1
+    defgrad_dataframe['F22_new'] = defgrad_dataframe['F22'] - 1
+    defgrad_dataframe['F33_new'] = defgrad_dataframe['F33'] - 1
+    defgrad_dataframe['F11_new'].iloc[0] = 0
+    defgrad_dataframe['F22_new'].iloc[0] = 0
+    defgrad_dataframe['F33_new'].iloc[0] = 0
+    print(defgrad_dataframe.columns)
+
+    # Step 2: Get the STEP-values
+    F11_step = defgrad_dataframe['F11_new'].diff().tolist()
+    F22_step = defgrad_dataframe['F22_new'].diff().tolist()
+    F33_step = defgrad_dataframe['F33_new'].diff().tolist()
+    F12_step = defgrad_dataframe['F12'].diff().tolist()
+    F23_step = defgrad_dataframe['F23'].diff().tolist()
+    F31_step = defgrad_dataframe['F31'].diff().tolist()
+    F21_step = defgrad_dataframe['F21'].diff().tolist()
+    F32_step = defgrad_dataframe['F32'].diff().tolist()
+    F13_step = defgrad_dataframe['F13'].diff().tolist()
+    time_step = defgrad_dataframe['time'].diff().tolist()
+
+    # Step 3: Write the data
+    n_frames = defgrad_dataframe.__len__()
+    with open(store_path + '/loadpath.load', 'w') as loadpath:
+        for i in range(1, n_frames):
+            loadpath.writelines('Fdot {} {} {} {} {} {} {} {} {} stress * * * * * * * * * time {} incs 1\n'.format(
+                F11_step[i], F12_step[i], F13_step[i],
+                F21_step[i], F22_step[i], F23_step[i],
+                F31_step[i], F32_step[i], F33_step[i],
+                1   # FIXME Time muss glaube ich einfach gleich 1 sein, damit einfach die Summe der Gradienten passt
+            ))
+
 
 
 if __name__ == '__main__':
     # Testing RVE:
-    rve = np.load('../RVE_numpy.npy')
-    make_geom(rve, 50, 20, 175)
-    make_load()
-    make_config(n_grains=176, n_grains_martensite=25)
+    make_load_from_defgrad(file_path='../../ExampleInput/Defgrad_Biegen.txt', store_path='../../OutputData')

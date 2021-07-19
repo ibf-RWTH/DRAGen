@@ -7,6 +7,7 @@ from scipy.ndimage import convolve
 
 from dragen.utilities.RVE_Utils import RVEUtils
 
+
 class DiscreteRsa3D(RVEUtils):
 
     def __init__(self, box_size, n_pts, a, b, c, alpha, store_path, debug=False, infobox_obj=None, progress_obj=None):
@@ -44,11 +45,12 @@ class DiscreteRsa3D(RVEUtils):
         unoccupied_area_z = [self.z_grid[unoccupied_tuples_i[0]][unoccupied_tuples_i[1]][unoccupied_tuples_i[2]]
                              for unoccupied_tuples_i in unoccupied_tuples]
 
+        # TODO: Vielleicht kann man das so ändern, dass er hier den idx rauslöscht
         idx = random.choice(range(len(unoccupied_area_x)))
         x_0 = unoccupied_area_x[idx]
         y_0 = unoccupied_area_y[idx]
         z_0 = unoccupied_area_z[idx]
-        #self.infobox_obj.add_text('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
+        # self.infobox_obj.add_text('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
         print('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
         # print('Iterator', iterator)
         # print(a)
@@ -65,6 +67,9 @@ class DiscreteRsa3D(RVEUtils):
         ellipsoid = super().ellipsoid(a, b, c, x_0, y_0, z_0, alpha=alpha)
 
         time_elapse = datetime.datetime.now() - t_0
+        # with open(self.store_path + '/rve.sta', 'a') as sta:
+        #    sta.writelines('x_0_{}: {}, y_0_{}: {}, z_0_{}: {} time: {} \n'.format(iterator, x_0, iterator, y_0,
+        #                                                                           iterator, z_0, time_elapse.total_seconds()))
         if self.debug:
             self.logger.info('time spent on ellipsoid{}: {}'.format(iterator, time_elapse.total_seconds()))
         return ellipsoid, x_0, y_0, z_0
@@ -73,7 +78,7 @@ class DiscreteRsa3D(RVEUtils):
         plt.ioff()
         t_0 = datetime.datetime.now()
         n_grains = self.n_grains
-        rve_x, rve_y, rve_z = np.where((array >= 1) | (array == -200) | (array < -200))
+        rve_x, rve_y, rve_z = np.where((array >= 1) | (array == -1000) | (array < -200)) # TODO: Zurückändern
         grain_tuples = [*zip(rve_x, rve_y, rve_z)]
         grains_x = [self.x_grid[grain_tuples_i[0]][grain_tuples_i[1]][grain_tuples_i[2]]
                     for grain_tuples_i in grain_tuples]
@@ -84,10 +89,14 @@ class DiscreteRsa3D(RVEUtils):
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array > 0) | (array == -200) | (array < -200))],
-                   s=1, vmin=-20,
-                   vmax=n_grains, cmap='seismic')  # lower -200 for band grains and inclusions
-        # ax.scatter(grains_x, grains_y, grains_z, c='r', s=1)
+        #ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array > 0) | (array == -200) | (array < -200))],
+        #           s=1, vmin=-20,
+        #           vmax=n_grains, cmap='seismic')  # lower -200 for band grains and inclusions
+        #ax.scatter(grains_x, grains_y, grains_z, c='black', s=1)
+
+        ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array > 0) | (array == -1000) | (array < -200))],
+                   s=1, vmin=-0,
+                   vmax=n_grains, cmap='seismic')
 
         ax.set_xlim(-5, self.box_size + 5)
         ax.set_ylim(-5, self.box_size + 5)
@@ -103,6 +112,29 @@ class DiscreteRsa3D(RVEUtils):
         # plt.show()
 
         plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}.png'.format(iterator, attempt))
+
+        # TODO: Delete, only for phd-Seminar
+        ax.view_init(90, 270)
+        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_1.png'.format(iterator, attempt))
+
+        ax.view_init(90, 90)
+        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_2.png'.format(iterator, attempt))
+
+        ax.view_init(90, 0)
+        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_2.png'.format(iterator, attempt))
+
+        ax.view_init(90, 180)
+        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_4.png'.format(iterator, attempt))
+
+        ax.view_init(90, 180)
+        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_5.png'.format(iterator, attempt))
+
+        ax.view_init(0, 180)
+        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_6.png'.format(iterator, attempt))
+
+        ax.view_init(0, 90)
+        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_7.png'.format(iterator, attempt))
+
         plt.close(fig)
         time_elapse = datetime.datetime.now() - t_0
         if self.debug:
@@ -151,8 +183,8 @@ class DiscreteRsa3D(RVEUtils):
             if band_points_old > 0:
                 if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)) | \
                         (band_points / band_vol_0 < bandratio):
-                    #print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
-                    #print('ratio:', (band_points / band_vol_0 > bandratio))
+                    # print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
+                    # print('ratio:', (band_points / band_vol_0 > bandratio))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
 
@@ -182,7 +214,7 @@ class DiscreteRsa3D(RVEUtils):
                         time_elapse = datetime.datetime.now() - t_0
                         self.logger.info(
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
-            progress = int((float(len(x_0_list))/self.n_grains * 100))
+            progress = int((float(len(x_0_list)) / self.n_grains * 100))
             if gui:
                 self.progress_obj.emit(progress)
 
@@ -243,14 +275,15 @@ class DiscreteRsa3D(RVEUtils):
 
         i = 1
         attempt = 0
+        sum_attempts = 0
 
         # While-loop
-        while (i < self.n_grains + 1) & (attempt < 5000):
+        while (i < self.n_grains + 1) & (attempt < 30000):
             # Im Prinzip kann man Manuels while-loop kopieren, da es jetzt quasi ein riesiges, Dickes Band gibt,
             # was später wieder rückgängig gemacht wird
             t_0 = datetime.datetime.now()
             free_points_old = np.count_nonzero(rsa == 0)
-            band_points_old = np.count_nonzero(rsa == -200)
+            band_points_old = np.count_nonzero(rsa == -200)  # Same as band_vol_0
             grain = rsa_boundaries.copy()
             backup_rsa = rsa.copy()
             ellipsoid, x0, y0, z0 = self.gen_ellipsoid(rsa, iterator=i - 1)
@@ -259,15 +292,24 @@ class DiscreteRsa3D(RVEUtils):
             periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=-(1000 + i))
             # print(np.unique(periodic_grain))
             rsa[(periodic_grain == -(1000 + i)) & ((rsa == 0) | (rsa == -200))] = -(1000 + i)
+            #print(np.asarray(np.unique(periodic_grain, return_counts=True)).T)
+            #print(free_points_old)
+            #print(band_points_old)
 
             if animation:
                 self.rsa_plotter(rsa, iterator=-(1000 + i), attempt=attempt)
 
             free_points = np.count_nonzero(rsa == 0)
             band_points = np.count_nonzero(rsa == -200)
+            #print(free_points)
+            #print(band_points)
+            #print(free_points_old+band_points_old-free_points-band_points)
             if band_points_old > 0:
-                if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)) | \
-                        (band_points / band_vol_0 < 0.95):  # Prozentbereich nach außen muss möglich sein (95%)
+                # Schnitte zulassen...Es geht wohl nicht anders
+                # > xy x grain_points heißt, dass mindestens XX% des Korns im freien Raum platziert werden müssen
+                if ((free_points_old + band_points_old - free_points - band_points) != 1.0 * np.count_nonzero(periodic_grain)) | \
+                        (band_points / band_vol_0 < 0.9):  # Prozentbereich nach außen muss möglich sein (90%)
+                    print('Attempt: ', attempt)
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
 
@@ -276,6 +318,7 @@ class DiscreteRsa3D(RVEUtils):
                     y_0_list.append(y0)
                     z_0_list.append(z0)
                     i = i + 1
+                    sum_attempts = sum_attempts + attempt
                     attempt = 0
                     if self.debug:
                         time_elapse = datetime.datetime.now() - t_0
@@ -292,12 +335,15 @@ class DiscreteRsa3D(RVEUtils):
                     y_0_list.append(y0)
                     z_0_list.append(z0)
                     i = i + 1
+                    sum_attempts = sum_attempts + attempt
                     attempt = 0
                     if self.debug:
                         time_elapse = datetime.datetime.now() - t_0
                         self.logger.info(
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
-        if len(x_0_list) == self.n_grains:
+
+        # Mindestens 90% der Körner müssen platziert werden.
+        if len(x_0_list) >= 0.9*self.n_grains:
             status = True
         else:
             self.logger.info("Not all grains could be placed please decrease shrinkfactor!")
@@ -306,6 +352,8 @@ class DiscreteRsa3D(RVEUtils):
         print(np.asarray(np.unique(rsa, return_counts=True)).T)
         rsa[np.where(rsa == -200)] = 0
         print(np.asarray(np.unique(rsa, return_counts=True)).T)
+        with open(self.store_path + '/rve.sta', 'a') as sta:
+            sta.writelines('Total number of attempts needed: {}\n\n'.format(sum_attempts))
         return rsa, x_0_list, y_0_list, z_0_list, status
 
     def run_rsa_inclusions(self, rve, animation=False):
@@ -351,7 +399,7 @@ class DiscreteRsa3D(RVEUtils):
             periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=-(200 + i))
 
             inc_rve[(periodic_grain == -(200 + i)) & ((new_rve == 0) | (new_rve == -200))] = -(
-                        200 + i)  # -for Inclusions
+                    200 + i)  # -for Inclusions
 
             # Checking
             check = set(rve[np.where(inc_rve == -(200 + i))])
