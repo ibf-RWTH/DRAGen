@@ -136,13 +136,15 @@ class DataTask3D(RVEUtils):
                 band_array = super().band_generator(band_array)
 
             rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(self.band_ratio_rsa, band_array,
-                                                                                     animation=self.animation)
+                                                                                     animation=self.animation,
+                                                                                     gui=self.gui_flag)
             grains_df['x_0'] = x_0_list
             grains_df['y_0'] = y_0_list
             grains_df['z_0'] = z_0_list
 
         else:
-            rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(animation=self.animation)
+            rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(animation=self.animation,
+                                                                                     gui=self.gui_flag)
             grains_df['x_0'] = x_0_list
             grains_df['y_0'] = y_0_list
             grains_df['z_0'] = z_0_list
@@ -151,7 +153,7 @@ class DataTask3D(RVEUtils):
             discrete_tesselation_obj = Tesselation3D(self.box_size, self.n_pts, grains_df,
                                                      self.shrink_factor, self.band_ratio_final, store_path,
                                                      infobox_obj=self.infobox_obj, progress_obj=self.progress_obj)
-            rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa, animation=self.animation)
+            rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa, animation=self.animation, gui=self.gui_flag)
 
         else:
             self.logger.info("The rsa did not succeed...")
@@ -182,7 +184,7 @@ class DataTask3D(RVEUtils):
             #debug_df.to_csv('debug_grains_df.csv', index=False)
             mesher_obj = Mesher(periodic_rve_df, grains_df, store_path=store_path,
                                 phase_two_isotropic=True, animation=self.animation,
-                                infobox_obj=self.infobox_obj, progress_obj=self.progress_obj)
+                                infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag)
             mesher_obj.mesh_and_build_abaqus_model()
         return store_path
 
@@ -207,7 +209,8 @@ class DataTask3D(RVEUtils):
                           phase2_ref_r_discrete_in, phase2_ref_r_discrete_out, 'phase 2 discrete')
             obj.gen_plots(phase1_ref_r_conti_in, phase1_ref_r_conti_out, 'phase 1 conti', 'phase1vs2_conti',
                           phase2_ref_r_conti_in, phase2_ref_r_conti_out, 'phase 2 conti')
-            self.infobox_obj.emit('checkout the evaluation report of the rve stored at:\n'
+            if self.gui_flag:
+                self.infobox_obj.emit('checkout the evaluation report of the rve stored at:\n'
                                   '{}/Postprocessing'.format(self.store_path))
         else:
             obj.gen_plots(phase1_ref_r_conti_in, phase1_ref_r_conti_out, 'conti', 'in_vs_out_conti')
