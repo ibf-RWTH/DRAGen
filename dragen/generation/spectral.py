@@ -196,9 +196,9 @@ def make_load(store_path) -> None:
             'fdot * 0 0  0 2.0e-2 0  0 0 *  stress  0 * *   * * *   * * 0  time 10  incs 100')     # rot 0.70710678 -0.70710678 0.0  0.70710678 0.70710678 0.0  0.0 0.0 1.0')
 
 
-def make_load_from_defgrad(file_path, store_path):
+def make_load_from_defgrad(file_path, store_path, single=False):
     '''
-    TODO:
+    TODO: Write informations
     '''
     defgrad_dataframe = pd.read_csv(file_path, sep='\t', header=0)
 
@@ -224,15 +224,18 @@ def make_load_from_defgrad(file_path, store_path):
     time_step = defgrad_dataframe['time'].diff().tolist()
 
     # Step 3: Write the data
-    n_frames = defgrad_dataframe.__len__()
-    with open(store_path + '/loadpath.load', 'w') as loadpath:
-        for i in range(1, n_frames):
-            loadpath.writelines('Fdot {} {} {} {} {} {} {} {} {} stress * * * * * * * * * time {} incs 1\n'.format(
-                F11_step[i], F12_step[i], F13_step[i],
-                F21_step[i], F22_step[i], F23_step[i],
-                F31_step[i], F32_step[i], F33_step[i],
-                1   # FIXME Time muss glaube ich einfach gleich 1 sein, damit einfach die Summe der Gradienten passt
-            ))
+    if not single:
+        n_frames = defgrad_dataframe.__len__()
+        with open(store_path + '/loadpath.load', 'w') as loadpath:
+            for i in range(1, n_frames):
+                loadpath.writelines('Fdot {} {} {} {} {} {} {} {} {} stress * * * * 0 * * * 0 time {} incs 1\n'.format(
+                    F11_step[i], F12_step[i], F13_step[i],
+                    F21_step[i], '*', F23_step[i],
+                    F31_step[i], F32_step[i], '*',
+                    1   # Time has to be zero to ensure valid sum of defgrad
+                ))
+    else:
+        print('Currently not implemented')
 
 
 

@@ -302,6 +302,9 @@ class DataTask3D_GAN(RVEUtils):
         """
         # FIXME: Sobald es miehr als ein Band gibt, gibt es ziemliche Probleme, irgendwas stimmt da nicht
         # FIXME: Wenn die unterschiedlich Dick sind, wird das auch nicht wirklich funktionieren
+        """
+        
+        """
         if self.number_of_bands > 0:
             starttime = time.time()
             with open(store_path + '/rve.sta', 'a') as sta:

@@ -159,7 +159,6 @@ class Tesselation3D(RVEUtils):
                 grain is deleted. This avoids background growing and dumb results
                 Counting (i = i + 1) up only if no deletion happens
                 '''
-                # TODO: Aus irgendeinem Grund funktioniert das immer noch nicht mit den Bandpunkten.
                 # Als Workaround werden alle Bandpunkte nach 8 Epochen gelöscht, damit funktioniert es
                 delta_grow = freepoints_old - freepoints
                 if (idx in band_idx) and (epoch == 8):
@@ -195,7 +194,7 @@ class Tesselation3D(RVEUtils):
             if gui:
                 self.progress_obj.emit(packingratio)
             else:
-                # TODO: Entweder Gui oder logger?
+                # TODO: In das .sta-File
                 print(packingratio)
 
         if packingratio == 100:

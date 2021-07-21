@@ -696,7 +696,6 @@ class RVEUtils:
                           ((rve['x'] == max_x) & (rve['y'] == min_y) & (rve['z'] == max_z)) |
                           ((rve['x'] == max_x) & (rve['y'] == max_y) & (rve['z'] == max_z))]
         rve.loc[corners.index, 'GrainID'] = corner1.GrainID.values
-        print('Ran repairing successfully!')
         return rve
 
     def ellipse(self, a, b, x_0, y_0, alpha=0):
