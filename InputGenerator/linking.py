@@ -348,8 +348,10 @@ class Reconstructor:
                     inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
 
         # Del last if to big and more than one value:
-        if grain_vol >= max_volume and inp_list.__len__() > 1:
-            inp_list.pop(-1)
+        if grain_vol > 1.1 * max_volume and inp_list.__len__() > 1:
+            # Pop
+            idx = np.random.randint(0, inp_list.__len__())
+            inp_list.pop(idx)
 
         header = ['a', 'b', 'c', 'alpha', 'volume']
         self.rve_inp = pd.DataFrame(inp_list, columns=header)
@@ -358,6 +360,7 @@ class Reconstructor:
         self.rve_inp['phi1'] = (np.random.rand(self.rve_inp.__len__()) * 360)
         self.rve_inp['PHI'] = (np.random.rand(self.rve_inp.__len__()) * 360)
         self.rve_inp['phi2'] = (np.random.rand(self.rve_inp.__len__()) * 360)
+
 
 
 

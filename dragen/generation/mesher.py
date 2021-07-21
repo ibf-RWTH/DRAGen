@@ -10,7 +10,7 @@ import logging
 class Mesher:
 
     def __init__(self, rve: pd.DataFrame, grains_df: pd.DataFrame, store_path,
-                 phase_two_isotropic=True, animation=True, infobox_obj=None, progress_obj=None):
+                 phase_two_isotropic=True, animation=True, infobox_obj=None, progress_obj=None, gui=True, elem='C3D4'):
         self.rve = rve
         self.grains_df = grains_df
         self.store_path = store_path
@@ -31,6 +31,8 @@ class Mesher:
         self.n_pts = int(rve.n_pts[0])
         self.bin_size = rve.box_size[0] / (self.n_pts+1) ## test
         self.logger = logging.getLogger("RVE-Gen")
+        self.gui = gui
+        self.elem = elem
 
     def gen_blocks(self) -> pv.UniformGrid:
 
@@ -225,7 +227,10 @@ class Mesher:
             sub_surf = pv.PolyData(smooth_points, faces)
 
             tet = tetgen.TetGen(sub_surf)
-            tet.tetrahedralize(order=1, mindihedral=10, minratio=1.5, supsteiner_level=1)
+            if self.elem == 'C3D4':
+                tet.tetrahedralize(order=1, mindihedral=10, minratio=1.5, supsteiner_level=1)
+            elif self.elem == 'C3D10':
+                tet.tetrahedralize(order=2, mindihedral=10, minratio=1.5, supsteiner_level=1)
             sub_grid = tet.grid
 
             """
@@ -244,7 +249,8 @@ class Mesher:
 
             ncells = sub_grid.n_cells
             print(i, ncells)
-            self.progress_obj.emit(75+(100*(i+1)/self.n_grains/4))
+            if self.gui:
+                self.progress_obj.emit(75+(100*(i+1)/self.n_grains/4))
             grainIDList = [i + 1]
             grainID_array = grainIDList * ncells
             sub_grid['GrainID'] = grainID_array
@@ -253,11 +259,14 @@ class Mesher:
             else:
                 if len(grid.cell_arrays.keys()) == 0:
                     # print(i, grid.cell_arrays.keys())
-                    self.infobox_obj.emit('uuups! I lost the grainID_key! please increase the resolution')
+                    if self.gui:
+                        self.infobox_obj.emit('uuups! I lost the grainID_key! please increase the resolution')
+                    else:
+                        self.logger.info('I lost the grainID_key! please increase the resolution')
                     return
                 grid = sub_grid.merge(grid)
             grain_vol = sub_grid.volume
-            self.logger.info(str(grain_vol*10**9))
+            #self.logger.info(str(grain_vol*10**9))
             self.grains_df.loc[self.grains_df['GrainID'] == i, 'meshed_conti_volume'] = grain_vol*10**9
 
         self.grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
@@ -265,7 +274,8 @@ class Mesher:
         print('ende', grid.cell_arrays.keys())
         if len(grid.cell_arrays.keys()) == 0:
             print(i, grid.cell_arrays.keys())
-            self.infobox_obj.emit('uuups! I lost the grainID_key! please increase the resolution')
+            if self.gui:
+                self.infobox_obj.emit('uuups! I lost the grainID_key! please increase the resolution')
             return
         #sys.exit()
         pv.save_meshio(self.store_path + '/rve-part.inp', grid)
@@ -480,6 +490,7 @@ class Mesher:
         # rear set
         FrontSet = faces_df.loc[faces_df['z'] == max_z]['Eqn-Set'].to_list()
 
+        '''
         self.logger.info('E_B1 ' + str(len(E_B1)))
         self.logger.info('E_B2 ' + str(len(E_B2)))
         self.logger.info('E_B3 ' + str(len(E_B3)))
@@ -498,6 +509,7 @@ class Mesher:
         self.logger.info('TopSet ' + str(len(TopSet)))
         self.logger.info('FrontSet ' + str(len(FrontSet)))
         self.logger.info('RearSet ' + str(len(RearSet)))
+        '''
 
         OutPutFile = open(self.store_path + '/Nsets.inp', 'w')
         for i in grid_hull_df.index:
@@ -1194,16 +1206,21 @@ class Mesher:
             plotter.show(screenshot=self.store_path + storename + '.png', auto_close=True)
 
     def mesh_and_build_abaqus_model(self) -> None:
-        self.progress_obj.emit(0)
-        self.infobox_obj.emit('starting mesher')
+        if self.gui:
+            self.progress_obj.emit(0)
+            self.infobox_obj.emit('starting mesher')
         GRID = self.gen_blocks()
-        self.progress_obj.emit(25)
+        if self.gui:
+            self.progress_obj.emit(25)
         GRID = self.gen_grains(GRID)
         grain_boundaries_poly_data, tri_df = self.convert_to_mesh(GRID)
-        self.progress_obj.emit(50)
+        if self.gui:
+            self.progress_obj.emit(50)
         face_label = self.gen_face_labels(tri_df)
         smooth_grain_boundaries = self.smooth(grain_boundaries_poly_data, GRID, tri_df, face_label)
-        self.progress_obj.emit(75)
+        if self.gui:
+            self.progress_obj.emit(75)
         self.build_abaqus_model(rve=GRID, poly_data=smooth_grain_boundaries, fl=face_label, tri_df=tri_df)
-        self.progress_obj.emit(100)
+        if self.gui:
+            self.progress_obj.emit(100)
 

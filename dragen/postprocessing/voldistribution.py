@@ -16,7 +16,6 @@ class PostProcVol:
         if not os.path.isdir(output_path + '/Postprocessing'):
             os.mkdir(output_path + '/Postprocessing')
 
-
     def gen_in_out_lists(self) -> tuple:
 
         input_df = pd.read_csv(self.output_path + '/Generation_Data/grain_data_input.csv')
@@ -30,7 +29,6 @@ class PostProcVol:
             input_df['r_ref_discrete'] = np.cbrt(3 * input_df['final_discrete_volume'] / (4 * np.pi))
         total_vol_conti_in = sum(input_df['final_conti_volume'].to_numpy().flatten().tolist())
         total_vol_discrete_in = sum(input_df['final_discrete_volume'].to_numpy().flatten().tolist())
-
 
         # process phase1 input data
         phase1_input_df = input_df.loc[input_df['phaseID'] == 1]
@@ -62,7 +60,7 @@ class PostProcVol:
 
         # process conti output
         output_df_conti = pd.read_csv(self.output_path + '/Generation_Data/grain_data_output_conti.csv')
-        # process conti output
+        # process discrete output
         output_df_discrete = pd.read_csv(self.output_path + '/Generation_Data/grain_data_output_discrete.csv')
 
         if self.dimension == 2:
@@ -73,7 +71,7 @@ class PostProcVol:
             output_df_discrete['r_ref_discrete'] = np.cbrt(
                 3 * output_df_discrete['final_discrete_volume'] / (4 * np.pi))
         total_vol_conti_out = sum(output_df_conti['meshed_conti_volume'].to_numpy().flatten().tolist())
-        print(output_df_conti[['meshed_conti_volume','phaseID']].head())
+        print(output_df_conti[['meshed_conti_volume', 'phaseID']].head())
         print(total_vol_conti_out)
         total_vol_discrete_out = sum(output_df_discrete['final_discrete_volume'].to_numpy().flatten().tolist())
 
@@ -108,8 +106,8 @@ class PostProcVol:
         phase2_ratio_discrete_out = phase2_vol_discrete_out / total_vol_discrete_out
         phase2_ref_r_discrete_out = phase2_output_df_discrete['r_ref_discrete'].to_numpy().flatten().tolist()
 
-        return phase1_ratio_conti_in, phase1_ref_r_conti_in, phase1_ratio_discrete_in, phase1_ref_r_discrete_in,\
-               phase2_ratio_conti_in, phase2_ref_r_conti_in, phase2_ratio_discrete_in, phase2_ref_r_discrete_in,\
+        return phase1_ratio_conti_in, phase1_ref_r_conti_in, phase1_ratio_discrete_in, phase1_ref_r_discrete_in, \
+               phase2_ratio_conti_in, phase2_ref_r_conti_in, phase2_ratio_discrete_in, phase2_ref_r_discrete_in, \
                phase1_ratio_conti_out, phase1_ref_r_conti_out, phase1_ratio_discrete_out, phase1_ref_r_discrete_out, \
                phase2_ratio_conti_out, phase2_ref_r_conti_out, phase2_ratio_discrete_out, phase2_ref_r_discrete_out
 
@@ -119,12 +117,13 @@ class PostProcVol:
         sizes = [phase1_ratio, phase2_ratio]
         explode = (0.1, 0)
 
-        plt.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
+        fig1, ax1 = plt.subplots()
+        ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
                 shadow=True, startangle=90)
-        plt.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-        plt.title(title)
+        ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+        ax1.set_title(title)
 
-        plt.savefig(self.store_path + '/phase_distribution_{}.png'.format(title))
+        fig1.savefig(self.store_path + '/phase_distribution_{}.png'.format(title))
         plt.close()
 
     def gen_plots(self, input, output, title, filename, input_opt=None, output_opt=None, title_opt=None, ) -> None:
@@ -148,13 +147,12 @@ class PostProcVol:
         fig = plt.figure(figsize=(11, 8))
 
         ax = fig.add_subplot(1, 1, 1)
-        ax.plot(x_d, np.exp(logdens_1_in), 'k', label='input data '+title)
-        ax.plot(x_d, np.exp(logdens_1_out), '--k', label='output data '+title)
+        ax.plot(x_d, np.exp(logdens_1_in), 'k', label='input data ' + title)
+        ax.plot(x_d, np.exp(logdens_1_out), '--k', label='output data ' + title)
         plt.xlabel('Grain Radius of Reference Sphere (µm)', fontsize=20)
         plt.ylabel('Normalized Density ( - ) ', fontsize=20)
         # caputure max y-lim
         max_log_dens = [max(np.exp(logdens_1_in)), max(np.exp(logdens_1_out))]
-
 
         if input_opt is not None and output_opt is not None:
             kde_2_in = KernelDensity(bandwidth=.25, kernel='gaussian')
@@ -180,10 +178,8 @@ class PostProcVol:
         plt.close()
 
 
-
 if __name__ == "__main__":
     outputPath = 'C:/temp/OutputData/2021-05-10_0'
     dim_flag = 3
     obj = PostProcVol(outputPath, dim_flag)
     obj.gen_stack_plot()
-
