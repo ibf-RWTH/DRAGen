@@ -12,7 +12,7 @@ from dragen.generation.DiscreteTesselation3D import Tesselation3D
 from dragen.utilities.RVE_Utils import RVEUtils
 from dragen.generation.mesher import Mesher
 from dragen.postprocessing.voldistribution import PostProcVol
-from substructure.run import Run as Sub_Run
+from dragen_substructure.run import Run as Sub_Run
 
 class DataTask3D(RVEUtils):
 
