@@ -16,7 +16,7 @@ from dragen.generation import spectral
 
 from InputGenerator.C_WGAN_GP import WGANCGP
 from InputGenerator.linking import Reconstructor
-
+from dragen_substructure.run import Run as Sub_Run
 
 class DataTask3D_GAN(RVEUtils):
 
@@ -495,6 +495,9 @@ class DataTask3D_GAN(RVEUtils):
                     periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = (i + 2)
                     periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
 
+                sub_run = Sub_Run(self.box_size, self.n_pts, 'F:/pycharm/2nd_mini_thesis/dragen-master/')
+                subs_rve = sub_run.run(periodic_rve_df, grains_df, 6.8, 0.5, 0.01, 0, 1,
+                                       store_path=self.store_path)  # grain_id -1
                 # Start the Mesher
                 mesher_obj = Mesher(periodic_rve_df, store_path=store_path, phase_two_isotropic=True, animation=False,
                                     grains_df=grains_df, gui=False, elem='C3D10')
