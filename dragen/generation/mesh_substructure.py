@@ -374,9 +374,10 @@ def write_block_data(self):
             """phi1 = int(np.random.rand() * 360)
             PHI = int(np.random.rand() * 360)
             phi2 = int(np.random.rand() * 360)"""
-            phi1 = bid_to_angle[i][0]
-            PHI = bid_to_angle[i][1]
-            phi2 = bid_to_angle[i][2]
+            print(nblock,':',bid_to_angle[nblock])
+            phi1 = bid_to_angle[nblock][0]
+            PHI = bid_to_angle[nblock][1]
+            phi2 = bid_to_angle[nblock][2]
             f.write('Block: {}: {}: {}: {}: {}\n'.format(nblock, phi1, PHI, phi2, grainsize[i]))
         else:
             if phase[i] == 1:
@@ -400,7 +401,7 @@ def bid_to_gid(self, bid):
 
     return int(gid_list.iloc[0])
 
-def comp_angle(self,grain_data,point_data):  #may cause invalid value for arc
+def comp_angle(self,grain_data,point_data):
     T_list = [np.array(0) for i in range(24)]
 
     T_list[0] = np.array([[0.742, 0.667, 0.075],
@@ -536,12 +537,41 @@ def comp_angle(self,grain_data,point_data):  #may cause invalid value for arc
         R = np.matrix(np.dot(result, R1))
 
         RB = T*R
+        N,n,n1,n2 = 1,1,1,1
 
+        if RB[2,2] > 1:
+            N = 1/RB[2,2]
+
+        if RB[2,2] < -1:
+
+            N = -1/RB[2,2]
+
+        RB[2,2] = N*RB[2,2]
         PHIB = np.degrees(np.arccos(RB[2,2]))
+        sin_PHIB = np.sin(np.deg2rad(PHIB))
+
+        if RB[2,0]/sin_PHIB > 1 or RB[2,0]/sin_PHIB <-1:
+
+            n1 = sin_PHIB/RB[2,0]
+
+        if RB[0,2]/sin_PHIB > 1 or RB[0,2]/sin_PHIB <-1:
+
+            n2 = sin_PHIB/RB[0,2]
+
+        if abs(n1)>abs(n2):
+
+            n = n2
+
+        else:
+
+            n = n1
+
+        #recalculate after scaling
+        RB = N*n*RB
+        PHIB = np.degrees(np.arccos(RB[2, 2]))
         sin_PHIB = np.sin(np.deg2rad(PHIB))
         phi1B = np.degrees(np.arcsin(RB[2,0]/sin_PHIB))
         phi2B = np.degrees(np.arcsin(RB[0,2]/sin_PHIB))
-
         return phi1B,PHIB,phi2B
 
 Mesher.gen_substruct = gen_substruct
@@ -555,16 +585,34 @@ Mesher.write_block_data = write_block_data
 
 if __name__ == "__main__":
 
-    rve = pd.read_csv('F:/pycharm/2nd_mini_thesis/mesh_practice/final_input/07.26.2021--2/mesh_rve.csv')
-    grains_df = pd.read_csv('F:/pycharm/2nd_mini_thesis/mesh_practice/final_input/07.26.2021--2/grains.csv')
+    rve = pd.read_csv('F:/pycharm/2nd_mini_thesis/mesh_practice/final_input/07.26.2021--3/mesh_rve.csv')
+    grains_df = pd.read_csv('F:/pycharm/2nd_mini_thesis/mesh_practice/final_input/07.26.2021--3/grains.csv')
 
+    rve['GrainID'] = rve['GrainID'] + 1
+    rve['packet_id'] = rve['packet_id'] + 1
+    rve['block_id'] = rve['block_id'] + 1
+
+    grains_df['GrainID'] = grains_df['GrainID'] + 1
     rve.n_pts = [40 for i in range(len(rve))]
     rve.box_size = [20 for i in range(len(rve))]
-    mesh = Mesher(rve, grains_df, './final_input/07.26.2021--2',phase_two_isotropic=False, animation=False)
+    mesh = Mesher(rve, grains_df, './final_input/07.26.2021--3',phase_two_isotropic=False, animation=False)
 
     grid = mesh.gen_substruct()
     boundaries, tri_df = mesh.subs_to_mesh(grid)
     facelabel = mesh.gen_face_labels(tri_df)
     smooth_rve = mesh.smooth(boundaries, grid, tri_df, facelabel)
     mesh.abaqus_subs_model(smooth_rve, grid, facelabel, tri_df)
+    # block_list = list(set(rve['block_id']))
+    # groups = rve.groupby('block_id').head(1)
+    # angle_list = groups.apply(lambda p: comp_angle(None,grains_df, p), axis=1)
+    # bid_to_angle = dict(zip(block_list, angle_list))
+    #
+    # print(angle_list)
+    #
+    # for bid in block_list:
+    #
+    #     print(bid_to_angle[bid][0])
+
+
+
 
