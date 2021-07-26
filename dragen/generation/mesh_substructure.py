@@ -400,7 +400,7 @@ def bid_to_gid(self, bid):
 
     return int(gid_list.iloc[0])
 
-def comp_angle(self,grain_data,point_data): #may cause invalid value for arc
+def comp_angle(self,grain_data,point_data):  #may cause invalid value for arc
     T_list = [np.array(0) for i in range(24)]
 
     T_list[0] = np.array([[0.742, 0.667, 0.075],
