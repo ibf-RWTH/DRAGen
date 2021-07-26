@@ -377,7 +377,7 @@ def write_block_data(self):
             phi1 = bid_to_angle[i][0]
             PHI = bid_to_angle[i][1]
             phi2 = bid_to_angle[i][2]
-            f.write('Grain: {}: {}: {}: {}: {}\n'.format(nblock, phi1, PHI, phi2, grainsize[i]))
+            f.write('Block: {}: {}: {}: {}: {}\n'.format(nblock, phi1, PHI, phi2, grainsize[i]))
         else:
             if phase[i] == 1:
                 phase1_idx += 1
@@ -387,7 +387,7 @@ def write_block_data(self):
                 phi1 = bid_to_angle[i][0]
                 PHI = bid_to_angle[i][1]
                 phi2 = bid_to_angle[i][2]
-                f.write('Grain: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, PHI, phi2, grainsize[i]))
+                f.write('Block: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, PHI, phi2, grainsize[i]))
     f.close()
 
 def bid_to_pid(self, bid):
@@ -400,7 +400,7 @@ def bid_to_gid(self, bid):
 
     return int(gid_list.iloc[0])
 
-def comp_angle(self,grain_data,point_data):
+def comp_angle(self,grain_data,point_data): #may cause invalid value for arc
     T_list = [np.array(0) for i in range(24)]
 
     T_list[0] = np.array([[0.742, 0.667, 0.075],
