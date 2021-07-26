@@ -12,7 +12,7 @@ from dragen.generation.DiscreteTesselation3D import Tesselation3D
 from dragen.utilities.RVE_Utils import RVEUtils
 from dragen.generation.mesher import Mesher
 from dragen.postprocessing.voldistribution import PostProcVol
-
+from substructure.run import Run as Sub_Run
 
 class DataTask3D(RVEUtils):
 
@@ -180,9 +180,11 @@ class DataTask3D(RVEUtils):
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = (i + 2)
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
 
+            sub_run = Sub_Run(self.box_size, self.n_pts,'F:/pycharm/2nd_mini_thesis/dragen-master/')
+            subs_rve = sub_run.run(periodic_rve_df, grains_df, 6.8, 0.5, 0.01, 0, 1, store_path=self.store_path)#grain_id -1
             # Start the Mesher
             #debug_df.to_csv('debug_grains_df.csv', index=False)
-            mesher_obj = Mesher(periodic_rve_df, grains_df, store_path=store_path,
+            mesher_obj = Mesher(subs_rve, grains_df, store_path=store_path, #needs to be merged
                                 phase_two_isotropic=True, animation=self.animation,
                                 infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag)
             mesher_obj.mesh_and_build_abaqus_model()
