@@ -3,7 +3,7 @@
 Time:     2021/6/17 22:55
 Author:   Linghao Kong
 Version:  V 0.1
-File:     rve_substructure_old.py
+File:     rve_substructure.py
 Describe: Write during the internship at IEHK RWTH"""
 
 from dragen.utilities.RVE_Utils import RVEUtils
