@@ -346,7 +346,7 @@ def write_block_data(self,bid_to_mid):
                 phi1 = angle[0]
                 PHI = angle[1]
                 phi2 = angle[2]
-                f.write('Materialk: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, PHI, phi2, grainsize[i]))
+                f.write('Material: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, PHI, phi2, grainsize[i]))
 
     f.close()
 
