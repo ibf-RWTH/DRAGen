@@ -548,16 +548,20 @@ def find_material(self):
     bid_list = martensite_group.loc[martensite_group['block_orientation'].isnull(),'block_id']
     #fill in nan
     for bid in bid_list:
+        i = 1
+        bv = martensite_group.loc[martensite_group['block_id'] == bid, 'block_orientation']
+        while (bv.isnull()).any():
+            try:
 
-        try:
+                bv = martensite_group.loc[martensite_group['block_id'] == bid - 2 * i, 'block_orientation']
 
-            bv = martensite_group.loc[martensite_group['block_id']==bid-2,'block_orientation']
+            except:
 
-        except:
+                bv = martensite_group.loc[martensite_group['block_id'] == bid + 2 * i, 'block_orientation']
 
-            bv = martensite_group.loc[martensite_group['block_id'] == bid+2, 'block_orientation']
+            i += 1
 
-        rve.loc[rve['block_id'] == bid,'block_orientation'] = bv.iloc[0]
+        rve.loc[rve['block_id'] == bid, 'block_orientation'] = bv.iloc[0]
 
 
     groups1 = rve[rve['phaseID'] == 2].groupby(['GrainID','block_orientation'])
