@@ -237,45 +237,78 @@ class Grain(RVEUtils):
         self.merge_small_packets()
 
     def merge_small_packets(self):
-        while (self.points_data.groupby('packet_id').apply(len)<10).any():
+        while (self.points_data.groupby('packet_id').apply(len) < 10).any():
+            # print('before merge',(self.points_data.groupby('block_id').apply(len) < 10).any())
+            pid = self.points_data['packet_id'].map(lambda pid: int(pid.replace('p','')))
+            self.points_data['strip_packet_id'] = pid
+            self.points_data.sort_values('strip_packet_id',
+                                         inplace=True)  # sort by bid, so that the order of blocks is arranged
 
-            packet_groups = self.points_data.groupby('packet_id')
+            packet_groups = self.points_data.groupby('strip_packet_id')
             big_packets = []
             small_packets = []
+            bp_list = []
             for k in packet_groups.groups.keys():
                 group = packet_groups.get_group(k)
 
                 if len(group) < 10:
-
-                    small_packets.append(k)
-
+                    small_packets.append(k)  # get the id of small blocks
                 else:
-
                     big_packets.append(k)
+                    bp_list.append(group['packet_id'].iloc[0])
 
-            if len(small_packets) <= len(big_packets):
+            if len(small_packets) == 1:
+                dis = np.array([small_packets[0] - big_packet for big_packet in big_packets])
+                new_id = \
+                self.points_data.loc[self.points_data['strip_packet_id'] == big_packets[np.argmin(dis)], 'packet_id'].iloc[
+                    0]
+                self.points_data.loc[self.points_data['strip_packet_id'] == small_packets[0], 'packet_id'] = new_id
+                print('all small packets are merged')
+                break
 
-                new_ids = big_packets[0:len(small_packets)]
+            new_id_list = []
+            old_id_list = []
+            for j in range(len(small_packets)):
+                i = 0
+                old_id = self.points_data.loc[self.points_data['strip_packet_id'] == small_packets[j], 'packet_id'].iloc[0]
+                temp = small_packets[j]
+                while small_packets[j] + i in small_packets:
+                    temp = small_packets[j] + i
+                    i += 1
+                small_packets[j] = temp
 
-            else:
+                if i == 1:  # no adjacent block is small one
 
-                if len(big_packets) == 0:
-                    for i in range(0,len(small_packets),2):
+                    if small_packets[j] == small_packets[j - 1]:
+                        new_id = old_id
+                    else:
+                        if len(big_packets) == 0:
+                            dis = np.array([small_packets[j] - small_packet for small_packet in small_packets if
+                                            small_packet != small_packets[j]])
+                            new_id = self.points_data.loc[
+                                self.points_data['strip_packet_id'] == small_packets[np.argmin(dis)], 'packet_id'].iloc[0]
+                        else:
+                            dis = np.array([small_packets[j] - big_packet for big_packet in big_packets])
+                            new_id = self.points_data.loc[
+                                self.points_data['strip_packet_id'] == big_packets[np.argmin(dis)], 'packet_id'].iloc[0]
 
-                        try:
-                            small_packets[i] = small_packets[i+1]
+                else:  # adjacent block is small one
+                    new_id = self.points_data.loc[self.points_data['strip_packet_id'] == temp, 'packet_id'].iloc[0]  # merge adjacent small blocks into one block
 
-                        except:
-                            small_packets[i] = small_packets[i-1]
+                old_id_list.append(old_id)
+                new_id_list.append(new_id)
 
-                    new_ids = small_packets
-                else:
-                    new_ids = small_packets
-                    new_ids[0:len(big_packets)] = big_packets
+            old_id_list.extend(bp_list)
+            new_id_list.extend(bp_list)
+            # print(old_id_list)
+            # print(new_id_list)
+            old_to_new = dict(zip(old_id_list, new_id_list))
 
-            s_to_nid = dict(zip(small_packets, new_ids))
-            for pid in small_packets:
-                self.points_data.loc[self.points_data['packet_id'] == pid, 'packet_id'] = s_to_nid[pid]
+            new_pid = self.points_data['packet_id'].map(lambda pid: old_to_new[pid])
+            self.points_data['packet_id'] = new_pid
+            # print('after merge',self.points_data.groupby('packet_id').apply(len)<10)
+            self.points_data.drop('strip_packet_id',axis=1)
+        print('all small packets are merged')
 
 
     def gen_blocks(self, t_mu, sigma, lower=None, upper=None):
@@ -528,56 +561,96 @@ class Packet():
         block_id = points_data['p_dis'].map(lambda dis: self.dis_to_id(dis, bt_list))
 
         points_data['block_id'] = points_data['packet_id'] + block_id
-        points_data = points_data.drop(['pd', 'p_dis'], axis=1)
+        points_data = points_data.drop('pd', axis=1)
 
         points_data.dropna(axis=0,inplace=True,how='any')
 
         self.points_data = points_data
-        self.merge_small_block()
+        if len(self.points_data) > 10:
+            self.merge_small_block()
+
+    def strip_pid(self,bid):
+
+        return(int(bid[len(self['id']):]))
 
     def merge_small_block(self):
 
-        while ((self.points_data.groupby('block_id').apply(len)<10).any()).any():
-            print('begin to merge small blocks')
-            block_groups = self.points_data.groupby('block_id')
+        while (self.points_data.groupby('block_id').apply(len) < 10).any():
+            #print('before merge',(self.points_data.groupby('block_id').apply(len) < 10).any())
+            bid = self.points_data['block_id'].map(lambda bid: self.strip_pid(bid))
+            self.points_data['strip_block_id'] = bid
+            self.points_data.sort_values('strip_block_id',inplace=True)#sort by bid, so that the order of blocks is arranged
+
+            block_groups = self.points_data.groupby('strip_block_id')
             big_blocks = []
             small_blocks = []
+            bb_list = []
             for k in block_groups.groups.keys():
                 group = block_groups.get_group(k)
 
                 if len(group) < 10:
-
-                    small_blocks.append(k)
-
+                    small_blocks.append(k) #get the id of small blocks
                 else:
-
                     big_blocks.append(k)
+                    bb_list.append(group['block_id'].iloc[0])
 
-            if len(small_blocks) <= len(big_blocks):
+            if len(small_blocks) == 1:
+                dis = np.array([small_blocks[0] - big_block for big_block in big_blocks])
+                new_id = self.points_data.loc[self.points_data['strip_block_id'] == big_blocks[np.argmin(dis)], 'block_id'].iloc[0]
+                self.points_data.loc[self.points_data['strip_block_id'] == small_blocks[0],'block_id'] = new_id
+                print('all small blocks are merged')
+                break
 
-                new_ids = big_blocks[0:len(small_blocks)]
+            new_id_list = []
+            old_id_list = []
+            for j in range(len(small_blocks)):
+                i = 0
+                old_id = self.points_data.loc[self.points_data['strip_block_id'] == small_blocks[j],'block_id'].iloc[0]
+                temp = small_blocks[j]
+                while small_blocks[j]+i in small_blocks:
 
-            else:
+                    temp = small_blocks[j] + i
+                    i += 1
+                small_blocks[j] = temp
 
-                if len(big_blocks) == 0:
-                    new_ids = small_blocks
-                    for i in range(0,len(small_blocks),2):
+                if i == 1: # no adjacent block is small one
 
-                        try:
-                            new_ids[i] = new_ids[i+1]
+                    if small_blocks[j] == small_blocks[j-1]:
+                        new_id = old_id
+                    else:
+                        if len(big_blocks) == 0:
+                            dis = np.array([small_blocks[j] - small_block for small_block in small_blocks if small_block != small_blocks[j]])
+                            new_id = self.points_data.loc[self.points_data['strip_block_id'] == small_blocks[np.argmin(dis)], 'block_id'].iloc[0]
+                        else:
+                            dis = np.array([small_blocks[j] - big_block for big_block in big_blocks])
+                            new_id = self.points_data.loc[self.points_data['strip_block_id'] == big_blocks[np.argmin(dis)],'block_id'].iloc[0]
 
-                        except:
-                            new_ids[i] = new_ids[i-1]
+                else: #adjacent block is small one
+                    new_id = self.points_data.loc[self.points_data['strip_block_id'] == temp, 'block_id'].iloc[0]  # merge adjacent small blocks into one block
 
-                else:
+                old_id_list.append(old_id)
+                new_id_list.append(new_id)
 
-                    new_ids = small_blocks
-                    new_ids[0:len(big_blocks)] = big_blocks
 
-            new_ids = new_ids.extend(big_blocks)
-            self.points_data['block_id'] = new_ids
+            old_id_list.extend(bb_list)
+            new_id_list.extend(bb_list)
+            # print(old_id_list)
+            # print(new_id_list)
+            old_to_new = dict(zip(old_id_list,new_id_list))
+
+            new_bid = self.points_data['block_id'].map(lambda bid:old_to_new[bid])
+            self.points_data['block_id'] = new_bid
+            #print('after merge',self.points_data.groupby('block_id').apply(len)<10)
+            self.points_data.drop('strip_block_id',axis=1)
 
         print('all small blocks are merged')
+
+    def get_bt(self):
+
+        bg = self.points_data.groupby('block_id')
+
+        for b in bg:
+            print(b)
 
 
     def assign_bv(self,grain):
