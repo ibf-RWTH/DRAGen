@@ -70,35 +70,34 @@ class Grain(RVEUtils):
 
         super().__init__(box_size,n_pts,debug=False)
 
-    # points_gen is only for testing within 1 grain
-    # def points_gen(self):
-    #
-    #     x,y,z = super().gen_grid()
-    #     ellip = super().ellipsoid(self.a,self.b,self.c,self.x_0,self.y_0,self.z_0,self.alpha)
-    #     t = (ellip <= 1)
-    #
-    #     X = []
-    #     Y = []
-    #     Z = []
-    #
-    #     for px in np.nditer(t * x):
-    #         X.append(float(px))
-    #     for py in np.nditer(t * y):
-    #         Y.append(float(py))
-    #     for pz in np.nditer(t * z):
-    #         Z.append(float(pz))
-    #
-    #     X = np.array(X).reshape(-1, 1)
-    #     Y = np.array(Y).reshape(-1, 1)
-    #     Z = np.array(Z).reshape(-1, 1)
-    #
-    #     points_list = np.concatenate([X, Y, Z], axis=1)
-    #     points_list = np.unique(points_list, axis=0)
-    #
-    #     self.points = points_list
-    #     self.points_data = pd.DataFrame(points_list,columns=['x','y','z'])
-    #
-    #     return points_list
+    def points_gen(self):
+
+        x,y,z = super().gen_grid()
+        ellip = super().ellipsoid(self.a,self.b,self.c,self.x_0,self.y_0,self.z_0,self.alpha)
+        t = (ellip <= 1)
+
+        X = []
+        Y = []
+        Z = []
+
+        for px in np.nditer(t * x):
+            X.append(float(px))
+        for py in np.nditer(t * y):
+            Y.append(float(py))
+        for pz in np.nditer(t * z):
+            Z.append(float(pz))
+
+        X = np.array(X).reshape(-1, 1)
+        Y = np.array(Y).reshape(-1, 1)
+        Z = np.array(Z).reshape(-1, 1)
+
+        points_list = np.concatenate([X, Y, Z], axis=1)
+        points_list = np.unique(points_list, axis=0)
+
+        self.points = points_list
+        self.points_data = pd.DataFrame(points_list,columns=['x','y','z'])
+
+        return points_list
 
     def lc_to_gc(self,habit_plane_list):
 
@@ -235,36 +234,49 @@ class Grain(RVEUtils):
             packets_list = self.packets_list
 
         self.second_cut_list = np.array(self.second_cut_list).squeeze()
+        self.merge_small_packets()
 
-    def dis_to_id(self,dis, t_list):
+    def merge_small_packets(self):
+        while (self.points_data.groupby('packet_id').apply(len)<10).any():
 
-        t_1 = []
-        t_list = list(t_list)
-        if len(t_list) == 1:
-            t_list.insert(0, 0)
-            t_1 = t_list
+            packet_groups = self.points_data.groupby('packet_id')
+            big_packets = []
+            small_packets = []
+            for k in packet_groups.groups.keys():
+                group = packet_groups.get_group(k)
 
-            if dis >= max(t_1):
+                if len(group) < 10:
 
-                return '1'
+                    small_packets.append(k)
+
+                else:
+
+                    big_packets.append(k)
+
+            if len(small_packets) <= len(big_packets):
+
+                new_ids = big_packets[0:len(small_packets)]
 
             else:
 
-                return '0'
+                if len(big_packets) == 0:
+                    for i in range(0,len(small_packets),2):
 
-        else:
-            for i in range(len(t_list) - 1):
-                s = sum(t_list[0:i + 1])
-                t_1.append(s)
+                        try:
+                            small_packets[i] = small_packets[i+1]
 
-            t_1.insert(0, 0)
+                        except:
+                            small_packets[i] = small_packets[i-1]
 
-        for i in range(len(t_1) - 1):
-            if dis >= t_1[i] and dis < t_1[i + 1]:
-                return str(i)
+                    new_ids = small_packets
+                else:
+                    new_ids = small_packets
+                    new_ids[0:len(big_packets)] = big_packets
 
-            if dis > max(t_1):
-                return str(len(t_1))
+            s_to_nid = dict(zip(small_packets, new_ids))
+            for pid in small_packets:
+                self.points_data.loc[self.points_data['packet_id'] == pid, 'packet_id'] = s_to_nid[pid]
+
 
     def gen_blocks(self, t_mu, sigma, lower=None, upper=None):
 
@@ -273,7 +285,7 @@ class Grain(RVEUtils):
 
         for packet in self.packets_list:
 
-            packet.gen_blocks(self,t_mu,sigma,lower=lower,upper=upper)
+            packet.gen_blocks(t_mu,sigma,lower=lower,upper=upper)
             points_data.loc[packet.points_data.index,'block_id'] = packet.points_data['block_id']
 
         self.points_data = points_data
@@ -444,7 +456,38 @@ class Packet():
 
         return Packet(points1),Packet(points2),cut_plane #return error sometimes
 
-    def gen_blocks(self,grain,t_mu,sigma,lower=None,upper=None):
+    def dis_to_id(self,dis, t_list):
+
+        t_1 = []
+        t_list = list(t_list)
+        if len(t_list) == 1:
+            t_list.insert(0, 0)
+            t_1 = t_list
+
+            if dis >= max(t_1):
+
+                return '1'
+
+            else:
+
+                return '0'
+
+        else:
+            for i in range(len(t_list) - 1):
+                s = sum(t_list[0:i + 1])
+                t_1.append(s)
+
+            t_1.insert(0, 0)
+
+        for i in range(len(t_1) - 1):
+            if dis >= t_1[i] and dis < t_1[i + 1]:
+                return str(i)
+
+            if dis > max(t_1):
+                return str(len(t_1))
+
+
+    def gen_blocks(self,t_mu,sigma,lower=None,upper=None):
 
         points_data = self.points_data.copy()
 
@@ -482,13 +525,60 @@ class Packet():
         N = stats.truncnorm((lower - t_mu) / sigma, (upper - np.log(t_mu)) / sigma, loc=np.log(t_mu), scale=sigma)
         bt_list = np.exp(N.rvs(n))
 
-        block_id = points_data['p_dis'].map(lambda dis: grain.dis_to_id(dis, bt_list))
+        block_id = points_data['p_dis'].map(lambda dis: self.dis_to_id(dis, bt_list))
 
         points_data['block_id'] = points_data['packet_id'] + block_id
         points_data = points_data.drop(['pd', 'p_dis'], axis=1)
 
         points_data.dropna(axis=0,inplace=True,how='any')
+
         self.points_data = points_data
+        self.merge_small_block()
+
+    def merge_small_block(self):
+
+        while ((self.points_data.groupby('block_id').apply(len)<10).any()).any():
+            print('begin to merge small blocks')
+            block_groups = self.points_data.groupby('block_id')
+            big_blocks = []
+            small_blocks = []
+            for k in block_groups.groups.keys():
+                group = block_groups.get_group(k)
+
+                if len(group) < 10:
+
+                    small_blocks.append(k)
+
+                else:
+
+                    big_blocks.append(k)
+
+            if len(small_blocks) <= len(big_blocks):
+
+                new_ids = big_blocks[0:len(small_blocks)]
+
+            else:
+
+                if len(big_blocks) == 0:
+                    new_ids = small_blocks
+                    for i in range(0,len(small_blocks),2):
+
+                        try:
+                            new_ids[i] = new_ids[i+1]
+
+                        except:
+                            new_ids[i] = new_ids[i-1]
+
+                else:
+
+                    new_ids = small_blocks
+                    new_ids[0:len(big_blocks)] = big_blocks
+
+            new_ids = new_ids.extend(big_blocks)
+            self.points_data['block_id'] = new_ids
+
+        print('all small blocks are merged')
+
 
     def assign_bv(self,grain):
 
