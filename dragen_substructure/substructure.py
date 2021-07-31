@@ -258,7 +258,7 @@ class Grain(RVEUtils):
                     bp_list.append(group['packet_id'].iloc[0])
 
             if len(small_packets) == 1:
-                dis = np.array([small_packets[0] - big_packet for big_packet in big_packets])
+                dis = np.array([abs(small_packets[0] - big_packet) for big_packet in big_packets])
                 new_id = \
                 self.points_data.loc[self.points_data['strip_packet_id'] == big_packets[np.argmin(dis)], 'packet_id'].iloc[
                     0]
@@ -283,12 +283,12 @@ class Grain(RVEUtils):
                         new_id = old_id
                     else:
                         if len(big_packets) == 0:
-                            dis = np.array([small_packets[j] - small_packet for small_packet in small_packets if
+                            dis = np.array([abs(small_packets[j] - small_packet) for small_packet in small_packets if
                                             small_packet != small_packets[j]])
                             new_id = self.points_data.loc[
                                 self.points_data['strip_packet_id'] == small_packets[np.argmin(dis)], 'packet_id'].iloc[0]
                         else:
-                            dis = np.array([small_packets[j] - big_packet for big_packet in big_packets])
+                            dis = np.array([abs(small_packets[j] - big_packet) for big_packet in big_packets])
                             new_id = self.points_data.loc[
                                 self.points_data['strip_packet_id'] == big_packets[np.argmin(dis)], 'packet_id'].iloc[0]
 
