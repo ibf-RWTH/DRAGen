@@ -10,7 +10,7 @@ import pandas as pd
 from dragen.generation.DiscreteRsa3D import DiscreteRsa3D
 from dragen.generation.DiscreteTesselation3D import Tesselation3D
 from dragen.utilities.RVE_Utils import RVEUtils
-from dragen.generation.mesher import Mesher
+from dragen.generation.sub_mesh import Sub_Mesher
 from dragen.postprocessing.voldistribution import PostProcVol
 from dragen_substructure.run import Run as Sub_Run
 
@@ -184,8 +184,8 @@ class DataTask3D(RVEUtils):
             subs_rve = sub_run.run(periodic_rve_df, grains_df, 6.8, 0.5, 0.01, 0, 1, store_path=self.store_path)#grain_id -1
             # Start the Mesher
             #debug_df.to_csv('debug_grains_df.csv', index=False)
-            mesher_obj = Mesher(subs_rve, grains_df, store_path=store_path, #needs to be merged
-                                phase_two_isotropic=True, animation=self.animation,
+            mesher_obj = Sub_Mesher(subs_rve, grains_df, store_path=store_path, #needs to be merged
+                                phase_two_isotropic=False, animation=self.animation,
                                 infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag)
             mesher_obj.mesh_and_build_abaqus_model()
         return store_path
