@@ -6,6 +6,7 @@ Functions for writing output fo Spectral Solver: 3 Files:
 """
 import numpy as np
 import pandas as pd
+import pyvista as pv
 
 
 def make_config(store_path, n_grains, grains_df, band=True) -> None:
@@ -157,13 +158,31 @@ def make_config(store_path, n_grains, grains_df, band=True) -> None:
                                .format(angles[0], angles2[1], angles[2]))
 
 
-def make_geom(rve, grid_size, spacing, n_grains, store_path) -> None:
+def make_geom(rve, grid_size, spacing, store_path) -> None:
+    # TODO: Add pyvista-meshing here to visualize RVE
+
+    # Start with the plot
+    start = int(rve.__len__() / 4)
+    stop = int(rve.__len__() / 4 + rve.__len__() / 2)
+    real_rve = rve[start:stop, start:stop, start:stop]
+    x = np.linspace(0, grid_size * spacing, num=real_rve.__len__()+1)
+    y = np.linspace(0, grid_size * spacing, num=real_rve.__len__()+1)
+    z = np.linspace(0, grid_size * spacing, num=real_rve.__len__()+1)
+    xx, yy, zz = np.meshgrid(x,y,z)
+    grid = pv.StructuredGrid(xx, yy, zz)
+    grid.cell_arrays['grains'] = real_rve.flatten()
+    plotter = pv.Plotter(window_size=(800, 600))
+    plotter.add_mesh(grid)
+    plotter.add_axes()
+    plotter.show(screenshot=store_path + '/rve.png')
+
+
     homogenization = 1
-    with open(store_path + '/' + 'RVE.geom'.format(n_grains, grid_size), 'w') as geom:
+    with open(store_path + '/' + 'RVE.geom', 'w') as geom:
         geom.writelines('4 header\n')  # Kommt drauf an wie viele Header es gibt
         geom.writelines('grid\ta {0}\tb {0}\tc {0}\n'.format(grid_size))
         geom.writelines('size\tx {0}\ty {0}\tz {0}\n'.format(spacing / 1000))
-        geom.writelines('microstructures {}\n'.format(n_grains))
+        geom.writelines('microstructures {}\n'.format(rve.max()))
         geom.writelines('homogenization\t{}\n'.format(homogenization))
 
         # Write the values
@@ -196,10 +215,15 @@ def make_load(store_path) -> None:
             'fdot * 0 0  0 2.0e-2 0  0 0 *  stress  0 * *   * * *   * * 0  time 10  incs 100')     # rot 0.70710678 -0.70710678 0.0  0.70710678 0.70710678 0.0  0.0 0.0 1.0')
 
 
-def make_load_from_defgrad(file_path, store_path, single=False):
-    '''
-    TODO: Write informations
-    '''
+def make_load_from_defgrad(file_path, store_path, single=True):
+    """
+    Writes the defgrad for Damask-Spectral .load file
+    Two possibilities:
+        1.) Write the deformation gradient RATE for each extracted element from Abaqus
+            (so 100 incs in Abaqus -> 100 Damask load cases (single=False)
+            Currently leading to odd results!!!!
+        2.) Use the resulting defgrad (last increment) as single load case (single=True)
+    """
     defgrad_dataframe = pd.read_csv(file_path, sep='\t', header=0)
 
     # Step 1: Correct the F11 - F33 cols
@@ -209,7 +233,6 @@ def make_load_from_defgrad(file_path, store_path, single=False):
     defgrad_dataframe['F11_new'].iloc[0] = 0
     defgrad_dataframe['F22_new'].iloc[0] = 0
     defgrad_dataframe['F33_new'].iloc[0] = 0
-    print(defgrad_dataframe.columns)
 
     # Step 2: Get the STEP-values
     F11_step = defgrad_dataframe['F11_new'].diff().tolist()
@@ -225,6 +248,7 @@ def make_load_from_defgrad(file_path, store_path, single=False):
 
     # Step 3: Write the data
     if not single:
+        print('WARNING: Load case currently results in odd results in DAMASK!!')
         n_frames = defgrad_dataframe.__len__()
         with open(store_path + '/loadpath.load', 'w') as loadpath:
             for i in range(1, n_frames):
@@ -235,10 +259,27 @@ def make_load_from_defgrad(file_path, store_path, single=False):
                     1   # Time has to be zero to ensure valid sum of defgrad
                 ))
     else:
-        print('Currently not implemented')
-
+        F11 = defgrad_dataframe['F11_new'].iloc[-1]
+        F12 = defgrad_dataframe['F12'].iloc[-1]
+        F13 = defgrad_dataframe['F13'].iloc[-1]
+        F21 = defgrad_dataframe['F21'].iloc[-1]
+        F23 = defgrad_dataframe['F23'].iloc[-1]
+        F31 = defgrad_dataframe['F31'].iloc[-1]
+        F32 = defgrad_dataframe['F32'].iloc[-1]
+        with open(store_path + '/loadpath.load', 'w') as loadpath:
+            loadpath.writelines('Fdot {} {} {} {} {} {} {} {} {} stress * * * * 0 * * * 0 time {} incs 100\n'.format(
+                F11, F12, F13,
+                F21, '*', F23,
+                F31, F32, '*',
+                1
+                ))
 
 
 if __name__ == '__main__':
     # Testing RVE:
-    make_load_from_defgrad(file_path='../../ExampleInput/Defgrad_Biegen.txt', store_path='../../OutputData')
+    #make_load_from_defgrad(file_path='../../ExampleInput/Defgrad_Biegen.txt', store_path='../../OutputData', single=True)
+
+    # Test plotting function
+    rve = np.load('../../ExampleInput/RVE_Numpy.npy')
+
+    make_geom(store_path='../../OutputData', spacing=1, grid_size=100, rve=rve)

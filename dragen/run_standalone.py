@@ -10,14 +10,14 @@ if __name__ == "__main__":
 
     bands = True
     solver_typ = ['Spectral']
-    number_of_rve = 2
+    number_of_rve = 1
 
     # Read percentages:
     data_full = pd.read_csv('../ExampleInput/Full_Martensite_Percentage.csv')
     bandwidths = pd.read_csv('../ExampleInput/Bandwidths.csv')
     n_bands = pd.read_csv('../ExampleInput/NumberOfBands.csv')
 
-    v = 1
+    v = 0
     for solver in solver_typ:
         for i in range(number_of_rve):
 
@@ -38,9 +38,9 @@ if __name__ == "__main__":
                 number_of_bands = 0
                 bandwidth = 0
 
-            obj3D = DataTask3D_GAN(box_size=30, n_pts=50, number_of_bands=number_of_bands, bandwidth=bandwidth,
+            obj3D = DataTask3D_GAN(box_size=25, n_pts=50, number_of_bands=number_of_bands, bandwidth=bandwidth,
                                    shrink_factor=0.5,
-                                   band_filling=1.5, phase_ratio=float(full_percentage), inclusions_ratio=0.01,
+                                   band_filling=1.3, phase_ratio=float(full_percentage), inclusions_ratio=0.01,
                                    inclusions_flag=False, solver=solver, file1=None, file2=None, store_path='../',
                                    gui_flag=False, anim_flag=True, gan_flag=True, exe_flag=False)
             grains_df, store_path = obj3D.initializations(3, epoch=v)

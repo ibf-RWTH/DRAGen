@@ -158,21 +158,18 @@ class Tesselation3D(RVEUtils):
                 2.) If a grain is not growing in reality (difference between freepoints and freepoints_old), the 
                 grain is deleted. This avoids background growing and dumb results
                 Counting (i = i + 1) up only if no deletion happens
+                Als Workaround werden alle Bandpunkte nach 8 Epochen gelöscht, damit funktioniert es
                 '''
-                # Als Workaround werden alle Bandpunkte nach 8 Epochen gelöscht, damit funktioniert es
                 delta_grow = freepoints_old - freepoints
                 if (idx in band_idx) and (epoch == 8):
-                    #print('Del because of epoch')
                     grain_idx.remove(idx)
                     grain_idx_backup.remove(idx)
                 elif (grain_vol > self.final_volume[idx-1]) and not repeat:
                     grain_idx.remove(idx)
                     if idx in band_idx:
-                        #print('Del from Backup')
                         grain_idx_backup.remove(idx)
                 elif delta_grow == 0: # and not repeat:    # and not repeat beobachten
                     grain_idx.remove(idx)
-                    #grain_idx_backup.remove(idx)
                 else:
                     i += 1
 
@@ -190,12 +187,11 @@ class Tesselation3D(RVEUtils):
                 self.tesselation_plotter(rve, epoch)
             epoch += 1
             packingratio = (1 - freepoints / vol_0) * 100
-            # print('packingratio:', packingratio, '%')
             if gui:
                 self.progress_obj.emit(packingratio)
             else:
-                # TODO: In das .sta-File
-                print(packingratio)
+                with open(self.store_path + '/rve.sta', 'a') as sta:
+                    sta.writelines('Packingratio: {:.6%}\n'.format(packingratio/100))
 
         if packingratio == 100:
             status = True

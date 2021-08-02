@@ -45,10 +45,13 @@ class DataTask3D_GAN(RVEUtils):
         Parameters:  
         """
         self.number_of_bands = number_of_bands
-        if number_of_bands == 0:
-            self.bandwidth = np.zeros(shape=(3, 1))
+        if self.number_of_bands == 0:
+            self.bandwidth_sum = 0
         else:
+            self.bandwidth_sum = np.sum(np.asarray(bandwidth))  # To call sum() on list/tuple whatever
+            print('Sum BW: ', self.bandwidth_sum)
             self.bandwidth = np.asarray(bandwidth)
+            print('Bandbreiten-Array: ', self.bandwidth)
         self.band_filling = band_filling  # Percentage of Filling for the banded structure
         self.phase_ratio = phase_ratio  # 1 means all ferrite, 0 means all Martensite
         self.inclusion_ratio = inclusions_ratio  # Space occupied by inclusions
@@ -197,7 +200,7 @@ class DataTask3D_GAN(RVEUtils):
                 grain_vol += vol
                 inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
             else:
-                if (grain[0] > maximum):  # or (grain[0] > maximum*2) or (grain[2] > maximum*2):
+                if (grain[0] > maximum) or (grain[0] > maximum*3) or (grain[2] > maximum*3):
                     pass
                 else:
                     # Only append if smaller
@@ -219,7 +222,7 @@ class DataTask3D_GAN(RVEUtils):
             sta.writelines('\nNeeded {}-Loops to sample points for the bands!\n'.format(loop_counter))
 
         # Del last if to big and more than one value:
-        if grain_vol > 1.1 * max_volume and inp_list.__len__() > 0:
+        if grain_vol > 1.5 * max_volume and inp_list.__len__() > 0:
             # Pop
             idx = np.random.randint(0, inp_list.__len__())
             inp_list.pop(idx)
@@ -275,10 +278,9 @@ class DataTask3D_GAN(RVEUtils):
             sta.writelines('Calculating the phase ratio...\n')
 
         print('Bandberechnung')
-        print(self.bandwidth)
-        percentage_in_bands = (float(
-            (np.array(self.bandwidth).sum()) * self.number_of_bands * self.box_size ** 2) * self.band_filling) / \
+        percentage_in_bands = (self.bandwidth_sum * self.box_size ** 2 * self.band_filling) / \
                               (self.box_size ** 3)
+        print(percentage_in_bands)
 
         self.percentage_in_bands = percentage_in_bands
         new_phase_ratio = self.phase_ratio - percentage_in_bands
@@ -307,14 +309,14 @@ class DataTask3D_GAN(RVEUtils):
         """
         if self.number_of_bands > 0:
             starttime = time.time()
+            # FIXME: Das muss noch runter, samplen PRO band
             with open(store_path + '/rve.sta', 'a') as sta:
                 sta.writelines("\n\nRVE generation process has started with Band-creation \n")
                 sta.writelines(
                     "The total volume of the RVE is {0}*{0}*{0} = {1} \n".format(self.box_size, self.box_size ** 3))
-                adjusted_size = np.cbrt(
-                    (self.number_of_bands * np.asarray(self.bandwidth).sum() * self.box_size ** 2) * self.band_filling)
+                adjusted_size = np.cbrt((self.bandwidth[0] * self.box_size ** 2) * self.band_filling)
                 phase1 = self.sample_gan_input_2d(size=10000, label=6, boxsize=adjusted_size,
-                                                  maximum=np.amin(self.bandwidth) * 1.5)
+                                                  maximum=self.bandwidth[0] * 1.5)
                 bands_df = super().process_df(phase1, float(self.shrink_factor))
                 bands_df['phaseID'] = 2
                 sta.writelines('Sampled {} Martensite-Points for band-Creation! \n'.format(bands_df.__len__()))
@@ -337,19 +339,101 @@ class DataTask3D_GAN(RVEUtils):
             band_array = np.zeros((2 * self.n_pts, 2 * self.n_pts, 2 * self.n_pts))
             band_array = utils_obj_band.gen_boundaries_3D(band_array)
 
-            for i in range(self.number_of_bands):
-                band_array = utils_obj_band.band_generator(band_array, bandwidth=self.bandwidth[i])
+            # Place first band
+            x_0_list = list()
+            y_0_list = list()
+            z_0_list = list()
 
-            rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa_clustered(
-                banded_rsa_array=band_array,
+            # Zum abspeichern der Werte
+            band_list = list()
+
+            # Berechne center and store the values:
+            band_center_0 = int(self.bin_size + np.random.rand() * (self.box_size - self.bin_size))
+            band_half_0 = float(self.bandwidth[0] / 2)
+            band_list.append([band_half_0, band_center_0])
+
+            rsa_start = utils_obj_band.band_generator(store_path=self.store_path, band_array=band_array,
+                                                      bandwidth=self.bandwidth[0], center=band_center_0)
+            rsa, x_0, y_0, z_0, rsa_status = discrete_RSA_obj.run_rsa_clustered(
+                previous_rsa=rsa_start,
+                band_array=rsa_start,
                 animation=True)
+
+            x_0_list.extend(x_0)
+            y_0_list.extend(y_0)
+            z_0_list.extend(z_0)
+
+            # Place the Rest of the Bands
+            for i in range(1, self.number_of_bands):
+                print(i)
+                print('RSA zu Beginn Band 2.')
+
+                # ---------------------------------------------------------------------------------------------------
+                # Sample grains for the second band
+                with open(store_path + '/rve.sta', 'a') as sta:
+                    sta.writelines('\n\n Band number {}\n'.format(i+1))
+                    adjusted_size = np.cbrt((self.bandwidth[i] * self.box_size ** 2) * self.band_filling)
+                    phase1 = self.sample_gan_input_2d(size=10000, label=6, boxsize=adjusted_size,
+                                                      maximum=self.bandwidth[i] * 1.5)
+                    new_df = super().process_df(phase1, float(self.shrink_factor))
+                    new_df['phaseID'] = 2
+                    sta.writelines('Sampled {} Martensite-Points for band-Creation! \n'.format(new_df.__len__()))
+                    sta.writelines('The total conti volume is: {} \n'.format(np.sum(new_df['final_conti_volume'].values)))
+                    sta.writelines(
+                        'The total discrete volume is: {} \n'.format(np.sum(new_df['final_discrete_volume'].values)))
+                    bands_df = pd.concat([bands_df, new_df])
+                    bands_df.reset_index(inplace=True, drop=True)
+                    bands_df['GrainID'] = bands_df.index
+                # ---------------------------------------------------------------------------------------------------
+
+                # Fixme: Band-Array_new hat immer noch beide Bänder - CenterBerechnung rausziehen
+                band_array = np.zeros((2 * self.n_pts, 2 * self.n_pts, 2 * self.n_pts))
+                band_array = utils_obj_band.gen_boundaries_3D(band_array)
+
+                # Berechne neuen Center und prüfe überschneidung
+                intersect = True
+                while intersect == True:
+                    band_center = int(self.bin_size + np.random.rand() * (self.box_size - self.bin_size))
+                    band_half = self.bandwidth[i] / 2
+                    # Intersection when c_old - c_new < b_old + b_new (for each band)
+                    for [bw_old, bc_old] in band_list:
+                        bw_dist = bw_old + band_half
+                        bc_dist = abs(bc_old - band_center)
+                        if bc_dist <= bw_dist:
+                            # one single intercept is enough for breaking the loop
+                            intersect = True
+                            break
+                        else:
+                            intersect = False
+
+
+                band_array_new = utils_obj_band.band_generator(store_path=self.store_path, band_array=band_array,
+                                                               bandwidth=self.bandwidth[i], center=band_center)
+                discrete_RSA_obj = DiscreteRsa3D(self.box_size, self.n_pts,
+                                                 new_df['a'].tolist(),
+                                                 new_df['b'].tolist(),
+                                                 new_df['c'].tolist(),
+                                                 new_df['alpha'].tolist(), store_path=store_path)
+
+                # Get maximum value from previous RSA as starting pint
+                startindex = int(np.amin(rsa)+1000)*-1
+                print(startindex)
+                rsa, x_0, y_0, z_0, rsa_status = discrete_RSA_obj.run_rsa_clustered(
+                    previous_rsa=rsa,
+                    band_array=band_array_new,
+                    animation=True, startindex=startindex)  # Maximum value of previous is startpoint of new
+
+                x_0_list.extend(x_0)
+                y_0_list.extend(y_0)
+                z_0_list.extend(z_0)
+
             endtime = datetime.timedelta(seconds=(time.time() - starttime))
+
             with open(store_path + '/rve.sta', 'a') as sta:
                 sta.writelines('Elapsed time for band creation: {}\n\n'.format(endtime))
         else:
             rsa_status = True
 
-        breakpoint()
         """
         ----------------------------------------------------------------------------------
         Placing the rest of the grains!
@@ -365,8 +449,9 @@ class DataTask3D_GAN(RVEUtils):
                 sta.writelines("RVE generation process continues with placing of the ferrite grains and martensite "
                                "islands \n")
                 # Ferrite:
-                adjusted_size_ferrite = np.cbrt((self.box_size ** 3 - self.number_of_bands * np.asarray(self.bandwidth).sum() *
-                                                 self.box_size ** 2) * (1 - new_phase_ratio))
+                adjusted_size_ferrite = np.cbrt(
+                    (self.box_size ** 3 - self.band_filling * self.bandwidth_sum * self.box_size ** 2) * (
+                                1 - new_phase_ratio))
                 phase1 = self.sample_gan_input(size=800, labels=[0, 1, 2], adjusted_size=adjusted_size_ferrite)
                 grains_df = super().process_df(phase1, float(self.shrink_factor))
                 grains_df['phaseID'] = 1  # Ferrite_Grains
@@ -376,8 +461,9 @@ class DataTask3D_GAN(RVEUtils):
                 sta.writelines(
                     'The total discrete volume is: {} \n'.format(np.sum(grains_df['final_discrete_volume'].values)))
                 # Martensite
-                adjusted_size_martensite = np.cbrt((self.box_size ** 3 - self.number_of_bands * np.asarray(self.bandwidth).sum() *
-                                                    self.box_size ** 2) * new_phase_ratio)
+                adjusted_size_martensite = np.cbrt(
+                    (
+                                self.box_size ** 3 - self.band_filling * self.bandwidth_sum * self.box_size ** 2) * new_phase_ratio)
                 phase2 = self.sample_gan_input_2d(size=800, label=6, boxsize=adjusted_size_martensite,
                                                   maximum=self.box_size / 5)
                 grains_df_2 = super().process_df(phase2, float(self.shrink_factor))
@@ -508,7 +594,7 @@ class DataTask3D_GAN(RVEUtils):
         """
         -------------------------------------------------------------------------
         CREATE INPUT FOR NUMERICAL SOLVER!
-        There are two options available at the moment, Abqus/implicit and 
+        There are two options available at the moment, Abaqus/implicit and 
         DAMASK_Spectral.
         Control via solver == 'FEM' or 'Spectral'
         -------------------------------------------------------------------------
@@ -540,11 +626,11 @@ class DataTask3D_GAN(RVEUtils):
             # 2.) Make Geometry
             band = True if self.number_of_bands > 0 else False
             if band:
-                spectral.make_geom(rve=rve, n_grains=grains_df.__len__() + 1, grid_size=self.n_pts,
+                spectral.make_geom(rve=rve, grid_size=self.n_pts,
                                    spacing=self.box_size,
                                    store_path=store_path)
             else:
-                spectral.make_geom(rve=rve, n_grains=grains_df.__len__(), grid_size=self.n_pts, spacing=self.box_size,
+                spectral.make_geom(rve=rve, grid_size=self.n_pts, spacing=self.box_size,
                                    store_path=store_path)
 
             # 3.) Make config / material inpu

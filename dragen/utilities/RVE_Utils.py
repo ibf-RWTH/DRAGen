@@ -189,7 +189,7 @@ class RVEUtils:
         self.logger.info("Volume for the given radii: {}".format(d_vol))
         return d_vol
 
-    def band_generator(self, band_array: np.array, bandwidth=None, plane: str = 'xz'):
+    def band_generator(self, store_path, band_array: np.array, bandwidth=None, plane: str = 'xz', center=None):
         """Creates a band of given bandwidth for given points in interval [step_half, box_size)
         with bin_size spacing along the axis.
         Parameters :
@@ -204,6 +204,7 @@ class RVEUtils:
             band_half = bandwidth/2
 
         empty_array = band_array.copy()
+        band_array_backup = band_array.copy()
         empty_array[empty_array == -200] = 0
 
         if plane == 'xy':
@@ -220,6 +221,8 @@ class RVEUtils:
 
             # band_ center doesnt necessarily need to be an integer
             band_center = int(self.bin_size + np.random.rand() * (self.box_size - self.bin_size))
+            if center is not None:
+                band_center = center
             print('center: ', band_center)
             left_bound = band_center - band_half
             right_bound = band_center + band_half
@@ -232,15 +235,28 @@ class RVEUtils:
             # place current band
             band_array[(r >= left_bound) & (r <= right_bound) & (band_array == 0)] = -200
 
-            # get total volume of all bands
+            # get total volume of ALL bands
             rve_band_vol_new = np.count_nonzero(band_array == -200)
 
             # compare real volume and theoretical volume of current band if bands are exactly on top of
             # each other band_vol_0_theo = 0 which must be avoided
-            if ((rve_band_vol_old + band_vol_0_theo) == rve_band_vol_new) and not band_vol_0_theo == 0:
+            # NEW: Bands should not intersect
+            """print('Altes Volumen: ', rve_band_vol_old)
+            print('Neues Volumen: ', rve_band_vol_new)
+            print('Theoretisches Neues Vol: ', band_vol_0_theo)
+            print(rve_band_vol_old + band_vol_0_theo)
+            print(rve_band_vol_old + rve_band_vol_new)"""
+            if ((rve_band_vol_old + band_vol_0_theo) == (rve_band_vol_new)) and not band_vol_0_theo == 0:
                 band_is_placed = True
                 self.logger.info("Band generator - Bandwidth: {}, Left bound: {} and Right bound: {}"
                                  .format(self.bandwidth, left_bound, right_bound))
+                with open(store_path + '/rve.sta', 'a') as sta:
+                    sta.writelines("Band generator - Bandwidth: {}, Left bound: {} and Right bound: {}\n"
+                                   .format(bandwidth, left_bound, right_bound))
+            else:
+                band_array = band_array_backup.copy()
+                empty_array = band_array.copy()
+
 
         return band_array
 
@@ -826,4 +842,7 @@ class RVEUtils:
         grains_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
 
         return grains_df
+
+
+
 

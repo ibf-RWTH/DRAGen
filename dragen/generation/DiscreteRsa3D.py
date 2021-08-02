@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import matplotlib.pyplot as plt
 import random
@@ -77,7 +79,8 @@ class DiscreteRsa3D(RVEUtils):
         plt.ioff()
         t_0 = datetime.datetime.now()
         n_grains = self.n_grains
-        rve_x, rve_y, rve_z = np.where((array >= 1) | (array == -200) | (array < -200))
+        #rve_x, rve_y, rve_z = np.where((array >= 1) | (array == -200) | (array < -200))
+        rve_x, rve_y, rve_z = np.where((array >= 1) | (array == -1000) | (array < -200)) # For bands
         grain_tuples = [*zip(rve_x, rve_y, rve_z)]
         grains_x = [self.x_grid[grain_tuples_i[0]][grain_tuples_i[1]][grain_tuples_i[2]]
                     for grain_tuples_i in grain_tuples]
@@ -88,14 +91,14 @@ class DiscreteRsa3D(RVEUtils):
 
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array > 0) | (array == -200) | (array < -200))],
+        """ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array > 0) | (array == -200) | (array < -200))],
                    s=1, vmin=-20,
-                   vmax=n_grains, cmap='seismic')  # lower -200 for band grains and inclusions
+                   vmax=n_grains, cmap='seismic')"""  # lower -200 for band grains and inclusions"""
         #ax.scatter(grains_x, grains_y, grains_z, c='black', s=1)
 
-        """ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array > 0) | (array == -1000) | (array < -200))],
+        ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array > 0) | (array == -1000) | (array < -200))],
                    s=1, vmin=-0,
-                   vmax=n_grains, cmap='seismic')"""
+                   vmax=n_grains, cmap='seismic')
 
         ax.set_xlim(-5, self.box_size + 5)
         ax.set_ylim(-5, self.box_size + 5)
@@ -106,7 +109,7 @@ class DiscreteRsa3D(RVEUtils):
         # ax.view_init(90, 270)
         # plt.show()
 
-        # ax.view_init(270, 90)  # facing in z-direction (clockwise rotation)
+        ax.view_init(270, 90)  # facing in z-direction (clockwise rotation)
         # ax.view_init(90, 270) #facing against z-direction (counterclockwise rotation)
         # plt.show()
 
@@ -209,7 +212,7 @@ class DiscreteRsa3D(RVEUtils):
 
         return rsa, x_0_list, y_0_list, z_0_list, status
 
-    def run_rsa_clustered(self, banded_rsa_array, animation=False):
+    def run_rsa_clustered(self, previous_rsa, band_array, animation=False, startindex=0): # FIXME: Startindex ergänzen
         """
         Parameters:
             banded_rsa_array: banded area with -200 everywhere
@@ -223,31 +226,45 @@ class DiscreteRsa3D(RVEUtils):
         """
         status = False
 
-        if banded_rsa_array is None:
+        if previous_rsa is None:
             self.logger.info('This cluster-rsa needs a defined band ')
         else:
-            rsa = banded_rsa_array
+            # Use this array for checking, because here is only the band "free"
+            rsa = band_array.copy()
+            #print('Normal band array')
+            #print(np.asarray(np.unique(rsa, return_counts=True)).T)
+            # Place in this Array
+            placement_rsa = previous_rsa.copy()
+            #print('Previous RSA-array')
+            #print(np.asarray(np.unique(placement_rsa, return_counts=True)).T)
 
         # Change values:
         shadow_rsa = rsa.copy()
         rsa[np.where(shadow_rsa == -200)] = 0
         rsa[np.where(shadow_rsa == 0)] = -200
+        #print('Normal Band Array after switching')
+        #print(np.asarray(np.unique(rsa, return_counts=True)).T)
+
+        #shadow_rsa_placement = placement_rsa.copy()
+        #placement_rsa[np.where(shadow_rsa_placement == -200)] = 0
+        #placement_rsa[np.where(shadow_rsa_placement == 0)] = -200
 
         # --------------------------------------------------
         fig = plt.figure(figsize=(30, 30))
         ax = fig.gca(projection='3d')
         ax.set_aspect('auto')
         ax.voxels(rsa == -200, edgecolor="k")
-        fig.savefig(self.store_path + '/' + 'Cluster.png')
+        fig.savefig(self.store_path + '/' + 'Cluster_{}.png'.format(time.time()))
         # --------------------------------------------------
 
         # Init
         band_vol_0 = np.count_nonzero(rsa == -200)  # Zähle -200 für initiales Gefüge
         print('Initiales, nicht belegbares Volumen:', band_vol_0)
-        rsa_boundaries = rsa.copy()
         x_0_list = list()
         y_0_list = list()
         z_0_list = list()
+
+        rsa_boundaries = rsa.copy()
 
         i = 1
         attempt = 0
@@ -263,23 +280,21 @@ class DiscreteRsa3D(RVEUtils):
             grain = rsa_boundaries.copy()
             backup_rsa = rsa.copy()
             ellipsoid, x0, y0, z0 = self.gen_ellipsoid(rsa, iterator=i - 1)
-            grain[(ellipsoid <= 1) & ((grain == 0) | (grain == -200))] = -(1000 + i)
+            grain[(ellipsoid <= 1) & ((grain == 0) | (grain == -200))] = -(1000 + i + startindex)
             # print(np.unique(grain))
-            periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=-(1000 + i))
+            periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=-(1000 + i + startindex))
             # print(np.unique(periodic_grain))
-            rsa[(periodic_grain == -(1000 + i)) & ((rsa == 0) | (rsa == -200))] = -(1000 + i)
-            #print(np.asarray(np.unique(periodic_grain, return_counts=True)).T)
-            #print(free_points_old)
-            #print(band_points_old)
-
-            if animation:
-                self.rsa_plotter(rsa, iterator=-(1000 + i), attempt=attempt)
+            rsa2 = rsa.copy()
+            rsa[(periodic_grain == -(1000 + i + startindex)) & ((rsa == 0) | (rsa == -200))] = -(1000 + i + startindex)
+            """print(np.unique((periodic_grain == -(1000 + i)), return_counts=True))
+            print(np.unique(((rsa2 == 0) | (rsa2 == -200)), return_counts=True))
+            print(np.unique((periodic_grain == -(1000 + i)) & ((rsa2 == 0) | (rsa2 == -200)), return_counts=True))"""
 
             free_points = np.count_nonzero(rsa == 0)
             band_points = np.count_nonzero(rsa == -200)
-            #print(free_points)
-            #print(band_points)
+
             #print(free_points_old+band_points_old-free_points-band_points)
+            #print(np.count_nonzero(periodic_grain))
             if band_points_old > 0:
                 # Schnitte zulassen...Es geht wohl nicht anders
                 # > xy x grain_points heißt, dass mindestens XX% des Korns im freien Raum platziert werden müssen
@@ -290,12 +305,21 @@ class DiscreteRsa3D(RVEUtils):
                     attempt = attempt + 1
 
                 else:
+                    # Place now the grain in the "real" rsa
+                    """print('Place grain in new RSA')
+                    print(np.unique((periodic_grain == -(1000 + i)), return_counts=True))
+                    print(np.unique(((rsa2 == 0) | (rsa2 == -200)), return_counts=True))
+                    print(np.unique((periodic_grain == -(1000 + i)) & ((rsa2 == 0) | (rsa2 == -200)), return_counts=True))"""
+                    placement_rsa[(periodic_grain == -(1000 + i + startindex)) & ((rsa2 == 0) | (rsa2 == -200))] = -(1000 + i + startindex)
+                    #print(np.asarray(np.unique(placement_rsa, return_counts=True)).T)
                     x_0_list.append(x0)
                     y_0_list.append(y0)
                     z_0_list.append(z0)
                     i = i + 1
                     sum_attempts = sum_attempts + attempt
-                    attempt = 0
+                    if animation:
+                        self.rsa_plotter(placement_rsa, iterator=-(1000 + i + startindex), attempt=attempt)
+                    attempt = 1
                     if self.debug:
                         time_elapse = datetime.datetime.now() - t_0
                         self.logger.info(
@@ -325,12 +349,16 @@ class DiscreteRsa3D(RVEUtils):
             self.logger.info("Not all grains could be placed please decrease shrinkfactor!")
 
         # Change -200 in rsa_array back to 0
-        print(np.asarray(np.unique(rsa, return_counts=True)).T)
-        rsa[np.where(rsa == -200)] = 0
-        print(np.asarray(np.unique(rsa, return_counts=True)).T)
+        #print(np.asarray(np.unique(placement_rsa, return_counts=True)).T)
+        placement_rsa[np.where(placement_rsa == -200)] = 0
+        print(np.asarray(np.unique(placement_rsa, return_counts=True)).T)
+
+        rsa[np.where(placement_rsa == -200)] = 0
+
         with open(self.store_path + '/rve.sta', 'a') as sta:
             sta.writelines('Total number of attempts needed: {}\n\n'.format(sum_attempts))
-        return rsa, x_0_list, y_0_list, z_0_list, status
+
+        return placement_rsa, x_0_list, y_0_list, z_0_list, status
 
     def run_rsa_inclusions(self, rve, animation=False):
         """
