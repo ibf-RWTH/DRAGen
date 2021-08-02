@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import warnings
-from dragen_substructure.data import save_data
+from substructure.data import save_data
 import math
 import scipy.stats as stats
 #block_id needs modification
@@ -234,7 +234,7 @@ class Grain(RVEUtils):
             packets_list = self.packets_list
 
         self.second_cut_list = np.array(self.second_cut_list).squeeze()
-        self.merge_small_packets()
+        #self.merge_small_packets()
 
     def merge_small_packets(self):
         while (self.points_data.groupby('packet_id').apply(len) < 10).any():
@@ -263,7 +263,6 @@ class Grain(RVEUtils):
                 self.points_data.loc[self.points_data['strip_packet_id'] == big_packets[np.argmin(dis)], 'packet_id'].iloc[
                     0]
                 self.points_data.loc[self.points_data['strip_packet_id'] == small_packets[0], 'packet_id'] = new_id
-                print('all small packets are merged')
                 break
 
             new_id_list = []
@@ -314,12 +313,15 @@ class Grain(RVEUtils):
     def gen_blocks(self, t_mu, sigma, lower=None, upper=None):
 
         self.points_data['block_id'] = np.nan
+        self.points_data['block_thickness'] = np.nan
         points_data = self.points_data.copy()
 
         for packet in self.packets_list:
 
             packet.gen_blocks(t_mu,sigma,lower=lower,upper=upper)
+            packet.get_bt()
             points_data.loc[packet.points_data.index,'block_id'] = packet.points_data['block_id']
+            points_data.loc[packet.points_data.index,'block_thickness'] = packet.points_data['block_thickness']
 
         self.points_data = points_data
 
@@ -566,8 +568,8 @@ class Packet():
         points_data.dropna(axis=0,inplace=True,how='any')
 
         self.points_data = points_data
-        if len(self.points_data) > 10:
-            self.merge_small_block()
+        # if len(self.points_data) > 10:
+        #     self.merge_small_block()
 
     def strip_pid(self,bid):
 
@@ -595,7 +597,7 @@ class Packet():
                     bb_list.append(group['block_id'].iloc[0])
 
             if len(small_blocks) == 1:
-                dis = np.array([small_blocks[0] - big_block for big_block in big_blocks])
+                dis = np.array([abs(small_blocks[0] - big_block) for big_block in big_blocks])
                 new_id = self.points_data.loc[self.points_data['strip_block_id'] == big_blocks[np.argmin(dis)], 'block_id'].iloc[0]
                 self.points_data.loc[self.points_data['strip_block_id'] == small_blocks[0],'block_id'] = new_id
                 print('all small blocks are merged')
@@ -619,10 +621,10 @@ class Packet():
                         new_id = old_id
                     else:
                         if len(big_blocks) == 0:
-                            dis = np.array([small_blocks[j] - small_block for small_block in small_blocks if small_block != small_blocks[j]])
+                            dis = np.array([abs(small_blocks[j] - small_block) for small_block in small_blocks if small_block != small_blocks[j]])
                             new_id = self.points_data.loc[self.points_data['strip_block_id'] == small_blocks[np.argmin(dis)], 'block_id'].iloc[0]
                         else:
-                            dis = np.array([small_blocks[j] - big_block for big_block in big_blocks])
+                            dis = np.array([abs(small_blocks[j] - big_block) for big_block in big_blocks])
                             new_id = self.points_data.loc[self.points_data['strip_block_id'] == big_blocks[np.argmin(dis)],'block_id'].iloc[0]
 
                 else: #adjacent block is small one
@@ -634,8 +636,8 @@ class Packet():
 
             old_id_list.extend(bb_list)
             new_id_list.extend(bb_list)
-            # print(old_id_list)
-            # print(new_id_list)
+            print(old_id_list)
+            print(new_id_list)
             old_to_new = dict(zip(old_id_list,new_id_list))
 
             new_bid = self.points_data['block_id'].map(lambda bid:old_to_new[bid])
@@ -648,9 +650,9 @@ class Packet():
     def get_bt(self):
 
         bg = self.points_data.groupby('block_id')
-
-        for b in bg:
-            print(b)
+        bid_to_bt = bg['p_dis'].apply(max)-bg['p_dis'].apply(min)
+        self.points_data['block_thickness'] = self.points_data.apply(lambda p:bid_to_bt[p['block_id']],axis=1)
+        self.points_data.drop('p_dis',inplace=True,axis=1)
 
 
     def assign_bv(self,grain):
@@ -678,7 +680,7 @@ class Packet():
 if __name__ == '__main__':
 
     grains_data = pd.read_csv('F:/pycharm/2nd_mini_thesis/dragen-master/dragen/OutputData/2021-06-10_0/Generation_Data/grain_data_output_discrete.csv')
-    grain_data = grains_data.iloc[5]
+    grain_data = grains_data.iloc[0]
 
     orientation = (grain_data['phi1'],grain_data['PHI'],grain_data['phi2'])
     grain = Grain(20,40,grain_data['final_conti_volume'],grain_data['a'],grain_data['b'],grain_data['c'],grainID=grain_data['GrainID'],phaseID=grain_data['phaseID'],
@@ -688,6 +690,7 @@ if __name__ == '__main__':
 
     grain.gen_blocks(0.5, 0.61)
     grain.block_orientation_assignment()
+    print(grain.points_data)
 
     # grain.substruct_plotter('packet')
     # grain.substruct_plotter('block')
