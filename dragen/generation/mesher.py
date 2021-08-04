@@ -211,17 +211,18 @@ class Mesher:
         f.write('**\n')
         f.close()
 
+        x_min = min(rve.x)
+        y_min = min(rve.y)
+        z_min = min(rve.z)
+        x_max = max(rve.x)
+        y_max = max(rve.y)
+        z_max = max(rve.z)
+        gid_list = list()
+
         for i in range(self.n_grains):
 
-            x_min = min(rve.x)
-            y_min = min(rve.y)
-            z_min = min(rve.z)
-            x_max = max(rve.x)
-            y_max = max(rve.y)
-            z_max = max(rve.z)
-            nGrain = i + 1
-
-            tri_idx = fl_df.loc[(fl_df[0] == nGrain) | (fl_df[1] == nGrain)].index
+            gid = i + 1
+            tri_idx = fl_df.loc[(fl_df[0] == gid) | (fl_df[1] == gid)].index
             triGrain = tri[tri_idx, :]
             faces = triGrain.astype('int32')
             sub_surf = pv.PolyData(smooth_points, faces)
@@ -253,30 +254,19 @@ class Mesher:
                 self.progress_obj.emit(75+(100*(i+1)/self.n_grains/4))
             grainIDList = [i + 1]
             grainID_array = grainIDList * ncells
-            sub_grid['GrainID'] = grainID_array
+            gid_list.extend(grainID_array)
+
             if i == 0:
                 grid = sub_grid
             else:
-                if len(grid.cell_arrays.keys()) == 0:
-                    # print(i, grid.cell_arrays.keys())
-                    if self.gui:
-                        self.infobox_obj.emit('uuups! I lost the grainID_key! please increase the resolution')
-                    else:
-                        self.logger.info('I lost the grainID_key! please increase the resolution')
-                    return
                 grid = sub_grid.merge(grid)
             grain_vol = sub_grid.volume
-            #self.logger.info(str(grain_vol*10**9))
             self.grains_df.loc[self.grains_df['GrainID'] == i, 'meshed_conti_volume'] = grain_vol*10**9
 
         self.grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
-
+        grid.cell_arrays['GrainID'] = gid_list
         print('ende', grid.cell_arrays.keys())
-        if len(grid.cell_arrays.keys()) == 0:
-            print(i, grid.cell_arrays.keys())
-            if self.gui:
-                self.infobox_obj.emit('uuups! I lost the grainID_key! please increase the resolution')
-            return
+
         #sys.exit()
         pv.save_meshio(self.store_path + '/rve-part.inp', grid)
         f = open(self.store_path + '/rve-part.inp', 'r')
