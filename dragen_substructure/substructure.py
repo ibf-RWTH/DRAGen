@@ -174,8 +174,7 @@ class Grain(RVEUtils):
         points_data = self.points_data.copy()
         groups = points_data.groupby('packet_id')
         kl = list(groups.groups.keys())
-        self.packets_list = [Packet(groups.get_group(pid)) for pid in kl]
-
+        self.packets_list = [Packet(groups.get_group(pid)) for pid in kl]  # update packets list
         return packet_id,plane_list
 
     def int_solution(self,k):
@@ -200,6 +199,7 @@ class Grain(RVEUtils):
         n = self.int_solution(k)
 
         self.insert_plane(n)  # these are the packet_id and plane_list at first round, in other words, before the second cut process
+        self.merge_small_packets()
 
         packets_list = self.packets_list.copy()
 
@@ -234,11 +234,14 @@ class Grain(RVEUtils):
             packets_list = self.packets_list
 
         self.second_cut_list = np.array(self.second_cut_list).squeeze()
-        #self.merge_small_packets()
+
 
     def merge_small_packets(self):
         while (self.points_data.groupby('packet_id').apply(len) < 10).any():
             # print('before merge',(self.points_data.groupby('block_id').apply(len) < 10).any())
+            if self.packets_list is not None:
+                if len(self.packets_list) == 1:
+                    break #in case the size of grain is too small
             pid = self.points_data['packet_id'].map(lambda pid: int(pid.replace('p','')))
             self.points_data['strip_packet_id'] = pid
             self.points_data.sort_values('strip_packet_id',
@@ -307,8 +310,12 @@ class Grain(RVEUtils):
             self.points_data['packet_id'] = new_pid
             # print('after merge',self.points_data.groupby('packet_id').apply(len)<10)
             self.points_data.drop('strip_packet_id',axis=1)
-        print('all small packets are merged')
 
+        points_data = self.points_data.copy()
+        groups = points_data.groupby('packet_id')
+        kl = list(groups.groups.keys())
+        self.packets_list = [Packet(groups.get_group(pid)) for pid in kl]# update packets list
+        print('all small packets in grain {} are merged'.format(self.grainID))
 
     def gen_blocks(self, t_mu, sigma, lower=None, upper=None):
 
@@ -464,9 +471,18 @@ class Packet():
 
         h_iter = np.random.randint(4, size=1)[0]
         cut_plane = np.array(hp_normal_list[h_iter]).astype(float)
-        cut_point = points_data.iloc[np.random.randint(len(points_data),size=1)]
+        d_values = points_data.apply(lambda p:-(p['x']*cut_plane[...,0] + p['y']*cut_plane[...,1] + p['z']*cut_plane[...,2]),axis=1)
+        d_values.sort_values(inplace=True)
 
-        d = -(cut_point['x']*cut_plane[...,0] + cut_point['y']*cut_plane[...,1] + cut_point['z']*cut_plane[...,2]).values
+        if len(d_values)%2 == 0:
+
+            index = int(len(d_values)/2) - 1
+        else:
+
+            index = int((len(d_values)-1)/2) - 1
+        cut_point = points_data.iloc[index]
+
+        d = -(cut_point['x']*cut_plane[...,0] + cut_point['y']*cut_plane[...,1] + cut_point['z']*cut_plane[...,2])
 
         new_id = points_data.apply(lambda p:self.id_assign(p,cut_plane,d),axis=1)
         points_data['packet_id'] = np.char.add(old_id,new_id)
@@ -474,18 +490,14 @@ class Packet():
         #with new_id, 2 new packets generated within original one
         groups = points_data.groupby('packet_id')
 
-        try:
+        if len(list(groups.groups.keys())) == 1:
+            raise TooSmallSizeError('The size of packet is too small!')
+        else:
             p_id1 = list(groups.groups.keys())[0]
             p_id2 = list(groups.groups.keys())[1]
 
             points1 = groups.get_group(p_id1)
             points2 = groups.get_group(p_id2)
-
-        except:
-
-            print('the size of packet is too small')
-
-            return
 
         cut_plane = np.insert(cut_plane,3,d,axis=1)
 
@@ -568,8 +580,8 @@ class Packet():
         points_data.dropna(axis=0,inplace=True,how='any')
 
         self.points_data = points_data
-        # if len(self.points_data) > 10:
-        #     self.merge_small_block()
+        if len(self.points_data) > 10:
+            self.merge_small_block()
 
     def strip_pid(self,bid):
 
@@ -600,7 +612,6 @@ class Packet():
                 dis = np.array([abs(small_blocks[0] - big_block) for big_block in big_blocks])
                 new_id = self.points_data.loc[self.points_data['strip_block_id'] == big_blocks[np.argmin(dis)], 'block_id'].iloc[0]
                 self.points_data.loc[self.points_data['strip_block_id'] == small_blocks[0],'block_id'] = new_id
-                print('all small blocks are merged')
                 break
 
             new_id_list = []
@@ -636,8 +647,7 @@ class Packet():
 
             old_id_list.extend(bb_list)
             new_id_list.extend(bb_list)
-            print(old_id_list)
-            print(new_id_list)
+
             old_to_new = dict(zip(old_id_list,new_id_list))
 
             new_bid = self.points_data['block_id'].map(lambda bid:old_to_new[bid])
@@ -645,14 +655,17 @@ class Packet():
             #print('after merge',self.points_data.groupby('block_id').apply(len)<10)
             self.points_data.drop('strip_block_id',axis=1)
 
-        print('all small blocks are merged')
+        print('all small blocks in packet {} are merged'.format(self['id']))
 
     def get_bt(self):
 
+        self.points_data['block_thickness'] = np.nan
         bg = self.points_data.groupby('block_id')
         bid_to_bt = bg['p_dis'].apply(max)-bg['p_dis'].apply(min)
         self.points_data['block_thickness'] = self.points_data.apply(lambda p:bid_to_bt[p['block_id']],axis=1)
         self.points_data.drop('p_dis',inplace=True,axis=1)
+        self.points_data.drop(self.points_data[self.points_data['block_thickness'] == 0].index |
+                              self.points_data[self.points_data['block_thickness'].isnull()].index,inplace=True)
 
 
     def assign_bv(self,grain):
@@ -676,38 +689,34 @@ class Packet():
         pb.loc[p % 2 != vi, 'block_orientation'] = V2[0]
 
         self.points_data = pb
+class TooSmallSizeError(Exception):
+    def __init__(self,info):
+        super().__init__(self)
+        self.info = info
 
+    def __str__(self):
+        return self.info
 if __name__ == '__main__':
 
     grains_data = pd.read_csv('F:/pycharm/2nd_mini_thesis/dragen-master/dragen/OutputData/2021-06-10_0/Generation_Data/grain_data_output_discrete.csv')
-    grain_data = grains_data.iloc[0]
 
-    orientation = (grain_data['phi1'],grain_data['PHI'],grain_data['phi2'])
-    grain = Grain(20,40,grain_data['final_conti_volume'],grain_data['a'],grain_data['b'],grain_data['c'],grainID=grain_data['GrainID'],phaseID=grain_data['phaseID'],
-                  alpha=grain_data['alpha'],orientation=orientation)
+    for i in range(50):
+        grain_data = grains_data.iloc[i]
 
-    grain.gen_packets(5) #give the equivd of packets
+        orientation = (grain_data['phi1'],grain_data['PHI'],grain_data['phi2'])
+        grain = Grain(20,40,grain_data['final_conti_volume'],grain_data['a'],grain_data['b'],grain_data['c'],grainID=grain_data['GrainID'],phaseID=grain_data['phaseID'],
+                          alpha=grain_data['alpha'],orientation=orientation)
 
-    grain.gen_blocks(0.5, 0.61)
-    grain.block_orientation_assignment()
-    print(grain.points_data)
+        grain.gen_packets(5) #give the equivd of packets
+
+        grain.gen_blocks(0.5, 0.61)
+        print(i)
+    # grain.block_orientation_assignment()
+
 
     # grain.substruct_plotter('packet')
     # grain.substruct_plotter('block')
 
-
-    # grains_x, grains_y, grains_z, ic = rve_load(
-    #     'F:/pycharm/2nd_mini_thesis/dragen-master/dragen/OutputData/2021-06-10_0/RVE_Numpy.npy', box_size=20, n_pts=40)
-    # grains_list = grains_in_rve(grains_x, grains_y, grains_z, ic,
-    #                             'F:/pycharm/2nd_mini_thesis/dragen-master/dragen/OutputData/2021-06-10_0/Generation_Data/grain_data_output_conti.csv',equiv_d=6.8)
-    #
-    # data = grains_list
-    # save_data(data,'data.pkl')
-    #
-    # print('plotting begins')
-    # rve_substruct_plotter(grains_list, 'grain','rve_grain.png')
-    # rve_substruct_plotter(grains_list, 'packet','rve_packet.png')
-    # rve_substruct_plotter(grains_list, 'block','rve_block.png')
 
 
 
