@@ -1,5 +1,7 @@
 # Conditional WGAN with gradient penalty
 import glob
+import sys
+
 import torch
 import torch.autograd as autograd
 import numpy as np
@@ -29,11 +31,17 @@ class WGANCGP(WGAN_BaseClass.WGAN):
     def __init__(self, df_list, num_features, storepath, batch_size=512, depth=2, width_d=128, width_g=128, p=0.0,
                  gen_iters=150000, learning_rate=0.00005, d_loop=5, z_dim=512,
                  embed_size=2, lambda_p=0.1, beta1=0.9, beta2=0.99,
-                 n_eval=1000, optimizer='Adam', activationg='Relu',
+                 n_eval=1000, optimizer='RMSProp', activationg='tanh',
                  activationd='Relu', normalize=False, centered=False, backend='tensorized'):
-        super(WGANCGP, self).__init__(df=df_list[0], batch_size=batch_size, num_features=num_features, depth=depth,
-                                      width_d=width_d, width_g=width_g, p=p, num_epochs=None, learning_rate=learning_rate,
-                                      d_loop=d_loop, z_dim=z_dim, lipschitz_const=0.01)
+        if df_list.__len__() != 0:
+            super(WGANCGP, self).__init__(df=df_list[0], batch_size=batch_size, num_features=num_features, depth=depth,
+                                          width_d=width_d, width_g=width_g, p=p, num_epochs=None, learning_rate=learning_rate,
+                                          d_loop=d_loop, z_dim=z_dim, lipschitz_const=0.01)
+        else:
+            super(WGANCGP, self).__init__(df=pd.DataFrame(np.random.randn(1, 4), columns=list('ABCD')), batch_size=batch_size, num_features=num_features, depth=depth,
+                                          width_d=width_d, width_g=width_g, p=p, num_epochs=None,
+                                          learning_rate=learning_rate,
+                                          d_loop=d_loop, z_dim=z_dim, lipschitz_const=0.01)
         self.storepath = storepath
         print(self.storepath)
         self.backend = backend
@@ -61,16 +69,19 @@ class WGANCGP(WGAN_BaseClass.WGAN):
         self.df_list = df_list
         self.data_list = list()  # List with single Datasets
         i = 0
-        for df in self.df_list:
-            print(df.__len__())
-            try:
-                self.data_list.append(gan_utils.GrainDataset(df=df, label=i))
-                i += 1
-            except Exception as e:
-                print(e)
-        self.data = torch.utils.data.ConcatDataset(self.data_list)
-        self.dataloader = torch.utils.data.DataLoader(self.data, batch_size=self.batch_size,
-                                                      shuffle=True, num_workers=0)
+        if self.df_list.__len__() != 0:
+            for df in self.df_list:
+                try:
+                    self.data_list.append(gan_utils.GrainDataset(df=df, label=i))
+                    i += 1
+                except Exception as e:
+                    print(e)
+            self.data = torch.utils.data.ConcatDataset(self.data_list)
+            self.dataloader = torch.utils.data.DataLoader(self.data, batch_size=self.batch_size,
+                                                          shuffle=True, num_workers=0)
+        else:
+            print('No initial data was provided. Please use *load_trained_states()* to add pretrained data')
+
         random.seed(0)
         torch.manual_seed(0)
         torch.cuda.manual_seed(0)
@@ -84,8 +95,7 @@ class WGANCGP(WGAN_BaseClass.WGAN):
         self.D = gan_utils.CDiscriminator(p=self.p, num_features=self.num_features, depth=self.depth,
                                           width=self.width_d, n_classes=self.n_classes,
                                           embed_size=self.embed_size, activation=self.activationD).to(self.device)
-        print(self.G)
-        print(self.D)
+
         self.optimizer = optimizer
         if optimizer == 'Adam':
             self.optimizerG = optim.Adam(self.G.parameters(), lr=self.lr, betas=(self.beta1, self.beta2))
@@ -367,7 +377,7 @@ class WGANCGP(WGAN_BaseClass.WGAN):
             with open(self.storepath + '/' + 'Eval_{}/'.format(self.dt_string) + 'Specs.txt', 'a') as specs:
                 specs.writelines('\n')
                 specs.writelines('Results \n')
-                print(self.SinkLosses)
+                #print(self.SinkLosses)
                 for key, value in self.SinkLosses.items():
                     specs.writelines('Label {} - Iteration {} - Result {} \n'.format(key, value[0][0], value[0][1]))
                 mean = np.array(list(self.SinkLosses.values()))
@@ -383,29 +393,27 @@ class WGANCGP(WGAN_BaseClass.WGAN):
         for key, value in self.SinkLosses.items():
             state = self.G_states[int(value[0][0])]
             self.best_states.append(state)
-        with open(self.storepath + '/' + 'Eval_{}/'.format(self.dt_string) + 'BestGenerators.p', 'wb') as f:
-            pickle.dump(self.best_states, f)
+
+        if self.best_states.__len__() != self.df_list.__len__():
+            print('Number of states unequal to number of dfs!')
+            sys.exit(0)
+
+        for i in tqdm(range(self.best_states.__len__())):
+            with open(self.storepath + '/' + 'Eval_{}/'.format(self.dt_string) + 'TrainedData_{}.pkl'.format(i), 'wb') as f:
+                save_list = [self.best_states[i], self.df_list[i]]
+                pickle.dump(save_list, f)
+                f.close()
 
     def sample_batch(self, label, size=1000):
         # Check if there is state data present.
-        sample = None
         if self.best_states:
             noise = torch.randn((size, self.z_dim), device='cpu')
             labels = torch.full((1, size), fill_value=label,
                                 dtype=torch.int64).view(size)
             sample = self.best_states[label](noise, labels).detach()
-
-        dir_path = '../ExampleInput/'
-        for root, dirs, files in os.walk(dir_path):
-            for file in files:
-                if file.endswith('.p'):
-                    print(file, root, dirs)
-                    self.best_states = pickle.load(open(root + '/' + file, 'rb'))
-                    noise = torch.randn((size, self.z_dim), device='cpu')
-                    labels = torch.full((1, size), fill_value=label,
-                                        dtype=torch.int64).view(size)
-                    sample = self.best_states[label](noise, labels).detach()
-                    break
+        else:
+            print('There is no state data! Aborting')
+            sys.exit(0)
 
         # Normalize and transfer to pandas df
         sample_df, _ = self.normalize_data(sample, label)
@@ -447,5 +455,23 @@ class WGANCGP(WGAN_BaseClass.WGAN):
             specs.writelines('Discriminator {} \n'.format(self.activationD))
             specs.writelines('BatchNorm? {} \n\n'.format(self.normalize))
             specs.writelines('Len of combined dataset: {}'.format(self.data.__len__()))
+
+    def load_trained_states(self, file_list, single=False):
+        # Read all the data
+        if not single:
+            for filepath in file_list:
+                try:
+                    with open(filepath, 'rb') as file:
+                        data = pickle.load(file)
+                        self.best_states.append(data[0])
+                        self.df_list.append(data[1])
+                except Exception as e:
+                    print('Not all data could be loaded! \n To avoid subsequent Errors, the process is canceled')
+                    print(e)
+                    sys.exit(0)
+        elif single:
+            print('Loading deprecated BestGenerators')
+            with open(file_list, 'rb') as file:
+                self.best_states = pickle.load(file)
 
 
