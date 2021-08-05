@@ -65,7 +65,7 @@ class Run:
                                        bandwidth=self.band_width, shrink_factor=self.shrink_factor,
                                        band_filling=0.99, phase_ratio=self.phase_ratio, inclusions_ratio=0.01,
                                        inclusions_flag=False,
-                                       file1=None, file2=None, store_path=None, gui_flag=False, anim_flag=True,
+                                       file1=None, file2=None, store_path=None, gui_flag=self.gui_flag, anim_flag=True,
                                        gan_flag=self.gan_flag, exe_flag=False)
             else:
                 obj3D = DataTask3D(box_size=self.box_size, n_pts=int(n_pts), number_of_bands=self.number_of_bands,
@@ -73,7 +73,7 @@ class Run:
                                    band_ratio_rsa=self.band_ratio_rsa, band_ratio_final=self.band_ratio_final,
                                    file1=self.file1, file2=self.file2, phase_ratio=self.phase_ratio,
                                    store_path=self.store_path,
-                                   gui_flag=True, gan_flag=self.gan_flag, anim_flag=self.visualization_flag,
+                                   gui_flag=self.gui_flag, gan_flag=self.gan_flag, anim_flag=self.visualization_flag,
                                    infobox_obj=self.infobox_obj, progess_obj=self.progress_obj)
             for i in range(self.number_of_rves):
                 grains_df, store_path = obj3D.initializations(self.dimension, epoch=i)
@@ -96,8 +96,8 @@ class Run:
 
 
 if __name__ == "__main__":
-    box_size = 20
-    resolution = 2
+    box_size = 30
+    resolution = 1.8
     number_of_rves = 1
     number_of_bands = 0
     bandwidth = 5
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     store_path = '../'
     shrink_factor = 0.5
     dimension = 3
-    gan_flag = True
+    gan_flag = False
 
     # Example Files
     file1 = '../ExampleInput/ferrite_54_grains.csv'

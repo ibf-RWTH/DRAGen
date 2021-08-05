@@ -51,13 +51,13 @@ class Mesher_2D(RVEUtils):
 
         # Set the grid dimensions: shape + 1 because we want to inject our values on
         #   the CELL data
-        grid.dimensions = np.array((self.n_pts + 1, self.n_pts + 1, 0)) + 1
+        grid.dimensions = np.array((self.n_pts + 1, self.n_pts + 1, 1)) + 1
 
         # Edit the spatial reference
         grid.origin = (0, 0, 0)  # The bottom left corner of the data set
 
         # These are the cell sizes along each axis in the gui µm were entered here they are transforemed to mm
-        grid.spacing = (self.bin_size / 1000, self.bin_size / 1000, 0)
+        grid.spacing = (self.bin_size / 1000, self.bin_size / 1000, self.bin_size / 1000)
 
         return grid
 
@@ -277,8 +277,10 @@ class Mesher_2D(RVEUtils):
         print(line_labels)
         print(line_labels.shape)
 
-        smooth = self.laplace_2D(all_lines, tri_mesh2d.points, alpha=0.25, n_iter=1)
-        tri_mesh2d.points = smooth
+        #smooth = self.laplace_2D(all_lines, tri_mesh2d.points, alpha=0.25, n_iter=4)
+        #tri_mesh2d.points = smooth
+        tri_mesh2d.save('2p5D.vtk')
+
 
         return tri_mesh2d
 
@@ -361,7 +363,7 @@ class BuildAbaqus2D:
                                          abaq_nodes_df.y[i])
             f.write(line)
 
-        f.write('*ELEMENT, TYPE=CPE3\n')
+        f.write('*ELEMENT, TYPE=C3D4\n')
         for i in range(len(abaq_elem_df)):
             line = '{}, {}, {}, {}\n'.format(abaq_elem_df.index[i] + 1,
                                          abaq_elem_df.p1[i]+1,
@@ -379,7 +381,7 @@ class BuildAbaqus2D:
         f = open(self.store_path + '/RVE_smooth.inp', 'a')
         f.write('*Part, name=PART-1\n')
         idx = [i for i, s in enumerate(lines) if '*element' in s.lower()][0]
-        lines[idx] = '*ELEMENT, TYPE=CPE3\n'
+        lines[idx] = '*ELEMENT, TYPE=C3D4\n'
         for line in lines[startingLine:]:
             f.write(line)
         f.close()
@@ -552,7 +554,6 @@ class BuildAbaqus2D:
         OutPutFile.write(' {},\n'.format(V3 + 1))
         OutPutFile.write('*Nset, nset=V4, instance=PART-1-1\n')
         OutPutFile.write(' {},\n'.format(V4 + 1))
-        OutPutFile.write('*Nset, nset=H1, instance=PART-1-1\n')
         ####################################################################
 
     def write_material_def(self) -> None:
@@ -599,7 +600,7 @@ class BuildAbaqus2D:
             f.write('**\n')
             f.write('*Material, name=Martensite\n')
             f.write('*Elastic\n')
-            f.write('0.21, 0.3\n')
+            f.write('210000, 0.3\n')
         f.close()
 
     def write_step_def(self) -> None:
@@ -634,7 +635,7 @@ class BuildAbaqus2D:
         f.write('**\n')
         f.write('** STEP: Step-1\n')
         f.write('**\n')
-        f.write('*Step, name=Step-1, nlgeom=YES, inc=10000000, solver=ITERATIVE\n')
+        f.write('*Step, name=Step-1, nlgeom=YES, inc=10000000\n')
         f.write('*Static\n')
         f.write('0.001, 10., 1.05e-15, 0.25\n')
         f.write('**\n')
