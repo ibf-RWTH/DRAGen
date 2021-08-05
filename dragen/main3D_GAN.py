@@ -1,4 +1,4 @@
-# TODO: Cleanup and correct banding errors
+
 
 import os
 import sys
@@ -24,7 +24,7 @@ from InputGenerator.linking import Reconstructor
 
 class DataTask3D_GAN(RVEUtils):
 
-    def __init__(self, box_size=30, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5, band_filling=0.99,
+    def __init__(self, ganfile, box_size=30, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5, band_filling=0.99,
                  phase_ratio=0.95, inclusions_ratio=0.01, solver='Spectral',
                  file1=None, file2=None, store_path=None, gui_flag=False, anim_flag=False, gan_flag=False,
                  exe_flag=False, inclusions_flag=True):
@@ -71,7 +71,7 @@ class DataTask3D_GAN(RVEUtils):
         self.file1 = file1
         self.file2 = file2
         self.utils_obj = RVEUtils(self.box_size, self.n_pts, self.bandwidth)
-        print(self.bandwidth)
+        self.ganfile = ganfile
         if self.gan_flag:
             print('Erzeuge GAN')
             self.GAN = self.run_cwgangp()
@@ -128,12 +128,8 @@ class DataTask3D_GAN(RVEUtils):
         if not os.path.isdir(store_path):
             os.makedirs(store_path)
         GAN = WGANCGP(df_list=[df1, df2, df3, df4, df5, df6, df7], storepath=store_path, num_features=3, gen_iters=100)
+        GAN.load_trained_states(single=True, file_list=self.ganfile)
 
-        # Run training for 5000 Its - 150.000 is default
-        # GAN.train()
-
-        # Evaluate Afterwards
-        # GAN.evaluate()
         return GAN
 
     def sample_gan_input(self, adjusted_size, labels=(), size=1000, maximum=None):
@@ -302,14 +298,9 @@ class DataTask3D_GAN(RVEUtils):
         flag before the field
         -------------------------------------------------------------------------------
         """
-        # FIXME: Sobald es miehr als ein Band gibt, gibt es ziemliche Probleme, irgendwas stimmt da nicht
-        # FIXME: Wenn die unterschiedlich Dick sind, wird das auch nicht wirklich funktionieren
-        """
-        
-        """
+
         if self.number_of_bands > 0:
             starttime = time.time()
-            # FIXME: Das muss noch runter, samplen PRO band
             with open(store_path + '/rve.sta', 'a') as sta:
                 sta.writelines("\n\nRVE generation process has started with Band-creation \n")
                 sta.writelines(
@@ -386,7 +377,6 @@ class DataTask3D_GAN(RVEUtils):
                     bands_df['GrainID'] = bands_df.index
                 # ---------------------------------------------------------------------------------------------------
 
-                # Fixme: Band-Array_new hat immer noch beide Bänder - CenterBerechnung rausziehen
                 band_array = np.zeros((2 * self.n_pts, 2 * self.n_pts, 2 * self.n_pts))
                 band_array = utils_obj_band.gen_boundaries_3D(band_array)
 

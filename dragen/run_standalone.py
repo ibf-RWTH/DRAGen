@@ -16,6 +16,7 @@ if __name__ == "__main__":
     data_full = pd.read_csv('../ExampleInput/Full_Martensite_Percentage.csv')
     bandwidths = pd.read_csv('../ExampleInput/Bandwidths.csv')
     n_bands = pd.read_csv('../ExampleInput/NumberOfBands.csv')
+    ganfile = r'../ExampleInput/BestGenerators.p'
 
     v = 0
     for solver in solver_typ:
@@ -38,7 +39,8 @@ if __name__ == "__main__":
                 number_of_bands = 0
                 bandwidth = 0
 
-            obj3D = DataTask3D_GAN(box_size=25, n_pts=50, number_of_bands=number_of_bands, bandwidth=bandwidth,
+            obj3D = DataTask3D_GAN(ganfile=ganfile, box_size=20, n_pts=30, number_of_bands=number_of_bands,
+                                   bandwidth=bandwidth,
                                    shrink_factor=0.5,
                                    band_filling=1.3, phase_ratio=float(full_percentage), inclusions_ratio=0.01,
                                    inclusions_flag=False, solver=solver, file1=None, file2=None, store_path='../',

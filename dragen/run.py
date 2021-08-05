@@ -96,8 +96,8 @@ class Run:
 
 
 if __name__ == "__main__":
-    box_size = 20
-    resolution = 2
+    box_size = 200
+    resolution = 0.5
     number_of_rves = 1
     number_of_bands = 0
     bandwidth = 5
@@ -106,11 +106,11 @@ if __name__ == "__main__":
     store_path = '../'
     shrink_factor = 0.5
     dimension = 3
-    gan_flag = True
+    gan_flag = False
 
     # Example Files
-    file1 = '../ExampleInput/ferrite_54_grains.csv'
-    file2 = '../ExampleInput/Pearlite_21_grains.csv'
+    file1 = r'O:\Werkstoffmechanik\01 WM MMD\13 Niklas\96_Misc\02_FürKollegen\01_Manuel\Eval_21_07_2021_11_22\\Data_processed.csv'
+    file2 = None
 
     Run(box_size, resolution, number_of_rves, number_of_bands, bandwidth,
         dimension, visualization_flag, file1, file2,

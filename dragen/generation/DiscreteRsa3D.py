@@ -109,7 +109,7 @@ class DiscreteRsa3D(RVEUtils):
         # ax.view_init(90, 270)
         # plt.show()
 
-        ax.view_init(270, 90)  # facing in z-direction (clockwise rotation)
+        #ax.view_init(270, 90)  # facing in z-direction (clockwise rotation)
         # ax.view_init(90, 270) #facing against z-direction (counterclockwise rotation)
         # plt.show()
 
@@ -212,7 +212,7 @@ class DiscreteRsa3D(RVEUtils):
 
         return rsa, x_0_list, y_0_list, z_0_list, status
 
-    def run_rsa_clustered(self, previous_rsa, band_array, animation=False, startindex=0): # FIXME: Startindex ergänzen
+    def run_rsa_clustered(self, previous_rsa, band_array, animation=False, startindex=0):
         """
         Parameters:
             banded_rsa_array: banded area with -200 everywhere
