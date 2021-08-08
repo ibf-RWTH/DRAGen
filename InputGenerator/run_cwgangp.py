@@ -52,7 +52,7 @@ if not os.path.isdir(store_path):
 df_list = [df1, df2, df3, df4, df5, df6, df7]
 store_path = store_path
 num_features = 3
-gen_iters = 100
+gen_iters = 3000
 
 # Optional parameters - use only if you know what you are doing
 batch_size = 256                # Batch size

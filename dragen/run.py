@@ -14,7 +14,8 @@ class Run:
                  dimension: int, visualization_flag: bool, file1: str = None, file2: str = None,
                  phase_ratio: float = None, store_path: str = None,
                  shrink_factor: float = 0.5, band_ratio_rsa: float = 0.75, band_ratio_final: float = 0.75,
-                 gui_flag: bool = False, gan_flag: bool = False, info_box_obj=None, progress_obj=None):
+                 gui_flag: bool = False, gan_flag: bool = False, info_box_obj=None, progress_obj=None, file3=None,
+                 inclusion_ratio=0.01, inclusion_flag=False, solver='FEM'):
 
         self.box_size = box_size
         self.resolution = resolution
@@ -35,8 +36,13 @@ class Run:
         self.infobox_obj = info_box_obj
         self.progress_obj = progress_obj
 
-    def run(self):
+        # Currently only for GAN
+        self.file3 = file3
+        self.inclusion_ratio = inclusion_ratio
+        self.inclusion_flag = inclusion_flag
+        self.solver = solver
 
+    def run(self):
         # calculate n_pts from box_size and resolution
         n_pts = math.ceil(float(self.box_size) * self.resolution)
         if n_pts % 2 != 0:
@@ -58,15 +64,15 @@ class Run:
                 obj2D.rve_generation(grains_df, store_path)
 
         elif self.dimension == 3:
-            # Teile in zwei Stück für GAN
+            # Distinguish between GAN and no GAN
             if self.gan_flag:
-                print('Hier')
                 obj3D = DataTask3D_GAN(box_size=self.box_size, n_pts=int(n_pts), number_of_bands=self.number_of_bands,
                                        bandwidth=self.band_width, shrink_factor=self.shrink_factor,
-                                       band_filling=0.99, phase_ratio=self.phase_ratio, inclusions_ratio=0.01,
-                                       inclusions_flag=False,
-                                       file1=None, file2=None, store_path=None, gui_flag=self.gui_flag, anim_flag=True,
-                                       gan_flag=self.gan_flag, exe_flag=False)
+                                       band_filling=0.99, phase_ratio=self.phase_ratio,
+                                       inclusions_ratio=self.inclusion_ratio, inclusions_flag=self.inclusion_flag,
+                                       solver=self.solver, file1=self.file1, file2=self.file2, file3=self.file3,
+                                       store_path=self.store_path, gui_flag=False, anim_flag=self.visualization_flag,
+                                       gan_flag=True, exe_flag=False)
             else:
                 obj3D = DataTask3D(box_size=self.box_size, n_pts=int(n_pts), number_of_bands=self.number_of_bands,
                                    bandwidth=self.band_width, shrink_factor=self.shrink_factor,
@@ -96,23 +102,50 @@ class Run:
 
 
 if __name__ == "__main__":
-    box_size = 30
-    resolution = 1.8
+    box_size = 25
+    resolution = 2
     number_of_rves = 1
     number_of_bands = 0
     bandwidth = 5
-    visualization_flag = False
     phase_ratio = 0.3
     store_path = '../'
     shrink_factor = 0.5
     dimension = 3
-    gan_flag = False
+    gan_flag = True
+    gui_flag = False
+    visualization_flag = True
+    inclusion_flag = True
+    solver = 'FEM'           # FEM or Spectral (DAMASK2)
+    inclusion_ratio = 0.01   # 1%
+
+    n_pts = math.ceil(float(box_size) * resolution)
+    if n_pts % 2 != 0:
+        n_pts += 1
 
     # Example Files
-    file1 = '../ExampleInput/ferrite_54_grains.csv'
-    file2 = '../ExampleInput/Pearlite_21_grains.csv'
+    file1 = '../ExampleInput/TrainedData_2.pkl'     # Ferrite
+    file2 = '../ExampleInput/TrainedData_6.pkl'     # Martensite (also band phase)
+    file3 = '../ExampleInput/TrainedData_5.pkl'     # Inclusions
 
+    # Run with GAN
     Run(box_size, resolution, number_of_rves, number_of_bands, bandwidth,
         dimension, visualization_flag, file1, file2,
         phase_ratio, store_path, shrink_factor, gui_flag=False, gan_flag=gan_flag,
-        info_box_obj=None, progress_obj=None).run()
+        info_box_obj=None, progress_obj=None, inclusion_flag=inclusion_flag, solver=solver,
+        inclusion_ratio=inclusion_ratio, file3=file3).run()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

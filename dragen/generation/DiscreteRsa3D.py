@@ -45,7 +45,6 @@ class DiscreteRsa3D(RVEUtils):
         unoccupied_area_z = [self.z_grid[unoccupied_tuples_i[0]][unoccupied_tuples_i[1]][unoccupied_tuples_i[2]]
                              for unoccupied_tuples_i in unoccupied_tuples]
 
-        # TODO: Vielleicht kann man das so ändern, dass er hier den idx rauslöscht
         idx = random.choice(range(len(unoccupied_area_x)))
         x_0 = unoccupied_area_x[idx]
         y_0 = unoccupied_area_y[idx]
@@ -78,7 +77,7 @@ class DiscreteRsa3D(RVEUtils):
         plt.ioff()
         t_0 = datetime.datetime.now()
         n_grains = self.n_grains
-        rve_x, rve_y, rve_z = np.where((array >= 1) | (array == -1000) | (array < -200)) # TODO: Zurückändern
+        rve_x, rve_y, rve_z = np.where((array >= 1) | (array == -1000) | (array <= -200))
         grain_tuples = [*zip(rve_x, rve_y, rve_z)]
         grains_x = [self.x_grid[grain_tuples_i[0]][grain_tuples_i[1]][grain_tuples_i[2]]
                     for grain_tuples_i in grain_tuples]
@@ -94,7 +93,7 @@ class DiscreteRsa3D(RVEUtils):
         #           vmax=n_grains, cmap='seismic')  # lower -200 for band grains and inclusions
         #ax.scatter(grains_x, grains_y, grains_z, c='black', s=1)
 
-        ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array > 0) | (array == -1000) | (array < -200))],
+        ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array > 0) | (array == -1000) | (array <= -200))],
                    s=1, vmin=-0,
                    vmax=n_grains, cmap='seismic')
 
@@ -112,28 +111,6 @@ class DiscreteRsa3D(RVEUtils):
         # plt.show()
 
         plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}.png'.format(iterator, attempt))
-
-        # TODO: Delete, only for phd-Seminar
-        ax.view_init(90, 270)
-        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_1.png'.format(iterator, attempt))
-
-        ax.view_init(90, 90)
-        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_2.png'.format(iterator, attempt))
-
-        ax.view_init(90, 0)
-        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_2.png'.format(iterator, attempt))
-
-        ax.view_init(90, 180)
-        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_4.png'.format(iterator, attempt))
-
-        ax.view_init(90, 180)
-        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_5.png'.format(iterator, attempt))
-
-        ax.view_init(0, 180)
-        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_6.png'.format(iterator, attempt))
-
-        ax.view_init(0, 90)
-        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}_7.png'.format(iterator, attempt))
 
         plt.close(fig)
         time_elapse = datetime.datetime.now() - t_0
