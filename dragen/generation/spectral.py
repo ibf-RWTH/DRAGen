@@ -7,6 +7,7 @@ Functions for writing output fo Spectral Solver: 3 Files:
 import numpy as np
 import pandas as pd
 import pyvista as pv
+import damask
 
 
 def make_config(store_path, n_grains, grains_df, band=True) -> None:
@@ -159,23 +160,20 @@ def make_config(store_path, n_grains, grains_df, band=True) -> None:
 
 
 def make_geom(rve, grid_size, spacing, store_path) -> None:
-    # TODO: Add pyvista-meshing here to visualize RVE
-
     # Start with the plot
     start = int(rve.__len__() / 4)
     stop = int(rve.__len__() / 4 + rve.__len__() / 2)
     real_rve = rve[start:stop, start:stop, start:stop]
-    x = np.linspace(0, grid_size * spacing, num=real_rve.__len__()+1)
-    y = np.linspace(0, grid_size * spacing, num=real_rve.__len__()+1)
-    z = np.linspace(0, grid_size * spacing, num=real_rve.__len__()+1)
-    xx, yy, zz = np.meshgrid(x,y,z)
+    x = np.linspace(0, grid_size * spacing, num=real_rve.__len__() + 1)
+    y = np.linspace(0, grid_size * spacing, num=real_rve.__len__() + 1)
+    z = np.linspace(0, grid_size * spacing, num=real_rve.__len__() + 1)
+    xx, yy, zz = np.meshgrid(x, y, z)
     grid = pv.StructuredGrid(xx, yy, zz)
     grid.cell_arrays['grains'] = real_rve.flatten()
     plotter = pv.Plotter(window_size=(800, 600))
     plotter.add_mesh(grid)
     plotter.add_axes()
     plotter.show(screenshot=store_path + '/rve.png')
-
 
     homogenization = 1
     with open(store_path + '/' + 'RVE.geom', 'w') as geom:
@@ -212,7 +210,7 @@ def make_load(store_path) -> None:
     # 1 Last am Ende
     with open(store_path + '/' + 'loadX.load', 'w') as load:
         load.writelines(
-            'fdot * 0 0  0 2.0e-2 0  0 0 *  stress  0 * *   * * *   * * 0  time 10  incs 100')     # rot 0.70710678 -0.70710678 0.0  0.70710678 0.70710678 0.0  0.0 0.0 1.0')
+            'fdot * 0 0  0 2.0e-2 0  0 0 *  stress  0 * *   * * *   * * 0  time 10  incs 100')  # rot 0.70710678 -0.70710678 0.0  0.70710678 0.70710678 0.0  0.0 0.0 1.0')
 
 
 def make_load_from_defgrad(file_path, store_path, single=True):
@@ -256,7 +254,7 @@ def make_load_from_defgrad(file_path, store_path, single=True):
                     F11_step[i], F12_step[i], F13_step[i],
                     F21_step[i], '*', F23_step[i],
                     F31_step[i], F32_step[i], '*',
-                    1   # Time has to be zero to ensure valid sum of defgrad
+                    1  # Time has to be zero to ensure valid sum of defgrad
                 ))
     else:
         F11 = defgrad_dataframe['F11_new'].iloc[-1]
@@ -272,14 +270,89 @@ def make_load_from_defgrad(file_path, store_path, single=True):
                 F21, '*', F23,
                 F31, F32, '*',
                 1
-                ))
+            ))
+
+
+"""
+INPUT FOR DAMASK 3 from here on!
+"""
+
+
+def write_material(store_path: str, grains: list) -> None:
+    matdata = damask.ConfigMaterial()
+
+    # Homog
+    matdata['homogenization']['SX'] = {'N_constitutents': 1, 'mechanical': {'type': 'pass'}}
+
+    # Phase
+    ferrite = {'lattice': 'cI',
+               'elastic': {'type': 'Hooke', 'C_11': 10, 'C_12': 10, 'C_44': 10},
+               'plastic': {'type': 'phenopowerlaw',
+                           'N_sl': [12],
+                           'a_sl': 2.0,
+                           'dot_gamma_0_sl': 0.001,
+                           'h0_sl_sl': 10,
+                           'h_sl_sl': [1, 1, 1.4, 1.4, 1.4, 1.4],
+                           'n_sl': 20,
+                           'xi_0_sl': 10,
+                           'xi_inf_sl': 10}
+               }
+    matdata['phase']['Ferrite'] = ferrite
+    matdata['phase']['Martensite'] = ferrite
+
+    # Material
+    for p in grains:
+        if p == 1:
+            matdata = matdata.material_add(phase=['Ferrite'], O=damask.Rotation.from_random(1),
+                                           homogenization='SX')
+        else:
+            matdata = matdata.material_add(phase=['Martensite'], O=damask.Rotation.from_random(1),
+                                           homogenization='SX')
+
+    matdata.save(store_path + '/Material.yaml')
+
+
+def write_load(store_path: str) -> None:
+    load_case = damask.Config(solver={'mechanical': 'spectral_basic'},
+                                      loadstep=[])
+
+    F = [1e-2, 0, 0, 0, 'x', 0, 0, 0, 'x']
+    P = ['x' if i != 'x' else 0 for i in F]
+
+    load_case['loadstep'].append({'boundary_conditions': {},
+                                  'discretization': {'t': 10., 'N': 100}, 'f_out': 4})
+    load_case['loadstep'][0]['boundary_conditions']['mechanical'] = \
+        {'P': [P[0:3], P[3:6], P[6:9]],
+         'F': [F[0:3], F[3:6], F[6:9]]}
+
+    load_case.save(store_path + '/load.yaml')
+
+
+def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
+    start = int(rve.__len__() / 4)
+    stop = int(rve.__len__() / 4 + rve.__len__() / 2)
+    real_rve = rve[start:stop, start:stop, start:stop]
+    # Create the spatial reference
+    grid = pv.UniformGrid()
+
+    # Set the grid dimensions: shape + 1 because we want to inject our values on
+    #   the CELL data
+    grid.dimensions = np.array(real_rve.shape) + 1
+
+    # Edit the spatial reference
+    grid.origin = (0, 0, 0)  # The bottom left corner of the data set
+    grid.spacing = (spacing, spacing, spacing)  # These are the cell sizes along each axis
+
+    # Add the data values to the cell data
+    grid.cell_arrays["material"] = real_rve.flatten(order="C")  # Flatten the array in C-Style
+
+    # Now save the grid
+    grid.plot(screenshot=store_path + '/rve.png')
+    grid.save(store_path + '/grid.vti')
 
 
 if __name__ == '__main__':
-    # Testing RVE:
-    #make_load_from_defgrad(file_path='../../ExampleInput/Defgrad_Biegen.txt', store_path='../../OutputData', single=True)
-
     # Test plotting function
     rve = np.load('../../ExampleInput/RVE_Numpy.npy')
 
-    make_geom(store_path='../../OutputData', spacing=1, grid_size=100, rve=rve)
+    write_grid(store_path='../../OutputData', rve=rve)

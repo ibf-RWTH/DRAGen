@@ -44,7 +44,7 @@ if __name__ == "__main__":
                                    shrink_factor=0.5,
                                    band_filling=1.3, phase_ratio=float(full_percentage), inclusions_ratio=0.01,
                                    inclusions_flag=False, solver=solver, file1=None, file2=None, store_path='../',
-                                   gui_flag=False, anim_flag=True, gan_flag=True, exe_flag=False)
+                                   gui_flag=False, anim_flag=False, gan_flag=True, exe_flag=False)
             grains_df, store_path = obj3D.initializations(3, epoch=v)
             obj3D.rve_generation(grains_df, store_path)
             obj3D.post_processing()

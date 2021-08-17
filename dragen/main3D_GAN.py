@@ -47,6 +47,7 @@ class DataTask3D_GAN(RVEUtils):
         self.number_of_bands = number_of_bands
         if self.number_of_bands == 0:
             self.bandwidth_sum = 0
+            self.bandwidth = 0
         else:
             self.bandwidth_sum = np.sum(np.asarray(bandwidth))  # To call sum() on list/tuple whatever
             print('Sum BW: ', self.bandwidth_sum)
@@ -606,14 +607,25 @@ class DataTask3D_GAN(RVEUtils):
             # Startpoint: Rearange the negative ID's
             last_grain_id = rve.max()
             if self.inclusions_flag:
+                phase_list = pd.concat([grains_df, inclusions_df])['phaseID'].tolist()
                 for i in range(len(inclusions_df)):
                     rve[np.where(rve == -(200 + i + 1))] = last_grain_id + i + 1
-                rve[np.where(rve == -200)] = last_grain_id + i + 2
+                    phase_list.append(2)
+                rve[np.where(rve == -200)] = last_grain_id + i + 2  # Band is last ID
+                phase_list.append(2)
             else:
+                phase_list = grains_df['phaseID'].tolist()
                 rve[np.where(rve == -200)] = last_grain_id + 1
-            # print(np.asarray(np.unique(rve, return_counts=True)).T)
+                phase_list.append(2)
+            print(np.asarray(np.unique(rve, return_counts=True)).T)
+            print(phase_list)
 
-            # 2.) Make Geometry
+            spectral.write_material(store_path=store_path, grains=phase_list)
+            spectral.write_load(store_path)
+            spectral.write_grid(store_path=store_path, rve=rve, spacing=self.bin_size/1000)
+
+
+            """# 2.) Make Geometry
             band = True if self.number_of_bands > 0 else False
             if band:
                 spectral.make_geom(rve=rve, grid_size=self.n_pts,
@@ -636,7 +648,7 @@ class DataTask3D_GAN(RVEUtils):
                                      grains_df=grains_df)
 
             # 4.) Last - Make load
-            spectral.make_load_from_defgrad(file_path='../ExampleInput/Defgrad.txt', store_path=store_path)
+            spectral.make_load_from_defgrad(file_path='../ExampleInput/Defgrad.txt', store_path=store_path)"""
 
         elif self.solver == 'FEM':
             if rve_status:
