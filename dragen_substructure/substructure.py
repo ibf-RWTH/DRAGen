@@ -11,9 +11,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import warnings
-from substructure.data import save_data
+from itertools import combinations
+from dragen_substructure.data import save_data
 import math
 import scipy.stats as stats
+
 #block_id needs modification
 #using magic method
 class Grain(RVEUtils):
@@ -199,6 +201,7 @@ class Grain(RVEUtils):
         n = self.int_solution(k)
 
         self.insert_plane(n)  # these are the packet_id and plane_list at first round, in other words, before the second cut process
+        self.find_packets_neighbors()
         self.merge_small_packets()
 
         packets_list = self.packets_list.copy()
@@ -235,86 +238,30 @@ class Grain(RVEUtils):
 
         self.second_cut_list = np.array(self.second_cut_list).squeeze()
 
+    def find_packets_neighbors(self):
+
+        for packets_com in combinations(self.packets_list, 2):
+
+            if packets_com[0].isneighbor(packets_com[1]):
+                packets_com[0].neighbors_list.append(packets_com[1])
+                packets_com[1].neighbors_list.append(packets_com[0])
 
     def merge_small_packets(self):
-        while (self.points_data.groupby('packet_id').apply(len) < 10).any():
-            # print('before merge',(self.points_data.groupby('block_id').apply(len) < 10).any())
-            if self.packets_list is not None:
-                if len(self.packets_list) == 1:
-                    break #in case the size of grain is too small
-            pid = self.points_data['packet_id'].map(lambda pid: int(pid.replace('p','')))
-            self.points_data['strip_packet_id'] = pid
-            self.points_data.sort_values('strip_packet_id',
-                                         inplace=True)  # sort by bid, so that the order of blocks is arranged
+        while (self.points_data.groupby('packet_id').apply(len) < 20).any():
+            for packet in self.packets_list:
+                if len(packet) < 20:
+                    merged_neighbor = packet.mergeneighbor()
+                    self.points_data.loc[packet.points_data.index, 'packet_id'] = merged_neighbor['id']
+                    for neighbor in packet.neighbors_list:
+                        try:
+                            neighbor.neighbors_list.remove(packet)
+                        except:
+                            continue
+                        if merged_neighbor not in neighbor.neighbors_list:
+                            neighbor.neighbors_list.append(merged_neighbor)
 
-            packet_groups = self.points_data.groupby('strip_packet_id')
-            big_packets = []
-            small_packets = []
-            bp_list = []
-            for k in packet_groups.groups.keys():
-                group = packet_groups.get_group(k)
-
-                if len(group) < 10:
-                    small_packets.append(k)  # get the id of small blocks
-                else:
-                    big_packets.append(k)
-                    bp_list.append(group['packet_id'].iloc[0])
-
-            if len(small_packets) == 1:
-                dis = np.array([abs(small_packets[0] - big_packet) for big_packet in big_packets])
-                new_id = \
-                self.points_data.loc[self.points_data['strip_packet_id'] == big_packets[np.argmin(dis)], 'packet_id'].iloc[
-                    0]
-                self.points_data.loc[self.points_data['strip_packet_id'] == small_packets[0], 'packet_id'] = new_id
-                break
-
-            new_id_list = []
-            old_id_list = []
-            for j in range(len(small_packets)):
-                i = 0
-                old_id = self.points_data.loc[self.points_data['strip_packet_id'] == small_packets[j], 'packet_id'].iloc[0]
-                temp = small_packets[j]
-                while small_packets[j] + i in small_packets:
-                    temp = small_packets[j] + i
-                    i += 1
-                small_packets[j] = temp
-
-                if i == 1:  # no adjacent block is small one
-
-                    if small_packets[j] == small_packets[j - 1]:
-                        new_id = old_id
-                    else:
-                        if len(big_packets) == 0:
-                            dis = np.array([abs(small_packets[j] - small_packet) for small_packet in small_packets if
-                                            small_packet != small_packets[j]])
-                            new_id = self.points_data.loc[
-                                self.points_data['strip_packet_id'] == small_packets[np.argmin(dis)], 'packet_id'].iloc[0]
-                        else:
-                            dis = np.array([abs(small_packets[j] - big_packet) for big_packet in big_packets])
-                            new_id = self.points_data.loc[
-                                self.points_data['strip_packet_id'] == big_packets[np.argmin(dis)], 'packet_id'].iloc[0]
-
-                else:  # adjacent block is small one
-                    new_id = self.points_data.loc[self.points_data['strip_packet_id'] == temp, 'packet_id'].iloc[0]  # merge adjacent small blocks into one block
-
-                old_id_list.append(old_id)
-                new_id_list.append(new_id)
-
-            old_id_list.extend(bp_list)
-            new_id_list.extend(bp_list)
-            # print(old_id_list)
-            # print(new_id_list)
-            old_to_new = dict(zip(old_id_list, new_id_list))
-
-            new_pid = self.points_data['packet_id'].map(lambda pid: old_to_new[pid])
-            self.points_data['packet_id'] = new_pid
-            # print('after merge',self.points_data.groupby('packet_id').apply(len)<10)
-            self.points_data.drop('strip_packet_id',axis=1)
-
-        points_data = self.points_data.copy()
-        groups = points_data.groupby('packet_id')
-        kl = list(groups.groups.keys())
-        self.packets_list = [Packet(groups.get_group(pid)) for pid in kl]# update packets list
+            if len(self.packets_list) == 1:
+                break  # in case the number of grid points of grain is less than 20
         print('all small packets in grain {} are merged'.format(self.grainID))
 
     def gen_blocks(self, t_mu, sigma, lower=None, upper=None):
@@ -439,6 +386,7 @@ class Packet():
     def __init__(self,points_data):
 
         self.points_data = points_data
+        self.neighbors_list = []
 
     def __len__(self):
 
@@ -449,6 +397,35 @@ class Packet():
         if item == 'id':
 
             return list(set(self.points_data['packet_id']))[0]
+
+    def isneighbor(self, packet):
+
+        pid1 = packet['id']  # the strip packet id of passed packet
+
+        pid2 = self['id']  # the strip packet id of itself
+
+        # compare the strip pid of both
+        # if only 1 digit differs from 1 they are neighbors, otherwise not
+
+        count = 0
+        for i in range(len(pid1)):
+
+            if pid1[i] != pid2[i]:
+                count += 1
+
+        if count == 1:
+
+            return True
+
+        else:
+
+            return False
+
+    def mergeneighbor(self):  # packet
+        index = np.random.randint(len(self.neighbors_list))
+        neighbor = self.neighbors_list[index]
+        self.points_data['packet_id'] = neighbor['id']
+        return neighbor
 
     def id_assign(self,point_data,cut_plane,d):
 
@@ -689,6 +666,7 @@ class Packet():
         pb.loc[p % 2 != vi, 'block_orientation'] = V2[0]
 
         self.points_data = pb
+
 class TooSmallSizeError(Exception):
     def __init__(self,info):
         super().__init__(self)
@@ -696,6 +674,7 @@ class TooSmallSizeError(Exception):
 
     def __str__(self):
         return self.info
+
 if __name__ == '__main__':
 
     grains_data = pd.read_csv('F:/pycharm/2nd_mini_thesis/dragen-master/dragen/OutputData/2021-06-10_0/Generation_Data/grain_data_output_discrete.csv')
