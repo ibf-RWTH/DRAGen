@@ -9,7 +9,7 @@ from dragen.utilities.RVE_Utils import RVEUtils
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import lognorm
+from scipy.stats import lognorm,truncnorm
 from substructure.data import save_data
 import math
 
@@ -133,10 +133,10 @@ class Grain(RVEUtils):
         LN = lognorm(s=sigma, scale=av_points_num)
         num_grid_ps = LN.rvs(av_pn)
         out_lrange_num = num_grid_ps[num_grid_ps <= 40]
-        out_hrange_num = num_grid_ps[num_grid_ps >= len(self.points_data) / 2]
+        out_hrange_num = num_grid_ps[num_grid_ps >= len(self.points_data)]
         # the num of points in packet must be larger than 40 smaller than half of the grain
         num_grid_ps = np.delete(num_grid_ps, num_grid_ps <= 40)
-        num_grid_ps = np.delete(num_grid_ps, num_grid_ps >= len(self.points_data) / 2)
+        num_grid_ps = np.delete(num_grid_ps, num_grid_ps >= len(self.points_data))
 
         if len(num_grid_ps) > 0:
             increasing = (sum(out_lrange_num) + sum(out_hrange_num)) / len(num_grid_ps)
@@ -168,7 +168,15 @@ class Grain(RVEUtils):
 
         i = 1
         for num in num_grid_ps:
-            index = np.random.randint(4)
+
+            trial_index = [0, 1, 2, 3]
+            if i > 1:
+                trial_index.remove(self.packets_list[i-2].chosen_nidx)
+                index = np.random.choice(trial_index,1)[0]
+
+            else:
+                index = np.random.randint(4)
+
             chosen_norm = self.hp_normal_list[index, ...]
 
             passing_point = points_data.sample(1, axis=0)
@@ -186,6 +194,7 @@ class Grain(RVEUtils):
 
             packet_df = points_data.loc[chosen_index]
             packet = Packet(packet_df)
+            packet.chosen_nidx = index
             packet.boundary = chosen_norm
             packet.gen_blocks(t_mu=block_thickness, sigma=b_sigma, lower=lower_t,upper=upper_t)  # complete df
             packet.get_bt()
@@ -201,6 +210,7 @@ class Grain(RVEUtils):
 
             i += 1
 
+        #self.points_data.drop(self.points_data[self.points_data['block_thickness'] == 0].index,inplace=True)
         return self.points_data
 
     def trial_variants_select(self, normal):
@@ -276,6 +286,7 @@ class Packet():
         self.points_data = points_data
         self.neighbors_list = []
         self.boundary = None
+        self.chosen_nidx = 0
 
     def __len__(self):
 
@@ -287,6 +298,36 @@ class Packet():
 
             return list(set(self.points_data['packet_id']))[0]
 
+    def dis_to_id(self,dis, t_list):
+
+        t_1 = []
+        t_list = list(t_list)
+        if len(t_list) == 1:
+            t_list.insert(0, 0)
+            t_1 = t_list
+
+            if dis >= max(t_1):
+
+                return '1'
+
+            else:
+
+                return '0'
+
+        else:
+            for i in range(len(t_list) - 1):
+                s = sum(t_list[0:i + 1])
+                t_1.append(s)
+
+            t_1.insert(0, 0)
+
+        for i in range(len(t_1) - 1):
+            if dis >= t_1[i] and dis < t_1[i + 1]:
+                return str(i)
+
+            if dis > max(t_1):
+                return str(len(t_1))
+
     def gen_blocks(self, t_mu, sigma, lower=None, upper=None):
 
         points_data = self.points_data.copy()
@@ -294,76 +335,125 @@ class Packet():
         block_plane = np.random.random((1, 3))
         # boundary plane of block within packet
 
-        p_d = -(points_data['x'] * block_plane[..., 0] + points_data['y'] * block_plane[..., 1] + points_data['z'] *
-                block_plane[..., 2])
+        pd = -(points_data['x'] * block_plane[..., 0] + points_data['y'] * block_plane[..., 1] + points_data['z'] *
+               block_plane[..., 2])
         # compute d of block boundary
 
-        points_data.insert(6, 'p_d', value=p_d)
+        points_data.insert(6, 'pd', value=pd)
         sq = np.sqrt(block_plane[..., 0] ** 2 + block_plane[..., 1] ** 2 + block_plane[..., 2] ** 2)
-        p_dis = (points_data['p_d'].max() - points_data['p_d']) / sq
+        p_dis = (points_data['pd'].max() - points_data['pd']) / sq
         points_data.insert(7, 'p_dis', value=p_dis)
 
         n = points_data['p_dis'].max() / t_mu
         n = math.ceil(n)
 
+        bt_list = []
+        if n == 1:
+            bt_list = [t_mu]
+
         if lower == None:
-            lower = 0.5
+            lower = - np.inf
+
         if upper == None:
             intervals = lognorm.interval(0.9, s=sigma, scale=t_mu)
             upper = np.log(intervals[1])
 
-        LN = lognorm(s=sigma, scale=t_mu)
-        bt_list = LN.rvs(n)
-
-        out_lrange_t = bt_list[bt_list <= lower]
-        out_hrange_t = bt_list[bt_list >= upper]
-
-        bt_list = np.delete(bt_list, bt_list <= lower)
-        bt_list = np.delete(bt_list, bt_list >= upper)
-        if len(bt_list) > 0:
-            increasing = (sum(out_lrange_t) + sum(out_hrange_t)) / len(bt_list)
-            bt_list = bt_list + increasing
+        if sigma > 1:
+            sigma = np.log(sigma)
 
         else:
-            bt_list = np.array([0.5 for i in range(int(p_dis.max() / 0.5))])
+            sigma = 0.01
 
-        factor = p_dis.max() / sum(bt_list)
-        bt_list = bt_list * factor
-        # get block thickness list that follows lognorm distribution
-        points_data.sort_values(by='p_dis', inplace=True, ascending=False)
-        rest_points_data = points_data.copy()  # for bsp
-        points_data['block_id'] = '0'
-        points_data['nid'] = 0 # for convenience of variants assignment
-        i = 1
-        for bt in bt_list:
+        N = truncnorm((lower - t_mu) / sigma, (upper - np.log(t_mu)) / sigma, loc=np.log(t_mu), scale=sigma)
+        bt_list = np.exp(N.rvs(n))
 
-            if len(rest_points_data) == 0:
-                break
+        block_id = points_data['p_dis'].map(lambda dis: self.dis_to_id(dis, bt_list))
+        points_data['block_id'] = points_data['packet_id'] + block_id
+        points_data = points_data.drop('pd', axis=1)
 
-            block = rest_points_data[rest_points_data['p_dis'] <= bt]
-            rest_points_data.drop(block.index, inplace=True)
-
-            if len(block) <= 20:
-                short_n = 20 - len(block)
-                if len(rest_points_data) >= short_n:
-                    block = pd.concat([block, rest_points_data.iloc[0:short_n]])
-                    rest_points_data.drop(rest_points_data.iloc[0:short_n].index, inplace=True)
-                else:
-                    block = pd.concat([block, rest_points_data])
-                    points_data.loc[block.index, 'block_id'] = str(self['id']) + 'b' + str(i)
-                    break
-
-            points_data.loc[block.index, 'block_id'] = str(self['id']) + 'b' + str(i)
-            points_data.loc[block.index, 'nid'] = i
-
-            i += 1
-
-        points_data.loc[points_data['block_id'] == '0', 'block_id'] = str(self['id']) + 'b' + str(i + 1)  # so that all points assigned with blocks
-        points_data.loc[points_data['block_id'] == '0', 'block_id'] = i+1
+        points_data.dropna(axis=0, inplace=True, how='any')
 
         self.points_data = points_data
+        if len(self.points_data) > 10:
+            self.merge_small_block()
 
-        return self.points_data
+    def strip_pid(self,bid):
+
+        return(int(bid[len(self['id']):]))
+
+    def merge_small_block(self):
+
+        while (self.points_data.groupby('block_id').apply(len) < 10).any():
+            old_ids = list(set(self.points_data['block_id']))
+            bid = self.points_data['block_id'].map(lambda bid: self.strip_pid(bid))
+            self.points_data['strip_block_id'] = bid
+            self.points_data.sort_values('strip_block_id',inplace=True)#sort by bid, so that the order of blocks is arranged
+
+            block_groups = self.points_data.groupby('strip_block_id')
+            big_blocks = []
+            small_blocks = []
+            bb_list = []
+            for k in block_groups.groups.keys():
+                group = block_groups.get_group(k)
+
+                if len(group) < 10:
+                    small_blocks.append(k) #get the id of small blocks
+                else:
+                    big_blocks.append(k)
+                    bb_list.append(group['block_id'].iloc[0])
+
+            if len(small_blocks) == 1:
+                dis = np.array([abs(small_blocks[0] - big_block) for big_block in big_blocks])
+                new_id = self.points_data.loc[self.points_data['strip_block_id'] == big_blocks[np.argmin(dis)], 'block_id'].iloc[0]
+                self.points_data.loc[self.points_data['strip_block_id'] == small_blocks[0],'block_id'] = new_id
+                break
+
+            new_id_list = []
+            old_id_list = []
+            for j in range(len(small_blocks)):
+                i = 0
+                old_id = self.points_data.loc[self.points_data['strip_block_id'] == small_blocks[j],'block_id'].iloc[0]
+                temp = small_blocks[j]
+                while small_blocks[j]+i in small_blocks:
+
+                    temp = small_blocks[j] + i
+                    i += 1
+                small_blocks[j] = temp
+
+                if i == 1: # no adjacent block is small one
+
+                    if small_blocks[j] == small_blocks[j-1]:
+                        new_id = old_id
+                    else:
+                        if len(big_blocks) == 0:
+                            dis = np.array([abs(small_blocks[j] - small_block) for small_block in small_blocks if small_block != small_blocks[j]])
+                            new_id = self.points_data.loc[self.points_data['strip_block_id'] == small_blocks[np.argmin(dis)], 'block_id'].iloc[0]
+                        else:
+                            dis = np.array([abs(small_blocks[j] - big_block) for big_block in big_blocks])
+                            new_id = self.points_data.loc[self.points_data['strip_block_id'] == big_blocks[np.argmin(dis)],'block_id'].iloc[0]
+
+                else: #adjacent block is small one
+                    new_id = self.points_data.loc[self.points_data['strip_block_id'] == temp, 'block_id'].iloc[0]  # merge adjacent small blocks into one block
+
+                old_id_list.append(old_id)
+                new_id_list.append(new_id)
+
+
+            old_id_list.extend(bb_list)
+            new_id_list.extend(bb_list)
+
+            old_to_new = dict(zip(old_id_list,new_id_list))
+
+            new_bid = self.points_data['block_id'].map(lambda bid:old_to_new[bid])
+            self.points_data['block_id'] = new_bid
+            self.points_data.drop('strip_block_id',axis=1)
+
+            new_ids = list(set(self.points_data['block_id']))
+            if new_ids == old_ids:
+                print('cannot merge blocks anymore')
+                break
+
+        print('all small blocks in packet {} are merged'.format(self['id']))
 
     def get_bt(self):
 
@@ -381,15 +471,14 @@ class Packet():
 
         pb = self.points_data.copy()
 
-        bid = str(pb.iloc[0]['nid'])
-        vi = int(bid) % 2
+        bid = str(pb.iloc[0]['block_id'])
+        vi = int(bid.replace('p', '')) % 2
         V1 = variant_trial_list[p_iter1]
         V2 = variant_trial_list[p_iter2]
-
+        p = pb['block_id'].map(lambda bi: float(str(bi).replace('p', '')))
         pb['block_orientation'] = np.nan
-        pb.loc[pb['nid'] % 2 == vi, 'block_orientation'] = V1[0]
-        pb.loc[pb['nid'] % 2 != vi, 'block_orientation'] = V2[0]
-
+        pb.loc[p % 2 == vi, 'block_orientation'] = V1[0]
+        pb.loc[p % 2 != vi, 'block_orientation'] = V2[0]
         self.points_data = pb
 
         return self.points_data
