@@ -12,11 +12,10 @@ from dragen.generation.DiscreteTesselation3D import Tesselation3D
 from dragen.utilities.RVE_Utils import RVEUtils
 from dragen.generation.sub_mesh import Sub_Mesher
 from dragen.postprocessing.voldistribution import PostProcVol
-from dragen_substructure.run import Run as Sub_Run
 
 class DataTask3D(RVEUtils):
 
-    def __init__(self, box_size: int, n_pts: int, number_of_bands: int, bandwidth: float, shrink_factor: float = 0.5,
+    def __init__(self, box_size: int, n_pts: int, number_of_bands: int, bandwidth: float, sub_run,shrink_factor: float = 0.5,
                  band_ratio_rsa: float = 0.95, band_ratio_final: float = 0.95, phase_ratio: float = None, file1=None,
                  file2=None, store_path=None, gui_flag=False, anim_flag=False, gan_flag=False, exe_flag=False,
                  infobox_obj=None, progess_obj=None):
@@ -40,6 +39,7 @@ class DataTask3D(RVEUtils):
         self.gen_path = None
         self.infobox_obj = infobox_obj
         self.progress_obj = progess_obj
+        self.sub_run = sub_run
 
         if exe_flag:
             self.root_dir = store_path
@@ -95,7 +95,6 @@ class DataTask3D(RVEUtils):
             grains_df = pd.concat([grains_df, phase2_df])
 
         grains_df = super().process_df(grains_df, self.shrink_factor)
-
         total_volume = sum(grains_df['final_conti_volume'].values)
         estimated_boxsize = np.cbrt(total_volume)
         self.logger.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
@@ -144,7 +143,7 @@ class DataTask3D(RVEUtils):
 
         else:
             rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(animation=self.animation,
-                                                                                     gui=self.gui_flag)
+                                                                     gui=self.gui_flag)
             grains_df['x_0'] = x_0_list
             grains_df['y_0'] = y_0_list
             grains_df['z_0'] = z_0_list
@@ -180,8 +179,8 @@ class DataTask3D(RVEUtils):
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = (i + 2)
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
 
-            sub_run = Sub_Run(self.box_size, self.n_pts,'F:/pycharm/2nd_mini_thesis/dragen-master/')
-            subs_rve = sub_run.run(periodic_rve_df, grains_df, 6.8, 0.5, 0.01, 0, 1, store_path=self.store_path)#grain_id -1
+            grains_df['phaseID'] = grains_df['phaseID'] + 1
+            subs_rve = self.sub_run.run(rve_df=periodic_rve_df,grains_df=grains_df,store_path=self.store_path,logger=self.logger)
             # Start the Mesher
             #debug_df.to_csv('debug_grains_df.csv', index=False)
             mesher_obj = Sub_Mesher(subs_rve, grains_df, store_path=store_path, #needs to be merged
