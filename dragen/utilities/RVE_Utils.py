@@ -19,7 +19,6 @@ class RVEUtils:
         self.z_grid = z_grid
         self.bandwidth = bandwidth
         self.debug = debug
-
         self.bin_size = box_size / n_pts
         self.step_half = self.bin_size / 2
 
@@ -117,8 +116,10 @@ class RVEUtils:
         grain_vol = 0
         data = data.copy()
         inp_list = list()
+        old_idx = []
         while grain_vol < max_volume:
             idx = np.random.randint(0, data.__len__())
+            old_idx.append(idx)
             grain = data[["a", "b", "c", "alpha", "phi1", "PHI", "phi2"]].iloc[idx].tolist()
             data = data.drop(labels=data.index[idx], axis=0)
             vol = 4 / 3 * np.pi * grain[0] * grain[1] * grain[2]
@@ -133,7 +134,7 @@ class RVEUtils:
 
         header = ["a", "b", "c", "alpha", "phi1", "PHI", "phi2"]
         df = pd.DataFrame(inp_list, columns=header)
-
+        df['old_gid'] = old_idx
         return df
 
     def sample_input_2D(self, data, bs) -> pd.DataFrame:

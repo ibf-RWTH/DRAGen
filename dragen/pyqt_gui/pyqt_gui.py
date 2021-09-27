@@ -10,7 +10,7 @@ from dragen.pyqt_gui.ScrollLabel import ScrollLabel
 
 from dragen.pyqt_gui.worker import Worker
 
-
+Args = {}
 class Window(QMainWindow, QFileDialog):
 
     """Main Window."""
@@ -200,14 +200,22 @@ class Window(QMainWindow, QFileDialog):
         self.action_submit = QAction('&Submit', self.tools)
         self.action_import_phase = QAction('Import phase data', self.tools)
         self.action_save_data = QAction('Save data', self.tools)
+        self.action_gen_subs = QAction('generate substructure',self.tools)
 
         self.tools.addAction(self.action_import_phase)
+        self.tools.addAction(self.action_gen_subs)
         self.tools.addAction(self.action_save_data)
         self.tools.addAction(self.action_submit)
 
         self.action_import_phase.triggered.connect(self.getfiles)
         self.action_save_data.triggered.connect(self.save_files)
         self.action_submit.triggered.connect(self.submit)
+        self.action_gen_subs.triggered.connect(self.subs_dialog)
+
+    def subs_dialog(self):
+        self.subs_win = SubsWindow()
+        self.subs_win.show()
+        self.subs_win.exec_()
 
     def _createStatusBar(self):
         self.status = QStatusBar()
@@ -237,7 +245,6 @@ class Window(QMainWindow, QFileDialog):
         elif self.sender() == self.save_button:
             self.save_files = QFileDialog.getExistingDirectory(self)
             self.save_files_Edit.setText(str(self.save_files))
-
 
     def save_button_handler(self):
         self.save_files = QFileDialog.getExistingDirectory(self)
@@ -282,6 +289,21 @@ class Window(QMainWindow, QFileDialog):
         phase_ratio = self.phase_ratio_Edit.value()
         store_path = self.save_files_Edit.text()
 
+        equiv_d = Args['equiv_d']
+        p_sigma = Args['p_sigma']
+        t_mu = Args['t_mu']
+        b_sigma = Args['b_sigma']
+        decreasing_facotr = Args['decreasing_factor']
+        lower = Args['lower']
+        upper = Args['upper']
+        circularity = Args['circularity']
+        plt_name = Args['plt_name']
+        save = Args['save']
+        plot = Args['plot']
+        filename = Args['filename']
+        figpath = Args['fig_path']
+        gen_flag = Args['gen_flag']
+        blockfile = Args['block_file']
         store_path_flag = False
         import_flag = False
         dimension = None
@@ -366,7 +388,9 @@ class Window(QMainWindow, QFileDialog):
             self.info_box.add_text('Staring the generation of {} RVEs'.format(n_rves))
             self.thread = QThread()
             self.worker = Worker(box_size, resolution, n_rves, n_bands, band_width, dimension, visualization_flag,
-                                 phase1_path, phase2_path, phase_ratio, store_path, gui_flag=True, gan_flag=gan_flag)
+                                 file1=phase1_path, file2=phase2_path, phase_ratio=phase_ratio, store_path=store_path, gui_flag=True, gan_flag=gan_flag,
+                                 equiv_d=equiv_d,p_sigma=p_sigma,t_mu=t_mu,b_sigma=b_sigma,decreasing_factor=decreasing_facotr,lower=lower,upper=upper,
+                                 circularity=circularity,plt_name=plt_name,save=save,plot=plot,filename=filename,fig_path=figpath,gen_flag=gen_flag,block_file=blockfile)
             self.worker.moveToThread(self.thread)
             self.thread.started.connect(self.worker.run)
             self.worker.finished.connect(self.thread.quit)
@@ -380,7 +404,457 @@ class Window(QMainWindow, QFileDialog):
             self.thread.finished.connect(lambda: self.action_submit.setEnabled(True))
             self.thread.finished.connect(lambda: self.status.showMessage('The generation has finished!'))
 
+class SubsWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
 
+    def initUI(self):
+        self.setWindowTitle('generate substructure')
+        grid = QGridLayout()
+        grid.setSpacing(10)
+        GenChoiceLabel = QLabel('generate substructures by: ')
+        self.fromFileButton = QPushButton()
+        self.fromFileButton.setText('from file')
+        self.userDefineButton = QPushButton()
+        self.userDefineButton.setText('user define')
+        self.fromFileButton.clicked.connect(self.from_file_window)
+        self.userDefineButton.clicked.connect(self.user_define_window)
+
+        grid.addWidget(GenChoiceLabel, 1, 0)
+        grid.addWidget(self.fromFileButton, 2, 0, alignment=Qt.AlignLeft)
+        grid.addWidget(self.userDefineButton, 2, 1, alignment=Qt.AlignRight)
+        self.setLayout(grid)
+
+    def from_file_window(self):
+        self.file_win = FromFileWindow()
+        self.file_win.show()
+        self.file_win.exec_()
+
+    def user_define_window(self):
+        self.user_define_win = FromUserDefineWindow()
+        self.user_define_win.show()
+        self.user_define_win.exec_()
+
+ckey = False
+pskey = False
+bskey = False
+dkey = False
+lkey = False
+hkey = False
+class FromFileWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+        self.figpath=None
+
+    def initUI(self):
+        self.resize(600, 300)
+        self.setWindowTitle('Generate from files: ')
+        SubsFileLabel = QLabel('substructure file path: ')
+        self.subs_file_Edit = QLineEdit()
+        self.subs_file_button = QPushButton()
+        self.subs_file_button.setText('select_file')
+        self.subs_file_button.clicked.connect(self.getfiles)
+
+        PacketSigmaLabel = QLabel('sigma(packet size): ')
+        self.packet_sigma_Edit = QDoubleSpinBox()
+        self.packet_sigma_Edit.setMinimum(0.01)
+        self.packet_sigma_Edit.setSingleStep(0.01)
+        self.packet_sigma_Check = QCheckBox()
+        self.packet_sigma_Edit.setEnabled(False)
+        def change_PS_state():
+            global pskey
+            pskey = not pskey
+            self.packet_sigma_Edit.setEnabled(pskey)
+        self.packet_sigma_Check.clicked.connect(change_PS_state)
+
+        BlockSigmaLabel = QLabel('sigma(block thickness): ')
+        self.block_sigma_Edit = QDoubleSpinBox()
+        self.block_sigma_Edit.setMinimum(0.01)
+        self.block_sigma_Edit.setSingleStep(0.01)
+        self.block_sigma_Check = QCheckBox()
+        self.block_sigma_Edit.setEnabled(False)
+        def change_BS_state():
+            global bskey
+            bskey = not bskey
+            self.block_sigma_Edit.setEnabled(bskey)
+        self.block_sigma_Check.clicked.connect(change_BS_state)
+
+        DecreasingFactorLabel = QLabel('decreasing factor: ')
+        self.decreasing_factor_Edit = QDoubleSpinBox()
+        self.decreasing_factor_Edit.setValue(0.95)
+        self.decreasing_factor_Edit.setSingleStep(0.01)
+        self.decreasing_factor_Check = QCheckBox()
+        self.decreasing_factor_Edit.setEnabled(False)
+        def change_D_state():
+            global dkey
+            dkey = not dkey
+            self.decreasing_factor_Edit.setEnabled(dkey)
+        self.decreasing_factor_Check.clicked.connect(change_D_state)
+
+        LowerValueLabel = QLabel('lower value(block thickness): ')
+        self.lower_value_Edit = QDoubleSpinBox()
+        self.lower_value_Edit.setValue(0.0)
+        self.lower_value_Edit.setSingleStep(0.1)
+        self.lower_value_Check = QCheckBox()
+        self.lower_value_Edit.setEnabled(False)
+        def change_L_state():
+            global lkey
+            lkey = not lkey
+            self.lower_value_Edit.setEnabled(lkey)
+        self.lower_value_Check.clicked.connect(change_L_state)
+
+        HigherValueLabel = QLabel('upper value(block thickness): ')
+        self.higher_value_Edit = QDoubleSpinBox()
+        self.higher_value_Edit.setValue(1.0)
+        self.higher_value_Edit.setSingleStep(0.1)
+        self.higher_value_Check = QCheckBox()
+        self.higher_value_Edit.setEnabled(False)
+        def change_H_state():
+            global hkey
+            hkey = not hkey
+            self.lower_value_Edit.setEnabled(hkey)
+        self.higher_value_Check.clicked.connect(change_H_state)
+
+        PlotLabel = QLabel('Plot: ')
+        PlotGrainLabel = QLabel('grain')
+        PlotPacketLabel = QLabel('packet')
+        PlotBlockLabel = QLabel('block')
+        self.plot_grain_Edit = QCheckBox()
+        self.plot_packet_Edit = QCheckBox()
+        self.plot_block_Edit = QCheckBox()
+
+        SaveFigLabel = QLabel('save fig at: ')
+        self.save_fig_Edit = QLineEdit()
+        self.save_fig_Button = QPushButton()
+        self.save_fig_Button.setText('select')
+        self.save_fig_Button.clicked.connect(self.getfigpath)
+
+        SaveFileLabel = QLabel('save result(.csv) as: ')
+        self.save_file_Edit = QLineEdit()
+        self.save_file_Edit.setText('substruct_data.csv')
+        self.save_file_Check = QCheckBox()
+        self.save_file_Check.setChecked(True)
+
+        self.commitButton = QPushButton()
+        self.commitButton.setText('commit')
+        self.commitButton.clicked.connect(self.commit)
+
+        grid = QGridLayout()
+        grid.setSpacing(15)
+        grid.addWidget(SubsFileLabel, 1, 0)
+        grid.addWidget(self.subs_file_Edit, 1, 1, 1, 2)
+        grid.addWidget(self.subs_file_button, 1, 3)
+        grid.addWidget(PacketSigmaLabel, 2, 0)
+        grid.addWidget(self.packet_sigma_Edit, 2, 1, alignment=Qt.AlignRight)
+        grid.addWidget(self.packet_sigma_Check, 2, 2, alignment=Qt.AlignRight)
+        grid.addWidget(BlockSigmaLabel, 3, 0)
+        grid.addWidget(self.block_sigma_Edit, 3, 1, alignment=Qt.AlignRight)
+        grid.addWidget(self.block_sigma_Check, 3, 2, alignment=Qt.AlignRight)
+        grid.addWidget(DecreasingFactorLabel, 4, 0)
+        grid.addWidget(self.decreasing_factor_Edit, 4, 1, alignment=Qt.AlignRight)
+        grid.addWidget(self.decreasing_factor_Check, 4, 2, alignment=Qt.AlignRight)
+        grid.addWidget(LowerValueLabel,5,0)
+        grid.addWidget(self.lower_value_Edit, 5, 1, alignment=Qt.AlignRight)
+        grid.addWidget(self.lower_value_Check, 5, 2, alignment=Qt.AlignRight)
+        grid.addWidget(HigherValueLabel, 6, 0)
+        grid.addWidget(self.higher_value_Edit, 6, 1, alignment=Qt.AlignRight)
+        grid.addWidget(self.higher_value_Check, 6, 2, alignment=Qt.AlignRight)
+        grid.addWidget(PlotLabel,7,0)
+        grid.addWidget(PlotGrainLabel,7,1)
+        grid.addWidget(self.plot_grain_Edit,7,2,alignment=Qt.AlignLeft)
+        grid.addWidget(PlotPacketLabel,7,3)
+        grid.addWidget(self.plot_packet_Edit,7,4,alignment=Qt.AlignLeft)
+        grid.addWidget(PlotBlockLabel,7,5)
+        grid.addWidget(self.plot_block_Edit,7,6,alignment=Qt.AlignLeft)
+        grid.addWidget(SaveFigLabel,8,0)
+        grid.addWidget(self.save_fig_Edit,8,1,1,2)
+        grid.addWidget(self.save_fig_Button,8,3)
+        grid.addWidget(SaveFileLabel,9,0)
+        grid.addWidget(self.save_file_Edit,9,1)
+        grid.addWidget(self.save_file_Check,9,2,alignment=Qt.AlignRight)
+        grid.addWidget(self.commitButton,10,1,alignment=Qt.AlignCenter)
+
+        self.setLayout(grid)
+
+    def getfiles(self):
+        dlg = QFileDialog()
+        dlg.setFileMode(QFileDialog.AnyFile)
+        if dlg.exec_():
+            self.subs_files = dlg.selectedFiles()
+            self.subs_file_Edit.setText(self.subs_files[0])
+
+    def getfigpath(self):
+        self.figpath = QFileDialog.getExistingDirectory(self,'please select file folder','./')
+        self.save_fig_Edit.setText(self.figpath)
+
+    def commit(self):
+        Args['block_file'] = self.subs_file_Edit.text()
+        Args['equiv_d'] = None
+
+        Args['t_mu'] = None
+        Args['circularity'] = 1.0
+        Args['decreasing_factor'] = 0.95
+        if self.decreasing_factor_Check.isChecked():
+            Args['decreasing_factor'] = self.decreasing_factor_Edit.value()
+        Args['p_sigma'] = 0.01
+        if self.packet_sigma_Check.isChecked():
+            Args['p_sigma'] = self.packet_sigma_Edit.value()
+        Args['b_sigma'] = 0.01
+        if self.block_sigma_Check.isChecked():
+            Args['b_sigma'] = self.block_sigma_Edit.value()
+        Args['lower'] = None
+        if self.lower_value_Check.isChecked():
+            Args['lower'] = self.lower_value_Edit.value()
+        Args['upper'] = None
+        if self.higher_value_Check.isChecked():
+            Args['upper'] = self.higher_value_Edit.value()
+        Args['plt_name'] = []
+        Args['plot'] = False
+        Args['save'] = True
+        if self.plot_grain_Edit.isChecked():
+            Args['plot'] = True
+            Args['plt_name'].append('Grain')
+
+        if self.plot_packet_Edit.isChecked():
+            Args['plot'] = True
+            Args['plt_name'].append('packet')
+
+        if self.plot_block_Edit.isChecked():
+            Args['plot'] = True
+            Args['plt_name'].append('block')
+
+        Args['fig_path'] = self.figpath
+
+        if self.save_file_Check.isChecked():
+            Args['save'] = True
+            Args['filename'] = self.save_file_Edit.text()
+        else:
+            Args['save'] = False
+
+        Args['gen_flag'] = 'from_file'
+        print(Args)
+
+class FromUserDefineWindow(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.figpath = None
+        self.initUI()
+
+    def initUI(self):
+        self.resize(600, 300)
+        self.setWindowTitle('generate by user define: ')
+        PacketEquivDLabel = QLabel('packet equiv_d: ')
+        self.packet_equiv_d_Edit = QDoubleSpinBox()
+        self.packet_equiv_d_Edit.setMinimum(2.0)
+        self.packet_equiv_d_Edit.setSingleStep(0.1)
+
+        PacketSigmaLabel = QLabel('sigma(packet size): ')
+        self.packet_sigma_Edit = QDoubleSpinBox()
+        self.packet_sigma_Edit.setMinimum(0.01)
+        self.packet_sigma_Edit.setSingleStep(0.01)
+        self.packet_sigma_Check = QCheckBox()
+        self.packet_sigma_Edit.setEnabled(False)
+
+        CircularityLabel = QLabel('circularity(packet): ')
+        self.circularity_Edit = QDoubleSpinBox()
+        self.circularity_Edit.setValue(1.0)
+        self.circularity_Edit.setSingleStep(0.1)
+        self.circularity_Check = QCheckBox()
+        self.circularity_Edit.setEnabled(False)
+
+        def change_circularity_state():
+            global ckey
+            ckey = not ckey
+            self.circularity_Edit.setEnabled(ckey)
+
+        self.circularity_Check.clicked.connect(change_circularity_state)
+
+        def change_PS_state():
+            global pskey
+            pskey = not pskey
+            self.packet_sigma_Edit.setEnabled(pskey)
+
+        self.packet_sigma_Check.clicked.connect(change_PS_state)
+
+        BlockThicknessLabel = QLabel('block thickness: ')
+        self.block_thickness_Edit = QDoubleSpinBox()
+        self.block_thickness_Edit.setMinimum(0.50)
+        self.block_thickness_Edit.setSingleStep(0.1)
+
+        DecreasingFactorLabel = QLabel('decreasing factor: ')
+        self.decreasing_factor_Edit = QDoubleSpinBox()
+        self.decreasing_factor_Edit.setValue(0.95)
+        self.decreasing_factor_Edit.setSingleStep(0.01)
+        self.decreasing_factor_Check = QCheckBox()
+        self.decreasing_factor_Edit.setEnabled(False)
+
+        def change_D_state():
+            global dkey
+            dkey = not dkey
+            self.decreasing_factor_Edit.setEnabled(dkey)
+
+        self.decreasing_factor_Check.clicked.connect(change_D_state)
+
+        BlockSigmaLabel = QLabel('sigma(block thickness): ')
+        self.block_sigma_Edit = QDoubleSpinBox()
+        self.block_sigma_Edit.setMinimum(0.01)
+        self.block_sigma_Edit.setSingleStep(0.01)
+        self.block_sigma_Check = QCheckBox()
+        self.block_sigma_Edit.setEnabled(False)
+
+        def change_BS_state():
+            global bskey
+            bskey = not bskey
+            self.block_sigma_Edit.setEnabled(bskey)
+
+        self.block_sigma_Check.clicked.connect(change_BS_state)
+
+        LowerValueLabel = QLabel('lower value(block thickness): ')
+        self.lower_value_Edit = QDoubleSpinBox()
+        self.lower_value_Edit.setValue(0.0)
+        self.lower_value_Edit.setSingleStep(0.1)
+        self.lower_value_Check = QCheckBox()
+        self.lower_value_Edit.setEnabled(False)
+
+        def change_L_state():
+            global lkey
+            lkey = not lkey
+            self.lower_value_Edit.setEnabled(lkey)
+
+        self.lower_value_Check.clicked.connect(change_L_state)
+
+        HigherValueLabel = QLabel('upper value(block thickness): ')
+        self.higher_value_Edit = QDoubleSpinBox()
+        self.higher_value_Edit.setValue(1.0)
+        self.higher_value_Edit.setSingleStep(0.1)
+        self.higher_value_Check = QCheckBox()
+        self.higher_value_Edit.setEnabled(False)
+
+        def change_H_state():
+            global hkey
+            hkey = not hkey
+            self.lower_value_Edit.setEnabled(hkey)
+
+        self.higher_value_Check.clicked.connect(change_H_state)
+
+        PlotLabel = QLabel('Plot: ')
+        PlotGrainLabel = QLabel('grain')
+        PlotPacketLabel = QLabel('packet')
+        PlotBlockLabel = QLabel('block')
+        self.plot_grain_Edit = QCheckBox()
+        self.plot_packet_Edit = QCheckBox()
+        self.plot_block_Edit = QCheckBox()
+
+        SaveFigLabel = QLabel('save fig at: ')
+        self.save_fig_Edit = QLineEdit()
+        self.save_fig_Button = QPushButton()
+        self.save_fig_Button.setText('select')
+        self.save_fig_Button.clicked.connect(self.getfigpath)
+
+        SaveFileLabel = QLabel('save result(.csv) as: ')
+        self.save_file_Edit = QLineEdit()
+        self.save_file_Edit.setText('substruct_data.csv')
+        self.save_file_Check = QCheckBox()
+        self.save_file_Check.setChecked(True)
+
+        self.commitButton = QPushButton()
+        self.commitButton.setText('commit')
+        self.commitButton.clicked.connect(self.commit)
+
+        grid = QGridLayout()
+        grid.setSpacing(15)
+        grid.addWidget(PacketEquivDLabel, 1, 0)
+        grid.addWidget(self.packet_equiv_d_Edit, 1, 1, alignment=Qt.AlignRight)
+        grid.addWidget(PacketSigmaLabel, 2, 0)
+        grid.addWidget(self.packet_sigma_Edit, 2, 1, alignment=Qt.AlignRight)
+        grid.addWidget(self.packet_sigma_Check, 2, 2, alignment=Qt.AlignRight)
+        grid.addWidget(CircularityLabel,3,0)
+        grid.addWidget(self.circularity_Edit, 3, 1, alignment=Qt.AlignRight)
+        grid.addWidget(self.circularity_Check, 3, 2, alignment=Qt.AlignRight)
+        grid.addWidget(BlockThicknessLabel,4,0)
+        grid.addWidget(self.block_thickness_Edit, 4, 1, alignment=Qt.AlignRight)
+        grid.addWidget(DecreasingFactorLabel,5,0)
+        grid.addWidget(self.decreasing_factor_Edit,5,1,alignment=Qt.AlignRight)
+        grid.addWidget(self.decreasing_factor_Check,5,2,alignment=Qt.AlignRight)
+        grid.addWidget(BlockSigmaLabel, 6, 0)
+        grid.addWidget(self.block_sigma_Edit, 6, 1, alignment=Qt.AlignRight)
+        grid.addWidget(self.block_sigma_Check, 6, 2, alignment=Qt.AlignRight)
+        grid.addWidget(LowerValueLabel, 7, 0)
+        grid.addWidget(self.lower_value_Edit, 7, 1, alignment=Qt.AlignRight)
+        grid.addWidget(self.lower_value_Check, 7, 2, alignment=Qt.AlignRight)
+        grid.addWidget(HigherValueLabel, 8, 0)
+        grid.addWidget(self.higher_value_Edit, 8, 1, alignment=Qt.AlignRight)
+        grid.addWidget(self.higher_value_Check, 8, 2, alignment=Qt.AlignRight)
+        grid.addWidget(PlotLabel, 9, 0)
+        grid.addWidget(PlotGrainLabel, 9, 1)
+        grid.addWidget(self.plot_grain_Edit, 9, 2, alignment=Qt.AlignLeft)
+        grid.addWidget(PlotPacketLabel, 9, 3)
+        grid.addWidget(self.plot_packet_Edit,9 , 4, alignment=Qt.AlignLeft)
+        grid.addWidget(PlotBlockLabel, 9, 5)
+        grid.addWidget(self.plot_block_Edit, 9, 6, alignment=Qt.AlignLeft)
+        grid.addWidget(SaveFigLabel, 10, 0)
+        grid.addWidget(self.save_fig_Edit,10, 1, 1, 2)
+        grid.addWidget(self.save_fig_Button, 10, 3)
+        grid.addWidget(SaveFileLabel, 11, 0)
+        grid.addWidget(self.save_file_Edit, 11, 1)
+        grid.addWidget(self.save_file_Check, 11, 2, alignment=Qt.AlignRight)
+        grid.addWidget(self.commitButton, 12, 1, alignment=Qt.AlignCenter)
+
+        self.setLayout(grid)
+
+    def getfigpath(self):
+        self.figpath = QFileDialog.getExistingDirectory(self,'please select file folder','./')
+        self.save_fig_Edit.setText(self.figpath)
+
+    def commit(self):
+        Args['equiv_d'] = self.packet_equiv_d_Edit.value()
+        Args['t_mu'] = self.block_sigma_Edit.value()
+        Args['gen_flag'] = 'user_define'
+        Args['decreasing_factor'] = 0.95
+        if self.decreasing_factor_Check.isChecked():
+            Args['decreasing_factor'] = self.decreasing_factor_Edit.value()
+        Args['circularity'] = 1.0
+        if self.circularity_Check.isChecked():
+            Args['circularity'] = self.circularity_Edit.value()
+        Args['p_sigma'] = 0.01
+        if self.packet_sigma_Check.isChecked():
+            Args['p_sigma'] = self.packet_sigma_Edit.value()
+        Args['b_sigma'] = 0.01
+        if self.block_sigma_Check.isChecked():
+            Args['b_sigma'] = self.block_sigma_Edit.value()
+        Args['lower'] = None
+        if self.lower_value_Check.isChecked():
+            Args['lower'] = self.lower_value_Edit.value()
+        Args['upper'] = None
+        if self.higher_value_Check.isChecked():
+            Args['upper'] = self.higher_value_Edit.value()
+        Args['plt_name'] = []
+        Args['plot'] = False
+        Args['save'] = True
+        if self.plot_grain_Edit.isChecked():
+            Args['plot'] = True
+            Args['plt_name'].append('Grain')
+
+        if self.plot_packet_Edit.isChecked():
+            Args['plot'] = True
+            Args['plt_name'].append('packet')
+
+        if self.plot_block_Edit.isChecked():
+            Args['plot'] = True
+            Args['plt_name'].append('block')
+
+        Args['fig_path'] = self.figpath
+
+        if self.save_file_Check.isChecked():
+            Args['save'] = True
+            Args['filename'] = self.save_file_Edit.text()
+        else:
+            Args['save'] = False
+
+        Args['block_file'] = None
+        print(Args)
 
 class ThreadClass(QThread):
     """Main Window."""
