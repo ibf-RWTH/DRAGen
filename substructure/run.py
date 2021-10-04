@@ -12,7 +12,7 @@ from substructure.data import save_data
 import logging
 import logging.handlers
 import os
-from dragen_substructure.substructure import Grain
+from substructure.substructure import Grain
 
 class Run():
 
