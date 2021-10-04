@@ -6,7 +6,7 @@ Version:  V 0.1
 File:     run
 Describe: Write during the internship at IEHK RWTH"""
 import pandas as pd
-from substructure.rve_substructure import rve_substruct_plotter
+from substructure.substructure import plot_rve_subs
 import numpy as np
 from substructure.data import save_data
 import logging
@@ -146,7 +146,7 @@ class Run():
 
             for name in self.plt_name:
 
-                rve_substruct_plotter(rve_data,name,self.fig_path)
+                plot_rve_subs(rve_data,name,self.fig_path)
 
         logger.info('substructure generation successful')
         logger.info('------------------------------------------------------------------------------')
