@@ -16,7 +16,7 @@ from dragen.generation import spectral
 
 from InputGenerator.C_WGAN_GP import WGANCGP
 from InputGenerator.linking import Reconstructor
-from dragen_substructure.run import Run as Sub_Run
+from substructure.run import Run as Sub_Run
 
 class DataTask3D_GAN(RVEUtils):
 

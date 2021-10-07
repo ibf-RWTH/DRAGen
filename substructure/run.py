@@ -9,9 +9,6 @@ import pandas as pd
 from substructure.substructure import plot_rve_subs
 import numpy as np
 from substructure.data import save_data
-import logging
-import logging.handlers
-import os
 from substructure.substructure import Grain
 
 class Run():

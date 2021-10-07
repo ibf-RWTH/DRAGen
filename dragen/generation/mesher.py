@@ -28,8 +28,8 @@ class Mesher:
         self.z_max = int(max(rve.z))
         self.z_min = int(min(rve.z))
         self.n_grains = int(max(rve.GrainID))
-        self.n_pts = int(rve.n_pts[0])
-        self.bin_size = rve.box_size[0] / (self.n_pts+1) ## test
+        self.n_pts = int(rve['n_pts'].iloc[0])
+        self.bin_size = rve['box_size'].iloc[0] / (self.n_pts+1) ## test
         self.logger = logging.getLogger("RVE-Gen")
         self.gui = gui
         self.elem = elem
