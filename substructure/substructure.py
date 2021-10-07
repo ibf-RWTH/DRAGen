@@ -525,6 +525,21 @@ class Packet():
         bid_to_bt = bg['p_dis'].apply(max)-bg['p_dis'].apply(min)
         self.points_data['block_thickness'] = self.points_data.apply(lambda p:bid_to_bt[p['block_id']],axis=1)
 
+        zero_btdf = self.points_data[self.points_data['block_thickness'] == 0]
+        if not zero_btdf.empty:
+            self.points_data.loc[zero_btdf.index, 'block_thickness'] = self.points_data.loc[zero_btdf.index, 'p_dis']
+
+        self.points_data.sort_values(by=['x', 'y', 'z'], inplace=True)
+        zero_btdf = self.points_data[self.points_data['block_thickness'] == 0]
+        if not zero_btdf.empty:
+            for idx in zero_btdf.index:
+                try:
+                    self.points_data.loc[idx, 'block_thickness'] = self.points_data.loc[idx - 1, 'block_thickness']
+                    self.points_data.loc[idx, 'block_id'] = self.points_data.loc[idx - 1, 'block_id']
+                except:
+                    self.points_data.loc[idx, 'block_thickness'] = self.points_data.loc[idx + 1, 'block_thickness']
+                    self.points_data.loc[idx, 'block_id'] = self.points_data.loc[idx + 1, 'block_id']
+
         return self.points_data
 
     def assign_bv(self):
