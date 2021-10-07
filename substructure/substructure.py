@@ -11,6 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import lognorm
 import math
+import warnings
 
 class Grain(RVEUtils):
 
@@ -596,7 +597,7 @@ class Packet():
         return self.points_data
 
     def comp_ori(self,chosen_idx,assigned_idx):
-
+        warnings.filterwarnings('ignore')
         phi1 = self.pag_ori[0]
         PHI = self.pag_ori[1]
         phi2 = self.pag_ori[2]
