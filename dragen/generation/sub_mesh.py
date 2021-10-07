@@ -155,7 +155,6 @@ class Sub_Mesher(Mesher):
         y_max = max(rve.y)
         z_max = max(rve.z)
 
-        fail_bid_list = []
         bid_list = []
         pid_list = []
         gid_list = []
@@ -169,19 +168,13 @@ class Sub_Mesher(Mesher):
             sub_surf = pv.PolyData(smooth_points, faces)
 
             tet = tetgen.TetGen(sub_surf)
-            try:
-                if self.elem == 'C3D4':
-                    tet.tetrahedralize(order=1, mindihedral=10, minratio=1.5, supsteiner_level=1)
-                elif self.elem == 'C3D10':
-                    tet.tetrahedralize(order=2, mindihedral=10, minratio=1.5, supsteiner_level=1)
-                sub_grid = tet.grid  # grid 1
 
-            except Exception as e:
+            if self.elem == 'C3D4':
+                tet.tetrahedralize(order=1, mindihedral=10, minratio=1.5, supsteiner_level=1)
+            elif self.elem == 'C3D10':
+                tet.tetrahedralize(order=2, mindihedral=10, minratio=1.5, supsteiner_level=1)
+            sub_grid = tet.grid  # grid 1
 
-                fail_bid_list.append(bid)
-                print(e)
-                print('failed bid cannot tet is:', bid)
-                continue
 
             """
             This following code block is only needed if all grains are generated as independent parts
@@ -211,6 +204,12 @@ class Sub_Mesher(Mesher):
                 grid = sub_grid  # grid2
             else:
                 grid = sub_grid.merge(grid)  # grid3
+            grain_vol = sub_grid.volume
+                # self.logger.info(str(grain_vol*10**9))
+            self.grains_df.loc[self.grains_df['GrainID'] == i, 'meshed_conti_volume'] = grain_vol * 10 ** 9
+
+        self.grains_df['phaseID'] -= 1
+        self.grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
 
         grid.cell_arrays['block_id'] = bid_list
         grid.cell_arrays['packet_id'] = pid_list
@@ -266,8 +265,6 @@ class Sub_Mesher(Mesher):
                     f.write(' {},'.format(cell))
                 f.write('\n')
 
-            # bid_to_mid,n = self.find_material()
-            # self.n_materials = n
             for i in range(self.n_blocks):
                 nBlock = i + 1
                 if self.rve.loc[rve['block_id'] == nBlock].phaseID.values[0] == 1:
@@ -283,40 +280,6 @@ class Sub_Mesher(Mesher):
                         f.write('** Section: Section - Block{}\n'.format(nBlock))
                         f.write('*Solid Section, elset=Set-Block{}, material=Material\n'.format(nBlock))
 
-            # phase1_idx = 0
-            # phase2_idx = 0
-            # for i in range(self.n_packets):
-            #     nPacket = i + 1
-            #     if self.rve.loc[rve['packet_id'] == nPacket].phaseID.values[0] == 1:
-            #         phase1_idx += 1
-            #         f.write('** Section: Section - Packet{}\n'.format(nPacket))
-            #         f.write('*Solid Section, elset=Set-Packet{}, material=Ferrite_{}\n'.format(nPacket, phase1_idx))
-            #     elif self.rve.loc[rve['packet_id'] == nPacket].phaseID.values[0] == 2:
-            #         if not self.phase_two_isotropic:
-            #             phase2_idx += 1
-            #             f.write('** Section: Section - Packet{}\n'.format(nPacket))
-            #             f.write('*Solid Section, elset=Set-Packet{}, material=Martensite_{}\n'.format(nPacket, phase2_idx))
-            #         else:
-            #             f.write('** Section: Section - Packet{}\n'.format(nPacket))
-            #             f.write('*Solid Section, elset=Set-Packet{}, material=Martensite\n'.format(nPacket))
-            #
-            # phase1_idx = 0
-            # phase2_idx = 0
-            # for i in range(self.n_grains):
-            #     nGrain = i + 1
-            #     if self.rve.loc[rve['GrainID'] == nGrain].phaseID.values[0] == 1:
-            #         phase1_idx += 1
-            #         f.write('** Section: Section - Grain{}\n'.format(nGrain))
-            #         f.write('*Solid Section, elset=Set-Grain{}, material=Ferrite_{}\n'.format(nGrain, phase1_idx))
-            #     elif self.rve.loc[rve['GrainID'] == nGrain].phaseID.values[0] == 2:
-            #         if not self.phase_two_isotropic:
-            #             phase2_idx += 1
-            #             f.write('** Section: Section - Grain{}\n'.format(nGrain))
-            #             f.write('*Solid Section, elset=Set-Grain{}, material=Martensite_{}\n'.format(nGrain, phase2_idx))
-            #         else:
-            #             f.write('** Section: Section - Grain{}\n'.format(nGrain))
-            #             f.write('*Solid Section, elset=Set-Grain{}, material=Martensite\n'.format(nGrain))
-
         grid_hull_df = pd.DataFrame(grid.points.tolist(), columns=['x', 'y', 'z'])
         grid_hull_df = grid_hull_df.loc[(grid_hull_df['x'] == x_max) | (grid_hull_df['x'] == x_min) |
                                         (grid_hull_df['y'] == y_max) | (grid_hull_df['y'] == y_min) |
@@ -328,7 +291,6 @@ class Sub_Mesher(Mesher):
         self.write_step_def()  # it will lead to a faulty inputfile
         self.write_block_data()
 
-        return fail_bid_list
 
 
     def write_material(self):
@@ -350,34 +312,66 @@ class Sub_Mesher(Mesher):
         f.write('!MMM Crystal Plasticity Input File\n')
         phase1_idx = 0
         blocks = self.rve.groupby('block_id').head(1)
-        angles = blocks.apply(lambda block: self.comp_angle(self.grains_df, block), axis=1)
+
+        bt = blocks.apply(lambda block:block['block_thickness'],axis=1)
         bid = blocks.apply(lambda block: block['block_id'], axis=1)
-        bid_to_angles = dict(zip(bid, angles))
+
+        bid_to_bt = dict(zip(bid,bt))
         phase = [self.rve.loc[self.rve['block_id'] == i].phaseID.values[0] for i in range(1, self.n_blocks + 1)]
-        grainsize = [1 for i in range(1, self.n_blocks + 1)]
+        grainsize = [bid_to_bt[i] for i in range(1, self.n_blocks + 1)]
 
-        for i in range(self.n_blocks):
-            angle = bid_to_angles[i + 1]
-            if not self.phase_two_isotropic:
+        if 'phi1'in self.rve.head(0) and 'PHI' in self.rve.head(0) and 'phi2' in self.rve.head(0):
+            for i in range(self.n_blocks):
+                if not self.phase_two_isotropic:
+                    phi1 = self.rve[self.rve['block_id'] == i+1]['phi1'].values[0]
+                    PHI = self.rve[self.rve['block_id'] == i+1]['PHI'].values[0]
+                    phi2 = self.rve[self.rve['block_id'] == i+1]['phi2'].values[0]
+                    f.write('Material: {}: {}: {}: {}: {}\n'.format(i + 1, phi1, PHI, phi2, grainsize[i]))
 
-                phi1 = angle[0]
-                PHI = angle[1]
-                phi2 = angle[2]
-                f.write('Material: {}: {}: {}: {}: {}\n'.format(i + 1, phi1, PHI, phi2, grainsize[i]))
+                else:
 
-            else:
+                    if phase[i] == 1:
+                        phase1_idx += 1
+                        """phi1 = int(np.random.rand() * 360)
+                        PHI = int(np.random.rand() * 360)
+                        phi2 = int(np.random.rand() * 360)"""
+                        phi1 = self.rve[self.rve['block_id'] == i + 1]['phi1'].values[0]
+                        PHI = self.rve[self.rve['block_id'] == i + 1]['PHI'].values[0]
+                        phi2 = self.rve[self.rve['block_id'] == i + 1]['phi2'].values[0]
+                        f.write('Material: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, PHI, phi2, grainsize[i]))
+        else:
+            angles = blocks.apply(lambda block: self.comp_angle(self.grains_df, block), axis=1)
+            bid_to_angles = dict(zip(bid, angles))
+            for i in range(self.n_blocks):
+                angle = bid_to_angles[i + 1]
+                if not self.phase_two_isotropic:
 
-                if phase[i] == 1:
-                    phase1_idx += 1
-                    """phi1 = int(np.random.rand() * 360)
-                    PHI = int(np.random.rand() * 360)
-                    phi2 = int(np.random.rand() * 360)"""
                     phi1 = angle[0]
                     PHI = angle[1]
                     phi2 = angle[2]
-                    f.write('Materialk: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, PHI, phi2, grainsize[i]))
+                    f.write('Material: {}: {}: {}: {}: {}\n'.format(i + 1, phi1, PHI, phi2, grainsize[i]))
+
+                else:
+
+                    if phase[i] == 1:
+                        phase1_idx += 1
+                        """phi1 = int(np.random.rand() * 360)
+                        PHI = int(np.random.rand() * 360)
+                        phi2 = int(np.random.rand() * 360)"""
+                        phi1 = angle[0]
+                        PHI = angle[1]
+                        phi2 = angle[2]
+                        f.write('Material: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, PHI, phi2, grainsize[i]))
 
         f.close()
+
+        # with open(self.store_path +'/neper_ori.txt','a+') as f:
+        #     for i in range(self.n_blocks):
+        #         angle = bid_to_angles[i + 1]
+        #         phi1 = angle[0]
+        #         PHI = angle[1]
+        #         phi2 = angle[2]
+        #         f.write('Material: {}: {}: {}: {}: \n'.format(i + 1, phi1, PHI, phi2))
 
 
     def bid_to_pid(self, bid):
@@ -568,58 +562,57 @@ class Sub_Mesher(Mesher):
 
             return phi1B, PHIB, phi2B
 
-
-    def find_material(self):
-        rve = self.rve
-        phase_groups = rve.groupby('phaseID')
-        martensite_group = phase_groups.get_group(2)
-        bid_list = martensite_group.loc[martensite_group['block_orientation'].isnull(), 'block_id']
-        # fill in nan
-        for bid in bid_list:
-            i = 1
-            bv = martensite_group.loc[martensite_group['block_id'] == bid, 'block_orientation']
-            while (bv.isnull()).any():
-                try:
-
-                    bv = martensite_group.loc[martensite_group['block_id'] == bid - 2 * i, 'block_orientation']
-
-                except:
-
-                    bv = martensite_group.loc[martensite_group['block_id'] == bid + 2 * i, 'block_orientation']
-
-                i += 1
-
-            rve.loc[rve['block_id'] == bid, 'block_orientation'] = bv.iloc[0]
-
-        groups1 = rve[rve['phaseID'] == 2].groupby(['GrainID', 'block_orientation'])
-        kl = list(groups1.groups.keys())
-        bid_list = []
-        mid_list = []
-        n = 0
-        for key in kl:
-            n += 1
-            group = groups1.get_group(key)
-            group_bid_list = list(set(group['block_id']))
-            group_mid_list = [n for i in range(len(group_bid_list))]
-
-            bid_list.extend(group_bid_list)
-            mid_list.extend(group_mid_list)
-
-        groups2 = rve[rve['phaseID'] == 1].groupby('GrainID')
-        kl = list(groups2.groups.keys())
-
-        for key in kl:
-            n += 1
-            group = groups2.get_group(key)
-            group_bid_list = list(set(group['block_id']))
-            group_mid_list = [n for i in range(len(group_bid_list))]
-
-            bid_list.extend(group_bid_list)
-            mid_list.extend(group_mid_list)
-
-        bid_to_mid = dict(zip(bid_list, mid_list))
-
-        return bid_to_mid, n
+    # def find_material(self):
+    #     rve = self.rve
+    #     phase_groups = rve.groupby('phaseID')
+    #     martensite_group = phase_groups.get_group(2)
+    #     bid_list = martensite_group.loc[martensite_group['block_orientation'].isnull(), 'block_id']
+    #     # fill in nan
+    #     for bid in bid_list:
+    #         i = 1
+    #         bv = martensite_group.loc[martensite_group['block_id'] == bid, 'block_orientation']
+    #         while (bv.isnull()).any():
+    #             try:
+    #
+    #                 bv = martensite_group.loc[martensite_group['block_id'] == bid - 2 * i, 'block_orientation']
+    #
+    #             except:
+    #
+    #                 bv = martensite_group.loc[martensite_group['block_id'] == bid + 2 * i, 'block_orientation']
+    #
+    #             i += 1
+    #
+    #         rve.loc[rve['block_id'] == bid, 'block_orientation'] = bv.iloc[0]
+    #
+    #     groups1 = rve[rve['phaseID'] == 2].groupby(['GrainID', 'block_orientation'])
+    #     kl = list(groups1.groups.keys())
+    #     bid_list = []
+    #     mid_list = []
+    #     n = 0
+    #     for key in kl:
+    #         n += 1
+    #         group = groups1.get_group(key)
+    #         group_bid_list = list(set(group['block_id']))
+    #         group_mid_list = [n for i in range(len(group_bid_list))]
+    #
+    #         bid_list.extend(group_bid_list)
+    #         mid_list.extend(group_mid_list)
+    #
+    #     groups2 = rve[rve['phaseID'] == 1].groupby('GrainID')
+    #     kl = list(groups2.groups.keys())
+    #
+    #     for key in kl:
+    #         n += 1
+    #         group = groups2.get_group(key)
+    #         group_bid_list = list(set(group['block_id']))
+    #         group_mid_list = [n for i in range(len(group_bid_list))]
+    #
+    #         bid_list.extend(group_bid_list)
+    #         mid_list.extend(group_mid_list)
+    #
+    #     bid_to_mid = dict(zip(bid_list, mid_list))
+    #
+    #     return bid_to_mid, n
 
     def mesh_and_build_abaqus_model(self) -> None:
         if self.gui:
@@ -641,12 +634,8 @@ class Sub_Mesher(Mesher):
             self.progress_obj.emit(100)
 
 if __name__ == "__main__":
-    rve = pd.read_csv('/mesh_practice/final_input/01.08.2021/mesh_rve.csv')
-    grains_df = pd.read_csv('/mesh_practice/final_input/01.08.2021/grains.csv')
+    rve = pd.read_csv('F:/pycharm/2nd_mini_thesis/mesh_practice/neper_model/neper_rve.csv')
+    grains_df = pd.read_csv('F:/pycharm/2nd_mini_thesis/mesh_practice/final_input/01.08.2021/grains.csv')
 
-    rve['GrainID'] = rve['GrainID'] + 1
-    grains_df['GrainID'] = grains_df['GrainID'] + 1
-    rve.n_pts = [40 for i in range(len(rve))]
-    rve.box_size = [20 for i in range(len(rve))]
-    mesh = Sub_Mesher(rve, grains_df, '../../../mesh_practice/final_input/01.08.2021', phase_two_isotropic=False, animation=False, gui=False)
+    mesh = Sub_Mesher(rve, grains_df, 'F:/pycharm/2nd_mini_thesis/mesh_practice/neper_model/input2', phase_two_isotropic=False, animation=False, gui=False)
     mesh.mesh_and_build_abaqus_model()
