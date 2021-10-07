@@ -6,7 +6,6 @@ import datetime
 import os
 import logging
 
-
 class Mesher:
 
     def __init__(self, rve: pd.DataFrame, grains_df: pd.DataFrame, store_path,
