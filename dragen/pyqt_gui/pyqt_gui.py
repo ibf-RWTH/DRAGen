@@ -39,7 +39,7 @@ class Window(QMainWindow, QFileDialog):
         self._createStatusBar()
         box_size_label = QLabel('RVE-Size (µm)')
         self.box_size_Edit = QSpinBox()
-        self.box_size_Edit.setMinimum(10)
+        self.box_size_Edit.setMinimum(1)
         self.box_size_Edit.setValue(20)
         self.box_size_Edit.valueChanged.connect(self.bandwidth_handler)
 
