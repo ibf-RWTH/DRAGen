@@ -11,6 +11,7 @@ import numpy as np
 from substructure.data import save_data
 from substructure.substructure import Grain
 from scipy.stats import moment
+import matplotlib.pyplot as plt
 
 class Run():
 
@@ -218,8 +219,21 @@ class Run():
             f.write('total number: {}\n'.format(n_block))
             f.write('average(thickness): {}\n'.format(mean_bt))
             f.write('standard variance(thickness): {}\n'.format(std_bt))
-            f.write('MMD: {}'.format(MMD))
+            f.write('MMD: {}\n'.format(MMD))
+            f.write('\n')
+            if MMD <= 0.01:
+                f.write('##warning: the MMD is too small, please check statistical features!')
 
+        #plot MMD
+        if MMD > 0.01:
+            l = (np.power(gen_bt_kmoments - measured_bt_kmoments, 2).sum())**0.5
+            lrange = np.linspace(-2*l,2*l,500)
+            gk =  np.exp(-lrange**2/ (2 * sigma ** 2))
+            plt.plot(lrange,gk)
+            plt.plot(l,MMD,'rx',markersize=10)
+            plt.xlabel('Feature Distance')
+            plt.ylabel('Maximum Mean Discrepancy')
+            plt.savefig(self.store_path + '/Postprocessing/MMD.png')
         self.logger.info('substructure postprocessing successful')
 
 
