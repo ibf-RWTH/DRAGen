@@ -16,7 +16,7 @@ class Run:
                  lower: float=None, upper: float=None, circularity: float=1, plt_name: str=None, save: bool=True,
                  plot: bool=False,filename: str=None, fig_path: str=None, OR: str='KS',file1: str = None, file2: str = None, phase_ratio: float = None, store_path: str = None,
                  shrink_factor: float = 0.5, band_ratio_rsa: float = 0.75, band_ratio_final: float = 0.75,
-                 gui_flag: bool = False, gan_flag: bool = False, info_box_obj=None, progress_obj=None,gen_flag='user_define',block_file=None):
+                 gui_flag: bool = False, gan_flag: bool = False, info_box_obj=None, progress_obj=None,gen_flag='user_define',block_file=None,k:int=3,sigma:int=2):
 
         self.box_size = box_size
         self.resolution = resolution
@@ -52,6 +52,8 @@ class Run:
         self.OR = OR
         self.gen_flag = gen_flag
         self.block_file = block_file
+        self.k = k
+        self.sigma = sigma
 
     def run(self):
 
@@ -102,6 +104,7 @@ class Run:
                 grains_df, store_path = obj3D.initializations(self.dimension, epoch=i)
                 obj3D.rve_generation(grains_df, store_path)
                 obj3D.post_processing()
+                sub_run.post_processing(k=self.k, sigma=self.sigma)
 
         else:
             LOGS_DIR = 'Logs/'
@@ -117,7 +120,6 @@ class Run:
             logger.info('dimension must be 2 or 3')
             sys.exit()
 
-
 if __name__ == "__main__":
     box_size = 15
     resolution = 2
@@ -127,19 +129,20 @@ if __name__ == "__main__":
     visualization_flag = False
     phase_ratio = 0.3
     store_path = 'F:/pycharm/2nd_mini_thesis/dragen-master/OutputData'
-    shrink_factor = 0.4
+    shrink_factor = 0.5
     dimension = 3
     gan_flag = False
-    equiv_d = 3
-    p_sigma = 0.01
-    t_mu = 0.5
+    equiv_d = 5
+    p_sigma = 0.1
+    t_mu = 1.0
+    b_sigma = 0.1
     # Example Files
-    file1 = 'F:/pycharm/2nd_mini_thesis/dragen-master/ExampleInput/example_pag_inp.csv'
+    file1 = 'F:/git/git_dragen/ExampleInput/example_pag_inp.csv'
     file2 = None
-    block_file = 'F:/pycharm/2nd_mini_thesis/dragen-master/ExampleInput/example_block_inp.csv'
+    block_file = 'F:/git/git_dragen/ExampleInput/example_block_inp.csv'
     #file1 = 'F:/pycharm/2nd_mini_thesis/dragen-master/dragen/ExampleInput/pearlite_21_grains.csv'
 
     Run(box_size, resolution, number_of_rves, number_of_bands, bandwidth,
-        dimension, visualization_flag, file1=file1, file2=file2,equiv_d=equiv_d,p_sigma=p_sigma,t_mu=t_mu,
+        dimension, visualization_flag, file1=file1, file2=file2,equiv_d=equiv_d,p_sigma=p_sigma,t_mu=t_mu,b_sigma=b_sigma,
         phase_ratio=phase_ratio, store_path=store_path, shrink_factor=shrink_factor, gui_flag=False, gan_flag=gan_flag,
         info_box_obj=None, progress_obj=None,gen_flag='from_file',block_file=block_file).run()

@@ -10,6 +10,7 @@ from substructure.substructure import plot_rve_subs
 import numpy as np
 from substructure.data import save_data
 from substructure.substructure import Grain
+from scipy.stats import moment
 
 class Run():
 
@@ -35,6 +36,9 @@ class Run():
         self.OR = OR
         self.block_file = block_file
         self.gen_flag = gen_flag
+        self.rve_data = None
+        self.store_path = None
+        self.logger = None
 
     def get_orientations(self,block_df, grainID):
         blocks = block_df[block_df['grain_id'] == grainID+1] # +1...
@@ -147,8 +151,78 @@ class Run():
 
         logger.info('substructure generation successful')
         logger.info('------------------------------------------------------------------------------')
-
+        self.rve_data = rve_data
+        self.store_path = store_path
+        self.logger = logger
         return rve_data
+
+    def post_processing(self,k,sigma=2):
+        def gaussian_kernel(x1, x2, sigma=2):
+            return np.exp(-np.power(x1 - x2, 2).sum() / (2 * sigma ** 2))
+
+        def k_moments(x, k):
+            m_list = []
+            for i in range(k):
+                if i == 0:
+                    m = np.mean(x)
+                else:
+                    m = moment(x, i + 1)
+                m_list.append(m)
+            return np.array(m_list)
+
+        pag_path = self.store_path + '/Generation_Data/grain_data_output_discrete.csv'
+        pag_df = pd.read_csv(pag_path)
+        discrete_vol = pag_df['final_discrete_volume']
+        n_pag = len(pag_df) + 1
+        mean_pagvol = np.mean(discrete_vol)
+        std_pagvol = np.std(discrete_vol)
+
+        n_pak = int(self.rve_data['packet_id'].max())
+        mean_pakvol = self.box_size**3/n_pak
+        variance_pakvol = 0
+        for i in range(1,n_pak+1):
+            pakvol = len(self.rve_data[self.rve_data['packet_id']==i])/len(self.rve_data)*self.box_size**3
+            variance_pakvol += (pakvol-mean_pakvol)**2/n_pak
+
+        std_pakvol = variance_pakvol**0.5
+
+        n_block = int(self.rve_data['block_id'].max())
+        bt_df = self.rve_data.groupby(['block_id']).first()
+        mean_bt = bt_df['block_thickness'].mean()
+        std_bt = bt_df['block_thickness'].std()
+
+        #compute MMD
+        measured_bt = pd.read_csv(self.block_file)['block_thickness']
+        generated_bt = bt_df['block_thickness']
+
+        #compute k-moments
+        measured_bt_kmoments = k_moments(measured_bt,k)
+        gen_bt_kmoments = k_moments(generated_bt,k)
+
+        #get MMD
+        MMD = gaussian_kernel(gen_bt_kmoments,measured_bt_kmoments,sigma)
+
+        result_path = self.store_path + '/Postprocessing/result.txt'
+        with open(result_path,'w') as f:
+            f.write('Parent Austenitic Grains Statistical Info:\n')
+            f.write('total number: {}\n'.format(n_pag))
+            f.write('average(volume): {}\n'.format(mean_pagvol))
+            f.write('standard variance(volume): {}\n'.format(std_pagvol))
+            f.write('\n')
+            f.write('Packets Statistical Info:\n')
+            f.write('total number: {}\n'.format(n_pak))
+            f.write('average(volume): {}\n'.format(mean_pakvol))
+            f.write('standard variance(volume): {}\n'.format(std_pakvol))
+            f.write('\n')
+            f.write('Blocks Statistical Info:\n')
+            f.write('total number: {}\n'.format(n_block))
+            f.write('average(thickness): {}\n'.format(mean_bt))
+            f.write('standard variance(thickness): {}\n'.format(std_bt))
+            f.write('MMD: {}'.format(MMD))
+
+        self.logger.info('substructure postprocessing successful')
+
+
 
 if __name__ == '__main__':
 
