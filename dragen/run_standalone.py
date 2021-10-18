@@ -8,7 +8,7 @@ from dragen.main3D_GAN import DataTask3D_GAN
 if __name__ == "__main__":
     ### Instanciate some variables to vary ###
 
-    bands = True
+    bands = False
     solver_typ = ['Spectral']
     number_of_rve = 1
 
@@ -39,7 +39,7 @@ if __name__ == "__main__":
                 number_of_bands = 0
                 bandwidth = 0
 
-            obj3D = DataTask3D_GAN(ganfile=ganfile, box_size=20, n_pts=30, number_of_bands=number_of_bands,
+            obj3D = DataTask3D_GAN(ganfile=ganfile, box_size=15, n_pts=32, number_of_bands=number_of_bands,
                                    bandwidth=bandwidth,
                                    shrink_factor=0.5,
                                    band_filling=1.3, phase_ratio=float(full_percentage), inclusions_ratio=0.01,

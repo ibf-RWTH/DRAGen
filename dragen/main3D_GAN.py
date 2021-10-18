@@ -622,7 +622,7 @@ class DataTask3D_GAN(RVEUtils):
 
             spectral.write_material(store_path=store_path, grains=phase_list)
             spectral.write_load(store_path)
-            spectral.write_grid(store_path=store_path, rve=rve, spacing=self.bin_size/1000)
+            spectral.write_grid(store_path=store_path, rve=rve, spacing=self.box_size/1000)
 
 
             """# 2.) Make Geometry

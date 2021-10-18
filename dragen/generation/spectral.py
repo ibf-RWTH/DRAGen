@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import pyvista as pv
 import damask
+import vtk
 
 
 def make_config(store_path, n_grains, grains_df, band=True) -> None:
@@ -282,23 +283,42 @@ def write_material(store_path: str, grains: list) -> None:
     matdata = damask.ConfigMaterial()
 
     # Homog
-    matdata['homogenization']['SX'] = {'N_constitutents': 1, 'mechanical': {'type': 'pass'}}
+    matdata['homogenization']['SX'] = {'N_constituents': 1, 'mechanical': {'type': 'pass'}}
 
     # Phase
     ferrite = {'lattice': 'cI',
-               'elastic': {'type': 'Hooke', 'C_11': 10, 'C_12': 10, 'C_44': 10},
-               'plastic': {'type': 'phenopowerlaw',
-                           'N_sl': [12],
-                           'a_sl': 2.0,
-                           'dot_gamma_0_sl': 0.001,
-                           'h0_sl_sl': 10,
-                           'h_sl_sl': [1, 1, 1.4, 1.4, 1.4, 1.4],
-                           'n_sl': 20,
-                           'xi_0_sl': 10,
-                           'xi_inf_sl': 10}
+               'mechanical':
+                   {'output': ['F', 'P', 'F_e', 'F_p', 'L_p', 'O'],
+                    'elastic': {'type': 'Hooke', 'C_11': 233.3e9, 'C_12': 135.5e9, 'C_44': 128.0e9},
+                    'plastic': {'type': 'phenopowerlaw',
+                                'N_sl': [12],
+                                'a_sl': 2.25,
+                                'atol_xi': 1,
+                                'dot_gamma_0_sl': 0.001,
+                                'h_0_sl-sl': 800e6,
+                                'h_sl-sl': [1, 1, 1.4, 1.4, 1.4, 1.4, 1.4],
+                                'n_sl': 20,
+                                'xi_0_sl': [200e6],
+                                'xi_inf_sl': [370e6]}}
                }
+
+    martensite = {'lattice': 'cI',
+                  'mechanical':
+                      {'output': ['F', 'P', 'F_e', 'F_p', 'L_p', 'O'],
+                       'elastic': {'type': 'Hooke', 'C_11': 417.4e9, 'C_12': 242.4e9, 'C_44': 211.1e9},
+                       'plastic': {'type': 'phenopowerlaw',
+                                   'N_sl': [12],
+                                   'a_sl': 2.25,
+                                   'atol_xi': 1,
+                                   'dot_gamma_0_sl': 0.001,
+                                   'h_0_sl-sl': 563e9,
+                                   'h_sl-sl': [1, 1, 1.4, 1.4, 1.4, 1.4, 1.4],
+                                   'n_sl': 20,
+                                   'xi_0_sl': [406e6],
+                                   'xi_inf_sl': [873e6]}}
+                  }
     matdata['phase']['Ferrite'] = ferrite
-    matdata['phase']['Martensite'] = ferrite
+    matdata['phase']['Martensite'] = martensite
 
     # Material
     for p in grains:
@@ -309,12 +329,12 @@ def write_material(store_path: str, grains: list) -> None:
             matdata = matdata.material_add(phase=['Martensite'], O=damask.Rotation.from_random(1),
                                            homogenization='SX')
 
-    matdata.save(store_path + '/Material.yaml')
+    matdata.save(store_path + '/material.yaml')
 
 
 def write_load(store_path: str) -> None:
     load_case = damask.Config(solver={'mechanical': 'spectral_basic'},
-                                      loadstep=[])
+                              loadstep=[])
 
     F = [1e-2, 0, 0, 0, 'x', 0, 0, 0, 'x']
     P = ['x' if i != 'x' else 0 for i in F]
@@ -323,7 +343,7 @@ def write_load(store_path: str) -> None:
                                   'discretization': {'t': 10., 'N': 100}, 'f_out': 4})
     load_case['loadstep'][0]['boundary_conditions']['mechanical'] = \
         {'P': [P[0:3], P[3:6], P[6:9]],
-         'F': [F[0:3], F[3:6], F[6:9]]}
+         'dot_F': [F[0:3], F[3:6], F[6:9]]}
 
     load_case.save(store_path + '/load.yaml')
 
@@ -332,7 +352,11 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
     start = int(rve.__len__() / 4)
     stop = int(rve.__len__() / 4 + rve.__len__() / 2)
     real_rve = rve[start:stop, start:stop, start:stop]
-    # Create the spatial reference
+
+    grid = damask.Grid(material=real_rve, size=[spacing, spacing, spacing])
+    grid.save(fname=store_path + '/grid.vti')
+
+    """# Create the spatial reference
     grid = pv.UniformGrid()
 
     # Set the grid dimensions: shape + 1 because we want to inject our values on
@@ -348,7 +372,7 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
 
     # Now save the grid
     grid.plot(screenshot=store_path + '/rve.png')
-    grid.save(store_path + '/grid.vti')
+    grid.save(store_path + '/grid.vti')"""
 
 
 if __name__ == '__main__':
