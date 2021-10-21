@@ -11,7 +11,6 @@ import numpy as np
 from substructure.data import save_data
 from substructure.substructure import Grain
 from scipy.stats import moment
-import matplotlib.pyplot as plt
 
 class Run():
 
@@ -155,6 +154,37 @@ class Run():
         self.rve_data = rve_data
         self.store_path = store_path
         self.logger = logger
+
+        rve_data.sort_values(by=['x','y','z'],inplace=True)
+        zero_btdf = rve_data[rve_data['block_thickness']==0]
+        if not zero_btdf.empty:
+            #iter over zero_btdf
+            for i in range(len(zero_btdf)):
+                #find the closet block without 0 block thickness
+                n = 1
+                m = 1
+                index = zero_btdf.index[i]
+
+                while True:
+                    if rve_data.loc[index+n,'block_thickness'] != 0:
+                        zero_btdf.iloc[i]['block_id'] = rve_data.loc[index+n,'block_id']
+                        zero_btdf.iloc[i]['block_thickness'] = rve_data.loc[index+n,'block_thickness']
+                        break
+
+                    else:
+                        n += 1
+
+                    if rve_data.loc[index-m,'block_thickness'] != 0:
+                        zero_btdf.iloc[i]['block_id'] = rve_data.loc[index-m,'block_id']
+                        zero_btdf.iloc[i]['block_thickness'] = rve_data.loc[index-m,'block_thickness']
+                        break
+
+                    else:
+                        m += 1
+
+            rve_data.loc[zero_btdf.index,'block_id'] = zero_btdf['block_id']
+            rve_data.loc[zero_btdf.index,'block_thickness'] = zero_btdf['block_thickness']
+
         return rve_data
 
     def post_processing(self,k,sigma=2):
@@ -224,16 +254,6 @@ class Run():
             if MMD <= 0.01:
                 f.write('##warning: the MMD is too small, please check statistical features!')
 
-        #plot MMD
-        if MMD > 0.01:
-            l = (np.power(gen_bt_kmoments - measured_bt_kmoments, 2).sum())**0.5
-            lrange = np.linspace(-2*l,2*l,500)
-            gk =  np.exp(-lrange**2/ (2 * sigma ** 2))
-            plt.plot(lrange,gk)
-            plt.plot(l,MMD,'rx',markersize=10)
-            plt.xlabel('Feature Distance')
-            plt.ylabel('Maximum Mean Discrepancy')
-            plt.savefig(self.store_path + '/Postprocessing/MMD.png')
         self.logger.info('substructure postprocessing successful')
 
 
@@ -243,8 +263,10 @@ if __name__ == '__main__':
     import datetime
     start = datetime.datetime.now()
     test_run = Run(20,40,'F:/pycharm/2nd_mini_thesis/substructure')
-    rve_data = pd.read_csv('F:/pycharm/2nd_mini_thesis/dragen-master/OutputData/2021-07-23_0/substruct_data_abq.csv') #changes into rve data
-    grains_df = pd.read_csv('F:/pycharm/2nd_mini_thesis/dragen-master/OutputData/2021-07-23_0/Generation_Data/grain_data_input.csv')#grain_data
-    test_run.run()
-    end = datetime.datetime.now()
-    print('running time is',end-start)
+    rve_data = pd.read_csv('F:/pycharm/2nd_mini_thesis/dragen-master/OutputData/2021-09-23_0/substruct_data_abq.csv') #changes into rve data
+    # grains_df = pd.read_csv('F:/pycharm/2nd_mini_thesis/dragen-master/OutputData/2021-09-23_0/Generation_Data/grain_data_input.csv')#grain_data
+    # test_run.run()
+    # end = datetime.datetime.now()
+    # print('running time is',end-start)
+    df = rve_data[rve_data['block_id']==1]
+    print(df)
