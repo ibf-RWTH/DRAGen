@@ -4,14 +4,16 @@ import random
 import datetime
 import logging
 from scipy.ndimage import convolve
-
+import sys
 from dragen.utilities.RVE_Utils import RVEUtils
 
 class DiscreteRsa3D(RVEUtils):
 
-    def __init__(self, box_size, n_pts, a, b, c, alpha, store_path, debug=False, infobox_obj=None, progress_obj=None):
+    def __init__(self, box_size, box_size_y, box_size_z, n_pts, a, b, c, alpha, store_path, debug=False, infobox_obj=None, progress_obj=None):
 
         self.box_size = box_size
+        self.box_size_y = box_size_y
+        self.box_size_z = box_size_z
         self.n_pts = n_pts
         self.a = a
         self.b = b
@@ -24,7 +26,7 @@ class DiscreteRsa3D(RVEUtils):
         self.logger = logging.getLogger("RVE-Gen")
         self.n_grains = len(a)
 
-        super().__init__(box_size, n_pts)
+        super().__init__(box_size, n_pts=n_pts, box_size_y=box_size_y, box_size_z=box_size_z)
 
         self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
 
@@ -82,12 +84,22 @@ class DiscreteRsa3D(RVEUtils):
         grains_z = [self.z_grid[grain_tuples_i[0]][grain_tuples_i[1]][grain_tuples_i[2]]
                     for grain_tuples_i in grain_tuples]
 
+        free_rve_x, free_rve_y, free_rve_z = np.where((array == -26))
+        free_space_tuples = [*zip(free_rve_x, free_rve_y, free_rve_z)]
+
+        free_space_x = [self.x_grid[free_space_tuples_i[0]][free_space_tuples_i[1]][free_space_tuples_i[2]]
+                        for free_space_tuples_i in free_space_tuples]
+        free_space_y = [self.y_grid[free_space_tuples_i[0]][free_space_tuples_i[1]][free_space_tuples_i[2]]
+                        for free_space_tuples_i in free_space_tuples]
+        free_space_z = [self.z_grid[free_space_tuples_i[0]][free_space_tuples_i[1]][free_space_tuples_i[2]]
+                        for free_space_tuples_i in free_space_tuples]
+
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array > 0) | (array == -200) | (array < -200))],
                    s=1, vmin=-20,
                    vmax=n_grains, cmap='seismic')  # lower -200 for band grains and inclusions
-        # ax.scatter(grains_x, grains_y, grains_z, c='r', s=1)
+        ax.scatter(free_space_x, free_space_y, free_space_z, color='grey', alpha=0.01)
 
         ax.set_xlim(-5, self.box_size + 5)
         ax.set_ylim(-5, self.box_size + 5)
@@ -117,7 +129,9 @@ class DiscreteRsa3D(RVEUtils):
 
         if banded_rsa_array is None:
             rsa = super().gen_array()
+            print('rsa_shape: ', rsa.shape)
             rsa = super().gen_boundaries_3D(rsa)
+            print(rsa.shape)
 
         else:
             rsa = banded_rsa_array
@@ -265,6 +279,7 @@ class DiscreteRsa3D(RVEUtils):
 
             free_points = np.count_nonzero(rsa == 0)
             band_points = np.count_nonzero(rsa == -200)
+
             if band_points_old > 0:
                 if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)) | \
                         (band_points / band_vol_0 < 0.95):  # Prozentbereich nach außen muss möglich sein (95%)
