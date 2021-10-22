@@ -10,13 +10,16 @@ from dragen.postprocessing.voldistribution import PostProcVol
 from dragen.pyqt_gui.ScrollLabel import ScrollLabel
 
 class Run:
-    def __init__(self, box_size: int, resolution: float, number_of_rves: int, number_of_bands: int, bandwidth: float,
-                 dimension: int, visualization_flag: bool, file1: str = None, file2: str = None,
+    def __init__(self, box_size: int, box_size_y: int = None, box_size_z: int = None, resolution: float = 1, number_of_rves: int = 1,
+                 number_of_bands: int = 0, bandwidth: float = 1,
+                 dimension: int = 3, visualization_flag: bool = False, file1: str = None, file2: str = None,
                  phase_ratio: float = None, store_path: str = None,
                  shrink_factor: float = 0.5, band_ratio_rsa: float = 0.75, band_ratio_final: float = 0.75,
                  gui_flag: bool = False, gan_flag: bool = False, info_box_obj=None, progress_obj=None):
 
         self.box_size = box_size
+        self.box_size_y = box_size_y
+        self.box_size_z = box_size_z
         self.resolution = resolution
         self.number_of_rves = number_of_rves
         self.number_of_bands = number_of_bands
@@ -36,7 +39,6 @@ class Run:
         self.progress_obj = progress_obj
 
     def run(self):
-
         # calculate n_pts from box_size and resolution
         n_pts = math.ceil(float(self.box_size) * self.resolution)
         if n_pts % 2 != 0:
@@ -44,7 +46,6 @@ class Run:
         if self.infobox_obj is not None:
             self.infobox_obj.emit("the chosen resolution lead to {}^{} points in the grid".format(str(n_pts),
                                                                                                   str(self.dimension)))
-
         if self.dimension == 2:
             obj2D = DataTask2D(box_size=self.box_size, n_pts=int(n_pts), number_of_bands=self.number_of_bands,
                                bandwidth=self.band_width, shrink_factor=self.shrink_factor,
@@ -60,15 +61,16 @@ class Run:
         elif self.dimension == 3:
             # Teile in zwei Stück für GAN
             if self.gan_flag:
-                print('Hier')
-                obj3D = DataTask3D_GAN(box_size=self.box_size, n_pts=int(n_pts), number_of_bands=self.number_of_bands,
+                obj3D = DataTask3D_GAN(box_size=self.box_size,
+                                       n_pts=int(n_pts), number_of_bands=self.number_of_bands,
                                        bandwidth=self.band_width, shrink_factor=self.shrink_factor,
                                        band_filling=0.99, phase_ratio=self.phase_ratio, inclusions_ratio=0.01,
                                        inclusions_flag=False,
                                        file1=None, file2=None, store_path=None, gui_flag=self.gui_flag, anim_flag=True,
                                        gan_flag=self.gan_flag, exe_flag=False)
             else:
-                obj3D = DataTask3D(box_size=self.box_size, n_pts=int(n_pts), number_of_bands=self.number_of_bands,
+                obj3D = DataTask3D(box_size=self.box_size, box_size_y=self.box_size_y, box_size_z=self.box_size_z,
+                                   n_pts=int(n_pts), number_of_bands=self.number_of_bands,
                                    bandwidth=self.band_width, shrink_factor=self.shrink_factor,
                                    band_ratio_rsa=self.band_ratio_rsa, band_ratio_final=self.band_ratio_final,
                                    file1=self.file1, file2=self.file2, phase_ratio=self.phase_ratio,
@@ -96,23 +98,27 @@ class Run:
 
 
 if __name__ == "__main__":
-    box_size = 30
-    resolution = 1.8
+    box_size = 64
+    box_size_y = None    # if this is None it will be set to the main box_size value
+    box_size_z = None     # for sheet rve set z to None and y to different value than x the other way round is buggy
+    resolution = 4
     number_of_rves = 1
     number_of_bands = 0
     bandwidth = 5
-    visualization_flag = False
-    phase_ratio = 0.3
-    store_path = '../'
+    visualization_flag = True
+    phase_ratio = 0.8
+    store_path = 'C:/temp/'
     shrink_factor = 0.5
-    dimension = 3
+    dimension = 2
     gan_flag = False
-
     # Example Files
-    file1 = '../ExampleInput/ferrite_54_grains.csv'
-    file2 = '../ExampleInput/Pearlite_21_grains.csv'
 
-    Run(box_size, resolution, number_of_rves, number_of_bands, bandwidth,
-        dimension, visualization_flag, file1, file2,
-        phase_ratio, store_path, shrink_factor, gui_flag=False, gan_flag=gan_flag,
+    file1 = 'D:/Sciebo/IEHK/RVEs/Input_DP800/Ferrit_ab.csv'
+    #file2 = None
+    file2 = 'D:/Sciebo/IEHK/RVEs/Input_DP800/Martensit_ab.csv'
+
+    Run(box_size, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution, number_of_rves=number_of_rves,
+        number_of_bands=number_of_bands, bandwidth=bandwidth, dimension=dimension,
+        visualization_flag=visualization_flag, file1=file1, file2=file2,
+        phase_ratio=phase_ratio, store_path=store_path, shrink_factor=shrink_factor, gui_flag=False, gan_flag=gan_flag,
         info_box_obj=None, progress_obj=None).run()
