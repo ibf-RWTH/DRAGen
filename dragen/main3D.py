@@ -16,13 +16,16 @@ from dragen.postprocessing.voldistribution import PostProcVol
 
 class DataTask3D(RVEUtils):
 
-    def __init__(self, box_size: int, n_pts: int, number_of_bands: int, bandwidth: float, shrink_factor: float = 0.5,
+    def __init__(self, box_size: int, box_size_y, box_size_z,
+                 n_pts: int, number_of_bands: int, bandwidth: float, shrink_factor: float = 0.5,
                  band_ratio_rsa: float = 0.95, band_ratio_final: float = 0.95, phase_ratio: float = None, file1=None,
                  file2=None, store_path=None, gui_flag=False, anim_flag=False, gan_flag=False, exe_flag=False,
                  infobox_obj=None, progess_obj=None):
 
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
+        self.box_size_y = box_size_y
+        self.box_size_z = box_size_z
         self.n_pts = n_pts  # has to be even
         self.bin_size = self.box_size / self.n_pts
         self.step_half = self.bin_size / 2
@@ -34,19 +37,12 @@ class DataTask3D(RVEUtils):
         self.band_ratio_final = band_ratio_final  # Band ratio for Tesselator - final is br1 * br2
         self.gui_flag = gui_flag
         self.gan_flag = gan_flag
-        self.root_dir = './'
-        self.store_path = None
-        self.fig_path = None
-        self.gen_path = None
+        self.root_dir = store_path
+        self.store_path = store_path
+        self.fig_path = store_path+'Figs'
+        self.gen_path = store_path+'Generation_Data'
         self.infobox_obj = infobox_obj
         self.progress_obj = progess_obj
-
-        if exe_flag:
-            self.root_dir = store_path
-        if not gui_flag:
-            self.root_dir = sys.argv[0][:-14]  # setting root_dir to root_dir by checking path of current file
-        elif gui_flag and not exe_flag:
-            self.root_dir = store_path
 
         self.logger.info('the exe_flag is: ' + str(exe_flag))
         self.logger.info('root was set to: ' + self.root_dir)
@@ -56,7 +52,8 @@ class DataTask3D(RVEUtils):
 
         self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
 
-        super().__init__(box_size, n_pts, self.x_grid, self.y_grid, self.z_grid, bandwidth, debug=False)
+        super().__init__(box_size,  n_pts, box_size_y=box_size_y, box_size_z=box_size_z,
+                         x_grid=self.x_grid, y_grid=self.y_grid, z_grid=self.z_grid, bandwidth=bandwidth, debug=False)
 
     def setup_logging(self):
         LOGS_DIR = self.root_dir + '/Logs/'
@@ -79,18 +76,52 @@ class DataTask3D(RVEUtils):
         self.logger.info("RVE generation process has started...")
         phase1_input_df = super().read_input(phase1_csv, dimension)
         # Phase Ratio calculation
-        adjusted_size = np.cbrt((self.box_size ** 3 -
-                                (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
-                                * self.phase_ratio)
-        grains_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
-        grains_df['phaseID'] = 1
-
-        if phase2_csv is not None:
-            phase2_input_df = super().read_input(phase2_csv, dimension)
+        if self.box_size_y is None and self.box_size_z is None:
             adjusted_size = np.cbrt((self.box_size ** 3 -
                                     (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
-                                    * (1-self.phase_ratio))
-            phase2_df = super().sample_input_3D(phase2_input_df, bs=adjusted_size)
+                                    * self.phase_ratio)
+            grains_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
+
+        elif self.box_size_y is not None and self.box_size_z is None:
+            adjusted_size = np.cbrt((self.box_size ** 2 * self.box_size_y -
+                                     (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
+                                    * self.phase_ratio)
+            grains_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
+        elif self.box_size_y is None and self.box_size_z is not None:
+            adjusted_size = np.cbrt((self.box_size ** 2 * self.box_size_z -
+                                     (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
+                                    * self.phase_ratio)
+            grains_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
+        else:
+            adjusted_size = np.cbrt((self.box_size * self.box_size_y * self.box_size_z -
+                                     (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
+                                    * self.phase_ratio)
+            grains_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
+        grains_df['phaseID'] = 1
+        if phase2_csv is not None:
+            phase2_input_df = super().read_input(phase2_csv, dimension)
+            if self.box_size_y is None and self.box_size_z is None:
+                adjusted_size = np.cbrt((self.box_size ** 3 -
+                                         (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
+                                        * (1 - self.phase_ratio))
+                phase2_df = super().sample_input_3D(phase2_input_df, bs=adjusted_size)
+
+            elif self.box_size_y is not None and self.box_size_z is None:
+                adjusted_size = np.cbrt((self.box_size ** 2 * self.box_size_y -
+                                         (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
+                                        * (1 - self.phase_ratio))
+                phase2_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
+            elif self.box_size_y is None and self.box_size_z is not None:
+                adjusted_size = np.cbrt((self.box_size ** 2 * self.box_size_z -
+                                         (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
+                                        * (1 - self.phase_ratio))
+                phase2_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
+            else:
+                adjusted_size = np.cbrt((self.box_size * self.box_size_y * self.box_size_z -
+                                         (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
+                                        * (1 - self.phase_ratio))
+                phase2_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
+
             phase2_df['phaseID'] = 2
             grains_df = pd.concat([grains_df, phase2_df])
 
@@ -117,7 +148,7 @@ class DataTask3D(RVEUtils):
 
     def rve_generation(self, grains_df, store_path) -> str:
 
-        discrete_RSA_obj = DiscreteRsa3D(self.box_size, self.n_pts,
+        discrete_RSA_obj = DiscreteRsa3D(self.box_size, self.box_size_y, self.box_size_z, self.n_pts,
                                          grains_df['a'].tolist(),
                                          grains_df['b'].tolist(),
                                          grains_df['c'].tolist(),
@@ -150,8 +181,8 @@ class DataTask3D(RVEUtils):
             grains_df['z_0'] = z_0_list
 
         if rsa_status:
-            discrete_tesselation_obj = Tesselation3D(self.box_size, self.n_pts, grains_df,
-                                                     self.shrink_factor, self.band_ratio_final, store_path,
+            discrete_tesselation_obj = Tesselation3D(self.box_size, self.box_size_y, self.box_size_z, self.n_pts,
+                                                     grains_df, self.shrink_factor, self.band_ratio_final, store_path,
                                                      infobox_obj=self.infobox_obj, progress_obj=self.progress_obj)
             rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa, animation=self.animation, gui=self.gui_flag)
 
@@ -162,6 +193,7 @@ class DataTask3D(RVEUtils):
         if rve_status:
             periodic_rve_df = super().repair_periodicity_3D(rve)
             periodic_rve_df['phaseID'] = 0
+            print('len rve edge:', np.cbrt(len(periodic_rve_df)))
             # An den NaN-Werten in dem DF liegt es nicht!
 
             grains_df.sort_values(by=['GrainID'])
@@ -169,7 +201,7 @@ class DataTask3D(RVEUtils):
             for i in range(len(grains_df)):
                 # Set grain-ID to number of the grain
                 # Denn Grain-ID ist entweder >0 oder -200 oder >-200
-                periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1, 'phaseID'] = grains_df['phaseID'][i]
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == i+1, 'phaseID'] = grains_df['phaseID'][i]
                 #debug_df.loc[debug_df.index == i, 'vol_rve_df'] = \
                 #    len(periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1])*self.bin_size**3
 
@@ -181,10 +213,14 @@ class DataTask3D(RVEUtils):
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
 
             # Start the Mesher
-            #debug_df.to_csv('debug_grains_df.csv', index=False)
-            mesher_obj = Mesher(periodic_rve_df, grains_df, store_path=store_path,
+            #grains_df.to_csv('grains_df.csv', index=False)
+            #periodic_rve_df.to_csv('periodic_rve_df.csv', index=False)
+
+            mesher_obj = Mesher(box_size_x=self.box_size, box_size_y=self.box_size_y, box_size_z=self.box_size_z,
+                                rve=periodic_rve_df,grains_df=grains_df, store_path=store_path,
                                 phase_two_isotropic=True, animation=self.animation,
-                                infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag)
+                                infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag,
+                                element_type='C3D8')
             mesher_obj.mesh_and_build_abaqus_model()
         return store_path
 

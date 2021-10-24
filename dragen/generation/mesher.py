@@ -5,12 +5,15 @@ import tetgen
 import datetime
 import os
 import logging
-
-
 class Mesher:
 
-    def __init__(self, rve: pd.DataFrame, grains_df: pd.DataFrame, store_path,
-                 phase_two_isotropic=True, animation=True, infobox_obj=None, progress_obj=None, gui=True, elem='C3D4'):
+    def __init__(self, box_size_x: int, box_size_y: int = None, box_size_z: int = None,  rve: pd.DataFrame = None,
+                 grains_df: pd.DataFrame = None, store_path: str = None,
+                 phase_two_isotropic=True, animation=True, infobox_obj=None,
+                 progress_obj=None, gui=True, element_type='C3D4'):
+        self.box_size_x = box_size_x
+        self.box_size_y = box_size_y
+        self.box_size_z = box_size_z
         self.rve = rve
         self.grains_df = grains_df
         self.store_path = store_path
@@ -28,43 +31,59 @@ class Mesher:
         self.z_max = int(max(rve.z))
         self.z_min = int(min(rve.z))
         self.n_grains = int(max(rve.GrainID))
-        self.n_pts = int(rve.n_pts[0])
-        self.bin_size = rve.box_size[0] / (self.n_pts+1) ## test
+        self.n_pts_x = int(rve.n_pts[0])+1
+        self.bin_size = rve.box_size[0] / (self.n_pts_x) ## test
+        if self.box_size_y is not None:
+            self.n_pts_y = int(self.box_size_y/self.bin_size)
+        else:
+            self.box_size_y = self.box_size_x
+            self.n_pts_y =self.n_pts_x
+
+        if self.box_size_z is not None:
+            self.n_pts_z = int(self.box_size_z / self.bin_size)
+        else:
+            self.box_size_z = self.box_size_x
+            self.n_pts_z = self.n_pts_x
+
         self.logger = logging.getLogger("RVE-Gen")
         self.gui = gui
-        self.elem = elem
+        self.element_type = element_type
+        self.roughness = True
 
-    def gen_blocks(self) -> pv.UniformGrid:
+    def gen_blocks(self) -> pv.UnstructuredGrid:
 
         """this function generates a structured grid
         in py-vista according to the rve"""
-        grid = pv.UniformGrid()
 
-        # Set the grid dimensions: shape + 1 because we want to inject our values on
-        #   the CELL data
-        grid.dimensions = np.array((self.n_pts+1, self.n_pts+1, self.n_pts+1)) + 1
+        xrng = np.linspace(0, self.box_size_x/1000, self.n_pts_x+1, endpoint=True)
+        yrng = np.linspace(0, self.box_size_y/1000, self.n_pts_y+1, endpoint=True)
+        zrng = np.linspace(0, self.box_size_z/1000, self.n_pts_z+1, endpoint=True)
+        grid = pv.RectilinearGrid(xrng, yrng, zrng)
 
-        # Edit the spatial reference
-        grid.origin = (0, 0, 0)  # The bottom left corner of the data set
-        # These are the cell sizes along each axis in the gui µm were entered here they are transforemed to mm
-        grid.spacing = (self.bin_size/1000, self.bin_size/1000, self.bin_size/1000)
+        grid = grid.cast_to_unstructured_grid()
         return grid
 
-    def gen_grains(self, grid: pv.UniformGrid) -> pv.UniformGrid:
+    def gen_grains(self, grid: pv.UnstructuredGrid) -> pv.UnstructuredGrid:
 
         """the grainIDs are written on the cell_array"""
 
-        rve = self.rve
-        rve.sort_values(by=['x', 'y', 'z'], inplace=True)  # This sorting is important for some weird reason
+
+        if self.box_size_y is None and self.box_size_z is None:
+            self.rve.sort_values(by=['x', 'y', 'z'], inplace=True)  # This sorting is important for some weird reason
+        if self.box_size_y is not None and self.box_size_z is None:
+            self.rve.sort_values(by=['x', 'y', 'z'], inplace=True)  # This sorting is important for some weird reason
+        elif self.box_size_y is None and self.box_size_z is not None:
+            self.rve.sort_values(by=['z', 'x', 'y'], inplace=True)  # TODO: This sorting is important for some weird reason
+        else:
+            self.rve.sort_values(by=['x', 'y', 'z'], inplace=True)  # This sorting is important for some weird reason
 
         # Add the data values to the cell data
-        grid.cell_arrays["GrainID"] = rve.GrainID
-        grid.cell_arrays["phaseID"] = rve.phaseID
-
+        grid.cell_data["GrainID"] = self.rve['GrainID'].to_numpy()
+        grid.cell_data["phaseID"] = self.rve['phaseID'].to_numpy()
         # Now plot the grid!
         if self.animation:
             plotter = pv.Plotter(off_screen=True)
-            plotter.add_mesh(grid, scalars='phaseID', stitle='Phase IDs',
+            plotter.add_mesh(grid, scalars='phaseID', scalar_bar_args={'title': 'Phase IDs'},
                              show_edges=True, interpolate_before_map=True)
             plotter.add_axes()
             plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
@@ -72,7 +91,7 @@ class Mesher:
             plotter.close()
 
             plotter = pv.Plotter(off_screen=True)
-            plotter.add_mesh(grid, scalars='GrainID', stitle='Grain IDs',
+            plotter.add_mesh(grid, scalars='GrainID', scalar_bar_args={'title':'Grain IDs'},
                              show_edges=True, interpolate_before_map=True)
             plotter.add_axes()
             plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
@@ -81,254 +100,103 @@ class Mesher:
 
         return grid
 
-    def convert_to_mesh(self, grid: pv.UniformGrid) -> tuple:
+    def smoothen_mesh(self, grid: pv.UnstructuredGrid, element_type: str = 'C3D8') -> pv.UnstructuredGrid:
 
         """information about grainboundary elements of hex-mesh
         is extracted here and stored in pv.Polydata and
         in a pd.Dataframe"""
-
+        x_max = max(grid.points[:, 0])
+        x_min = min(grid.points[:, 0])
+        y_max = max(grid.points[:, 1])
+        y_min = min(grid.points[:, 1])
+        z_max = max(grid.points[:, 2])
+        z_min = min(grid.points[:, 2])
         numberOfGrains = self.n_grains
-        grainboundary_df = pd.DataFrame()
-        all_points = grid.points
-        all_points_df = pd.DataFrame(all_points, columns=['x', 'y', 'z'], dtype=float)
-        all_points_df.sort_values(by=['x', 'y', 'z'], inplace=True)
 
-        for i in range(1,numberOfGrains + 1):
-            sub_grid = grid.extract_cells(np.where(np.asarray(grid.cell_arrays.values())[0] == i))
-            sub_surf = sub_grid.extract_surface()
-            sub_surf.triangulate(inplace=True)
+        gid_list = list()
+        pid_list = list()
 
-            # store all points of grain in DataFrame and reindex to indices from whole RVE
-            p = sub_surf.points
-            p_df = pd.DataFrame(p, columns=['x', 'y', 'z'], dtype=float)
-            p_df.sort_values(by=['x', 'y', 'z'], inplace=True)
+        ######################################
+        if self.element_type != 'C3D8':
+            old_grid = grid.copy()
+            grid_tet = pv.UnstructuredGrid()
+            for i in range(1, numberOfGrains + 1):
+                phase = self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0]
+                grain_grid_tet = old_grid.extract_cells(np.where(np.asarray(old_grid.cell_data.values())[0] == i))
+                grain_surf_tet = grain_grid_tet.extract_surface(pass_pointid=True, pass_cellid=True)
+                grain_surf_tet.triangulate(inplace=True)
 
-            compare_all = all_points_df.merge(p_df, on=['x', 'y', 'z'], how='left', indicator=True)
+                tet = tetgen.TetGen(grain_surf_tet)
+                if self.element_type == 'C3D4':
+                    tet.tetrahedralize(order=1, mindihedral=10, minratio=1.5, supsteiner_level=0, steinerleft=0)
+                elif self.element_type == 'C3D10':
+                    tet.tetrahedralize(order=2, mindihedral=10, minratio=1.5, supsteiner_level=0, steinerleft=0)
+                tet_grain_grid = tet.grid
+                ncells = tet_grain_grid.n_cells
 
-            compare_grain = compare_all.loc[compare_all['_merge'] == 'both'].copy()
-            compare_grain.reset_index(inplace=True)
-            compare_grain['grain_idx'] = p_df.index
-            compare_grain.sort_values(by=['grain_idx'], inplace=True)
+                if self.gui:
+                    self.progress_obj.emit(75+(100*(i+1)/self.n_grains/4))
+                grainIDList = [i]
+                grainID_array = grainIDList * ncells
+                gid_list.extend(grainID_array)
 
-            # store all faces in Dataframe and reindex points to indices from whole RVE
-            f = sub_surf.faces
-            faces = np.reshape(f, (int(len(f) / 4), 4))
-
-            f_df = pd.DataFrame(faces, columns=['npts', 'p1', 'p2', 'p3'])
-            idx = np.asarray(compare_grain['index'])
-            f_df['p1'] = [idx[j] for j in f_df['p1'].values]
-            f_df['p2'] = [idx[j] for j in f_df['p2'].values]
-            f_df['p3'] = [idx[j] for j in f_df['p3'].values]
-            f_df['facelabel'] = str(i)
-
-            grainboundary_df = pd.concat([grainboundary_df, f_df])
-
-        # filter out duplicate triangles by sorting them and dropping duplicates
-        sorted_tuple = [[grainboundary_df.p1.values[i],
-                         grainboundary_df.p2.values[i],
-                         grainboundary_df.p3.values[i]]
-                        for i in range(len(grainboundary_df))]
-        sorted_tuple = [sorted(item) for item in sorted_tuple]
-        sorted_tuple = [tuple(item) for item in sorted_tuple]
-        grainboundary_df.drop_duplicates(inplace=True)
-        grainboundary_df['sorted_tris'] = sorted_tuple
-
-        unique_grainboundary_df = grainboundary_df.drop_duplicates(subset=['sorted_tris'], keep='first')
-
-        all_faces = unique_grainboundary_df.drop(['sorted_tris', 'facelabel'], axis=1)
-        all_faces = np.asarray(all_faces, dtype='int32')
-        all_faces = np.reshape(all_faces, (1, int(len(all_faces) * 4)))[0]
-        boundaries = pv.PolyData(all_points, all_faces)
-
-        return boundaries, grainboundary_df
-
-    @staticmethod
-    def gen_face_labels(tri_df: pd.DataFrame) -> np.ndarray:
-
-        """all boundary triangles are investigated regarding to
-        the grains they are connected to and the face labels
-        are stored in a list"""
-
-        tri_df.sort_values(by=['facelabel'], inplace=True)
-        fl_df = tri_df[['sorted_tris', 'facelabel']]
-        fl_df = fl_df.groupby(['sorted_tris'], sort=False)['facelabel'].apply(', '.join).reset_index()
-        fl_df['LabelCount'] = fl_df['facelabel'].str.count(",") + 1
-        fl_df.loc[fl_df['LabelCount'] == 1, 'facelabel'] += ',-1'
-        fl_df['LabelCount'] = fl_df['facelabel'].str.count(",") + 1
-        tri_df.drop_duplicates(subset='sorted_tris', inplace=True, keep='first')
-        tri_df.reset_index(inplace=True, drop=True)
-        tri_df['facelabel'] = fl_df['facelabel']
-        facelabel = np.asarray(tri_df['facelabel'])
-        facelabel = [item.split(',') for item in facelabel]
-        facelabel = np.asarray([[int(fl) for fl in group] for group in facelabel])
-
-        return facelabel
-
-    @staticmethod
-    def smooth(tri: pv.PolyData, rve: pv.UniformGrid, tri_df: pd.DataFrame, fl: list) -> pv.PolyData:
-
-        """this function is smoothing the surface
-        mesh of the grain boundaries """
-
-        fl_df = pd.DataFrame(fl)
-        pts = rve.points
-        tri = tri.faces
-
-        tri_df = tri_df.drop(['facelabel', 'sorted_tris'], axis=1)
-        tri_sub = tri_df.copy()
-        tri_sub.drop(fl_df.loc[(fl_df[0] == -1) | (fl_df[1] == -1)].index, inplace=True, axis='rows')
-        tri_sub = tri_sub.to_numpy().astype('int32')
-
-        ########## mesh and smooth blocks ########################
-        surf = pv.PolyData(pts, tri_sub)
-        smooth_boundaries = surf.smooth(n_iter=200)
-        smooth_points = smooth_boundaries.points
-        smooth_points = np.asarray(smooth_points)
-        smooth_boundaries = pv.PolyData(smooth_points, tri_sub)  # kept here for debugging purposes
-        smooth_rve = pv.PolyData(smooth_points, tri)
-        return smooth_rve
-
-    def build_abaqus_model(self, poly_data: pv.PolyData, rve: pv.UniformGrid,
-                           fl: list, tri_df: pd.DataFrame = pd.DataFrame()) -> None:
-
-        """building the abaqus model here so far only single phase supported
-        for dual or multiple phase material_def needs to be adjusted"""
-
-        fl_df = pd.DataFrame(fl)
-        tri = tri_df.drop(['facelabel', 'sorted_tris'], axis=1)
-        tri = np.asarray(tri)
-        smooth_points = poly_data.points
-
-        f = open(self.store_path + '/RVE_smooth.inp', 'w+')
-        f.write('*Heading\n')
-        f.write('** Job name: Job-1 Model name: Job-1\n')
-        f.write('** Generated by: DRAGen \n')
-        f.write('** Date: {}\n'.format(datetime.datetime.now().strftime("%d.%m.%Y")))
-        f.write('** Time: {}\n'.format(datetime.datetime.now().strftime("%H:%M:%S")))
-        f.write('*Preprint, echo=NO, model=NO, history=NO, contact=NO\n')
-        f.write('**\n')
-        f.write('** PARTS\n')
-        f.write('**\n')
-        f.close()
-
-        for i in range(self.n_grains):
-
-            x_min = min(rve.x)
-            y_min = min(rve.y)
-            z_min = min(rve.z)
-            x_max = max(rve.x)
-            y_max = max(rve.y)
-            z_max = max(rve.z)
-            nGrain = i + 1
-
-            tri_idx = fl_df.loc[(fl_df[0] == nGrain) | (fl_df[1] == nGrain)].index
-            triGrain = tri[tri_idx, :]
-            faces = triGrain.astype('int32')
-            sub_surf = pv.PolyData(smooth_points, faces)
-
-            tet = tetgen.TetGen(sub_surf)
-            if self.elem == 'C3D4':
-                tet.tetrahedralize(order=1, mindihedral=10, minratio=1.5, supsteiner_level=1)
-            elif self.elem == 'C3D10':
-                tet.tetrahedralize(order=2, mindihedral=10, minratio=1.5, supsteiner_level=1)
-            sub_grid = tet.grid
-
-            """
-            This following code block is only needed if all grains are generated as independent parts
-            and are merged together later. Or if cohesive contact definitions are defined.
-            A first attempt for cohesive contact defs led to convergence issues which is why this route
-            wasn't followed any further
-            """
-            #grain_hull_df = pd.DataFrame(sub_grid.points.tolist(), columns=['x', 'y', 'z'])
-            #grain_hull_df = gridPointsDf.loc[(gridPointsDf['x'] == x_max) | (gridPointsDf['x'] == x_min) |
-            #                                (gridPointsDf['y'] == y_max) | (gridPointsDf['y'] == y_min) |
-            #                                (gridPointsDf['z'] == z_max) | (gridPointsDf['z'] == z_min)]
-            #grain_hull_df['GrainID'] = nGrain
-            #grid_hull_df = pd.concat([grid_hull_df, grain_hull_df])
-
-
-            ncells = sub_grid.n_cells
-            print(i, ncells)
-            if self.gui:
-                self.progress_obj.emit(75+(100*(i+1)/self.n_grains/4))
-            grainIDList = [i + 1]
-            grainID_array = grainIDList * ncells
-            sub_grid['GrainID'] = grainID_array
-            if i == 0:
-                grid = sub_grid
-            else:
-                if len(grid.cell_arrays.keys()) == 0:
-                    # print(i, grid.cell_arrays.keys())
-                    if self.gui:
-                        self.infobox_obj.emit('uuups! I lost the grainID_key! please increase the resolution')
-                    else:
-                        self.logger.info('I lost the grainID_key! please increase the resolution')
-                    return
-                grid = sub_grid.merge(grid)
-            grain_vol = sub_grid.volume
-            #self.logger.info(str(grain_vol*10**9))
-            self.grains_df.loc[self.grains_df['GrainID'] == i, 'meshed_conti_volume'] = grain_vol*10**9
-
-        self.grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
-
-        print('ende', grid.cell_arrays.keys())
-        if len(grid.cell_arrays.keys()) == 0:
-            print(i, grid.cell_arrays.keys())
-            if self.gui:
-                self.infobox_obj.emit('uuups! I lost the grainID_key! please increase the resolution')
-            return
-        #sys.exit()
-        pv.save_meshio(self.store_path + '/rve-part.inp', grid)
-        f = open(self.store_path + '/rve-part.inp', 'r')
-        lines = f.readlines()
-        f.close()
-        startingLine = lines.index('*NODE\n')
-        f = open(self.store_path + '/RVE_smooth.inp', 'a')
-        f.write('*Part, name=PART-1\n')
-        for line in lines[startingLine:]:
-            f.write(line)
-        for i in range(self.n_grains):
-            nGrain = i + 1
-            print('in for nGrain=', nGrain, grid.cell_arrays.keys())
-            cells = np.where(grid.cell_arrays['GrainID'] == nGrain)[0]
-            f.write('*Elset, elset=Set-{}\n'.format(nGrain))
-            for j, cell in enumerate(cells + 1):
-                if (j + 1) % 16 == 0:
-                    f.write('\n')
-                f.write(' {},'.format(cell))
-            f.write('\n')
-
-        phase1_idx = 0
-        phase2_idx = 0
-        for i in range(self.n_grains):
-            nGrain = i + 1
-            if self.rve.loc[rve['GrainID'] == nGrain].phaseID.values[0] == 1:
-                phase1_idx += 1
-                f.write('** Section: Section - {}\n'.format(nGrain))
-                f.write('*Solid Section, elset=Set-{}, material=Ferrite_{}\n'.format(nGrain, phase1_idx))
-            elif self.rve.loc[rve['GrainID'] == nGrain].phaseID.values[0] == 2:
-                if not self.phase_two_isotropic:
-                    phase2_idx += 1
-                    f.write('** Section: Section - {}\n'.format(nGrain))
-                    f.write('*Solid Section, elset=Set-{}, material=Martensite_{}\n'.format(nGrain, phase2_idx))
+                phaseIDList = [phase]
+                phaseID_array = phaseIDList * ncells
+                pid_list.extend(phaseID_array)
+                if i == 0:
+                    grid_tet = tet_grain_grid
                 else:
-                    f.write('** Section: Section - {}\n'.format(nGrain))
-                    f.write('*Solid Section, elset=Set-{}, material=Martensite\n'.format(nGrain))
+                    grid_tet = tet_grain_grid.merge(grid_tet, merge_points=True)
 
-        f.close()
-        os.remove(self.store_path + '/rve-part.inp')
 
-        '''this grid_hull_df needs to be removed if the upper block is used for the independent parts'''
-        grid_hull_df = pd.DataFrame(grid.points.tolist(), columns=['x', 'y', 'z'])
-        grid_hull_df = grid_hull_df.loc[(grid_hull_df['x'] == x_max) | (grid_hull_df['x'] == x_min) |
-                                        (grid_hull_df['y'] == y_max) | (grid_hull_df['y'] == y_min) |
-                                        (grid_hull_df['z'] == z_max) | (grid_hull_df['z'] == z_min)]
+            grid_tet.cell_data['GrainID'] = np.asarray(gid_list)
+            grid_tet.cell_data['PhaseID'] = np.asarray(pid_list)
+            grid = grid_tet.copy()
 
-        self.make_assembly()         # Don't change the order
-        self.pbc(rve, grid_hull_df)      # of these four
-        self.write_material_def()    # functions here
-        self.write_step_def()        # it will lead to a faulty inputfile
-        self.write_grain_data()
+        all_points_df = pd.DataFrame(grid.points, columns=['x', 'y', 'z'])
+        all_points_df['ori_idx'] = all_points_df.index
+
+        all_points_df_old = all_points_df.copy()
+        all_points_df_old['x_min'] = False
+        all_points_df_old['y_min'] = False
+        all_points_df_old['z_min'] = False
+        all_points_df_old['x_max'] = False
+        all_points_df_old['y_max'] = False
+        all_points_df_old['z_max'] = False
+        all_points_df_old.loc[(all_points_df_old.x == x_min), 'x_min'] = True
+        all_points_df_old.loc[(all_points_df_old.y == y_min), 'y_min'] = True
+        all_points_df_old.loc[(all_points_df_old.z == z_min), 'z_min'] = True
+        all_points_df_old.loc[(all_points_df_old.x == x_max), 'x_max'] = True
+        all_points_df_old.loc[(all_points_df_old.y == y_max), 'y_max'] = True
+        all_points_df_old.loc[(all_points_df_old.z == z_max), 'z_max'] = True
+
+        old_grid = grid.copy()
+        for i in range(1, numberOfGrains + 1):
+            phase = self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0]
+            grain_grid = old_grid.extract_cells(np.where(np.asarray(old_grid.cell_data.values())[0] == i))
+            grain_surf = grain_grid.extract_surface()
+            grain_surf_df = pd.DataFrame(data=grain_surf.points, columns=['x', 'y', 'z'])
+            merged_pts_df = grain_surf_df.join(all_points_df_old.set_index(['x', 'y', 'z']), on=['x', 'y', 'z'])
+            grain_surf_smooth = grain_surf.smooth(n_iter=250)
+            smooth_pts_df = pd.DataFrame(data=grain_surf_smooth.points, columns=['x', 'y', 'z'])
+            all_points_df.loc[merged_pts_df['ori_idx'], ['x', 'y', 'z']] = smooth_pts_df.values
+            grain_vol = grain_grid.volume
+            self.grains_df.loc[self.grains_df['GrainID'] == i-1, 'meshed_conti_volume'] = grain_vol * 10 ** 9
+
+        self.grains_df[['GrainID','meshed_conti_volume', 'phaseID']].\
+            to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
+
+        all_points_df.loc[all_points_df_old['x_min'], 'x'] = x_min
+        all_points_df.loc[all_points_df_old['y_min'], 'y'] = y_min
+        all_points_df.loc[all_points_df_old['z_min'], 'z'] = z_min
+        all_points_df.loc[all_points_df_old['x_max'], 'x'] = x_max
+        all_points_df.loc[all_points_df_old['y_max'], 'y'] = y_max
+        all_points_df.loc[all_points_df_old['z_max'], 'z'] = z_max
+
+        grid.points = all_points_df[['x', 'y', 'z']].values
+
+
+        return grid
 
     def make_assembly(self) -> None:
 
@@ -354,23 +222,22 @@ class Mesher:
         f.write('*End Assembly\n')
         f.close()
 
-    def pbc(self, rve: pv.UniformGrid, grid_hull_df: pd.DataFrame) -> None:
+    def pbc(self, rve: pv.UnstructuredGrid, grid_hull_df: pd.DataFrame) -> None:
 
         """function to define the periodic boundary conditions
         if errors appear or equations are wrong check ppt presentation from ICAMS
         included in the docs folder called PBC_docs"""
 
-        min_x = min(rve.x)
-        min_y = min(rve.y)
-        min_z = min(rve.z)
-        max_x = max(rve.x)
-        max_y = max(rve.y)
-        max_z = max(rve.z)
-        print(min_x, min_y, min_z)
-        print(max_x, max_y, max_z)
+        min_x = min(rve.points[:, 0])
+        min_y = min(rve.points[:, 1])
+        min_z = min(rve.points[:, 2])
+        max_x = max(rve.points[:, 0])
+        max_y = max(rve.points[:, 1])
+        max_z = max(rve.points[:, 2])
+
         numberofgrains = self.n_grains
         ########## write Equation - sets ##########
-        grid_hull_df = grid_hull_df.sort_values(by=['x', 'y', 'z'])
+        grid_hull_df.sort_values(by=['x', 'y', 'z'], inplace=True)
         grid_hull_df.index.rename('pointNumber', inplace=True)
         grid_hull_df = grid_hull_df.reset_index()
         grid_hull_df.index.rename('Eqn-Set', inplace=True)
@@ -489,27 +356,6 @@ class Mesher:
         RearSet = faces_df.loc[faces_df['z'] == min_z]['Eqn-Set'].to_list()
         # rear set
         FrontSet = faces_df.loc[faces_df['z'] == max_z]['Eqn-Set'].to_list()
-
-        '''
-        self.logger.info('E_B1 ' + str(len(E_B1)))
-        self.logger.info('E_B2 ' + str(len(E_B2)))
-        self.logger.info('E_B3 ' + str(len(E_B3)))
-        self.logger.info('E_B4 ' + str(len(E_B4)))
-        self.logger.info('E_M1 ' + str(len(E_M1)))
-        self.logger.info('E_M2 ' + str(len(E_M2)))
-        self.logger.info('E_M3 ' + str(len(E_M3)))
-        self.logger.info('E_M4 ' + str(len(E_M4)))
-        self.logger.info('E_T1 ' + str(len(E_T1)))
-        self.logger.info('E_T2 ' + str(len(E_T2)))
-        self.logger.info('E_T3 ' + str(len(E_T3)))
-        self.logger.info('E_T4 ' + str(len(E_T4)))
-        self.logger.info('LeftSet ' + str(len(LeftSet)))
-        self.logger.info('RightSet ' + str(len(RightSet)))
-        self.logger.info('BottomSet ' + str(len(BottomSet)))
-        self.logger.info('TopSet ' + str(len(TopSet)))
-        self.logger.info('FrontSet ' + str(len(FrontSet)))
-        self.logger.info('RearSet ' + str(len(RearSet)))
-        '''
 
         OutPutFile = open(self.store_path + '/Nsets.inp', 'w')
         for i in grid_hull_df.index:
@@ -1021,7 +867,6 @@ class Mesher:
         OutPutFile.write('*Nset, nset=H4, instance=PART-1-1\n')
         OutPutFile.write(' {},\n'.format(H4 + 1))
         OutPutFile.close()
-        ####################################################################
 
     def write_material_def(self) -> None:
 
@@ -1213,14 +1058,112 @@ class Mesher:
         if self.gui:
             self.progress_obj.emit(25)
         GRID = self.gen_grains(GRID)
-        grain_boundaries_poly_data, tri_df = self.convert_to_mesh(GRID)
-        if self.gui:
-            self.progress_obj.emit(50)
-        face_label = self.gen_face_labels(tri_df)
-        smooth_grain_boundaries = self.smooth(grain_boundaries_poly_data, GRID, tri_df, face_label)
-        if self.gui:
-            self.progress_obj.emit(75)
-        self.build_abaqus_model(rve=GRID, poly_data=smooth_grain_boundaries, fl=face_label, tri_df=tri_df)
-        if self.gui:
-            self.progress_obj.emit(100)
+        smooth_mesh = self.smoothen_mesh(GRID)
 
+        pbc_grid = smooth_mesh
+
+
+        if self.roughness:
+            # TODO: roghness einbauen
+            #grid = self.apply_roughness(grid)
+            pass
+
+        f = open(self.store_path + '/RVE_smooth.inp', 'w+')
+        f.write('*Heading\n')
+        f.write('** Job name: Job-1 Model name: Job-1\n')
+        f.write('** Generated by: DRAGen \n')
+        f.write('** Date: {}\n'.format(datetime.datetime.now().strftime("%d.%m.%Y")))
+        f.write('** Time: {}\n'.format(datetime.datetime.now().strftime("%H:%M:%S")))
+        f.write('*Preprint, echo=NO, model=NO, history=NO, contact=NO\n')
+        f.write('**\n')
+        f.write('** PARTS\n')
+        f.write('**\n')
+        f.close()
+
+        pv.save_meshio(self.store_path + '/rve-part.inp', smooth_mesh)
+        f = open(self.store_path + '/rve-part.inp', 'r')
+        lines = f.readlines()
+        f.close()
+        startingLine = lines.index('*NODE\n')
+        f = open(self.store_path + '/RVE_smooth.inp', 'a')
+        f.write('*Part, name=PART-1\n')
+        for line in lines[startingLine:]:
+            f.write(line)
+        for i in range(self.n_grains):
+            nGrain = i + 1
+            # print('in for nGrain=', nGrain, smooth_mesh.cell_data.keys())
+            cells = np.where(smooth_mesh.cell_data['GrainID'] == nGrain)[0]
+            f.write('*Elset, elset=Set-{}\n'.format(nGrain))
+            for j, cell in enumerate(cells + 1):
+                if (j + 1) % 16 == 0:
+                    f.write('\n')
+                f.write(' {},'.format(cell))
+            f.write('\n')
+
+        phase1_idx = 0
+        phase2_idx = 0
+        for i in range(self.n_grains):
+            nGrain = i + 1
+            if self.rve.loc[GRID['GrainID'] == nGrain].phaseID.values[0] == 1:
+                phase1_idx += 1
+                f.write('** Section: Section - {}\n'.format(nGrain))
+                f.write('*Solid Section, elset=Set-{}, material=Ferrite_{}\n'.format(nGrain, phase1_idx))
+            elif self.rve.loc[GRID['GrainID'] == nGrain].phaseID.values[0] == 2:
+                if not self.phase_two_isotropic:
+                    phase2_idx += 1
+                    f.write('** Section: Section - {}\n'.format(nGrain))
+                    f.write('*Solid Section, elset=Set-{}, material=Martensite_{}\n'.format(nGrain, phase2_idx))
+                else:
+                    f.write('** Section: Section - {}\n'.format(nGrain))
+                    f.write('*Solid Section, elset=Set-{}, material=Martensite\n'.format(nGrain))
+
+        f.close()
+        os.remove(self.store_path + '/rve-part.inp')
+        x_max = max(GRID.points[:, 0])
+        x_min = min(GRID.points[:, 0])
+        y_max = max(GRID.points[:, 1])
+        y_min = min(GRID.points[:, 1])
+        z_max = max(GRID.points[:, 2])
+        z_min = min(GRID.points[:, 2])
+
+        grid_hull_df = pd.DataFrame(pbc_grid.points, columns=['x', 'y', 'z'])
+        grid_hull_df = grid_hull_df.loc[(grid_hull_df['x'] == x_max) | (grid_hull_df['x'] == x_min) |
+                                        (grid_hull_df['y'] == y_max) | (grid_hull_df['y'] == y_min) |
+                                        (grid_hull_df['z'] == z_max) | (grid_hull_df['z'] == z_min)]
+
+        self.make_assembly()         # Don't change the order
+        self.pbc(GRID, grid_hull_df)      # of these four
+        self.write_material_def()    # functions here
+        self.write_step_def()        # it will lead to a faulty inputfile
+        self.write_grain_data()
+
+        if self.animation:
+            plotter = pv.Plotter(off_screen=True)
+            plotter.add_mesh(smooth_mesh, scalars='phaseID', scalar_bar_args={'title': 'Phase IDs'},
+                             show_edges=True, interpolate_before_map=True)
+            plotter.add_axes()
+            plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
+                         screenshot=self.store_path+'/Figs/pyvista_smooth_Mesh_phases.png')
+            plotter.close()
+
+            plotter = pv.Plotter(off_screen=True)
+            plotter.add_mesh(smooth_mesh, scalars='GrainID', scalar_bar_args={'title':'Grain IDs'},
+                             show_edges=True, interpolate_before_map=True)
+            plotter.add_axes()
+            plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
+                         screenshot=self.store_path + '/Figs/pyvista_smooth_Mesh_grains.png')
+            plotter.close()
+
+
+if __name__ == '__main__':
+    store_path = './'
+    box_size_x = 50
+    periodic_rve_df = pd.read_csv('periodic_rve_df.csv')
+    grains_df = pd.read_csv('grains_df.csv')
+    el_type = 'C3D8'
+    #el_type = 'C3D4'
+    mesher_obj = Mesher(box_size_x=box_size_x, box_size_y=None, box_size_z=None,
+                        rve=periodic_rve_df, grains_df=grains_df, store_path=store_path,
+                        phase_two_isotropic=True, animation=False,
+                        infobox_obj=None, progress_obj=None, gui=False, element_type=el_type)
+    mesher_obj.mesh_and_build_abaqus_model()

@@ -58,7 +58,7 @@ class Mesher_2D(RVEUtils):
 
         # These are the cell sizes along each axis in the gui µm were entered here they are transforemed to mm
         grid.spacing = (self.bin_size / 1000, self.bin_size / 1000, self.bin_size / 1000)
-
+        grid = grid.cast_to_unstructured_grid()
         return grid
 
     def gen_grains(self, grid):
@@ -68,8 +68,8 @@ class Mesher_2D(RVEUtils):
         rve.sort_values(by=['x', 'y'], inplace=True)  # This sorting is important for some weird reason
 
         # Add the data values to the cell data
-        grid.cell_arrays["GrainID"] = rve.GrainID
-        grid.cell_arrays["phaseID"] = rve.phaseID
+        grid.cell_data["GrainID"] = rve.GrainID
+        grid.cell_data["phaseID"] = rve.phaseID
 
         # Now plot the grid!
         if self.animation:
@@ -212,77 +212,66 @@ class Mesher_2D(RVEUtils):
 
         return line_df
 
+    def smoothen_2D(self, grid):
+        x_max = max(grid.points[:, 0])
+        x_min = min(grid.points[:, 0])
+        y_max = max(grid.points[:, 1])
+        y_min = min(grid.points[:, 1])
+        z_max = max(grid.points[:, 2])
+        z_min = min(grid.points[:, 2])
+        numberOfGrains = self.n_grains
+
+        gid_list = list()
+        pid_list = list()
+        all_points_df = pd.DataFrame(grid.points, columns=['x', 'y', 'z'])
+        all_points_df['ori_idx'] = all_points_df.index
+
+        all_points_df_old = all_points_df.copy()
+        all_points_df_old['x_min'] = False
+        all_points_df_old['y_min'] = False
+        all_points_df_old['z_min'] = False
+        all_points_df_old['x_max'] = False
+        all_points_df_old['y_max'] = False
+        all_points_df_old['z_max'] = False
+        all_points_df_old.loc[(all_points_df_old.x == x_min), 'x_min'] = True
+        all_points_df_old.loc[(all_points_df_old.y == y_min), 'y_min'] = True
+        all_points_df_old.loc[(all_points_df_old.z == z_min), 'z_min'] = True
+        all_points_df_old.loc[(all_points_df_old.x == x_max), 'x_max'] = True
+        all_points_df_old.loc[(all_points_df_old.y == y_max), 'y_max'] = True
+        all_points_df_old.loc[(all_points_df_old.z == z_max), 'z_max'] = True
+
+        old_grid = grid.copy()
+        for i in range(1, numberOfGrains + 1):
+            phase = self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0]
+            grain_grid = old_grid.extract_cells(np.where(np.asarray(old_grid.cell_data.values())[0] == i))
+            grain_surf = grain_grid.extract_surface()
+            grain_surf_df = pd.DataFrame(data=grain_surf.points, columns=['x', 'y', 'z'])
+            merged_pts_df = grain_surf_df.join(all_points_df_old.set_index(['x', 'y', 'z']), on=['x', 'y', 'z'])
+            grain_surf_smooth = grain_surf.smooth(n_iter=500)
+            smooth_pts_df = pd.DataFrame(data=grain_surf_smooth.points, columns=['x', 'y', 'z'])
+            all_points_df.loc[merged_pts_df['ori_idx'], ['x', 'y', 'z']] = smooth_pts_df.values
+            grain_vol = grain_grid.volume
+            self.grains_df.loc[self.grains_df['GrainID'] == i - 1, 'meshed_conti_volume'] = grain_vol * 10 ** 9
+
+        #self.grains_df[['GrainID', 'meshed_conti_volume', 'phaseID']]. \
+        #    to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
+
+        all_points_df.loc[all_points_df_old['x_min'], 'x'] = x_min
+        all_points_df.loc[all_points_df_old['y_min'], 'y'] = y_min
+        all_points_df.loc[all_points_df_old['z_min'], 'z'] = z_min
+        all_points_df.loc[all_points_df_old['x_max'], 'x'] = x_max
+        all_points_df.loc[all_points_df_old['y_max'], 'y'] = y_max
+        all_points_df.loc[all_points_df_old['z_max'], 'z'] = z_max
+
+        grid.points = all_points_df[['x', 'y', 'z']].values
+
+        return grid
+
     def run_mesher_2D(self):
-        mesh2d = self.gen_blocks()
-        mesh2d = self.gen_grains(mesh2d)
-
-        x_max = max(mesh2d.points[:, 0])
-        y_max = max(mesh2d.points[:, 1])
-        tri_mesh2d = mesh2d.triangulate()
-        all_line_points = pd.DataFrame()
-        all_lines = pd.DataFrame()
-        for i in range(self.n_grains):
-            submesh2d = tri_mesh2d.extract_cells(np.where(tri_mesh2d.cell_arrays.values()[0] == i+1))
-            edges = submesh2d.extract_feature_edges()
-            tri_mesh2d_df = pd.DataFrame(tri_mesh2d.points, columns=['x', 'y', 'z'])
-            tri_mesh2d_df['grid_index_total'] = tri_mesh2d_df.index
-            tri_mesh2d_df.sort_values(by=['x', 'y', 'z'], inplace=True)
-            tri_mesh2d_df.reset_index(drop=True, inplace=True)
-
-            edges_df = pd.DataFrame(edges.points, columns=['x', 'y', 'z'])
-            edges_df['grid_index_edges'] = edges_df.index
-            edges_df.sort_values(by=['x', 'y', 'z'], inplace=True)
-            edges_df.reset_index(drop=True, inplace=True)
-
-            compare_all = tri_mesh2d_df.merge(edges_df, on=['x', 'y', 'z'], how='left', indicator=True)
-            compare_grain = compare_all.loc[compare_all['_merge'] == 'both'].copy()
-
-            compare_grain.sort_values(by=['grid_index_edges'], inplace=True)
-            idx = compare_grain['grid_index_total'].tolist()
-            compare_grain['GrainID'] = str(i+1)
-            all_line_points = pd.concat([all_line_points, compare_grain[['grid_index_total', 'GrainID']]])
-
-            lines = edges.lines.reshape((-1, 3))[:, 1:3]
-            compare_grain.sort_values(by='grid_index_edges')
-            compare_grain.reset_index(drop=True, inplace=True)
-            lines_df = pd.DataFrame()
-            lines_df['p1'] = compare_grain.iloc[lines[:, 0]].grid_index_total.values
-            lines_df['p2'] = compare_grain.iloc[lines[:, 1]].grid_index_total.values
-            lines_df['GrainID'] = str(i+1)
-
-            all_lines = pd.concat([all_lines, lines_df])
-            #tri_mesh2d.points[idx] = smooth.points
-
-        all_line_points.reset_index(drop=True, inplace=True)
-        all_lines.reset_index(drop=True, inplace=True)
-
-        all_line_points = self.gen_point_labels(all_line_points)
-        all_lines = self.gen_line_labels(all_lines)
-        """for i in range(len(all_lines)):
-            #print(tri_mesh2d.points[all_lines.p1[0]])
-            #sys.exit()
-            plt.plot(tri_mesh2d.points[all_lines.p1[i]][0], tri_mesh2d.points[all_lines.p1[i]][1], 'o')
-            plt.plot(tri_mesh2d.points[all_lines.p2[i]][0], tri_mesh2d.points[all_lines.p2[i]][1], 'o')
-        plt.show()
-        sys.exit()"""
-
-        print(all_lines)
-
-        line_labels = np.asarray(all_lines['line_labels'])
-        line_labels = [item.split(',') for item in line_labels]
-        line_labels = np.asarray([[int(ll) for ll in group] for group in line_labels])
-        line_labels_tuples = [tuple(ll) for ll in line_labels]
-        all_lines['line_labels'] = line_labels_tuples
-        print(all_lines)
-        print(line_labels)
-        print(line_labels.shape)
-
-        #smooth = self.laplace_2D(all_lines, tri_mesh2d.points, alpha=0.25, n_iter=4)
-        #tri_mesh2d.points = smooth
-        tri_mesh2d.save('2p5D.vtk')
-
-
-        return tri_mesh2d
+        grid = self.gen_blocks()
+        grid = self.gen_grains(grid)
+        mesh = self.smoothen_2D(grid)
+        return mesh
 
 class BuildAbaqus2D:
 
@@ -293,7 +282,7 @@ class BuildAbaqus2D:
 
         self.store_path = store_path
         self.phase_two_isotropic = phase_two_isotropic
-        self.n_grains = int(max(pv_mesh.cell_arrays['GrainID']))
+        self.n_grains = int(max(pv_mesh.cell_data['GrainID']))
 
         self.bin_size = rve_df.box_size[0] / (rve_df.n_pts[0]+1) ## test
         self.tex_phi1 = grains_df['phi1'].tolist()
@@ -346,11 +335,12 @@ class BuildAbaqus2D:
         f.close()
 
     def build_nodes_and_elements(self) -> None:
-        tris = self.mesh.extract_surface().faces
-        tris = tris.reshape((-1, 4))[:, 1:4]
+        faces = self.mesh.extract_surface().faces
 
-        node_dict = {'x': self.mesh.points[:, 0], 'y': self.mesh.points[:, 1]}
-        elem_dict = {'p1': tris[:, 0], 'p2': tris[:, 1], 'p3': tris[:, 2]}
+        faces = faces.reshape((-1, 5))[:, 1:5]
+
+        node_dict = {'x': self.mesh.points[:, 0], 'y': self.mesh.points[:, 1], 'z': self.mesh.points[:, 2]}
+        elem_dict = {'p1': faces[:, 0], 'p2': faces[:, 1], 'p3': faces[:, 2], 'p4': faces[:, 3]}
         abaq_nodes_df = pd.DataFrame(data=node_dict)
         abaq_elem_df = pd.DataFrame(data=elem_dict)
 
@@ -358,17 +348,19 @@ class BuildAbaqus2D:
         f.write('*Part, name=PART-1\n')
         f.write('*NODE\n')
         for i in range(len(abaq_nodes_df)):
-            line = '{}, {}, {}\n'.format(abaq_nodes_df.index[i]+1,
+            line = '{}, {}, {}, {}\n'.format(abaq_nodes_df.index[i]+1,
                                          abaq_nodes_df.x[i],
-                                         abaq_nodes_df.y[i])
+                                         abaq_nodes_df.y[i],
+                                         abaq_nodes_df.z[i])
             f.write(line)
 
-        f.write('*ELEMENT, TYPE=C3D4\n')
+        f.write('*ELEMENT, TYPE=C3D8\n')
         for i in range(len(abaq_elem_df)):
             line = '{}, {}, {}, {}\n'.format(abaq_elem_df.index[i] + 1,
                                          abaq_elem_df.p1[i]+1,
                                          abaq_elem_df.p2[i]+1,
-                                         abaq_elem_df.p3[i]+1)
+                                         abaq_elem_df.p3[i]+1,
+                                         abaq_elem_df.p4[i]+1)
             f.write(line)
         f.close()
 
@@ -381,18 +373,17 @@ class BuildAbaqus2D:
         f = open(self.store_path + '/RVE_smooth.inp', 'a')
         f.write('*Part, name=PART-1\n')
         idx = [i for i, s in enumerate(lines) if '*element' in s.lower()][0]
-        lines[idx] = '*ELEMENT, TYPE=C3D4\n'
+        lines[idx] = '*ELEMENT, TYPE=C3D8\n'
         for line in lines[startingLine:]:
             f.write(line)
         f.close()
-
 
     def generate_elementsets(self):
         f = open(self.store_path + '/RVE_smooth.inp', 'a')
         for i in range(self.n_grains):
             nGrain = i + 1
-            print('in for nGrain=', nGrain, self.mesh.cell_arrays.keys())
-            cells = np.where(self.mesh.cell_arrays['GrainID'] == nGrain)[0]
+            print('in for nGrain=', nGrain, self.mesh.cell_data.keys())
+            cells = np.where(self.mesh.cell_data['GrainID'] == nGrain)[0]
             f.write('*Elset, elset=Set-{}\n'.format(nGrain))
             for j, cell in enumerate(cells + 1):
                 if (j + 1) % 16 == 0:
@@ -422,75 +413,163 @@ class BuildAbaqus2D:
 
         f.close()
 
-    def pbc(self, grid_hull_df: pd.DataFrame) -> None:
+    def pbc(self, rve: pv.UnstructuredGrid, grid_hull_df: pd.DataFrame) -> None:
 
         """function to define the periodic boundary conditions
         if errors appear or equations are wrong check ppt presentation from ICAMS
         included in the docs folder called PBC_docs"""
 
-        min_x = min(grid_hull_df.x)
-        min_y = min(grid_hull_df.y)
+        min_x = min(rve.points[:, 0])
+        min_y = min(rve.points[:, 1])
+        min_z = min(rve.points[:, 2])
+        max_x = max(rve.points[:, 0])
+        max_y = max(rve.points[:, 1])
+        max_z = max(rve.points[:, 2])
 
-        max_x = max(grid_hull_df.x)
-        max_y = max(grid_hull_df.y)
-
-        print(min_x, min_y)
-        print(max_x, max_y)
         numberofgrains = self.n_grains
         ########## write Equation - sets ##########
-        grid_hull_df = grid_hull_df.sort_values(by=['x', 'y', 'z'])
+
+        grid_hull_df.sort_values(by=['x', 'y', 'z'], inplace=True)
         grid_hull_df.index.rename('pointNumber', inplace=True)
         grid_hull_df = grid_hull_df.reset_index()
         grid_hull_df.index.rename('Eqn-Set', inplace=True)
         grid_hull_df = grid_hull_df.reset_index()
-        #print(grid_hull_df.head())
-        #print(min_x, max_x)
+
+        # print(grid_hull_df.head())
+        # print(min_x, max_x)
         ########## Define Corner Sets ###########
         corner_df = grid_hull_df.loc[((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
-                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y))]
+                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
+                                     ((grid_hull_df['z'] == max_z) | (grid_hull_df['z'] == min_z))]
 
-        V1_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == min_y)]
+        V1_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == min_y) & (corner_df['z'] == max_z)]
         V1 = V1_df['pointNumber'].values[0]
         V1Eqn = V1_df['Eqn-Set'].values[0]
-        #print(V1_df)
-        V2_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == min_y)]
+        # print(V1_df)
+        V2_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == min_y) & (corner_df['z'] == max_z)]
         V2 = V2_df['pointNumber'].values[0]
         V2Eqn = V2_df['Eqn-Set'].values[0]
-        #print(V2_df)
-        V3_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == max_y)]
+        # print(V2_df)
+        V3_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == max_y) & (corner_df['z'] == max_z)]
         V3 = V3_df['pointNumber'].values[0]
         V3Eqn = V3_df['Eqn-Set'].values[0]
-        #print(V3_df)
-        V4_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == max_y)]
+        # print(V3_df)
+        V4_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == max_y) & (corner_df['z'] == max_z)]
         V4 = V4_df['pointNumber'].values[0]
         V4Eqn = V4_df['Eqn-Set'].values[0]
-        #print(V4_df)
-
+        # print(V4_df)
+        H1_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == min_y) & (corner_df['z'] == min_z)]
+        H1 = H1_df['pointNumber'].values[0]
+        H1Eqn = H1_df['Eqn-Set'].values[0]
+        # print(H1_df)
+        H2_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == min_y) & (corner_df['z'] == min_z)]
+        H2 = H2_df['pointNumber'].values[0]
+        H2Eqn = H2_df['Eqn-Set'].values[0]
+        # print(H2_df)
+        H3_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == max_y) & (corner_df['z'] == min_z)]
+        H3 = H3_df['pointNumber'].values[0]
+        H3Eqn = H3_df['Eqn-Set'].values[0]
+        # print(H3_df)
+        H4_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == max_y) & (corner_df['z'] == min_z)]
+        H4 = H4_df['pointNumber'].values[0]
+        H4Eqn = H4_df['Eqn-Set'].values[0]
+        # print(H4_df)
         ############ Define Edge Sets ###############
         edges_df = grid_hull_df.loc[(((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
-                                     ((grid_hull_df['y'] != max_y) & (grid_hull_df['y'] != min_y))) |
+                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
+                                     ((grid_hull_df['z'] != max_z) & (grid_hull_df['z'] != min_z))) |
+
+                                    (((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
+                                     ((grid_hull_df['y'] != max_y) & (grid_hull_df['y'] != min_y)) &
+                                     ((grid_hull_df['z'] == max_z) | (grid_hull_df['z'] == min_z))) |
 
                                     (((grid_hull_df['x'] != max_x) & (grid_hull_df['x'] != min_x)) &
-                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)))]
+                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
+                                     ((grid_hull_df['z'] == max_z) | (grid_hull_df['z'] == min_z)))]
         # edges_df.sort_values(by=['x', 'y', 'z'], inplace=True)
 
-        # Top Edge
-        Top = edges_df.loc[(edges_df['y'] == max_y)]['Eqn-Set'].to_list()
+        # Top front Edge
+        E_T1 = edges_df.loc[(edges_df['y'] == max_y) & (edges_df['z'] == max_z)]['Eqn-Set'].to_list()
 
-        # Right Edge
-        Right = edges_df.loc[(edges_df['x'] == max_x)]['Eqn-Set'].to_list()
+        # Top right Edge
+        E_T2 = edges_df.loc[(edges_df['x'] == max_x) & (edges_df['y'] == max_y)]['Eqn-Set'].to_list()
 
-        # Bottom Edge
-        Bottom = edges_df.loc[(edges_df['y'] == min_y)]['Eqn-Set'].to_list()
+        # Top back Edge
+        E_T3 = edges_df.loc[(edges_df['y'] == max_y) & (edges_df['z'] == min_z)]['Eqn-Set'].to_list()
 
-        # Left Edge
-        Left = edges_df.loc[(edges_df['x'] == min_x)]['Eqn-Set'].to_list()
+        # Top left Edge
+        E_T4 = edges_df.loc[(edges_df['x'] == min_x) & (edges_df['y'] == max_y)]['Eqn-Set'].to_list()
 
-        #self.logger.info('E1 ' + str(len(Top)))
-        #self.logger.info('E2 ' + str(len(Right)))
-        #self.logger.info('E3 ' + str(len(Bottom)))
-        #self.logger.info('E4 ' + str(len(Left)))
+        # bottm front edge
+        E_B1 = edges_df.loc[(edges_df['y'] == min_y) & (edges_df['z'] == max_z)]['Eqn-Set'].to_list()
 
+        # bottm right edge
+        E_B2 = edges_df.loc[(edges_df['x'] == max_x) & (edges_df['y'] == min_y)]['Eqn-Set'].to_list()
+
+        # bottm back edge
+        E_B3 = edges_df.loc[(edges_df['y'] == min_y) & (edges_df['z'] == min_z)]['Eqn-Set'].to_list()
+
+        # bottm left edge
+        E_B4 = edges_df.loc[(edges_df['x'] == min_x) & (edges_df['y'] == min_y)]['Eqn-Set'].to_list()
+
+        # left front edge
+        E_M1 = edges_df.loc[(edges_df['x'] == min_x) & (edges_df['z'] == max_z)]['Eqn-Set'].to_list()
+
+        # right front edge
+        E_M2 = edges_df.loc[(edges_df['x'] == max_x) & (edges_df['z'] == max_z)]['Eqn-Set'].to_list()
+
+        # left rear edge
+        E_M4 = edges_df.loc[(edges_df['x'] == min_x) & (edges_df['z'] == min_z)]['Eqn-Set'].to_list()
+
+        # right rear edge
+        E_M3 = edges_df.loc[(edges_df['x'] == max_x) & (edges_df['z'] == min_z)]['Eqn-Set'].to_list()
+
+        ######### Define Surface Sets #############
+        faces_df = grid_hull_df.loc[(((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
+                                     ((grid_hull_df['y'] != max_y) & (grid_hull_df['y'] != min_y)) &
+                                     ((grid_hull_df['z'] != max_z) & (grid_hull_df['z'] != min_z))) |
+
+                                    (((grid_hull_df['x'] != max_x) & (grid_hull_df['x'] != min_x)) &
+                                     ((grid_hull_df['y'] != max_y) & (grid_hull_df['y'] != min_y)) &
+                                     ((grid_hull_df['z'] == max_z) | (grid_hull_df['z'] == min_z))) |
+
+                                    (((grid_hull_df['x'] != max_x) & (grid_hull_df['x'] != min_x)) &
+                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
+                                     ((grid_hull_df['z'] != max_z) & (grid_hull_df['z'] != min_z)))]
+
+        # left set
+        LeftSet = faces_df.loc[faces_df['x'] == min_x]['Eqn-Set'].to_list()
+        # right set
+        RightSet = faces_df.loc[faces_df['x'] == max_x]['Eqn-Set'].to_list()
+        # bottom set
+        BottomSet = faces_df.loc[faces_df['y'] == min_y]['Eqn-Set'].to_list()
+        # top set
+        TopSet = faces_df.loc[faces_df['y'] == max_y]['Eqn-Set'].to_list()
+        # front set
+        RearSet = faces_df.loc[faces_df['z'] == min_z]['Eqn-Set'].to_list()
+        # rear set
+        FrontSet = faces_df.loc[faces_df['z'] == max_z]['Eqn-Set'].to_list()
+
+        '''
+        self.logger.info('E_B1 ' + str(len(E_B1)))
+        self.logger.info('E_B2 ' + str(len(E_B2)))
+        self.logger.info('E_B3 ' + str(len(E_B3)))
+        self.logger.info('E_B4 ' + str(len(E_B4)))
+        self.logger.info('E_M1 ' + str(len(E_M1)))
+        self.logger.info('E_M2 ' + str(len(E_M2)))
+        self.logger.info('E_M3 ' + str(len(E_M3)))
+        self.logger.info('E_M4 ' + str(len(E_M4)))
+        self.logger.info('E_T1 ' + str(len(E_T1)))
+        self.logger.info('E_T2 ' + str(len(E_T2)))
+        self.logger.info('E_T3 ' + str(len(E_T3)))
+        self.logger.info('E_T4 ' + str(len(E_T4)))
+        self.logger.info('LeftSet ' + str(len(LeftSet)))
+        self.logger.info('RightSet ' + str(len(RightSet)))
+        self.logger.info('BottomSet ' + str(len(BottomSet)))
+        self.logger.info('TopSet ' + str(len(TopSet)))
+        self.logger.info('FrontSet ' + str(len(FrontSet)))
+        self.logger.info('RearSet ' + str(len(RearSet)))
+        '''
 
         OutPutFile = open(self.store_path + '/Nsets.inp', 'w')
         for i in grid_hull_df.index:
@@ -499,31 +578,394 @@ class BuildAbaqus2D:
         OutPutFile.close()
 
         ############### Define Equations ###################################
+        OutPutFile = open(self.store_path + '/LeftToRight.inp', 'w')
+
+        OutPutFile.write('**** X-DIR \n')
+        for i in range(len(LeftSet)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(RightSet[i] + 1) + ',1, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(LeftSet[i] + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1, 1 \n')
+
+        OutPutFile.write('**** \n')
+        OutPutFile.write('**** Y-DIR \n')
+        for i in range(len(LeftSet)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(RightSet[i] + 1) + ',2, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(LeftSet[i] + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
+
+        OutPutFile.write('**** \n')
+        OutPutFile.write('**** Z-DIR \n')
+        for i in range(len(LeftSet)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(RightSet[i] + 1) + ',3, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(LeftSet[i] + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
+        OutPutFile.close()
+
+        OutPutFile = open(self.store_path + '/BottomToTop.inp', 'w')
+
+        OutPutFile.write('**** X-DIR \n')
+        for i in range(len(BottomSet)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(BottomSet[i] + 1) + ',1,1 \n')
+            OutPutFile.write('Eqn-Set-' + str(TopSet[i] + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',1,1 \n')
+
+        OutPutFile.write('**** \n')
+        OutPutFile.write('**** Y-DIR \n')
+        for i in range(len(BottomSet)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(BottomSet[i] + 1) + ',2, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(TopSet[i] + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',2, 1 \n')
+
+        OutPutFile.write('**** \n')
+        OutPutFile.write('**** Z-DIR \n')
+        for i in range(len(BottomSet)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(BottomSet[i] + 1) + ',3, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(TopSet[i] + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',3, 1 \n')
+        OutPutFile.close()
+
+        OutPutFile = open(self.store_path + '/FrontToRear.inp', 'w')
+
+        OutPutFile.write('**** X-DIR \n')
+        for i in range(len(RearSet)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(RearSet[i] + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(FrontSet[i] + 1) + ',1,1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',1,1 \n')
+
+        OutPutFile.write('**** \n')
+        OutPutFile.write('**** Y-DIR \n')
+        for i in range(len(RearSet)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(RearSet[i] + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(FrontSet[i] + 1) + ',2,1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',2,1 \n')
+
+        OutPutFile.write('**** \n')
+        OutPutFile.write('**** Z-DIR \n')
+        for i in range(len(RearSet)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(RearSet[i] + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(FrontSet[i] + 1) + ',3,1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',3,1 \n')
+        OutPutFile.close()
 
         OutPutFile = open(self.store_path + '/Edges.inp', 'w')
 
         # Edges in x-y Plane
         # right top edge to left top edge
         OutPutFile.write('**** X-DIR \n')
-        for i in range(len(Top)):
+        for i in range(len(E_T2)):
             # print item
             OutPutFile.write('*Equation \n')
             OutPutFile.write('4 \n')
-            OutPutFile.write('Eqn-Set-' + str(Top[i] + 1) + ',1, 1 \n')
-            OutPutFile.write('Eqn-Set-' + str(Bottom[i] + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T2[i] + 1) + ',1, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T4[i] + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1, 1 \n')
+
+        OutPutFile.write('**** Y-DIR \n')
+        for i in range(len(E_T2)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T2[i] + 1) + ',2, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T4[i] + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
+
+        OutPutFile.write('**** Z-DIR \n')
+        for i in range(len(E_T2)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T2[i] + 1) + ',3, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T4[i] + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
+
+        # right bottom edge to left bottom edge
+        OutPutFile.write('**** X-DIR \n')
+        for i in range(len(E_B2)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B2[i] + 1) + ',1, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B4[i] + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1, 1 \n')
+
+        OutPutFile.write('**** Y-DIR \n')
+        for i in range(len(E_B2)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B2[i] + 1) + ',2, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B4[i] + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
+
+        OutPutFile.write('**** Z-DIR \n')
+        for i in range(len(E_B2)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B2[i] + 1) + ',3, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B4[i] + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
+
+        # left top edge to left bottom edge
+        OutPutFile.write('**** X-DIR \n')
+        for i in range(len(E_T4)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T4[i] + 1) + ',1, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B4[i] + 1) + ',1,-1 \n')
             OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',1,-1 \n')
             OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1, 1 \n')
 
         OutPutFile.write('**** Y-DIR \n')
-        for i in range(len(Left)):
+        for i in range(len(E_T4)):
             # print item
             OutPutFile.write('*Equation \n')
             OutPutFile.write('4 \n')
-            OutPutFile.write('Eqn-Set-' + str(Left[i] + 1) + ',2, 1 \n')
-            OutPutFile.write('Eqn-Set-' + str(Right[i] + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T4[i] + 1) + ',2, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B4[i] + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
+
+        OutPutFile.write('**** Z-DIR \n')
+        for i in range(len(E_T4)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T4[i] + 1) + ',3, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B4[i] + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
+
+        # Edges in y-z Plane
+        # top back edge to top front edge
+        OutPutFile.write('**** X-DIR \n')
+        for i in range(len(E_T3)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T3[i] + 1) + ',1, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T1[i] + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1, 1 \n')
+
+        OutPutFile.write('**** Y-DIR \n')
+        for i in range(len(E_T3)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T3[i] + 1) + ',2, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T1[i] + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
+
+        OutPutFile.write('**** Z-DIR \n')
+        for i in range(len(E_T3)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T3[i] + 1) + ',3, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T1[i] + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
+
+        # Botom back edge to bottom front edge
+        OutPutFile.write('**** X-DIR \n')
+        for i in range(len(E_B3)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B3[i] + 1) + ',1, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B1[i] + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1, 1 \n')
+
+        OutPutFile.write('**** Y-DIR \n')
+        for i in range(len(E_B3)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B3[i] + 1) + ',2, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B1[i] + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
+
+        OutPutFile.write('**** Z-DIR \n')
+        for i in range(len(E_B3)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B3[i] + 1) + ',3, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B1[i] + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
+
+        # top front edge to bottom front edge
+        OutPutFile.write('**** X-DIR \n')
+        for i in range(len(E_T1)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T1[i] + 1) + ',1, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B1[i] + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1, 1 \n')
+
+        OutPutFile.write('**** Y-DIR \n')
+        for i in range(len(E_T1)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T1[i] + 1) + ',2, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B1[i] + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
+
+        OutPutFile.write('**** Z-DIR \n')
+        for i in range(len(E_T1)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_T1[i] + 1) + ',3, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_B1[i] + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
+
+        # Edges in x-z Plane
+        # rear right edge to rear left edge
+        OutPutFile.write('**** X-DIR \n')
+        for i in range(len(E_M3)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M3[i] + 1) + ',1, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M4[i] + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1, 1 \n')
+
+        OutPutFile.write('**** Y-DIR \n')
+        for i in range(len(E_M3)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M3[i] + 1) + ',2, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M4[i] + 1) + ',2,-1 \n')
             OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',2,-1 \n')
             OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
 
+        OutPutFile.write('**** Z-DIR \n')
+        for i in range(len(E_M3)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M3[i] + 1) + ',3, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M4[i] + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
+
+        # front right edge to front left edge
+        OutPutFile.write('**** X-DIR \n')
+        for i in range(len(E_M2)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M2[i] + 1) + ',1, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M1[i] + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1, 1 \n')
+
+        OutPutFile.write('**** Y-DIR \n')
+        for i in range(len(E_M2)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M2[i] + 1) + ',2, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M1[i] + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
+
+        OutPutFile.write('**** Z-DIR \n')
+        for i in range(len(E_M2)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M2[i] + 1) + ',3, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M1[i] + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
+
+        # top front edge to bottom front edge
+        OutPutFile.write('**** X-DIR \n')
+        for i in range(len(E_M4)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M4[i] + 1) + ',1, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M1[i] + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',1,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1, 1 \n')
+
+        OutPutFile.write('**** Y-DIR \n')
+        for i in range(len(E_M4)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M4[i] + 1) + ',2, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M1[i] + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',2,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
+
+        OutPutFile.write('**** Z-DIR \n')
+        for i in range(len(E_M4)):
+            # print item
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M4[i] + 1) + ',3, 1 \n')
+            OutPutFile.write('Eqn-Set-' + str(E_M1[i] + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',3,-1 \n')
+            OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
         OutPutFile.close()
 
         OutPutFile = open(self.store_path + '/Corners.inp', 'w')
@@ -543,6 +985,82 @@ class BuildAbaqus2D:
         OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',2,-1 \n')
         OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',2,-1 \n')
         OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
+        OutPutFile.write('**** z-DIR \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('Eqn-Set-' + str(V3Eqn + 1) + ',3, 1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',3,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',3,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
+
+        # H4 zu V4
+        OutPutFile.write('**** X-DIR \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('Eqn-Set-' + str(H4Eqn + 1) + ',1, 1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',1,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',1,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1, 1 \n')
+        OutPutFile.write('**** y-DIR \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('Eqn-Set-' + str(H4Eqn + 1) + ',2, 1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',2,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',2,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
+        OutPutFile.write('**** z-DIR \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('Eqn-Set-' + str(H4Eqn + 1) + ',3, 1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',3,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',3,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
+
+        # H3 zu V3
+        OutPutFile.write('**** X-DIR \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('Eqn-Set-' + str(H3Eqn + 1) + ',1, 1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V3Eqn + 1) + ',1,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',1,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1, 1 \n')
+        OutPutFile.write('**** y-DIR \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('Eqn-Set-' + str(H3Eqn + 1) + ',2, 1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V3Eqn + 1) + ',2,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',2,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
+        OutPutFile.write('**** z-DIR \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('Eqn-Set-' + str(H3Eqn + 1) + ',3, 1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V3Eqn + 1) + ',3,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',3,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
+
+        # H2 zu V2
+        OutPutFile.write('**** X-DIR \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('Eqn-Set-' + str(H2Eqn + 1) + ',1, 1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',1,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',1,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',1, 1 \n')
+        OutPutFile.write('**** y-DIR \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('Eqn-Set-' + str(H2Eqn + 1) + ',2, 1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',2,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',2,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',2, 1 \n')
+        OutPutFile.write('**** z-DIR \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('Eqn-Set-' + str(H2Eqn + 1) + ',3, 1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V2Eqn + 1) + ',3,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',3,-1 \n')
+        OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
         OutPutFile.close()
 
         OutPutFile = open(self.store_path + '/VerticeSets.inp', 'w')
@@ -554,7 +1072,15 @@ class BuildAbaqus2D:
         OutPutFile.write(' {},\n'.format(V3 + 1))
         OutPutFile.write('*Nset, nset=V4, instance=PART-1-1\n')
         OutPutFile.write(' {},\n'.format(V4 + 1))
-        ####################################################################
+        OutPutFile.write('*Nset, nset=H1, instance=PART-1-1\n')
+        OutPutFile.write(' {},\n'.format(H1 + 1))
+        OutPutFile.write('*Nset, nset=H2, instance=PART-1-1\n')
+        OutPutFile.write(' {},\n'.format(H2 + 1))
+        OutPutFile.write('*Nset, nset=H3, instance=PART-1-1\n')
+        OutPutFile.write(' {},\n'.format(H3 + 1))
+        OutPutFile.write('*Nset, nset=H4, instance=PART-1-1\n')
+        OutPutFile.write(' {},\n'.format(H4 + 1))
+        OutPutFile.close()
 
     def write_material_def(self) -> None:
 
@@ -710,7 +1236,6 @@ class BuildAbaqus2D:
     def run(self):
 
         self.build_abaqus_header()
-        #self.build_nodes_and_elements()
         self.make_meshio_inp_file()
         self.generate_elementsets()
         self.assign_materials()
@@ -721,9 +1246,12 @@ class BuildAbaqus2D:
         min_x = min(grid_hull_df.x)
         max_y = max(grid_hull_df.y)
         min_y = min(grid_hull_df.y)
+        max_z = max(grid_hull_df.z)
+        min_z = min(grid_hull_df.z)
         grid_hull_df = grid_hull_df.loc[(grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x) |
-                                        (grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)]
-        self.pbc(grid_hull_df)
+                                        (grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y) |
+                                        (grid_hull_df['z'] == max_z) | (grid_hull_df['z'] == min_z)]
+        self.pbc(self.mesh, grid_hull_df)
         self.write_material_def()  # functions here
         self.write_step_def()  # it will lead to a faulty inputfile
         self.write_grain_data()
@@ -733,39 +1261,37 @@ class BuildAbaqus2D:
         plotter.show()
 
 if __name__ == '__main__':
-    mesh_path = '../mesh.msh'
-    grains_df_path = '../grains_df.csv'
-    rve_df_path = '../test_rve.csv'
+    #mesh_path = '../mesh.msh'
+    grains_df_path = 'grains_df.csv'
+    rve_df_path = 'test_rve.csv'
 
-    mesh = pv.read_meshio(mesh_path)
+    #mesh = pv.read_meshio(mesh_path)
     grains_df = pd.read_csv(grains_df_path)
     rve_df = pd.read_csv(rve_df_path)
 
     mesher_obj = Mesher_2D(rve_df, grains_df,store_path='./', animation=False)
-    smooth_mesh= mesher_obj.run_mesher_2D()
-
+    #smooth_mesh= mesher_obj.run_mesher_2D()
+    grid = mesher_obj.gen_blocks()
+    grid = mesher_obj.gen_grains(grid)
+    mesh = mesher_obj.smoothen_2D(grid)
     p = pv.Plotter()
-    p.add_mesh(smooth_mesh, scalars='GrainID', show_edges=True)
+    p.add_mesh(mesh, scalars='GrainID', show_edges=True)
     p.show()
 
-    #abaqus_obj = BuildAbaqus2D(mesh, rve_df_path, store_path='./')
-    #abaqus_obj.build_abaqus_header()
-    #abaqus_obj.build_nodes_and_elements()
-    #abaqus_obj.generate_elementsets()
-    #abaqus_obj.assign_materials()
-    #abaqus_obj.make_assembly()
+    abaqus_obj = BuildAbaqus2D(mesh, rve_df=rve_df, grains_df=grains_df, store_path='./').run()
+
     '''this grid_hull_df needs to be removed if the upper block is used for the independent parts'''
-    #grid_hull_df = pd.DataFrame(mesh.points.tolist(), columns=['x', 'y', 'z'])
-    #max_x = max(grid_hull_df.x)
-    #min_x = min(grid_hull_df.x)
-    #max_y = max(grid_hull_df.y)
-    #min_y = min(grid_hull_df.y)
-    #grid_hull_df = grid_hull_df.loc[(grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x) |
-    #                                (grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)]
-    #abaqus_obj.pbc(grid_hull_df)
-    #abaqus_obj.write_material_def()  # functions here
-    #abaqus_obj.write_step_def()  # it will lead to a faulty inputfile
-    #abaqus_obj.write_grain_data()
+    grid_hull_df = pd.DataFrame(mesh.points.tolist(), columns=['x', 'y', 'z'])
+    max_x = max(grid_hull_df.x)
+    min_x = min(grid_hull_df.x)
+    max_y = max(grid_hull_df.y)
+    min_y = min(grid_hull_df.y)
+    grid_hull_df = grid_hull_df.loc[(grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x) |
+                                    (grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)]
+    abaqus_obj.pbc(grid_hull_df)
+    abaqus_obj.write_material_def()  # functions here
+    abaqus_obj.write_step_def()  # it will lead to a faulty inputfile
+    abaqus_obj.write_grain_data()
 
     #plotter = pv.Plotter()
     #plotter.add_mesh(mesh, show_edges=True, scalars='GrainID', cmap='flag')

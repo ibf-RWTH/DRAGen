@@ -8,10 +8,12 @@ from dragen.utilities.RVE_Utils import RVEUtils
 
 class Tesselation3D(RVEUtils):
 
-    def __init__(self, box_size, n_pts, grains_df, shrinkfactor, band_ratio, store_path, debug=False, infobox_obj=None,
-                 progress_obj=None, gui=True):
+    def __init__(self, box_size, box_size_y, box_size_z, n_pts, grains_df, shrinkfactor, band_ratio, store_path,
+                 debug=False, infobox_obj=None, progress_obj=None, gui=True):
 
         self.box_size = box_size
+        self.box_size_y = box_size_y
+        self.box_size_z = box_size_z
         self.n_pts = n_pts
         self.grains_df = grains_df
         self.a = grains_df['a'].tolist()
@@ -35,7 +37,7 @@ class Tesselation3D(RVEUtils):
         self.a_max = max(self.a)
         self.b_max = max(self.b)
         self.c_max = max(self.c)
-        super().__init__(box_size, n_pts)
+        super().__init__(box_size, n_pts=n_pts, box_size_y=box_size_y, box_size_z=box_size_z)
         self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
 
 
@@ -77,6 +79,18 @@ class Tesselation3D(RVEUtils):
         ax = fig.add_subplot(111, projection='3d')
         ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array >= 1) | (array == -200))], s=1, vmin=-20,
                    vmax=n_grains, cmap='seismic')
+
+        rve_x, rve_y, rve_z = np.where((array == 0))
+
+        free_space_tuples = [*zip(rve_x, rve_y, rve_z)]
+
+        free_space_x = [self.x_grid[free_space_tuples_i[0]][free_space_tuples_i[1]][free_space_tuples_i[2]]
+                    for free_space_tuples_i in free_space_tuples]
+        free_space_y = [self.y_grid[free_space_tuples_i[0]][free_space_tuples_i[1]][free_space_tuples_i[2]]
+                    for free_space_tuples_i in free_space_tuples]
+        free_space_z = [self.z_grid[free_space_tuples_i[0]][free_space_tuples_i[1]][free_space_tuples_i[2]]
+                    for free_space_tuples_i in free_space_tuples]
+        ax.scatter(free_space_x, free_space_y, free_space_z, color='grey', alpha=0.01)
 
         ax.set_xlim(-5, self.box_size + 5)
         ax.set_ylim(-5, self.box_size + 5)

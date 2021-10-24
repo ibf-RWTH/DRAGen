@@ -1,10 +1,8 @@
 import os
 import sys
 import datetime
-import time
 import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
+
 import logging
 import logging.handlers
 import pandas as pd
@@ -24,8 +22,9 @@ class DataTask3D_GAN(RVEUtils):
 
     def __init__(self, box_size=30, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5, band_filling=0.99,
                  phase_ratio=0.95, inclusions_ratio=0.01, solver='Spectral',
-                 file1=None, file2=None, file3=None, store_path=None, gui_flag=False, anim_flag=False, gan_flag=False,
+                 file1=None, file2=None, store_path=None, gui_flag=False, anim_flag=False, gan_flag=False,
                  exe_flag=False, inclusions_flag=True):
+        print('hier')
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.n_pts = n_pts  # has to be even
@@ -36,18 +35,18 @@ class DataTask3D_GAN(RVEUtils):
         self.gan_flag = gan_flag
         self.solver = solver
         self.inclusions_flag = inclusions_flag if self.gan_flag else False  # geht nicht ohne GAN
-        self.root_dir = sys.argv[0][:-14]
+        self.root_dir = './'
 
         """
         Aktueller Parametersatz für GAN:
         Parameters:  
         """
-        self.number_of_bands = 0 if number_of_bands < 1 else 1      # Currently only stable for one band
+        self.number_of_bands = number_of_bands
         self.bandwidth = bandwidth
         self.band_filling = band_filling  # Percentage of Filling for the banded structure
         self.phase_ratio = phase_ratio  # 1 means all ferrite, 0 means all Martensite
         self.inclusion_ratio = inclusions_ratio  # Space occupied by inclusions
-        """if exe_flag:
+        if exe_flag:
             self.root_dir = store_path
         if not gui_flag and not self.gan_flag:
             self.root_dir = sys.argv[0][:-14]  # setting root_dir to root_dir by checking path of current file
@@ -55,58 +54,55 @@ class DataTask3D_GAN(RVEUtils):
         elif gui_flag and not exe_flag:
             self.root_dir = store_path
         elif self.gan_flag:
-            self.root_dir = store_path"""
+            self.root_dir = store_path
 
         self.logger.info('the exe_flag is: ' + str(exe_flag))
         self.logger.info('root was set to: ' + self.root_dir)
         self.animation = anim_flag
         self.file1 = file1
         self.file2 = file2
-        self.file3 = file3
         self.utils_obj = RVEUtils(self.box_size, self.n_pts, self.bandwidth)
         if self.gan_flag:
+            print('Erzeuge GAN')
             self.GAN = self.run_cwgangp()
 
         self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
         super().__init__(box_size, n_pts, self.x_grid, self.y_grid, self.z_grid, bandwidth, debug=False)
 
-    def write_specs(self, storepath):
+    def write_specs(self):
         """
         Write a data-File containing all the informations necessary to create the rve to store_path
+        TODO: Write
         """
-        with open(storepath + '/' + 'Specs.txt', 'w') as specs:
-            # Network specs
-            specs.writelines('-----------------------------------------------------------\n')
-            specs.writelines('---------------------RVE-Specifications--------------------\n')
-            specs.writelines('-----------------------------------------------------------\n\n\n')
-            today = datetime.date.today()
-            d1 = today.strftime("%d/%m/%Y")
-            specs.writelines('Created at: ' + d1)
-            specs.writelines('\n\n')
-            specs.writelines('Size of the RVE {}µm - {}\n'.format(self.box_size, self.n_pts))
-            specs.writelines('Solver Typ: {}\n\n'.format(self.solver))
-            specs.writelines('Number of Bands: {}\n'.format(float(self.number_of_bands)))
-            for i in range(int(self.number_of_bands)):
-                specs.writelines('bandwidth: {}µm\n'.format(float(self.bandwidth)))
-            specs.writelines('Phase ratios:\n \tOverall-percentage: {}%\n \tBand-Percentage: {}%\n '
-                             '\tIsland-Percentage: {}%\n'.
-                             format(100 * self.phase_ratio, 100 * float(self.percentage_in_bands),
-                                    100 * float(self.new_phase_ratio)))
-            if self.inclusions_flag:
-                specs.writelines('Inclusion-percentage: {}\n'.format(self.inclusion_ratio))
-            else:
-                specs.writelines('No inclusions in the RVE! \n\n')
+        pass
 
-            specs.writelines('For informations, contributing etc. please contact the DRAGEN-Team:\n')
-            specs.writelines('\tDRAGen@iehk.rwth-aachen.de\n\n')
-
+    # Läuft einen Trainingsdurchgang und erzeugt ein GAN-Object
     def run_cwgangp(self):
+        SOURCE = self.root_dir + '/ExampleInput'
+
+        # Data:
+        df1 = pd.read_csv(SOURCE + '/Input_TDxBN_AR.csv')
+        df2 = pd.read_csv(SOURCE + '/Input_RDxBN_AR.csv')
+        df3 = pd.read_csv(SOURCE + '/Input_RDxTD_AR.csv')
+
+        # Inclusions
+        df4 = pd.read_csv(SOURCE + '/Einschlüsse_TDxBN_AR.csv')
+        df5 = pd.read_csv(SOURCE + '/Einschlüsse_RDxBN_AR.csv')
+        df6 = pd.read_csv(SOURCE + '/Einschlüsse_RDxTD_AR.csv')
+
+        df7 = pd.read_csv(SOURCE + '/Input_Martensit_BNxRD.csv')
         # Set up CWGAN-GP with all data
         store_path = self.root_dir + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(0)
         if not os.path.isdir(store_path):
             os.makedirs(store_path)
-        GAN = WGANCGP(df_list=[], storepath=store_path, num_features=3, gen_iters=100)
-        GAN.load_trained_states(single=False, file_list=[self.file1, self.file2, self.file3])
+        GAN = WGANCGP(df_list=[df1, df2, df3, df4, df5, df6, df7], storepath=store_path, num_features=3, gen_iters=100)
+
+        # Run training for 5000 Its - 150.000 is default
+        # GAN.train()
+
+        # Evaluate Afterwards
+        # GAN.evaluate()
+        self.logger.info('Created GAN-Object successfully!')
 
         return GAN
 
@@ -147,15 +143,6 @@ class DataTask3D_GAN(RVEUtils):
                 pass
         # Set c = b due to coming rotation
         df2['Axes3'] = df2['Axes2']
-        sns.kdeplot(data=df2, x='Axes1')
-        sns.kdeplot(data=df2, x='Axes2')
-        sns.kdeplot(data=df2, x='Axes3')
-        plt.legend(['Ax1', 'Ax2', 'Ax3'])
-        plt.savefig(self.store_path + '/MartensiteSize.png')
-        plt.close()
-
-        sns.pairplot(df2)
-        plt.savefig(self.store_path + '/Pairplot.png')
 
         # 2.) Sample the right amount of Input
         bs = boxsize
@@ -163,8 +150,6 @@ class DataTask3D_GAN(RVEUtils):
         grain_vol = 0
         data = df2.copy()
         inp_list = list()
-        counter = 0
-        loop_counter = 0
         while grain_vol < max_volume:
             idx = np.random.randint(0, data.__len__())
             grain = data[['Axes1', 'Axes2', 'Axes3', 'Slope']].iloc[idx].tolist()
@@ -174,7 +159,7 @@ class DataTask3D_GAN(RVEUtils):
                 grain_vol += vol
                 inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
             else:
-                if (grain[0] > maximum):  # or (grain[0] > maximum*2) or (grain[2] > maximum*2):
+                if (grain[0] > maximum) or (grain[1] > maximum) or (grain[2] > maximum):
                     pass
                 else:
                     # Only append if smaller
@@ -182,21 +167,8 @@ class DataTask3D_GAN(RVEUtils):
                     grain_vol += vol
                     inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
 
-            if data.__len__() <= 10:
-                # Reset the data
-                data = df2.copy()
-                counter += 1
-                with open(self.store_path + '/rve.sta', 'a') as sta:
-                    sta.writelines('\nReseting the database for the {}th time\n'.format(counter))
-                    if counter >= 3:
-                        sta.writelines('Considering increasing the bandwidth\n')
-            loop_counter += 1
-
-        with open(self.store_path + '/rve.sta', 'a') as sta:
-            sta.writelines('\nNeeded {}-Loops to sample points!\n'.format(loop_counter))
-
         # Del last if to big and more than one value:
-        if grain_vol > 1.1 * max_volume and inp_list.__len__() > 0:
+        if grain_vol > 1.1 * max_volume and inp_list.__len__() > 1:
             # Pop
             idx = np.random.randint(0, inp_list.__len__())
             inp_list.pop(idx)
@@ -206,7 +178,7 @@ class DataTask3D_GAN(RVEUtils):
 
         # Add temporary euler angles
         df3['phi1'] = (np.random.rand(df3.__len__()) * 360)
-        df3['PHI'] = (np.random.rand(df3.__len__()) * 180)
+        df3['PHI'] = (np.random.rand(df3.__len__()) * 360)
         df3['phi2'] = (np.random.rand(df3.__len__()) * 360)
 
         return df3
@@ -240,35 +212,20 @@ class DataTask3D_GAN(RVEUtils):
 
     def rve_generation(self, grains_df, store_path):
 
-        with open(store_path + '/rve.sta', 'a') as sta:
-            sta.writelines('------------------------------------------------------------------------------\n')
-            sta.writelines('----------------------------RVE Generation started----------------------------\n')
-            sta.writelines('------------------------------------------------------------------------------\n')
-            sta.writelines('\n\n')
-            now = datetime.datetime.now()
-            dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-            sta.writelines('Starttime: ' + dt_string)
-            sta.writelines('\n\n\n')
-            sta.writelines('Calculating the phase ratio...\n')
-
-        print('Bandberechnung')
-        print(self.bandwidth)
-        percentage_in_bands = (float(
-            (np.array(self.bandwidth).sum()) * self.number_of_bands * self.box_size ** 2) * self.band_filling) / \
+        self.logger.info('------------------------------------------------------------------------------')
+        self.logger.info('----------------------------RVE Generation started----------------------------')
+        self.logger.info('------------------------------------------------------------------------------')
+        self.logger.info('Calculating the phase ratio...')
+        percentage_in_bands = ((self.bandwidth * self.number_of_bands * self.box_size ** 2) * self.band_filling) / \
                               (self.box_size ** 3)
-
-        self.percentage_in_bands = percentage_in_bands
+        print(percentage_in_bands)
         new_phase_ratio = self.phase_ratio - percentage_in_bands
-        self.new_phase_ratio = new_phase_ratio
-        self.write_specs(self.store_path)
         if new_phase_ratio < 0:
-            with open(store_path + '/rve.sta', 'a') as sta:
-                sta.writelines('The bands are containing more martensite then specfified for the overall volume! \n')
-                sta.writelines('Setting the phase ratio for the rest of the volume to 1 \n')
+            self.logger.info('The bands are containing more martensite then specfified for the overall volume!')
+            self.logger.info('Setting the phase ratio for the rest of the volume to 1')
             new_phase_ratio = 0
         else:
-            with open(store_path + '/rve.sta', 'a') as sta:
-                sta.writelines('The phase ratio for the rest of the volume is: {} \n'.format(new_phase_ratio))
+            self.logger.info('The phase ratio for the rest of the volume is: {}'.format(new_phase_ratio))
         """
         -------------------------------------------------------------------------------
         BAND-PHASE GENERATION HERE
@@ -277,23 +234,19 @@ class DataTask3D_GAN(RVEUtils):
         flag before the field
         -------------------------------------------------------------------------------
         """
-        if self.number_of_bands > 0:
-            starttime = time.time()
-            with open(store_path + '/rve.sta', 'a') as sta:
-                sta.writelines("\n\nRVE generation process has started with Band-creation \n")
-                sta.writelines(
-                    "The total volume of the RVE is {0}*{0}*{0} = {1} \n".format(self.box_size, self.box_size ** 3))
-                adjusted_size = np.cbrt(
-                    (self.number_of_bands * np.asarray(self.bandwidth).sum() * self.box_size ** 2) * self.band_filling)
-                phase1 = self.sample_gan_input_2d(size=10000, label=1, boxsize=adjusted_size,
-                                                  maximum=np.amin(self.bandwidth) * 1.5)
-                bands_df = super().process_df(phase1, float(self.shrink_factor))
-                bands_df['phaseID'] = 2
-                sta.writelines('Sampled {} Martensite-Points for band-Creation! \n'.format(bands_df.__len__()))
-                sta.writelines('The total conti volume is: {} \n'.format(np.sum(bands_df['final_conti_volume'].values)))
-                sta.writelines(
-                    'The total discrete volume is: {} \n'.format(np.sum(bands_df['final_discrete_volume'].values)))
-
+        if self.bandwidth > 0:
+            self.logger.info("RVE generation process has started with Band-creation")
+            self.logger.info(
+                "The total volume of the RVE is {0}*{0}*{0} = {1}".format(self.box_size, self.box_size ** 3))
+            adjusted_size = np.cbrt((self.number_of_bands * self.bandwidth * self.box_size ** 2) * self.band_filling)
+            phase1 = self.sample_gan_input_2d(size=800, label=6, boxsize=adjusted_size,
+                                              maximum=self.bandwidth)
+            bands_df = super().process_df(phase1, float(self.shrink_factor))
+            bands_df['phaseID'] = 2
+            self.logger.info('Sampled {} Martensite-Points for band-Creation!'.format(bands_df.__len__()))
+            self.logger.info('The total conti volume is: {}'.format(np.sum(bands_df['final_conti_volume'].values)))
+            self.logger.info(
+                'The total discrete volume is: {}'.format(np.sum(bands_df['final_discrete_volume'].values)))
             discrete_RSA_obj = DiscreteRsa3D(self.box_size, self.n_pts,
                                              bands_df['a'].tolist(),
                                              bands_df['b'].tolist(),
@@ -303,24 +256,18 @@ class DataTask3D_GAN(RVEUtils):
             # initialize empty grid_array for bands called band_array
             xyz = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
             x_grid, y_grid, z_grid = np.meshgrid(xyz, xyz, xyz)
-
             utils_obj_band = RVEUtils(self.box_size, self.n_pts,
                                       x_grid=x_grid, y_grid=y_grid, z_grid=z_grid, bandwidth=self.bandwidth)
             band_array = np.zeros((2 * self.n_pts, 2 * self.n_pts, 2 * self.n_pts))
             band_array = utils_obj_band.gen_boundaries_3D(band_array)
 
             for i in range(self.number_of_bands):
-                band_array = utils_obj_band.band_generator(band_array, bandwidth=self.bandwidth)
-
+                band_array = utils_obj_band.band_generator(band_array)
             rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa_clustered(
                 banded_rsa_array=band_array,
-                animation=True)
-            endtime = datetime.timedelta(seconds=(time.time() - starttime))
-            with open(store_path + '/rve.sta', 'a') as sta:
-                sta.writelines('Elapsed time for band creation: {}\n\n'.format(endtime))
+                animation=False)
         else:
             rsa_status = True
-
         """
         ----------------------------------------------------------------------------------
         Placing the rest of the grains!
@@ -331,41 +278,36 @@ class DataTask3D_GAN(RVEUtils):
         ----------------------------------------------------------------------------------
         """
         if rsa_status:
-            print('Hier')
-            starttime = time.time()
-            with open(store_path + '/rve.sta', 'a') as sta:
-                sta.writelines("RVE generation process continues with placing of the ferrite grains and martensite "
-                               "islands \n")
-                # Ferrite:
-                adjusted_size_ferrite = np.cbrt((self.box_size ** 3 - self.number_of_bands * np.asarray(self.bandwidth).sum() *
-                                                 self.box_size ** 2) * (1 - new_phase_ratio))
-                phase1 = self.sample_gan_input_2d(size=800, label=0, boxsize=adjusted_size_ferrite)
-                grains_df = super().process_df(phase1, float(self.shrink_factor))
-                grains_df['phaseID'] = 1  # Ferrite_Grains
-                sta.writelines('Sampled {} Ferrite-Points for the matrix! \n'.format(grains_df.__len__()))
-                sta.writelines(
-                    'The total conti volume is: {} \n'.format(np.sum(grains_df['final_conti_volume'].values)))
-                sta.writelines(
-                    'The total discrete volume is: {} \n'.format(np.sum(grains_df['final_discrete_volume'].values)))
-                # Martensite
-                adjusted_size_martensite = np.cbrt((self.box_size ** 3 - self.number_of_bands * np.asarray(self.bandwidth).sum() *
-                                                    self.box_size ** 2) * new_phase_ratio)
-                phase2 = self.sample_gan_input_2d(size=800, label=1, boxsize=adjusted_size_martensite,
-                                                  maximum=self.box_size / 5)
-                grains_df_2 = super().process_df(phase2, float(self.shrink_factor))
-                grains_df_2['phaseID'] = 2  # Martensite_Islands
-                sta.writelines('Sampled {} Martensite-Islands for the matrix! \n'.format(grains_df_2.__len__()))
-                sta.writelines(
-                    'The total conti volume is: {} \n'.format(np.sum(grains_df_2['final_conti_volume'].values)))
-                sta.writelines(
-                    'The total discrete volume is: {} \n'.format(np.sum(grains_df_2['final_discrete_volume'].values)))
+            self.logger.info("RVE generation process continues with placing of the ferrite grains and martensite "
+                             "islands")
+            # Ferrite:
+            adjusted_size_ferrite = np.cbrt((self.box_size ** 3 - self.number_of_bands * self.bandwidth *
+                                             self.box_size ** 2) * (1 - new_phase_ratio))
+            phase1 = self.sample_gan_input(size=800, labels=[0, 1, 2], adjusted_size=adjusted_size_ferrite)
+            grains_df = super().process_df(phase1, float(self.shrink_factor))
+            grains_df['phaseID'] = 1  # Ferrite_Grains
+            self.logger.info('Sampled {} Ferrite-Points for the matrix!'.format(grains_df.__len__()))
+            self.logger.info('The total conti volume is: {}'.format(np.sum(grains_df['final_conti_volume'].values)))
+            self.logger.info(
+                'The total discrete volume is: {}'.format(np.sum(grains_df['final_discrete_volume'].values)))
+            # Martensite
+            adjusted_size_martensite = np.cbrt((self.box_size ** 3 - self.number_of_bands * self.bandwidth *
+                                                self.box_size ** 2) * new_phase_ratio)
+            phase2 = self.sample_gan_input_2d(size=800, label=6, boxsize=adjusted_size_martensite)
+            grains_df_2 = super().process_df(phase2, float(self.shrink_factor))
+            grains_df_2['phaseID'] = 2  # Martensite_Islands
+            self.logger.info('Sampled {} Martensite-Islands for the matrix!'.format(grains_df_2.__len__()))
+            self.logger.info('The total conti volume is: {}'.format(np.sum(grains_df_2['final_conti_volume'].values)))
+            self.logger.info(
+                'The total discrete volume is: {}'.format(np.sum(grains_df_2['final_discrete_volume'].values)))
 
-                # Sort again because of Concat
-                grains_df = pd.concat([grains_df, grains_df_2])
-                grains_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
-                grains_df.reset_index(inplace=True, drop=True)
-                grains_df['GrainID'] = grains_df.index
+            # Sort again because of Concat
+            grains_df = pd.concat([grains_df, grains_df_2])
+            grains_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
+            grains_df.reset_index(inplace=True, drop=True)
+            grains_df['GrainID'] = grains_df.index
 
+            # TODO hier musst du gucken mit dem neuen process data frame util das RSA obj nimmt jetzt einen dataframe
             discrete_RSA_obj = DiscreteRsa3D(self.box_size, self.n_pts,
                                              grains_df['a'].tolist(),
                                              grains_df['b'].tolist(),
@@ -373,7 +315,7 @@ class DataTask3D_GAN(RVEUtils):
                                              grains_df['alpha'].tolist(), store_path=store_path)
 
             # Run the 'rest' of the rsa:
-            if self.number_of_bands > 0:
+            if self.bandwidth > 0:
                 rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(band_ratio_rsa=1,
                                                                                          banded_rsa_array=rsa,
                                                                                          animation=self.animation,
@@ -386,12 +328,8 @@ class DataTask3D_GAN(RVEUtils):
                                                                                          banded_rsa_array=None,
                                                                                          animation=self.animation,
                                                                                          gui=False)
-            endtime = datetime.timedelta(seconds=(time.time() - starttime))
-            with open(store_path + '/rve.sta', 'a') as sta:
-                sta.writelines('\nElapsed time for normal RSA: {}\n\n'.format(endtime))
         else:
-            with open(store_path + '/rve.sta', 'a') as sta:
-                sta.writelines("The normal rsa did not succeed...Please check input and logging for Errors \n")
+            self.logger.info("The normal rsa did not succeed...")
             sys.exit()
 
         """
@@ -402,11 +340,9 @@ class DataTask3D_GAN(RVEUtils):
         ---------------------------------------------------------------------
         """
         if rsa_status:
-            starttime = time.time()
-            with open(store_path + '/rve.sta', 'a') as sta:
-                sta.writelines("\n\nRVE generation process continues with the tesselation of grains!\n")
+            self.logger.info("RVE generation process continues with the tesselation of grains!")
             # Passe Grain-IDs an
-            if self.number_of_bands > 0:
+            if self.bandwidth > 0:
                 rsa = self.utils_obj.rearange_grain_ids_bands(bands_df=bands_df,
                                                               grains_df=grains_df,
                                                               rsa=rsa)
@@ -438,12 +374,8 @@ class DataTask3D_GAN(RVEUtils):
             for i in range(len(grains_df), len(whole_df)):
                 rve[np.where(rve == i + 1)] = -200
 
-            endtime = datetime.timedelta(seconds=(time.time() - starttime))
-            with open(store_path + '/rve.sta', 'a') as sta:
-                sta.writelines('Elapsed time for Tesselation: {}\n\n'.format(endtime))
         else:
-            with open(store_path + '/rve.sta', 'a') as sta:
-                sta.writelines("The tesselation did not succeed...Check input and logging for Errors \n")
+            self.logger.info("The tesselation did not succeed...")
             sys.exit()
 
         """
@@ -455,17 +387,15 @@ class DataTask3D_GAN(RVEUtils):
         -------------------------------------------------------------------------
         """
         if rve_status and self.inclusions_flag:
-            with open(store_path + '/rve.sta', 'a') as sta:
-                sta.writelines("\n\nRVE generation process reaches final steps: Placing inclusions in the matrix\n")
-                adjusted_size = self.box_size * np.cbrt(self.inclusion_ratio)  # 1% as an example
-                inclusions = self.sample_gan_input_2d(size=200, label=2, boxsize=adjusted_size)
-                inclusions_df = super().process_df(inclusions, float(self.shrink_factor))
-                inclusions_df['phaseID'] = 2  # Inclusions also elastic
-                sta.writelines('Sampled {} inclusions for the RVE\n'.format(inclusions_df.__len__()))
-                sta.writelines(
-                    'The total conti volume is: {}\n'.format(np.sum(inclusions_df['final_conti_volume'].values)))
-                sta.writelines(
-                    'The total discrete volume is: {}\n'.format(np.sum(inclusions_df['final_discrete_volume'].values)))
+            self.logger.info("RVE generation process reaches final steps: Placing inclusions in the matrix")
+            adjusted_size = self.box_size * np.cbrt(self.inclusion_ratio)  # 1% as an example
+            inclusions = self.sample_gan_input(size=200, labels=(3, 4, 5), adjusted_size=adjusted_size)
+            inclusions_df = super().process_df(inclusions, float(self.shrink_factor))
+            inclusions_df['phaseID'] = 2  # Inclusions also elastic
+            self.logger.info('Sampled {} inclusions for the RVE'.format(inclusions_df.__len__()))
+            self.logger.info('The total conti volume is: {}'.format(np.sum(inclusions_df['final_conti_volume'].values)))
+            self.logger.info(
+                'The total discrete volume is: {}'.format(np.sum(inclusions_df['final_discrete_volume'].values)))
 
             discrete_RSA_inc_obj = DiscreteRsa3D(self.box_size, self.n_pts,
                                                  inclusions_df['a'].tolist(),
@@ -474,7 +404,7 @@ class DataTask3D_GAN(RVEUtils):
                                                  inclusions_df['alpha'].tolist(), store_path=store_path)
 
             rve, rve_status = discrete_RSA_inc_obj.run_rsa_inclusions(rve, animation=True)
-            # print(np.asarray(np.unique(rve, return_counts=True)).T)
+            print(np.asarray(np.unique(rve, return_counts=True)).T)
             # print(grains_df)
 
         """
@@ -486,9 +416,6 @@ class DataTask3D_GAN(RVEUtils):
         -------------------------------------------------------------------------
         """
         if self.solver == 'Spectral':
-            with open(store_path + '/rve.sta', 'a') as sta:
-                sta.writelines("\n\nRVE generation process nearly complete: Creating input for DAMASK Spectral now: \n")
-
             # 1.) Write out Volume
             grains_df.sort_values(by=['GrainID'], inplace=True)
             disc_vols = np.zeros((1, grains_df.shape[0])).flatten().tolist()
@@ -499,6 +426,7 @@ class DataTask3D_GAN(RVEUtils):
             grains_df['meshed_conti_volume'] = disc_vols
             grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
 
+            self.logger.info("RVE generation process nearly complete: Creating input for DAMASK Spectral now:")
             # Startpoint: Rearange the negative ID's
             last_grain_id = rve.max()
             if self.inclusions_flag:
@@ -507,7 +435,7 @@ class DataTask3D_GAN(RVEUtils):
                 rve[np.where(rve == -200)] = last_grain_id + i + 2
             else:
                 rve[np.where(rve == -200)] = last_grain_id + 1
-            # print(np.asarray(np.unique(rve, return_counts=True)).T)
+            print(np.asarray(np.unique(rve, return_counts=True)).T)
 
             # 2.) Make Geometry
             band = True if self.number_of_bands > 0 else False
@@ -519,29 +447,29 @@ class DataTask3D_GAN(RVEUtils):
                 spectral.make_geom(rve=rve, n_grains=grains_df.__len__(), grid_size=self.n_pts, spacing=self.box_size,
                                    store_path=store_path)
 
-            # 3.) Make config / material inpu
+            # 3.) Make config / material input
+            full_grains = pd.concat([whole_df, inclusions_df])
+            full_grains.reset_index(inplace=True)
+            full_grains['GrainID'] = full_grains.index
+            print(full_grains)
+
             if self.inclusions_flag:
-                full_grains = pd.concat([grains_df, inclusions_df])
-                full_grains.reset_index(inplace=True)
-                full_grains['GrainID'] = full_grains.index
-                # print(full_grains)
                 spectral.make_config(store_path=store_path, n_grains=full_grains.__len__(), band=band,
                                      grains_df=full_grains)
             else:
-                spectral.make_config(store_path=store_path, n_grains=grains_df.__len__(), band=band,
-                                     grains_df=grains_df)
+                spectral.make_config(store_path=store_path, n_grains=full_grains.__len__(), band=band,
+                                     grains_df=full_grains)
 
             # 4.) Last - Make load
-            spectral.make_load(store_path=store_path)
+            spectral.make_load(store_path)
 
         elif self.solver == 'FEM':
             if rve_status:
-                with open(store_path + '/rve.sta', 'a') as sta:
-                    sta.writelines("\n\nRVE generation process nearly complete: Creating Abaqus input now: \n")
+                self.logger.info("RVE generation process nearly complete: Creating Abaqus input now:")
                 periodic_rve_df = super().repair_periodicity_3D(rve)
                 periodic_rve_df['phaseID'] = 0
                 grains_df.sort_values(by=['GrainID'])
-                # print(grains_df)
+                print(grains_df)
 
                 for i in range(len(grains_df)):
                     # Set grain-ID to number of the grain
@@ -555,8 +483,8 @@ class DataTask3D_GAN(RVEUtils):
                         periodic_rve_df.loc[periodic_rve_df['GrainID'] == -(200 + j + 1), 'GrainID'] = (i + j + 2)
                         periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + j + 2), 'phaseID'] = 2
 
-                # print(periodic_rve_df)
-                # print(periodic_rve_df['GrainID'].value_counts())
+                print(periodic_rve_df)
+                print(periodic_rve_df['GrainID'].value_counts())
 
                 if self.number_of_bands > 0 and self.inclusions_flag:
                     # Set the points where == -200 to phase 2 and to grain ID i + j + 3
@@ -569,13 +497,12 @@ class DataTask3D_GAN(RVEUtils):
 
                 # Start the Mesher
                 mesher_obj = Mesher(periodic_rve_df, store_path=store_path, phase_two_isotropic=True, animation=False,
-                                    grains_df=grains_df, gui=False, elem='C3D4')
+                                    grains_df=grains_df, gui=False, elem='C3D10')
                 mesher_obj.mesh_and_build_abaqus_model()
 
     def post_processing(self):
         if self.solver == 'Spectral':
-            with open(self.store_path + '/rve.sta', 'a') as sta:
-                sta.writelines('Attention: Discrete and continuous Output are equal for the spectral grid! \n')
+            self.logger.info('Attention: Discrete and continuous Output are equal for the spectral grid!')
         obj = PostProcVol(self.store_path, dim_flag=3)
         phase1_ratio_conti_in, phase1_ref_r_conti_in, phase1_ratio_discrete_in, phase1_ref_r_discrete_in, \
         phase2_ratio_conti_in, phase2_ref_r_conti_in, phase2_ratio_discrete_in, phase2_ref_r_discrete_in, \
@@ -601,11 +528,10 @@ class DataTask3D_GAN(RVEUtils):
             obj.gen_plots(phase1_ref_r_conti_in, phase1_ref_r_conti_out, 'conti', 'in_vs_out_conti')
             obj.gen_plots(phase1_ref_r_discrete_in, phase1_ref_r_discrete_out, 'discrete', 'in_vs_out_discrete')
 
-        with open(self.store_path + '/rve.sta', 'a') as sta:
-            sta.writelines("\n\nRVE generation process has successfully completed... \n")
-            sta.writelines('------------------------------------------------------------------------------\n')
-            sta.writelines('-----------------------------RVE Generation ended-----------------------------\n')
-            sta.writelines('------------------------------------------------------------------------------\n')
+        self.logger.info("RVE generation process has successfully completed...")
+        self.logger.info('------------------------------------------------------------------------------')
+        self.logger.info('-----------------------------RVE Generation ended-----------------------------')
+        self.logger.info('------------------------------------------------------------------------------')
 
         # Important if you want to instantiate several DataTaskObjs
         self.logger.handlers.clear()
