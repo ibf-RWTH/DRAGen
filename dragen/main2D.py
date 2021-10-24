@@ -18,7 +18,7 @@ class DataTask2D(RVEUtils):
 
     def __init__(self, box_size: int, n_pts: int, number_of_bands: int, bandwidth: float, shrink_factor: float = 0.5,
                  band_ratio_rsa: float = 0.95, band_ratio_final: float = 0.95, phase_ratio: float = None, file1=None, file2=None, store_path=None,
-                 gui_flag=False, anim_flag=False, gan_flag=False, exe_flag=False):
+                 gui_flag=False, anim_flag=False, gan_flag=False, exe_flag=False,phases:list =['pearlite','ferrite']):
 
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size

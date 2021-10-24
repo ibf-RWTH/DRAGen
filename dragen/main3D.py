@@ -13,6 +13,7 @@ from dragen.utilities.RVE_Utils import RVEUtils
 from dragen.generation.mesher import Mesher
 from dragen.postprocessing.voldistribution import PostProcVol
 
+PHASENUM = {'pearlite':1,'ferrite':2} #fix number for the different phases
 
 class DataTask3D(RVEUtils):
 
@@ -20,7 +21,7 @@ class DataTask3D(RVEUtils):
                  n_pts: int, number_of_bands: int, bandwidth: float, shrink_factor: float = 0.5,
                  band_ratio_rsa: float = 0.95, band_ratio_final: float = 0.95, phase_ratio: float = None, file1=None,
                  file2=None, store_path=None, gui_flag=False, anim_flag=False, gan_flag=False, exe_flag=False,
-                 infobox_obj=None, progess_obj=None):
+                 infobox_obj=None, progess_obj=None,sub_run=None,phases:list =['pearlite','ferrite']):
 
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
@@ -51,7 +52,8 @@ class DataTask3D(RVEUtils):
         self.file2 = file2
 
         self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
-
+        self.sub_run = sub_run
+        self.phases = phases
         super().__init__(box_size,  n_pts, box_size_y=box_size_y, box_size_z=box_size_z,
                          x_grid=self.x_grid, y_grid=self.y_grid, z_grid=self.z_grid, bandwidth=bandwidth, debug=False)
 
@@ -72,60 +74,40 @@ class DataTask3D(RVEUtils):
 
         phase1_csv = self.file1
         phase2_csv = self.file2
-
+        files = [phase1_csv,phase2_csv]
         self.logger.info("RVE generation process has started...")
-        phase1_input_df = super().read_input(phase1_csv, dimension)
-        # Phase Ratio calculation
-        if self.box_size_y is None and self.box_size_z is None:
-            adjusted_size = np.cbrt((self.box_size ** 3 -
-                                    (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
-                                    * self.phase_ratio)
-            grains_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
 
-        elif self.box_size_y is not None and self.box_size_z is None:
-            adjusted_size = np.cbrt((self.box_size ** 2 * self.box_size_y -
-                                     (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
-                                    * self.phase_ratio)
-            grains_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
-        elif self.box_size_y is None and self.box_size_z is not None:
-            adjusted_size = np.cbrt((self.box_size ** 2 * self.box_size_z -
-                                     (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
-                                    * self.phase_ratio)
-            grains_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
-        else:
-            adjusted_size = np.cbrt((self.box_size * self.box_size_y * self.box_size_z -
-                                     (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
-                                    * self.phase_ratio)
-            grains_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
-        grains_df['phaseID'] = 1
-        if phase2_csv is not None:
-            phase2_input_df = super().read_input(phase2_csv, dimension)
+        total_df = pd.DataFrame()
+        for phase in self.phases:
+            file_idx = PHASENUM[phase] - 1
+            print('current phase is',phase,';phase input file is',files[file_idx])
+            phase_input_df = super().read_input(files[file_idx], dimension)
             if self.box_size_y is None and self.box_size_z is None:
                 adjusted_size = np.cbrt((self.box_size ** 3 -
-                                         (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
-                                        * (1 - self.phase_ratio))
-                phase2_df = super().sample_input_3D(phase2_input_df, bs=adjusted_size)
+                                        (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
+                                        * self.phase_ratio)
+                grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
 
             elif self.box_size_y is not None and self.box_size_z is None:
                 adjusted_size = np.cbrt((self.box_size ** 2 * self.box_size_y -
                                          (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
-                                        * (1 - self.phase_ratio))
-                phase2_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
+                                        * self.phase_ratio)
+                grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
             elif self.box_size_y is None and self.box_size_z is not None:
                 adjusted_size = np.cbrt((self.box_size ** 2 * self.box_size_z -
                                          (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
-                                        * (1 - self.phase_ratio))
-                phase2_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
+                                        * self.phase_ratio)
+                grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
             else:
                 adjusted_size = np.cbrt((self.box_size * self.box_size_y * self.box_size_z -
                                          (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
-                                        * (1 - self.phase_ratio))
-                phase2_df = super().sample_input_3D(phase1_input_df, bs=adjusted_size)
+                                        * self.phase_ratio)
+                grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
 
-            phase2_df['phaseID'] = 2
-            grains_df = pd.concat([grains_df, phase2_df])
+            grains_df['phaseID'] = PHASENUM[phase]
+            total_df = pd.concat([total_df,grains_df])
 
-        grains_df = super().process_df(grains_df, self.shrink_factor)
+        grains_df = super().process_df(total_df, self.shrink_factor)
 
         total_volume = sum(grains_df['final_conti_volume'].values)
         estimated_boxsize = np.cbrt(total_volume)
@@ -215,9 +197,10 @@ class DataTask3D(RVEUtils):
             # Start the Mesher
             #grains_df.to_csv('grains_df.csv', index=False)
             #periodic_rve_df.to_csv('periodic_rve_df.csv', index=False)
-
+            subs_rve = self.sub_run.run(rve_df=periodic_rve_df, grains_df=grains_df, store_path=self.store_path,
+                                        logger=self.logger) # returns rve df containing substructures
             mesher_obj = Mesher(box_size_x=self.box_size, box_size_y=self.box_size_y, box_size_z=self.box_size_z,
-                                rve=periodic_rve_df,grains_df=grains_df, store_path=store_path,
+                                rve=subs_rve,grains_df=grains_df, store_path=store_path,
                                 phase_two_isotropic=True, animation=self.animation,
                                 infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag,
                                 element_type='C3D8')

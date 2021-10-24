@@ -154,8 +154,10 @@ class RVEUtils:
         grain_vol = 0
         data = data.copy()
         inp_list = list()
+        old_idx = []
         while grain_vol < max_volume:
             idx = np.random.randint(0, data.__len__())
+            old_idx.append(idx)
             grain = data[["a", "b", "c", "alpha", "phi1", "PHI", "phi2"]].iloc[idx].tolist()
             data = data.drop(labels=data.index[idx], axis=0)
             vol = 4 / 3 * np.pi * grain[0] * grain[1] * grain[2]
@@ -166,7 +168,7 @@ class RVEUtils:
 
         header = ["a", "b", "c", "alpha", "phi1", "PHI", "phi2"]
         df = pd.DataFrame(inp_list, columns=header)
-
+        df['old_gid'] = old_idx # get old idx so that the substructure generator knows which grains are chosen in the input data
         return df
 
     def sample_input_2D(self, data, bs) -> pd.DataFrame:

@@ -23,7 +23,7 @@ class DataTask3D_GAN(RVEUtils):
     def __init__(self, box_size=30, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5, band_filling=0.99,
                  phase_ratio=0.95, inclusions_ratio=0.01, solver='Spectral',
                  file1=None, file2=None, store_path=None, gui_flag=False, anim_flag=False, gan_flag=False,
-                 exe_flag=False, inclusions_flag=True):
+                 exe_flag=False, inclusions_flag=True,sub_run=None,phases:list =['pearlite','ferrite']):
         print('hier')
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
@@ -67,6 +67,7 @@ class DataTask3D_GAN(RVEUtils):
             self.GAN = self.run_cwgangp()
 
         self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
+        self.sub_sun = sub_run
         super().__init__(box_size, n_pts, self.x_grid, self.y_grid, self.z_grid, bandwidth, debug=False)
 
     def write_specs(self):
@@ -496,7 +497,9 @@ class DataTask3D_GAN(RVEUtils):
                     periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
 
                 # Start the Mesher
-                mesher_obj = Mesher(periodic_rve_df, store_path=store_path, phase_two_isotropic=True, animation=False,
+                subs_rve = self.sub_run.run(rve_df=periodic_rve_df, grains_df=grains_df, store_path=self.store_path,
+                                            logger=self.logger)# returns rve df containing substructures
+                mesher_obj = Mesher(subs_rve, store_path=store_path, phase_two_isotropic=True, animation=False,
                                     grains_df=grains_df, gui=False, elem='C3D10')
                 mesher_obj.mesh_and_build_abaqus_model()
 
