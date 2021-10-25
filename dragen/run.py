@@ -22,7 +22,7 @@ class Run:
                  lower: float = None, upper: float = None, circularity: float = 1, plt_name: str = None,
                  save: bool = True,
                  plot: bool = False, filename: str = None, fig_path: str = None, OR: str = 'KS', gen_flag='user_define',
-                 subs_file:str =None,phases:list =['pearlite','ferrite']):
+                 subs_file:str =None,phases:list =['ferrite','martensite']):
 
         self.box_size = box_size
         self.box_size_y = box_size_y
@@ -128,17 +128,17 @@ class Run:
 
 
 if __name__ == "__main__":
-    box_size = 10
-    box_size_y = 4   # if this is None it will be set to the main box_size value
-    box_size_z = 5     # for sheet rve set z to None and y to different value than x the other way round is buggy
+    box_size = 16
+    box_size_y = None   # if this is None it will be set to the main box_size value
+    box_size_z = None     # for sheet rve set z to None and y to different value than x the other way round is buggy
     resolution = 2
     number_of_rves = 1
     number_of_bands = 0
     bandwidth = 5
     visualization_flag = False
-    phase_ratio = 0.8
+    phase_ratio = 0.3
     store_path = 'D:/test'
-    shrink_factor = 0.3
+    shrink_factor = 0.4
     dimension = 3
     gan_flag = False
     # Example Files
@@ -154,10 +154,10 @@ if __name__ == "__main__":
     # test pearlite phase
     subs_file = 'F:/pycharm/2nd_mini_thesis/dragen-master/ExampleInput/example_block_inp.csv'
     '''
-    specific number is fixed for each phase. 1->pearlite, 2->ferrite so far. The order of input files should also have the 
-    same order as phases. file1->pearlite, file2->ferrite. The substructures will only be generated in ferrite.
+    specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
+    same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in ferrite.
     '''
-    phases = ['ferrite']
+    phases = ['martensite']
     Run(box_size, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution, number_of_rves=number_of_rves,
         number_of_bands=number_of_bands, bandwidth=bandwidth, dimension=dimension,
         visualization_flag=visualization_flag, file1=file1, file2=file2,equiv_d=equiv_d,p_sigma=p_sigma,t_mu=t_mu,b_sigma=b_sigma,

@@ -10,10 +10,10 @@ import pandas as pd
 from dragen.generation.DiscreteRsa3D import DiscreteRsa3D
 from dragen.generation.DiscreteTesselation3D import Tesselation3D
 from dragen.utilities.RVE_Utils import RVEUtils
-from dragen.generation.mesher import Mesher
+from dragen.generation.mesh_subs import SubMesher
 from dragen.postprocessing.voldistribution import PostProcVol
 
-PHASENUM = {'pearlite':1,'ferrite':2} #fix number for the different phases
+PHASENUM = {'ferrite':1,'martensite':2} #fix number for the different phases
 
 class DataTask3D(RVEUtils):
 
@@ -199,9 +199,9 @@ class DataTask3D(RVEUtils):
             #periodic_rve_df.to_csv('periodic_rve_df.csv', index=False)
             subs_rve = self.sub_run.run(rve_df=periodic_rve_df, grains_df=grains_df, store_path=self.store_path,
                                         logger=self.logger) # returns rve df containing substructures
-            mesher_obj = Mesher(box_size_x=self.box_size, box_size_y=self.box_size_y, box_size_z=self.box_size_z,
-                                rve=subs_rve,grains_df=grains_df, store_path=store_path,
-                                phase_two_isotropic=True, animation=self.animation,
+            mesher_obj = SubMesher(box_size_x=self.box_size, box_size_y=self.box_size_y, box_size_z=self.box_size_z,
+                                rve=subs_rve,subs_df=grains_df, store_path=store_path,
+                                phase_two_isotropic=False, animation=self.animation,
                                 infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag,
                                 element_type='C3D8')
             mesher_obj.mesh_and_build_abaqus_model()
@@ -217,7 +217,7 @@ class DataTask3D(RVEUtils):
 
 
         print(phase2_ratio_conti_in)
-        if phase2_ratio_conti_in != 0:
+        if len(self.phases) > 1:
 
             obj.gen_pie_chart_phases(phase1_ratio_conti_in, phase2_ratio_conti_in, 'input_conti')
             obj.gen_pie_chart_phases(phase1_ratio_conti_out, phase2_ratio_conti_out, 'output_conti')
@@ -232,8 +232,14 @@ class DataTask3D(RVEUtils):
                 self.infobox_obj.emit('checkout the evaluation report of the rve stored at:\n'
                                   '{}/Postprocessing'.format(self.store_path))
         else:
-            obj.gen_plots(phase1_ref_r_conti_in, phase1_ref_r_conti_out, 'conti', 'in_vs_out_conti')
-            obj.gen_plots(phase1_ref_r_discrete_in, phase1_ref_r_discrete_out, 'discrete', 'in_vs_out_discrete')
+            print('the only phase is {}'.format(self.phases[0]))
+            if self.phases[0] == 'ferrite':
+                obj.gen_plots(phase1_ref_r_conti_in, phase1_ref_r_conti_out, 'conti', 'in_vs_out_conti')
+                obj.gen_plots(phase1_ref_r_discrete_in, phase1_ref_r_discrete_out, 'discrete', 'in_vs_out_discrete')
+
+            elif self.phases[0] == 'martensite':
+                obj.gen_plots(phase2_ref_r_conti_in, phase2_ref_r_conti_out, 'conti', 'in_vs_out_conti')
+                obj.gen_plots(phase2_ref_r_discrete_in, phase2_ref_r_discrete_out, 'discrete', 'in_vs_out_discrete')
 
 
         self.logger.info("RVE generation process has successfully completed...")

@@ -79,10 +79,10 @@ class Run():
 
             grain_data = grains_df.iloc[i]
             phaseID = int(grain_data['phaseID'])
-            grain_id = grain_data['GrainID']
-            x = rve_df[rve_df['GrainID'] == grain_id+1]['x'].to_numpy().reshape((-1, 1)) #needs + 1 finally
-            y = rve_df[rve_df['GrainID'] == grain_id+1]['y'].to_numpy().reshape((-1, 1))
-            z = rve_df[rve_df['GrainID'] == grain_id+1]['z'].to_numpy().reshape((-1, 1))
+            grain_id = grain_data['GrainID'] + 1
+            x = rve_df[rve_df['GrainID'] == grain_id]['x'].to_numpy().reshape((-1, 1)) #needs + 1 finally
+            y = rve_df[rve_df['GrainID'] == grain_id]['y'].to_numpy().reshape((-1, 1))
+            z = rve_df[rve_df['GrainID'] == grain_id]['z'].to_numpy().reshape((-1, 1))
 
             points = np.concatenate((x, y, z), axis=1)
 
@@ -119,21 +119,58 @@ class Run():
                 grain_data['block_orientation'] = np.NaN
                 rve_data = pd.concat([rve_data, grain_data])
 
-        #transfer id to number
-        rve_data.loc[rve_data['block_id'].isnull(), 'block_id'] = rve_data[rve_data['block_id'].isnull()]['packet_id'] + '0'
+        self.rve_data = rve_data
+        self.store_path = store_path
+        self.logger = logger
+
+        if (grains_df['phaseID'].isin([2])).any():#determine whether phase 2 is in df
+
+            rve_data.sort_values(by=['x', 'y', 'z'], inplace=True)
+            zero_btdf = rve_data[rve_data['block_thickness'] == 0]
+            if not zero_btdf.empty:
+                # iter over zero_btdf
+                for i in range(len(zero_btdf)):
+                    # find the closet block without 0 block thickness
+                    n = 1
+                    m = 1
+                    index = zero_btdf.index[i]
+
+                    while True:
+                        if (rve_data.loc[index + n, 'block_thickness'] != 0).any():# how can this be Series type???
+                            zero_btdf.iloc[i]['block_id'] = rve_data.loc[index + n, 'block_id']
+                            zero_btdf.iloc[i]['block_thickness'] = rve_data.loc[index + n, 'block_thickness']
+                            break
+
+                        else:
+                            n += 1
+
+                        if (rve_data.loc[index - m, 'block_thickness'] != 0).any():
+                            zero_btdf.iloc[i]['block_id'] = rve_data.loc[index - m, 'block_id']
+                            zero_btdf.iloc[i]['block_thickness'] = rve_data.loc[index - m, 'block_thickness']
+                            break
+
+                        else:
+                            m += 1
+
+                rve_data.loc[zero_btdf.index, 'block_id'] = zero_btdf['block_id']
+                rve_data.loc[zero_btdf.index, 'block_thickness'] = zero_btdf['block_thickness']
+
+        # transfer id to number
+        rve_data.loc[rve_data['block_id'].isnull(), 'block_id'] = rve_data[rve_data['block_id'].isnull()][
+                                                                      'packet_id'] + '0'
         packet_id = list(set(rve_data['packet_id']))
-        n_id = np.arange(1,len(packet_id) + 1)
+        n_id = np.arange(1, len(packet_id) + 1)
         pid_to_nid = dict(zip(packet_id, n_id))
         pid_in_rve = rve_data['packet_id'].map(lambda pid: pid_to_nid[pid])
 
         block_id = list(set(rve_data['block_id']))
-        n2_id = np.arange(1,len(block_id) + 1)
+        n2_id = np.arange(1, len(block_id) + 1)
         bid_to_nid = dict(zip(block_id, n2_id))
         bid_in_rve = rve_data['block_id'].map(lambda bid: bid_to_nid[bid])
 
         rve_data['packet_id'] = pid_in_rve
         rve_data['block_id'] = bid_in_rve
-        rve_data.npts = self.n_pts
+        rve_data.n_pts = self.n_pts
         rve_data.box_size = self.box_size
         rve_data.box_size_y = self.box_size_y
         rve_data.box_size_z = self.box_size_z
@@ -155,42 +192,6 @@ class Run():
 
         logger.info('substructure generation successful')
         logger.info('------------------------------------------------------------------------------')
-        self.rve_data = rve_data
-        self.store_path = store_path
-        self.logger = logger
-
-        if (grains_df['phaseID'].isin([2])).any():#determine whether phase 2 is in df
-
-            rve_data.sort_values(by=['x', 'y', 'z'], inplace=True)
-            zero_btdf = rve_data[rve_data['block_thickness'] == 0]
-            if not zero_btdf.empty:
-                # iter over zero_btdf
-                for i in range(len(zero_btdf)):
-                    # find the closet block without 0 block thickness
-                    n = 1
-                    m = 1
-                    index = zero_btdf.index[i]
-
-                    while True:
-                        if rve_data.loc[index + n, 'block_thickness'] != 0:
-                            zero_btdf.iloc[i]['block_id'] = rve_data.loc[index + n, 'block_id']
-                            zero_btdf.iloc[i]['block_thickness'] = rve_data.loc[index + n, 'block_thickness']
-                            break
-
-                        else:
-                            n += 1
-
-                        if rve_data.loc[index - m, 'block_thickness'] != 0:
-                            zero_btdf.iloc[i]['block_id'] = rve_data.loc[index - m, 'block_id']
-                            zero_btdf.iloc[i]['block_thickness'] = rve_data.loc[index - m, 'block_thickness']
-                            break
-
-                        else:
-                            m += 1
-
-                rve_data.loc[zero_btdf.index, 'block_id'] = zero_btdf['block_id']
-                rve_data.loc[zero_btdf.index, 'block_thickness'] = zero_btdf['block_thickness']
-
         return rve_data
 
     def post_processing(self,k,sigma=2):
