@@ -63,6 +63,36 @@ class Run():
         average_bt = block_df['block_thickness'].mean()
         return average_bt
 
+    def del_zerobt(self,df: pd.DataFrame):
+        sampled_df = df.groupby('block_id', as_index=False).first()
+        sampled_df.sort_values(by=['x', 'y', 'z'], inplace=True)
+        sampled_df.reset_index(inplace=True)
+        # get the id of block with zero thickness
+        zero_ids = sampled_df.loc[sampled_df['block_thickness'] == 0, 'block_id'].tolist()
+        if len(zero_ids) > 0:
+            print('modifying zero block thickness...')
+            for zid in zero_ids:
+                # iter over ids of block with zero thickness
+                idx = sampled_df[sampled_df['block_id'] == zid].index
+                n = 1
+                m = 1
+                while True:
+                    if sampled_df.loc[idx + n, 'block_thickness'].values != 0:
+                        nonzero_idx = idx + n
+                        break
+                    else:
+                        n += 1
+                    if sampled_df.loc[idx - m, 'block_thickness'].values != 0:
+                        nonzero_idx = idx - m
+                        break
+                    else:
+                        m += 1
+
+                new_bid = sampled_df.loc[nonzero_idx, 'block_id'].values[0]
+                new_bt = sampled_df.loc[nonzero_idx, 'block_thickness'].values[0]
+                df.loc[df['block_id'] == zid, 'block_id'] = new_bid
+                df.loc[df['block_id'] == new_bid, 'block_thickness'] = new_bt  # block id is modified here...
+
     def run(self,rve_df,grains_df,store_path,logger):
 
         logger.info('------------------------------------------------------------------------------')
@@ -123,42 +153,7 @@ class Run():
         self.store_path = store_path
         self.logger = logger
 
-        if (grains_df['phaseID'].isin([2])).any():#determine whether phase 2 is in df
-
-            rve_data.sort_values(by=['x', 'y', 'z'], inplace=True)
-            zero_btdf = rve_data[rve_data['block_thickness'] == 0].copy()
-            if not zero_btdf.empty:
-                # iter over zero_btdf
-                for i in range(len(zero_btdf)):
-                    # find the closet block without 0 block thickness
-                    n = 1
-                    m = 1
-                    index = zero_btdf.index[i]
-
-                    while True:
-                        try:
-                            if (rve_data.loc[index + n, 'block_thickness'] != 0).any():# how can this be Series type???
-                                zero_btdf.iloc[i, 'block_id'] = rve_data.loc[index + n, 'block_id']
-                                zero_btdf.iloc[i, 'block_thickness'] = rve_data.loc[index + n, 'block_thickness']
-                                break
-
-                            else:
-                                n += 1
-
-                            if (rve_data.loc[index - m, 'block_thickness'] != 0).any():
-                                zero_btdf.iloc[i, 'block_id'] = rve_data.loc[index - m, 'block_id']
-                                zero_btdf.iloc[i, 'block_thickness'] = rve_data.loc[index - m, 'block_thickness']
-                                break
-
-                            else:
-                                m += 1
-
-                        except:
-                            print(zero_btdf)
-                            print(rve_data)
-                rve_data.loc[zero_btdf.index, 'block_id'] = zero_btdf['block_id']
-                rve_data.loc[zero_btdf.index, 'block_thickness'] = zero_btdf['block_thickness']
-
+        self.del_zerobt(rve_data)# del blocks with 0 thickness
         # transfer id to number
         rve_data.loc[rve_data['block_id'].isnull(), 'block_id'] = rve_data[rve_data['block_id'].isnull()][
                                                                       'packet_id'] + '0'

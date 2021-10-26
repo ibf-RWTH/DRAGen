@@ -84,7 +84,7 @@ class DiscreteRsa3D(RVEUtils):
         grains_z = [self.z_grid[grain_tuples_i[0]][grain_tuples_i[1]][grain_tuples_i[2]]
                     for grain_tuples_i in grain_tuples]
 
-        free_rve_x, free_rve_y, free_rve_z = np.where((array == -14))
+        free_rve_x, free_rve_y, free_rve_z = np.where((array == -26))
         free_space_tuples = [*zip(free_rve_x, free_rve_y, free_rve_z)]
 
         free_space_x = [self.x_grid[free_space_tuples_i[0]][free_space_tuples_i[1]][free_space_tuples_i[2]]
@@ -181,15 +181,15 @@ class DiscreteRsa3D(RVEUtils):
                         self.logger.info(
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
             else:
-                if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)):
+                if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)): #free points old - free points should equal non zero in periodic grain
                     print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
-                    print("not place")
-                    print(free_points)
-                    print(free_points_old)
-                    print(band_points)
-                    print(band_points_old)
+                    # print("not place")
+                    # print(free_points)
+                    # print(free_points_old)
+                    # print(band_points)
+                    # print(band_points_old)
                     #sys.exit()
                 else:
                     x_0_list.append(x0)
