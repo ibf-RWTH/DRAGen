@@ -139,7 +139,6 @@ class RVEUtils:
                                              "phi1": tex_phi1, "PHI": tex_PHI, "phi2": tex_phi2}
             grain_df = pd.DataFrame(data=grain_dict,
                                     columns=["a", "b", "c", "alpha", "phi1", "PHI", "phi2"])
-
             return grain_df
         elif dimension == 2:
             grain_dict = {"a": radius_a, "b": radius_b, "alpha": alpha,
@@ -151,25 +150,29 @@ class RVEUtils:
     def sample_input_3D(self, data, bs) -> pd.DataFrame:
 
         max_volume = bs**3
+        data["volume"] = 4/3*np.pi*data["a"]*data["b"]*data["c"]
+        data = data.loc[data["volume"] < max_volume]
+
         grain_vol = 0
-        data = data.copy()
         inp_list = list()
-        old_idx = []
+        old_idx = list()
+        input_df = pd.DataFrame()
         while grain_vol < max_volume:
             idx = np.random.randint(0, data.__len__())
             old_idx.append(idx)
-            grain = data[["a", "b", "c", "alpha", "phi1", "PHI", "phi2"]].iloc[idx].tolist()
+
+            grain = data.loc[data.index[idx]]
+            grain_df = pd.DataFrame(grain).transpose()
             data = data.drop(labels=data.index[idx], axis=0)
-            vol = 4 / 3 * np.pi * grain[0] * grain[1] * grain[2]
+            vol = grain["volume"]
             grain_vol += vol
-            inp_list.append([grain[0], grain[1], grain[2], grain[3], grain[4], grain[5], grain[6]])
+            input_df = pd.concat([input_df,grain_df])
+            #input_df = input_df.transpose()
             if len(data) == 0:
                 break
 
-        header = ["a", "b", "c", "alpha", "phi1", "PHI", "phi2"]
-        df = pd.DataFrame(inp_list, columns=header)
-        df['old_gid'] = old_idx # get old idx so that the substructure generator knows which grains are chosen in the input data
-        return df
+        input_df['old_gid'] = old_idx # get old idx so that the substructure generator knows which grains are chosen in the input data
+        return input_df
 
     def sample_input_2D(self, data, bs) -> pd.DataFrame:
         max_volume = bs*bs
@@ -300,6 +303,7 @@ class RVEUtils:
         points_array_mod[points_array == iterator] = iterator
         t_0 = datetime.datetime.now()
         if self.box_size_y is None and self.box_size_z is None:
+            print("are we here")
             for i in range(1, 27):  # move points in x,y and z dir
                 points_array_copy = np.zeros(points_array.shape)
                 points_array_copy[(ellipse_points <= 1) & (points_array == -1 * i)] = -100 - i
@@ -310,8 +314,8 @@ class RVEUtils:
                     points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 10) | (i == 12) | (i == 15) | (i == 17):  # move points in x and y direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
                     points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 4) | (i == 6) | (i == 21) | (i == 23):  # move points in x and z direction
                     points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)

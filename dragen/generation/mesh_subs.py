@@ -12,6 +12,8 @@ import numpy as np
 import datetime
 import logging
 import os
+import tetgen
+
 class SubMesher(Mesher):
     def __init__(self,box_size_x: int, box_size_y: int = None, box_size_z: int = None,  rve: pd.DataFrame = None,
                  subs_df: pd.DataFrame = None, store_path: str = None,
@@ -75,8 +77,8 @@ class SubMesher(Mesher):
             self.progress_obj.emit(25)
         grid = self.gen_grains(grid)
 
-        grid.cell_data['packet_id'] = self.rve['packet_id'].to_numpy()
-        grid.cell_data['block_id'] = self.rve['block_id'].to_numpy()
+        grid.cell_arrays['packet_id'] = self.rve['packet_id'].to_numpy()
+        grid.cell_arrays['block_id'] = self.rve['block_id'].to_numpy()
 
         if self.animation:
             plotter = pv.Plotter(off_screen=True)
@@ -172,6 +174,105 @@ class SubMesher(Mesher):
                     phi2 = self.tex_phi2[i]
                     f.write('Grain: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, PHI, phi2, self.bt_list[i]))
         f.close()
+        
+    def smoothen_mesh(self, grid: pv.UnstructuredGrid, element_type: str = 'C3D8') -> pv.UnstructuredGrid:
+
+        """information about grainboundary elements of hex-mesh
+        is extracted here and stored in pv.Polydata and
+        in a pd.Dataframe"""
+        x_max = max(grid.points[:, 0])
+        x_min = min(grid.points[:, 0])
+        y_max = max(grid.points[:, 1])
+        y_min = min(grid.points[:, 1])
+        z_max = max(grid.points[:, 2])
+        z_min = min(grid.points[:, 2])
+        numberOfBlocks = self.n_blocks
+
+        gid_list = list()
+        pid_list = list()
+
+        ######################################
+        if self.element_type != 'C3D8':
+            old_grid = grid.copy()
+            grid_tet = pv.UnstructuredGrid()
+            for i in range(1, numberOfBlocks + 1):
+                phase = self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0]
+                grain_grid_tet = old_grid.extract_cells(np.where(np.asarray(old_grid.cell_arrays.values())[0] == i))
+                grain_surf_tet = grain_grid_tet.extract_surface(pass_pointid=True, pass_cellid=True)
+                grain_surf_tet.triangulate(inplace=True)
+
+                tet = tetgen.TetGen(grain_surf_tet)
+                if self.element_type == 'C3D4':
+                    tet.tetrahedralize(order=1, mindihedral=10, minratio=1.5, supsteiner_level=0, steinerleft=0)
+                elif self.element_type == 'C3D10':
+                    tet.tetrahedralize(order=2, mindihedral=10, minratio=1.5, supsteiner_level=0, steinerleft=0)
+                tet_grain_grid = tet.grid
+                ncells = tet_grain_grid.n_cells
+
+                if self.gui:
+                    self.progress_obj.emit(75+(100*(i+1)/self.n_blocks/4))
+                grainIDList = [i]
+                grainID_array = grainIDList * ncells
+                gid_list.extend(grainID_array)
+
+                phaseIDList = [phase]
+                phaseID_array = phaseIDList * ncells
+                pid_list.extend(phaseID_array)
+                if i == 0:
+                    grid_tet = tet_grain_grid
+                else:
+                    grid_tet = tet_grain_grid.merge(grid_tet, merge_points=True)
+
+
+            grid_tet.cell_arrays['GrainID'] = np.asarray(gid_list)
+            grid_tet.cell_arrays['PhaseID'] = np.asarray(pid_list)
+            grid = grid_tet.copy()
+
+        all_points_df = pd.DataFrame(grid.points, columns=['x', 'y', 'z'])
+        all_points_df['ori_idx'] = all_points_df.index
+
+        all_points_df_old = all_points_df.copy()
+        all_points_df_old['x_min'] = False
+        all_points_df_old['y_min'] = False
+        all_points_df_old['z_min'] = False
+        all_points_df_old['x_max'] = False
+        all_points_df_old['y_max'] = False
+        all_points_df_old['z_max'] = False
+        all_points_df_old.loc[(all_points_df_old.x == x_min), 'x_min'] = True
+        all_points_df_old.loc[(all_points_df_old.y == y_min), 'y_min'] = True
+        all_points_df_old.loc[(all_points_df_old.z == z_min), 'z_min'] = True
+        all_points_df_old.loc[(all_points_df_old.x == x_max), 'x_max'] = True
+        all_points_df_old.loc[(all_points_df_old.y == y_max), 'y_max'] = True
+        all_points_df_old.loc[(all_points_df_old.z == z_max), 'z_max'] = True
+
+        old_grid = grid.copy() #copy doenst copy the dynamically assigned new property...
+        for i in range(1, numberOfBlocks + 1):
+            phase = self.rve.loc[self.rve['block_id'] == i].phaseID.values[0]
+            # print(np.where(old_grid.cell_arrays['GrainID']==i))
+            grain_grid = old_grid.extract_cells(np.where(old_grid.cell_arrays['block_id']==i))
+            grain_surf = grain_grid.extract_surface()
+            grain_surf_df = pd.DataFrame(data=grain_surf.points, columns=['x', 'y', 'z'])
+            merged_pts_df = grain_surf_df.join(all_points_df_old.set_index(['x', 'y', 'z']), on=['x', 'y', 'z'])
+            grain_surf_smooth = grain_surf.smooth(n_iter=250)
+            smooth_pts_df = pd.DataFrame(data=grain_surf_smooth.points, columns=['x', 'y', 'z'])
+            all_points_df.loc[merged_pts_df['ori_idx'], ['x', 'y', 'z']] = smooth_pts_df.values
+            grain_vol = grain_grid.volume
+            #self.grains_df.loc[self.grains_df['block_id'] == i-1, 'meshed_conti_volume'] = grain_vol * 10 ** 9
+
+        #self.grains_df[['GrainID','meshed_conti_volume', 'phaseID']].\
+            #to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
+
+        all_points_df.loc[all_points_df_old['x_min'], 'x'] = x_min
+        all_points_df.loc[all_points_df_old['y_min'], 'y'] = y_min
+        all_points_df.loc[all_points_df_old['z_min'], 'z'] = z_min
+        all_points_df.loc[all_points_df_old['x_max'], 'x'] = x_max
+        all_points_df.loc[all_points_df_old['y_max'], 'y'] = y_max
+        all_points_df.loc[all_points_df_old['z_max'], 'z'] = z_max
+
+        grid.points = all_points_df[['x', 'y', 'z']].values
+
+
+        return grid
 
     def mesh_and_build_abaqus_model(self) -> None:
 
@@ -213,8 +314,8 @@ class SubMesher(Mesher):
             print('current sub is {},number is {}'.format(self.subsnum[n],nSubs))
             for i in range(nSubs):
                 nSub = i + 1
-                # print('in for nBlock=', nBlock, smooth_mesh.cell_data.keys())
-                cells = np.where(smooth_mesh.cell_data[self.idnum[n]] == nSub)[0]
+                # print('in for nBlock=', nBlock, smooth_mesh.cell_arrays.keys())
+                cells = np.where(smooth_mesh.cell_arrays[self.idnum[n]] == nSub)[0]
                 f.write('*Elset, elset=Set-{}{}\n'.format(self.subsnum[n],nSub))
                 for j, cell in enumerate(cells + 1):
                     if (j + 1) % 16 == 0:
@@ -228,11 +329,11 @@ class SubMesher(Mesher):
         phase2_idx = 0
         for i in range(self.n_blocks):
             nBlock = i + 1
-            if self.rve.loc[GRID.cell_data['block_id'] == nBlock].phaseID.values[0] == 1:
+            if self.rve.loc[GRID.cell_arrays['block_id'] == nBlock].phaseID.values[0] == 1:
                 phase1_idx += 1
                 f.write('** Section: Section - {}\n'.format(nBlock))
                 f.write('*Solid Section, elset=Set-Block{}, material=Ferrite_{}\n'.format(nBlock, phase1_idx))
-            elif self.rve.loc[GRID.cell_data['block_id'] == nBlock].phaseID.values[0] == 2:
+            elif self.rve.loc[GRID.cell_arrays['block_id'] == nBlock].phaseID.values[0] == 2:
                 if not self.phase_two_isotropic:
                     phase2_idx += 1
                     f.write('** Section: Section - {}\n'.format(nBlock))

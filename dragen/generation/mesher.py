@@ -61,7 +61,6 @@ class Mesher:
         grid = pv.RectilinearGrid(xrng, yrng, zrng)
 
         grid = grid.cast_to_unstructured_grid()
-        grid.cell_data = dict()
         return grid
 
     def gen_grains(self, grid: pv.UnstructuredGrid) -> pv.UnstructuredGrid:
@@ -79,8 +78,8 @@ class Mesher:
             self.rve.sort_values(by=['x', 'y', 'z'], inplace=True)  # This sorting is important for some weird reason
 
         # Add the data values to the cell data
-        grid.cell_data["GrainID"] = self.rve['GrainID'].to_numpy()
-        grid.cell_data["phaseID"] = self.rve['phaseID'].to_numpy()
+        grid.cell_arrays["GrainID"] = self.rve['GrainID'].to_numpy()
+        grid.cell_arrays["phaseID"] = self.rve['phaseID'].to_numpy()
         # Now plot the grid!
         if self.animation:
             plotter = pv.Plotter(off_screen=True)
@@ -123,7 +122,7 @@ class Mesher:
             grid_tet = pv.UnstructuredGrid()
             for i in range(1, numberOfGrains + 1):
                 phase = self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0]
-                grain_grid_tet = old_grid.extract_cells(np.where(np.asarray(old_grid.cell_data.values())[0] == i))
+                grain_grid_tet = old_grid.extract_cells(np.where(np.asarray(old_grid.cell_arrays.values())[0] == i))
                 grain_surf_tet = grain_grid_tet.extract_surface(pass_pointid=True, pass_cellid=True)
                 grain_surf_tet.triangulate(inplace=True)
 
@@ -150,8 +149,8 @@ class Mesher:
                     grid_tet = tet_grain_grid.merge(grid_tet, merge_points=True)
 
 
-            grid_tet.cell_data['GrainID'] = np.asarray(gid_list)
-            grid_tet.cell_data['PhaseID'] = np.asarray(pid_list)
+            grid_tet.cell_arrays['GrainID'] = np.asarray(gid_list)
+            grid_tet.cell_arrays['PhaseID'] = np.asarray(pid_list)
             grid = grid_tet.copy()
 
         all_points_df = pd.DataFrame(grid.points, columns=['x', 'y', 'z'])
@@ -172,11 +171,10 @@ class Mesher:
         all_points_df_old.loc[(all_points_df_old.z == z_max), 'z_max'] = True
 
         old_grid = grid.copy() #copy doenst copy the dynamically assigned new property...
-        old_grid.cell_data = grid.cell_data
         for i in range(1, numberOfGrains + 1):
             phase = self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0]
-            # print(np.where(old_grid.cell_data['GrainID']==i))
-            grain_grid = old_grid.extract_cells(np.where(old_grid.cell_data['GrainID']==i))
+            # print(np.where(old_grid.cell_arrays['GrainID']==i))
+            grain_grid = old_grid.extract_cells(np.where(old_grid.cell_arrays['GrainID']==i))
             grain_surf = grain_grid.extract_surface()
             grain_surf_df = pd.DataFrame(data=grain_surf.points, columns=['x', 'y', 'z'])
             merged_pts_df = grain_surf_df.join(all_points_df_old.set_index(['x', 'y', 'z']), on=['x', 'y', 'z'])
@@ -1094,8 +1092,8 @@ class Mesher:
             f.write(line)
         for i in range(self.n_grains):
             nGrain = i + 1
-            # print('in for nGrain=', nGrain, smooth_mesh.cell_data.keys())
-            cells = np.where(smooth_mesh.cell_data['GrainID'] == nGrain)[0]
+            # print('in for nGrain=', nGrain, smooth_mesh.cell_arrays.keys())
+            cells = np.where(smooth_mesh.cell_arrays['GrainID'] == nGrain)[0]
             f.write('*Elset, elset=Set-{}\n'.format(nGrain))
             for j, cell in enumerate(cells + 1):
                 if (j + 1) % 16 == 0:
@@ -1107,11 +1105,11 @@ class Mesher:
         phase2_idx = 0
         for i in range(self.n_grains):
             nGrain = i + 1
-            if self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 1:
+            if self.rve.loc[GRID.cell_arrays['GrainID'] == nGrain].phaseID.values[0] == 1:
                 phase1_idx += 1
                 f.write('** Section: Section - {}\n'.format(nGrain))
                 f.write('*Solid Section, elset=Set-{}, material=Ferrite_{}\n'.format(nGrain, phase1_idx))
-            elif self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 2:
+            elif self.rve.loc[GRID.cell_arrays['GrainID'] == nGrain].phaseID.values[0] == 2:
                 if not self.phase_two_isotropic:
                     phase2_idx += 1
                     f.write('** Section: Section - {}\n'.format(nGrain))

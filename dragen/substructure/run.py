@@ -70,8 +70,8 @@ class Run():
         logger.info('------------------------------------------------------------------------------')
         rve_data = pd.DataFrame()
         if self.gen_flag == 'from_file':
-            assert self.block_file is not None
-            block_df = pd.read_csv(self.block_file)
+            assert self.subs_file is not None
+            block_df = pd.read_csv(self.subs_file)
             average_bt = self.get_bt_distribution(block_df)
             average_bt = self.decreasing_factor * average_bt
 
@@ -126,7 +126,7 @@ class Run():
         if (grains_df['phaseID'].isin([2])).any():#determine whether phase 2 is in df
 
             rve_data.sort_values(by=['x', 'y', 'z'], inplace=True)
-            zero_btdf = rve_data[rve_data['block_thickness'] == 0]
+            zero_btdf = rve_data[rve_data['block_thickness'] == 0].copy()
             if not zero_btdf.empty:
                 # iter over zero_btdf
                 for i in range(len(zero_btdf)):
@@ -136,22 +136,26 @@ class Run():
                     index = zero_btdf.index[i]
 
                     while True:
-                        if (rve_data.loc[index + n, 'block_thickness'] != 0).any():# how can this be Series type???
-                            zero_btdf.iloc[i]['block_id'] = rve_data.loc[index + n, 'block_id']
-                            zero_btdf.iloc[i]['block_thickness'] = rve_data.loc[index + n, 'block_thickness']
-                            break
+                        try:
+                            if (rve_data.loc[index + n, 'block_thickness'] != 0).any():# how can this be Series type???
+                                zero_btdf.iloc[i, 'block_id'] = rve_data.loc[index + n, 'block_id']
+                                zero_btdf.iloc[i, 'block_thickness'] = rve_data.loc[index + n, 'block_thickness']
+                                break
 
-                        else:
-                            n += 1
+                            else:
+                                n += 1
 
-                        if (rve_data.loc[index - m, 'block_thickness'] != 0).any():
-                            zero_btdf.iloc[i]['block_id'] = rve_data.loc[index - m, 'block_id']
-                            zero_btdf.iloc[i]['block_thickness'] = rve_data.loc[index - m, 'block_thickness']
-                            break
+                            if (rve_data.loc[index - m, 'block_thickness'] != 0).any():
+                                zero_btdf.iloc[i, 'block_id'] = rve_data.loc[index - m, 'block_id']
+                                zero_btdf.iloc[i, 'block_thickness'] = rve_data.loc[index - m, 'block_thickness']
+                                break
 
-                        else:
-                            m += 1
+                            else:
+                                m += 1
 
+                        except:
+                            print(zero_btdf)
+                            print(rve_data)
                 rve_data.loc[zero_btdf.index, 'block_id'] = zero_btdf['block_id']
                 rve_data.loc[zero_btdf.index, 'block_thickness'] = zero_btdf['block_thickness']
 
@@ -230,7 +234,7 @@ class Run():
         std_bt = bt_df['block_thickness'].std()
 
         #compute MMD
-        measured_bt = pd.read_csv(self.block_file)['block_thickness']
+        measured_bt = pd.read_csv(self.subs_file)['block_thickness']
         generated_bt = bt_df['block_thickness']
 
         #compute k-moments

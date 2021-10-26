@@ -98,6 +98,7 @@ class DataTask3D(RVEUtils):
                                          (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
                                         * self.phase_ratio)
                 grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
+
             else:
                 adjusted_size = np.cbrt((self.box_size * self.box_size_y * self.box_size_z -
                                          (self.box_size ** 2 * self.number_of_bands * self.bandwidth))
@@ -156,6 +157,7 @@ class DataTask3D(RVEUtils):
             grains_df['z_0'] = z_0_list
 
         else:
+            print(grains_df.head(1))
             rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(animation=self.animation,
                                                                                      gui=self.gui_flag)
             grains_df['x_0'] = x_0_list
