@@ -155,7 +155,7 @@ if __name__ == "__main__":
     subs_file = 'F:/pycharm/2nd_mini_thesis/dragen-master/ExampleInput/example_block_inp.csv'
     '''
     specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
-    same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in ferrite.
+    same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in martensite.
     '''
     phases = ['martensite']
     Run(box_size, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution, number_of_rves=number_of_rves,
