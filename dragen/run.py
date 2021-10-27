@@ -21,7 +21,7 @@ class Run:
                  decreasing_factor: float = 0.95,
                  lower: float = None, upper: float = None, circularity: float = 1, plt_name: str = None,
                  save: bool = True,
-                 plot: bool = False, filename: str = None, fig_path: str = None, OR: str = 'KS', gen_flag='user_define',
+                 plot: bool = False, filename: str = None, fig_path: str = None, OR: str = 'KS', subs_flag = 'off',gen_flag='user_define',
                  subs_file:str =None,phases:list =['ferrite','martensite']):
 
         self.box_size = box_size
@@ -61,7 +61,7 @@ class Run:
         self.gen_flag = gen_flag
         self.subs_file = subs_file
         self.phases = phases
-
+        self.subs_flag = subs_flag
     def run(self):
         # calculate n_pts from box_size and resolution
         n_pts = math.ceil(float(self.box_size) * self.resolution)
@@ -97,7 +97,7 @@ class Run:
                                        band_filling=0.99, phase_ratio=self.phase_ratio, inclusions_ratio=0.01,
                                        inclusions_flag=False,
                                        file1=None, file2=None, store_path=None, gui_flag=self.gui_flag, anim_flag=True,
-                                       gan_flag=self.gan_flag, exe_flag=False,sub_run=sub_run)
+                                       gan_flag=self.gan_flag, exe_flag=False,sub_run=sub_run,subs_flag = self.subs_flag)
             else:
                 obj3D = DataTask3D(box_size=self.box_size, box_size_y=self.box_size_y, box_size_z=self.box_size_z,
                                    n_pts=int(n_pts), number_of_bands=self.number_of_bands,
@@ -106,7 +106,7 @@ class Run:
                                    file1=self.file1, file2=self.file2, phase_ratio=self.phase_ratio,
                                    store_path=self.store_path,
                                    gui_flag=self.gui_flag, gan_flag=self.gan_flag, anim_flag=self.visualization_flag,
-                                   infobox_obj=self.infobox_obj, progess_obj=self.progress_obj,sub_run=sub_run,phases=self.phases)
+                                   infobox_obj=self.infobox_obj, progess_obj=self.progress_obj,sub_run=sub_run,phases=self.phases,subs_flag=self.subs_flag)
             for i in range(self.number_of_rves):
                 grains_df, store_path = obj3D.initializations(self.dimension, epoch=i)
                 obj3D.rve_generation(grains_df, store_path)
@@ -163,4 +163,4 @@ if __name__ == "__main__":
         number_of_bands=number_of_bands, bandwidth=bandwidth, dimension=dimension,
         visualization_flag=visualization_flag, file1=file1, file2=file2,equiv_d=equiv_d,p_sigma=p_sigma,t_mu=t_mu,b_sigma=b_sigma,
         phase_ratio=phase_ratio, store_path=store_path, shrink_factor=shrink_factor, gui_flag=False, gan_flag=gan_flag,
-        info_box_obj=None, progress_obj=None,gen_flag='from_file',subs_file=subs_file,phases=phases).run()
+        info_box_obj=None, progress_obj=None,gen_flag='from_file',subs_file=subs_file,phases=phases,subs_flag="off").run()

@@ -31,8 +31,15 @@ class Mesher:
         self.z_max = int(max(rve.z))
         self.z_min = int(min(rve.z))
         self.n_grains = int(max(rve.GrainID))
-        self.n_pts_x = int(rve.n_pts)+1
-        self.bin_size = rve.box_size / (self.n_pts_x) ## test
+        if isinstance(rve.n_pts,pd.Series):
+            self.n_pts_x = int(rve.n_pts[0]) + 1
+        else:
+            self.n_pts_x = int(rve.n_pts)+1
+
+        if isinstance(rve.box_size,pd.Series):
+            self.bin_size = rve.box_size[0] / (self.n_pts_x)  ## test
+        else:
+            self.bin_size = rve.box_size / (self.n_pts_x) ## test
         if self.box_size_y is not None:
             self.n_pts_y = int(self.box_size_y/self.bin_size)
         else:

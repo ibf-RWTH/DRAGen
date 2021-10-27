@@ -11,6 +11,7 @@ from dragen.generation.DiscreteRsa3D import DiscreteRsa3D
 from dragen.generation.DiscreteTesselation3D import Tesselation3D
 from dragen.utilities.RVE_Utils import RVEUtils
 from dragen.generation.mesh_subs import SubMesher
+from dragen.generation.mesher import Mesher
 from dragen.postprocessing.voldistribution import PostProcVol
 
 PHASENUM = {'ferrite':1,'martensite':2} #fix number for the different phases
@@ -21,7 +22,7 @@ class DataTask3D(RVEUtils):
                  n_pts: int, number_of_bands: int, bandwidth: float, shrink_factor: float = 0.5,
                  band_ratio_rsa: float = 0.95, band_ratio_final: float = 0.95, phase_ratio: float = None, file1=None,
                  file2=None, store_path=None, gui_flag=False, anim_flag=False, gan_flag=False, exe_flag=False,
-                 infobox_obj=None, progess_obj=None,sub_run=None,phases:list =['pearlite','ferrite']):
+                 infobox_obj=None, progess_obj=None,sub_run=None,phases:list =['pearlite','ferrite'],subs_flag = 'on'):
 
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
@@ -54,6 +55,7 @@ class DataTask3D(RVEUtils):
         self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
         self.sub_run = sub_run
         self.phases = phases
+        self.subs_flag = subs_flag
         super().__init__(box_size,  n_pts, box_size_y=box_size_y, box_size_z=box_size_z,
                          x_grid=self.x_grid, y_grid=self.y_grid, z_grid=self.z_grid, bandwidth=bandwidth, debug=False)
 
@@ -198,13 +200,24 @@ class DataTask3D(RVEUtils):
             # Start the Mesher
             #grains_df.to_csv('grains_df.csv', index=False)
             #periodic_rve_df.to_csv('periodic_rve_df.csv', index=False)
-            subs_rve = self.sub_run.run(rve_df=periodic_rve_df, grains_df=grains_df, store_path=self.store_path,
-                                        logger=self.logger) # returns rve df containing substructures
-            mesher_obj = SubMesher(box_size_x=self.box_size, box_size_y=self.box_size_y, box_size_z=self.box_size_z,
-                                rve=subs_rve,subs_df=grains_df, store_path=store_path,
-                                phase_two_isotropic=False, animation=self.animation,
-                                infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag,
-                                element_type='C3D8')
+            if self.subs_flag == "on":
+                print("substructure generation is turned on...")
+                subs_rve = self.sub_run.run(rve_df=periodic_rve_df, grains_df=grains_df, store_path=self.store_path,
+                                            logger=self.logger) # returns rve df containing substructures
+                mesher_obj = SubMesher(box_size_x=self.box_size, box_size_y=self.box_size_y, box_size_z=self.box_size_z,
+                                    rve=subs_rve,subs_df=grains_df, store_path=store_path,
+                                    phase_two_isotropic=False, animation=self.animation,
+                                    infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag,
+                                    element_type='C3D8')
+
+            elif self.subs_flag == "off":
+                print("substructure generation is turned off...")
+                mesher_obj = Mesher(box_size_x=self.box_size, box_size_y=self.box_size_y, box_size_z=self.box_size_z,
+                                    rve=periodic_rve_df, grains_df=grains_df, store_path=store_path,
+                                    phase_two_isotropic=True, animation=self.animation,
+                                    infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag,
+                                    element_type='C3D8')
+
             mesher_obj.mesh_and_build_abaqus_model()
         return store_path
 
