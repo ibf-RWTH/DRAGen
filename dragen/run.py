@@ -147,8 +147,8 @@ if __name__ == "__main__":
     t_mu = 1.0
     b_sigma = 0.1
     # Example Files
-    #file2 = 'F:/git/merged_substructure/ExampleInput/ferrite_54_grains.csv'
-    file2 = '../ExampleInput/example_pag_inp.csv'
+    file2 = 'F:/git/git_dragen/ExampleInput/example_pag_inp.csv'
+    #file2 = '../ExampleInput/example_pag_inp.csv'
     file1 = None
     # file2 = None
     # file1 = 'F:/git/merged_substructure/ExampleInput/ferrite_54_grains.csv'
@@ -163,4 +163,4 @@ if __name__ == "__main__":
         number_of_bands=number_of_bands, bandwidth=bandwidth, dimension=dimension,
         visualization_flag=visualization_flag, file1=file1, file2=file2,equiv_d=equiv_d,p_sigma=p_sigma,t_mu=t_mu,b_sigma=b_sigma,
         phase_ratio=phase_ratio, store_path=store_path, shrink_factor=shrink_factor, gui_flag=False, gan_flag=gan_flag,
-        info_box_obj=None, progress_obj=None,gen_flag='from_file',subs_file=subs_file,phases=phases,subs_flag="off").run()
+        info_box_obj=None, progress_obj=None,gen_flag='from_file',subs_file=subs_file,phases=phases,subs_flag="on").run()

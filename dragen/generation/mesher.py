@@ -1092,10 +1092,13 @@ class Mesher:
         f = open(self.store_path + '/rve-part.inp', 'r')
         lines = f.readlines()
         f.close()
-        startingLine = lines.index('*NODE\n')
+        lines = [line.lower() for line in lines]
+        startingLine = lines.index('*node\n')
         f = open(self.store_path + '/RVE_smooth.inp', 'a')
         f.write('*Part, name=PART-1\n')
         for line in lines[startingLine:]:
+            if line == "*element, type=c3d8rh\n":
+                line = "*element, type=c3d8\n"
             f.write(line)
         for i in range(self.n_grains):
             nGrain = i + 1

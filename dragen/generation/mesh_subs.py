@@ -306,13 +306,13 @@ class SubMesher(Mesher):
         f = open(self.store_path + '/rve-part.inp', 'r')
         lines = f.readlines()
         f.close()
-        try:
-            startingLine = lines.index('*NODE\n')
-        except:
-            startingLine = lines.index('*Node\n') #solve pyvista version problem
+        lines = [line.lower() for line in lines]
+        startingLine = lines.index('*node\n') #solve pyvista version problem
         f = open(self.store_path + '/RVE_smooth.inp', 'a')
         f.write('*Part, name=PART-1\n')
         for line in lines[startingLine:]:
+            if line == "*element, type=c3d8rh\n":
+                line = "*element, type=c3d8\n"
             f.write(line)
 
         n = 1
