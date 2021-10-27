@@ -83,15 +83,15 @@ class Mesher:
         # Now plot the grid!
         if self.animation:
             plotter = pv.Plotter(off_screen=True)
-            plotter.add_mesh(grid, scalars='phaseID', scalar_bar_args={'title': 'Phase IDs'},
+            plotter.add_mesh(grid, scalars='phaseID',
                              show_edges=True, interpolate_before_map=True)
             plotter.add_axes()
             plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
-                         screenshot=self.store_path+'/Figs/pyvista_Hex_Mesh_phases.png')
+                         screenshot=self.store_path + '/Figs/pyvista_Hex_Mesh_phases.png')
             plotter.close()
 
             plotter = pv.Plotter(off_screen=True)
-            plotter.add_mesh(grid, scalars='GrainID', scalar_bar_args={'title':'Grain IDs'},
+            plotter.add_mesh(grid, scalars='GrainID',
                              show_edges=True, interpolate_before_map=True)
             plotter.add_axes()
             plotter.show(interactive=True, auto_close=True, window_size=[800, 600],

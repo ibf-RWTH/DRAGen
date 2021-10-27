@@ -303,7 +303,7 @@ class RVEUtils:
         points_array_mod[points_array == iterator] = iterator
         t_0 = datetime.datetime.now()
         if self.box_size_y is None and self.box_size_z is None:
-            print("are we here")
+            #print("are we here")
             for i in range(1, 27):  # move points in x,y and z dir
                 points_array_copy = np.zeros(points_array.shape)
                 points_array_copy[(ellipse_points <= 1) & (points_array == -1 * i)] = -100 - i
@@ -318,18 +318,18 @@ class RVEUtils:
                     points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 4) | (i == 6) | (i == 21) | (i == 23):  # move points in x and z direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
                     points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 2) | (i == 8) | (i == 19) | (i == 25):  # move points in y and z direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
                     points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 13) | (i == 14):  # move points in x direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 11) | (i == 16):  # move points in y direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 5) | (i == 22):  # move points in z direction
                     points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)

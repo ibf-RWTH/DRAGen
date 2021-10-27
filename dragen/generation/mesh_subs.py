@@ -82,7 +82,7 @@ class SubMesher(Mesher):
 
         if self.animation:
             plotter = pv.Plotter(off_screen=True)
-            plotter.add_mesh(grid, scalars='packet_id', scalar_bar_args={'title': 'Packet IDs'},
+            plotter.add_mesh(grid, scalars='packet_id',
                              show_edges=True, interpolate_before_map=True)
             plotter.add_axes()
             plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
@@ -90,7 +90,7 @@ class SubMesher(Mesher):
             plotter.close()
 
             plotter = pv.Plotter(off_screen=True)
-            plotter.add_mesh(grid, scalars='block_id', scalar_bar_args={'title': 'Block IDs'},
+            plotter.add_mesh(grid, scalars='block_id',
                              show_edges=True, interpolate_before_map=True)
             plotter.add_axes()
             plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
@@ -256,11 +256,14 @@ class SubMesher(Mesher):
             grain_surf_smooth = grain_surf.smooth(n_iter=250)
             smooth_pts_df = pd.DataFrame(data=grain_surf_smooth.points, columns=['x', 'y', 'z'])
             all_points_df.loc[merged_pts_df['ori_idx'], ['x', 'y', 'z']] = smooth_pts_df.values
-            grain_vol = grain_grid.volume
-            #self.grains_df.loc[self.grains_df['block_id'] == i-1, 'meshed_conti_volume'] = grain_vol * 10 ** 9
 
-        #self.grains_df[['GrainID','meshed_conti_volume', 'phaseID']].\
-            #to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
+        for i in range(1,self.n_grains+1):
+            grain_grid = old_grid.extract_cells(np.where(old_grid.cell_arrays['GrainID'] == i))
+            grain_vol = grain_grid.volume
+            self.grains_df.loc[self.grains_df['GrainID'] == i-1, 'meshed_conti_volume'] = grain_vol * 10 ** 9
+
+        self.grains_df[['GrainID','meshed_conti_volume', 'phaseID']].\
+        to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
 
         all_points_df.loc[all_points_df_old['x_min'], 'x'] = x_min
         all_points_df.loc[all_points_df_old['y_min'], 'y'] = y_min
@@ -303,7 +306,10 @@ class SubMesher(Mesher):
         f = open(self.store_path + '/rve-part.inp', 'r')
         lines = f.readlines()
         f.close()
-        startingLine = lines.index('*NODE\n')
+        try:
+            startingLine = lines.index('*NODE\n')
+        except:
+            startingLine = lines.index('*Node\n') #solve pyvista version problem
         f = open(self.store_path + '/RVE_smooth.inp', 'a')
         f.write('*Part, name=PART-1\n')
         for line in lines[startingLine:]:

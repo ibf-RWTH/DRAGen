@@ -157,7 +157,6 @@ class DataTask3D(RVEUtils):
             grains_df['z_0'] = z_0_list
 
         else:
-            print(grains_df.head(1))
             rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(animation=self.animation,
                                                                                      gui=self.gui_flag)
             grains_df['x_0'] = x_0_list
