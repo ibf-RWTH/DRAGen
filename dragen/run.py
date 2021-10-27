@@ -137,7 +137,7 @@ if __name__ == "__main__":
     bandwidth = 5
     visualization_flag = True
     phase_ratio = 1.0
-    store_path = 'D:/test'
+    store_path = '../'
     shrink_factor = 0.2
     dimension = 3
     gan_flag = False
@@ -148,12 +148,12 @@ if __name__ == "__main__":
     b_sigma = 0.1
     # Example Files
     #file2 = 'F:/git/merged_substructure/ExampleInput/ferrite_54_grains.csv'
-    file2 = 'F:/pycharm/2nd_mini_thesis/dragen-master/ExampleInput/example_pag_inp.csv'
+    file2 = '../ExampleInput/example_pag_inp.csv'
     file1 = None
     # file2 = None
     # file1 = 'F:/git/merged_substructure/ExampleInput/ferrite_54_grains.csv'
     # test pearlite phase
-    subs_file = 'F:/pycharm/2nd_mini_thesis/dragen-master/ExampleInput/example_block_inp.csv'
+    subs_file = '../ExampleInput/example_block_inp.csv'
     '''
     specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
     same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in martensite.
