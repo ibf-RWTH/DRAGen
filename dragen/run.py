@@ -135,10 +135,10 @@ if __name__ == "__main__":
     number_of_rves = 1
     number_of_bands = 0
     bandwidth = 5
-    visualization_flag = True
+    visualization_flag = False
     phase_ratio = 1.0
     store_path = '../'
-    shrink_factor = 0.2
+    shrink_factor = 0.4
     dimension = 3
     gan_flag = False
     # Example Files
