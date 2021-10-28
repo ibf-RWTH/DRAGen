@@ -147,20 +147,20 @@ if __name__ == "__main__":
     t_mu = 1.0
     b_sigma = 0.1
     # Example Files
-    file2 = 'F:/git/git_dragen/ExampleInput/example_pag_inp.csv'
+    #file2 = 'F:/git/git_dragen/ExampleInput/example_pag_inp.csv'
     #file2 = '../ExampleInput/example_pag_inp.csv'
-    file1 = None
-    # file2 = None
-    # file1 = 'F:/git/merged_substructure/ExampleInput/ferrite_54_grains.csv'
-    # test pearlite phase
-    subs_file = '../ExampleInput/example_block_inp.csv'
+    # file1 = None
+    file2 = None
+    file1 = 'E:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
+        # test pearlite phase
+    subs_file = None #'../ExampleInput/example_block_inp.csv'
     '''
     specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
     same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in martensite.
     '''
-    phases = ['martensite']
+    phases = ['ferrite']
     Run(box_size, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution, number_of_rves=number_of_rves,
         number_of_bands=number_of_bands, bandwidth=bandwidth, dimension=dimension,
         visualization_flag=visualization_flag, file1=file1, file2=file2,equiv_d=equiv_d,p_sigma=p_sigma,t_mu=t_mu,b_sigma=b_sigma,
         phase_ratio=phase_ratio, store_path=store_path, shrink_factor=shrink_factor, gui_flag=False, gan_flag=gan_flag,
-        info_box_obj=None, progress_obj=None,gen_flag='from_file',subs_file=subs_file,phases=phases,subs_flag="on").run()
+        info_box_obj=None, progress_obj=None,gen_flag='from_file',subs_file=subs_file,phases=phases,subs_flag=False).run()
