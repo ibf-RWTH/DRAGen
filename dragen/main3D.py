@@ -22,7 +22,7 @@ class DataTask3D(RVEUtils):
                  n_pts: int, number_of_bands: int, bandwidth: float, shrink_factor: float = 0.5,
                  band_ratio_rsa: float = 0.95, band_ratio_final: float = 0.95, phase_ratio: float = None, file1=None,
                  file2=None, store_path=None, gui_flag=False, anim_flag=False, gan_flag=False, exe_flag=False,
-                 infobox_obj=None, progess_obj=None,sub_run=None,phases:list =['pearlite','ferrite'],subs_flag = 'on'):
+                 infobox_obj=None, progess_obj=None,sub_run=None, phases: list = ['pearlite','ferrite'], subs_flag=False):
 
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
@@ -200,7 +200,7 @@ class DataTask3D(RVEUtils):
             # Start the Mesher
             #grains_df.to_csv('grains_df.csv', index=False)
             #periodic_rve_df.to_csv('periodic_rve_df.csv', index=False)
-            if self.subs_flag == "on":
+            if self.subs_flag == True:
                 print("substructure generation is turned on...")
                 subs_rve = self.sub_run.run(rve_df=periodic_rve_df, grains_df=grains_df, store_path=self.store_path,
                                             logger=self.logger) # returns rve df containing substructures
@@ -210,7 +210,7 @@ class DataTask3D(RVEUtils):
                                     infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag,
                                     element_type='C3D8')
 
-            elif self.subs_flag == "off":
+            elif self.subs_flag == False:
                 print("substructure generation is turned off...")
                 mesher_obj = Mesher(box_size_x=self.box_size, box_size_y=self.box_size_y, box_size_z=self.box_size_z,
                                     rve=periodic_rve_df, grains_df=grains_df, store_path=store_path,
