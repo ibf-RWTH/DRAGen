@@ -21,7 +21,7 @@ class Run:
                  decreasing_factor: float = 0.95,
                  lower: float = None, upper: float = None, circularity: float = 1, plt_name: str = None,
                  save: bool = True,
-                 plot: bool = False, filename: str = None, fig_path: str = None, OR: str = 'KS', subs_flag = 'off',gen_flag='user_define',
+                 plot: bool = False, filename: str = None, fig_path: str = None, OR: str = 'KS', subs_flag:bool=False,subs_file_flag=False,
                  subs_file:str =None,phases:list =['ferrite','martensite']):
 
         self.box_size = box_size
@@ -58,7 +58,7 @@ class Run:
         self.filename = filename
         self.fig_path = fig_path
         self.OR = OR
-        self.gen_flag = gen_flag
+        self.subs_file_flag = subs_file_flag
         self.subs_file = subs_file
         self.phases = phases
         self.subs_flag = subs_flag
@@ -73,7 +73,7 @@ class Run:
 
         sub_run = SubRun(box_size=self.box_size,box_size_y=self.box_size_y,box_size_z=self.box_size_z, n_pts=n_pts,equiv_d=self.equiv_d,p_sigma=self.p_sigma,t_mu=self.t_mu,b_sigma=self.b_sigma,
                           decreasing_factor=self.decreasing_factor,lower=self.lower,upper=self.upper,circularity=self.circularity,plt_name=self.plt_name,
-                          save=self.save,plot=self.plot,filename=self.filename,fig_path=self.fig_path,gen_flag=self.gen_flag,
+                          save=self.save,plot=self.plot,filename=self.filename,fig_path=self.fig_path,subs_file_flag=self.subs_file_flag,
                           subs_file=self.subs_file,OR=self.OR)
 
         if self.dimension == 2:
@@ -135,7 +135,7 @@ if __name__ == "__main__":
     number_of_rves = 1
     number_of_bands = 0
     bandwidth = 5
-    visualization_flag = False
+    visualization_flag = True
     phase_ratio = 1.0
     store_path = '../'
     shrink_factor = 0.4
@@ -148,19 +148,19 @@ if __name__ == "__main__":
     b_sigma = 0.1
     # Example Files
     #file2 = 'F:/git/git_dragen/ExampleInput/example_pag_inp.csv'
-    #file2 = '../ExampleInput/example_pag_inp.csv'
-    # file1 = None
-    file2 = None
-    file1 = 'E:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
+    file2 = 'F:/git/merged_substructure/ExampleInput/example_pag_inp.csv'
+    file1 = None
+    # file2 = None
+    # file1 = 'E:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
         # test pearlite phase
-    subs_file = None #'../ExampleInput/example_block_inp.csv'
+    subs_file = 'F:/git/merged_substructure/ExampleInput/example_block_inp.csv'
     '''
     specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
     same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in martensite.
     '''
-    phases = ['ferrite']
+    phases = ['martensite']
     Run(box_size, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution, number_of_rves=number_of_rves,
         number_of_bands=number_of_bands, bandwidth=bandwidth, dimension=dimension,
         visualization_flag=visualization_flag, file1=file1, file2=file2,equiv_d=equiv_d,p_sigma=p_sigma,t_mu=t_mu,b_sigma=b_sigma,
         phase_ratio=phase_ratio, store_path=store_path, shrink_factor=shrink_factor, gui_flag=False, gan_flag=gan_flag,
-        info_box_obj=None, progress_obj=None,gen_flag='from_file',subs_file=subs_file,phases=phases,subs_flag=False).run()
+        info_box_obj=None, progress_obj=None,subs_file_flag=True,subs_file=subs_file,phases=phases,subs_flag=True).run()

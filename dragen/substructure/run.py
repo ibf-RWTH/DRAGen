@@ -16,7 +16,7 @@ class Run():
 
     def __init__(self,box_size, box_size_y:int,box_size_z:int,n_pts,equiv_d=None, p_sigma=None, t_mu=None, b_sigma=0.001, decreasing_factor=0.95,
                  lower=None, upper=None, circularity=1, plt_name=None, save=True, plot=False,
-                 filename=None, fig_path=None, gen_flag='user_define',subs_file=None, OR='KS'):
+                 filename=None, fig_path=None, subs_file_flag=False,subs_file=None, OR='KS'):
 
         self.box_size = box_size
         self.box_size_y = box_size_y
@@ -37,7 +37,7 @@ class Run():
         self.fig_path = fig_path
         self.OR = OR
         self.subs_file = subs_file
-        self.gen_flag = gen_flag
+        self.subs_file_flag = subs_file_flag
         self.rve_data = None
         self.store_path = None
         self.logger = None
@@ -99,7 +99,7 @@ class Run():
         logger.info('substructure generation begins')
         logger.info('------------------------------------------------------------------------------')
         rve_data = pd.DataFrame()
-        if self.gen_flag == 'from_file':
+        if self.subs_file_flag == True:
             assert self.subs_file is not None
             block_df = pd.read_csv(self.subs_file)
             average_bt = self.get_bt_distribution(block_df)
@@ -122,7 +122,7 @@ class Run():
                 grain = Grain(v=grain_data['final_conti_volume'], points=points,
                               phaseID=phaseID,grainID=grain_id,orientation=orientation)
 
-                if self.gen_flag == 'from_file':
+                if self.subs_file_flag == True:
                     old_gid = grain_data['old_gid']
                     blocks = block_df[block_df['grain_id'] == old_gid + 1]
                     n_pack = len(list(set(blocks['packet_id'])))
@@ -131,7 +131,7 @@ class Run():
                                    circularity=self.circularity,
                                    n_pack=n_pack, orientations=orientations)
 
-                if self.gen_flag == 'user_define':
+                else:
                     assert self.equiv_d is not None
                     assert self.p_sigma is not None
                     assert self.t_mu is not None

@@ -151,7 +151,7 @@ class RVEUtils:
 
         max_volume = bs**3
         data["volume"] = 4/3*np.pi*data["a"]*data["b"]*data["c"]
-        data = data.loc[data["volume"] < max_volume]
+        data = data.loc[data["a"] < self.box_size/2]
 
         grain_vol = 0
         inp_list = list()
