@@ -157,7 +157,8 @@ class Grain(RVEUtils):
             packet.variants = self.trial_variants_select(packet)
             packet.pag_ori = self.orientation
             packet.gen_blocks(t_mu=block_thickness, sigma=b_sigma, lower=lower_t,upper=upper_t)  # complete df
-            comp_df = packet.get_bt()
+            packet.get_bt()
+            comp_df = packet.merge_tiny_blocks()
 
             self.points_data.loc[comp_df.index, 'packet_id'] = packet['id']
             self.points_data.loc[comp_df.index, 'block_id'] = comp_df['block_id']
@@ -365,6 +366,8 @@ class Packet():
         self.variants = None
         self.orientations = None
         self.pag_ori = None
+        self.lower_t = None
+        self.upper_t = None
 
     def __len__(self):
 
@@ -404,14 +407,15 @@ class Packet():
         n = math.ceil(n)
 
         if lower == None:
-            lower = - np.inf
+            lower = t_mu/3
 
         if upper == None:
-            upper = points_data['p_dis'].max()
+            upper = 3*t_mu
 
         if sigma == 0:
             sigma = 0.1
 
+        self.lower_t = lower
         LN = lognorm(s=sigma,scale=t_mu)
         bt_list = LN.rvs(n)
         out_lrange = bt_list[bt_list <= lower]
@@ -436,86 +440,61 @@ class Packet():
         points_data = points_data.drop('pd', axis=1)
 
         self.points_data = points_data
-        if len(self.points_data) > 10:
-            self.merge_small_block()
 
     def strip_pid(self,bid):
 
         return(int(bid[len(self['id']):]))
 
-    def merge_small_block(self):
+    def merge_tiny_blocks(self):
+        lower = self.lower_t
+        while True:
+            if len(list(set(self.points_data['block_id']))) == 1:
+                break
+            tiny_blocks = self.points_data[self.points_data['block_thickness'] < lower]
+            if tiny_blocks.empty:
+                break
+            sampled_df = self.points_data.groupby('block_id', as_index=False).first()
+            sampled_df.sort_values(by=['p_dis'], inplace=True)
+            sampled_df.reset_index(inplace=True)
+            # begin to merge
+            tiny_bid = sampled_df[sampled_df['block_thickness'] < lower]['block_id'].tolist()
 
-        while (self.points_data.groupby('block_id').apply(len) < 10).any():
-            old_ids = list(set(self.points_data['block_id']))
-            bid = self.points_data['block_id'].map(lambda bid: self.strip_pid(bid))
-            self.points_data['strip_block_id'] = bid
-            self.points_data.sort_values('strip_block_id',inplace=True)#sort by bid, so that the order of blocks is arranged
-
-            block_groups = self.points_data.groupby('strip_block_id')
-            big_blocks = []
-            small_blocks = []
-            bb_list = []
-            for k in block_groups.groups.keys():
-                group = block_groups.get_group(k)
-
-                if len(group) < 10:
-                    small_blocks.append(k) #get the id of small blocks
+            idx = sampled_df[sampled_df['block_id'] == tiny_bid[0]].index
+            old_bt = sampled_df[sampled_df['block_id'] == tiny_bid[0]]['block_thickness'].values[0]
+            n = 1
+            m = 1
+            bt = old_bt
+            dis = sampled_df[sampled_df['block_id'] == tiny_bid[0]]['p_dis'].values[0]
+            while bt < lower:
+                if idx + n < len(sampled_df):
+                    old_bid = sampled_df.loc[idx + n - 1, 'block_id'].values[0]
+                    new_bid = sampled_df.loc[idx + n, 'block_id'].values[0]
+                    increased_bt = sampled_df.loc[idx + n, 'block_thickness'].values[0]
+                    increased_dis = sampled_df.loc[idx + n, 'p_dis'].values[0]
+                    bt += increased_bt
+                    dis += increased_dis
+                    self.points_data.loc[self.points_data['block_id'] == old_bid, 'block_id'] = new_bid
+                    self.points_data.loc[self.points_data['block_id'] == new_bid, 'block_thickness'] = bt
+                    self.points_data.loc[self.points_data['block_id'] == new_bid, 'p_dis'] = dis
+                    n += 1
                 else:
-                    big_blocks.append(k)
-                    bb_list.append(group['block_id'].iloc[0])
-
-            if len(small_blocks) == 1:
-                dis = np.array([abs(small_blocks[0] - big_block) for big_block in big_blocks])
-                new_id = self.points_data.loc[self.points_data['strip_block_id'] == big_blocks[np.argmin(dis)], 'block_id'].iloc[0]
-                self.points_data.loc[self.points_data['strip_block_id'] == small_blocks[0],'block_id'] = new_id
-                break
-
-            new_id_list = []
-            old_id_list = []
-            for j in range(len(small_blocks)):
-                i = 0
-                old_id = self.points_data.loc[self.points_data['strip_block_id'] == small_blocks[j],'block_id'].iloc[0]
-                temp = small_blocks[j]
-                while small_blocks[j]+i in small_blocks:
-
-                    temp = small_blocks[j] + i
-                    i += 1
-                small_blocks[j] = temp
-
-                if i == 1: # no adjacent block is small one
-
-                    if small_blocks[j] == small_blocks[j-1]:
-                        new_id = old_id
+                    if idx -m >= 0:
+                        old_bid = sampled_df.loc[idx - m + 1, 'block_id'].values[0]
+                        new_bid = sampled_df.loc[idx -m, 'block_id'].values[0]
+                        increased_bt = sampled_df.loc[idx - m, 'block_thickness'].values[0]
+                        increased_dis = sampled_df.loc[idx - m, 'p_dis'].values[0]
+                        bt += increased_bt
+                        dis += increased_dis
+                        self.points_data.loc[self.points_data['block_id'] == old_bid, 'block_id'] = new_bid
+                        self.points_data.loc[self.points_data['block_id'] == new_bid, 'block_thickness'] = bt
+                        self.points_data.loc[self.points_data['block_id'] == new_bid, 'p_dis'] = dis
+                        m += 1
                     else:
-                        if len(big_blocks) == 0:
-                            dis = np.array([abs(small_blocks[j] - small_block) for small_block in small_blocks if small_block != small_blocks[j]])
-                            new_id = self.points_data.loc[self.points_data['strip_block_id'] == small_blocks[np.argmin(dis)], 'block_id'].iloc[0]
-                        else:
-                            dis = np.array([abs(small_blocks[j] - big_block) for big_block in big_blocks])
-                            new_id = self.points_data.loc[self.points_data['strip_block_id'] == big_blocks[np.argmin(dis)],'block_id'].iloc[0]
+                        break
 
-                else: #adjacent block is small one
-                    new_id = self.points_data.loc[self.points_data['strip_block_id'] == temp, 'block_id'].iloc[0]  # merge adjacent small blocks into one block
+        print('all tiny blocks in packet {} are merged'.format(self['id']))
+        return self.points_data
 
-                old_id_list.append(old_id)
-                new_id_list.append(new_id)
-
-
-            old_id_list.extend(bb_list)
-            new_id_list.extend(bb_list)
-
-            old_to_new = dict(zip(old_id_list,new_id_list))
-
-            new_bid = self.points_data['block_id'].map(lambda bid:old_to_new[bid])
-            self.points_data['block_id'] = new_bid
-            self.points_data.drop('strip_block_id',axis=1)
-
-            new_ids = list(set(self.points_data['block_id']))
-            if new_ids == old_ids:
-                print('cannot merge blocks anymore')
-                break
-
-        print('all small blocks in packet {} are merged'.format(self['id']))
 
     def get_bt(self):
 
@@ -523,10 +502,6 @@ class Packet():
         bg = self.points_data.groupby('block_id')
         bid_to_bt = bg['p_dis'].apply(max)-bg['p_dis'].apply(min)
         self.points_data['block_thickness'] = self.points_data.apply(lambda p:bid_to_bt[p['block_id']],axis=1)
-
-        zero_btdf = self.points_data[self.points_data['block_thickness'] == 0]
-        if not zero_btdf.empty:
-            self.points_data.loc[zero_btdf.index, 'block_thickness'] = self.points_data.loc[zero_btdf.index, 'p_dis']
         return self.points_data
 
     def assign_bv(self):

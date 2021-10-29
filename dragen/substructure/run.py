@@ -11,6 +11,8 @@ import numpy as np
 from dragen.substructure.data import save_data
 from dragen.substructure.substructure import Grain
 from scipy.stats import moment
+from scipy.stats import gaussian_kde
+import matplotlib.pyplot as plt
 
 class Run():
 
@@ -77,16 +79,19 @@ class Run():
                 n = 1
                 m = 1
                 while True:
-                    if sampled_df.loc[idx + n, 'block_thickness'].values != 0:
-                        nonzero_idx = idx + n
-                        break
-                    else:
-                        n += 1
-                    if sampled_df.loc[idx - m, 'block_thickness'].values != 0:
-                        nonzero_idx = idx - m
-                        break
-                    else:
-                        m += 1
+                    if idx + n < len(sampled_df):
+                        if sampled_df.loc[idx + n, 'block_thickness'].values != 0:
+                            nonzero_idx = idx + n
+                            break
+                        else:
+                            n += 1
+
+                    if idx - m > 0:
+                        if sampled_df.loc[idx - m, 'block_thickness'].values != 0:
+                            nonzero_idx = idx - m
+                            break
+                        else:
+                            m += 1
 
                 new_bid = sampled_df.loc[nonzero_idx, 'block_id'].values[0]
                 new_bt = sampled_df.loc[nonzero_idx, 'block_thickness'].values[0]
@@ -210,7 +215,7 @@ class Run():
         pag_path = self.store_path + '/Generation_Data/grain_data_output_discrete.csv'
         pag_df = pd.read_csv(pag_path)
         discrete_vol = pag_df['final_discrete_volume']
-        n_pag = len(pag_df) + 1
+        n_pag = len(pag_df)
         mean_pagvol = np.mean(discrete_vol)
         std_pagvol = np.std(discrete_vol)
 
@@ -259,6 +264,22 @@ class Run():
             f.write('\n')
             if MMD <= 0.01:
                 f.write('##warning: the MMD is too small, please check statistical features!')
+
+        if self.subs_file_flag:
+            bt_df = pd.read_csv(self.subs_file)
+            measured_bt = np.sort(bt_df['block_thickness'].to_numpy())
+            kernel1 = gaussian_kde(measured_bt)
+            blocks = self.rve_data.groupby('block_id').first()
+            generated_bt = np.sort(blocks['block_thickness'].to_numpy())
+            kernel2 = gaussian_kde(generated_bt)
+            plt.plot(measured_bt, kernel1(measured_bt), label='Real_Distribution')
+            plt.plot(generated_bt,kernel2(generated_bt),label='DRAGen_Distribution')
+            plt.xlabel('Block_Thickness({}m)'.format(r'$\mu$'), fontsize=15)
+            plt.ylabel('Frequency', fontsize=15)
+            plt.xticks(fontsize=13)
+            plt.yticks(fontsize=13)
+            plt.legend(fontsize=12.5, loc=1)
+            plt.savefig(self.store_path + '/Postprocessing/compare_distribution.png')
 
         self.logger.info('substructure postprocessing successful')
 

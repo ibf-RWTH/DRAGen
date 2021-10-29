@@ -255,5 +255,6 @@ class DataTask3D(RVEUtils):
                 obj.gen_plots(phase2_ref_r_conti_in, phase2_ref_r_conti_out, 'conti', 'in_vs_out_conti')
                 obj.gen_plots(phase2_ref_r_discrete_in, phase2_ref_r_discrete_out, 'discrete', 'in_vs_out_discrete')
 
-
+        if self.subs_flag:
+            self.sub_run.post_processing(k=3)
         self.logger.info("RVE generation process has successfully completed...")
