@@ -25,3 +25,4 @@ example
 /Experimental/
 /dragen/generation/test_roughness.py
 /ExampleInput/recon2D_Drill1_1_62um_32pnts_trim400-900_x250z120_roughness.csv
+dragen/generation/sandbox.py
