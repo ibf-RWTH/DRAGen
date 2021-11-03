@@ -15,8 +15,8 @@ import os
 import tetgen
 
 class SubMesher(Mesher):
-    def __init__(self,box_size_x: int, box_size_y: int = None, box_size_z: int = None,  rve: pd.DataFrame = None,
-                 subs_df: pd.DataFrame = None, store_path: str = None,
+    def __init__(self,box_size_x: int, box_size_y: int = None, box_size_z: int = None, rve_shape: tuple = None,
+                 rve: pd.DataFrame = None, subs_df: pd.DataFrame = None, store_path: str = None,
                  phase_two_isotropic=True, animation=True, infobox_obj=None,
                  progress_obj=None, gui=True, element_type='C3D4'):
         self.box_size_x = box_size_x
@@ -44,16 +44,16 @@ class SubMesher(Mesher):
         self.n_blocks = int(max(rve.block_id))
         self.n_packets = int(max(rve.packet_id))
         self.n_grains = int(max(rve.GrainID))
-        self.n_pts_x = int(rve.n_pts) + 1
+        self.n_pts_x = rve_shape[0]+1
         self.bin_size = rve.box_size / (self.n_pts_x)  ## test
         if self.box_size_y is not None:
-            self.n_pts_y = int(self.box_size_y / self.bin_size)
+            self.n_pts_y = rve_shape[1]+1
         else:
             self.box_size_y = self.box_size_x
             self.n_pts_y = self.n_pts_x
 
         if self.box_size_z is not None:
-            self.n_pts_z = int(self.box_size_z / self.bin_size)
+            self.n_pts_z = rve_shape[1]+1
         else:
             self.box_size_z = self.box_size_x
             self.n_pts_z = self.n_pts_x
@@ -64,8 +64,8 @@ class SubMesher(Mesher):
         self.roughness = True
         self.idnum = {1:'GrainID',2:'packet_id',3:'block_id'}
         self.subsnum = {1:'Grain',2:'Packet',3:'Block'}
-        super().__init__(box_size_x=box_size_x,box_size_y=box_size_y,box_size_z=box_size_z,rve=rve,
-                         grains_df=subs_df,store_path=store_path,phase_two_isotropic=phase_two_isotropic,animation=animation,
+        super().__init__(box_size_x=box_size_x,box_size_y=box_size_y,box_size_z=box_size_z,rve=rve, rve_shape=rve_shape,
+        grains_df=subs_df,store_path=store_path,phase_two_isotropic=phase_two_isotropic,animation=animation,
                          infobox_obj=infobox_obj,progress_obj=progress_obj,gui=gui,element_type=element_type)
 
     def gen_subs(self):
@@ -77,8 +77,9 @@ class SubMesher(Mesher):
             self.progress_obj.emit(25)
         grid = self.gen_grains(grid)
 
-        grid.cell_arrays['packet_id'] = self.rve['packet_id'].to_numpy()
-        grid.cell_arrays['block_id'] = self.rve['block_id'].to_numpy()
+        self.rve.sort_values(by=['z','y','x'], inplace=True)
+        grid.cell_data['packet_id'] = self.rve['packet_id'].to_numpy()
+        grid.cell_data['block_id'] = self.rve['block_id'].to_numpy()
 
         if self.animation:
             plotter = pv.Plotter(off_screen=True)
@@ -197,7 +198,7 @@ class SubMesher(Mesher):
             grid_tet = pv.UnstructuredGrid()
             for i in range(1, numberOfBlocks + 1):
                 phase = self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0]
-                grain_grid_tet = old_grid.extract_cells(np.where(np.asarray(old_grid.cell_arrays.values())[0] == i))
+                grain_grid_tet = old_grid.extract_cells(np.where(np.asarray(old_grid.cell_data.values())[0] == i))
                 grain_surf_tet = grain_grid_tet.extract_surface(pass_pointid=True, pass_cellid=True)
                 grain_surf_tet.triangulate(inplace=True)
 
@@ -224,8 +225,8 @@ class SubMesher(Mesher):
                     grid_tet = tet_grain_grid.merge(grid_tet, merge_points=True)
 
 
-            grid_tet.cell_arrays['GrainID'] = np.asarray(gid_list)
-            grid_tet.cell_arrays['PhaseID'] = np.asarray(pid_list)
+            grid_tet.cell_data['GrainID'] = np.asarray(gid_list)
+            grid_tet.cell_data['PhaseID'] = np.asarray(pid_list)
             grid = grid_tet.copy()
 
         all_points_df = pd.DataFrame(grid.points, columns=['x', 'y', 'z'])
@@ -248,8 +249,7 @@ class SubMesher(Mesher):
         old_grid = grid.copy() #copy doenst copy the dynamically assigned new property...
         for i in range(1, numberOfBlocks + 1):
             phase = self.rve.loc[self.rve['block_id'] == i].phaseID.values[0]
-            # print(np.where(old_grid.cell_arrays['GrainID']==i))
-            grain_grid = old_grid.extract_cells(np.where(old_grid.cell_arrays['block_id']==i))
+            grain_grid = old_grid.extract_cells(np.where(old_grid.cell_data['block_id']==i))
             grain_surf = grain_grid.extract_surface()
             grain_surf_df = pd.DataFrame(data=grain_surf.points, columns=['x', 'y', 'z'])
             merged_pts_df = grain_surf_df.join(all_points_df_old.set_index(['x', 'y', 'z']), on=['x', 'y', 'z'])
@@ -258,7 +258,7 @@ class SubMesher(Mesher):
             all_points_df.loc[merged_pts_df['ori_idx'], ['x', 'y', 'z']] = smooth_pts_df.values
 
         for i in range(1,self.n_grains+1):
-            grain_grid = old_grid.extract_cells(np.where(old_grid.cell_arrays['GrainID'] == i))
+            grain_grid = old_grid.extract_cells(np.where(old_grid.cell_data['GrainID'] == i))
             grain_vol = grain_grid.volume
             self.grains_df.loc[self.grains_df['GrainID'] == i-1, 'meshed_conti_volume'] = grain_vol * 10 ** 9
 
@@ -311,17 +311,17 @@ class SubMesher(Mesher):
         f = open(self.store_path + '/RVE_smooth.inp', 'a')
         f.write('*Part, name=PART-1\n')
         for line in lines[startingLine:]:
-            if line == "*element, type=c3d8rh\n":
-                line = "*element, type=c3d8\n"
+            if line.replace(" ", "") == "*element,type=c3d8rh\n":
+                line = "*element,type=c3d8\n"
+            if '*end' in line:
+                line = line.replace('*end', '**\n')
             f.write(line)
-
         n = 1
         for nSubs in [self.n_grains,self.n_packets,self.n_blocks]:
             print('current sub is {},number is {}'.format(self.subsnum[n],nSubs))
             for i in range(nSubs):
                 nSub = i + 1
-                # print('in for nBlock=', nBlock, smooth_mesh.cell_arrays.keys())
-                cells = np.where(smooth_mesh.cell_arrays[self.idnum[n]] == nSub)[0]
+                cells = np.where(smooth_mesh.cell_data[self.idnum[n]] == nSub)[0]
                 f.write('*Elset, elset=Set-{}{}\n'.format(self.subsnum[n],nSub))
                 for j, cell in enumerate(cells + 1):
                     if (j + 1) % 16 == 0:
@@ -335,11 +335,11 @@ class SubMesher(Mesher):
         phase2_idx = 0
         for i in range(self.n_blocks):
             nBlock = i + 1
-            if self.rve.loc[GRID.cell_arrays['block_id'] == nBlock].phaseID.values[0] == 1:
+            if self.rve.loc[GRID.cell_data['block_id'] == nBlock].phaseID.values[0] == 1:
                 phase1_idx += 1
                 f.write('** Section: Section - {}\n'.format(nBlock))
                 f.write('*Solid Section, elset=Set-Block{}, material=Ferrite_{}\n'.format(nBlock, phase1_idx))
-            elif self.rve.loc[GRID.cell_arrays['block_id'] == nBlock].phaseID.values[0] == 2:
+            elif self.rve.loc[GRID.cell_data['block_id'] == nBlock].phaseID.values[0] == 2:
                 if not self.phase_two_isotropic:
                     phase2_idx += 1
                     f.write('** Section: Section - {}\n'.format(nBlock))
