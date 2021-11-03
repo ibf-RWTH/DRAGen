@@ -110,7 +110,8 @@ class Run:
             for i in range(self.number_of_rves):
                 grains_df, store_path = obj3D.initializations(self.dimension, epoch=i)
                 obj3D.rve_generation(grains_df, store_path)
-                obj3D.post_processing()
+                if self.subs_file_flag:
+                    obj3D.post_processing()
 
         else:
             LOGS_DIR = 'Logs/'
@@ -128,10 +129,10 @@ class Run:
 
 
 if __name__ == "__main__":
-    box_size = 16
+    box_size = 32
     box_size_y = None   # if this is None it will be set to the main box_size value
-    box_size_z = None     # for sheet rve set z to None and y to different value than x the other way round is buggy
-    resolution = 2
+    box_size_z = 16     # for sheet rve set z to None and y to different value than x the other way round is buggy
+    resolution = 1
     number_of_rves = 1
     number_of_bands = 0
     bandwidth = 5
@@ -147,13 +148,13 @@ if __name__ == "__main__":
     t_mu = 1.0
     b_sigma = 0.1
     # Example Files
-    #file2 = 'F:/git/git_dragen/ExampleInput/example_pag_inp.csv'
-    file2 = 'F:/git/merged_substructure/ExampleInput/example_pag_inp.csv'
+    file2 = '../ExampleInput/example_pag_inp.csv'
+    #file1 = 'F:/git/merged_substructure/ExampleInput/example_pag_inp.csv'
+    #file2 = 'F:/git/merged_substructure/ExampleInput/example_block_inp.csv'
     file1 = None
-    # file2 = None
-    # file1 = 'E:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
+    #file2 = 'E:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
         # test pearlite phase
-    subs_file = 'F:/git/merged_substructure/ExampleInput/example_block_inp.csv'
+    subs_file = '../ExampleInput/example_block_inp.csv'
     '''
     specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
     same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in martensite.
@@ -161,6 +162,6 @@ if __name__ == "__main__":
     phases = ['martensite']
     Run(box_size, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution, number_of_rves=number_of_rves,
         number_of_bands=number_of_bands, bandwidth=bandwidth, dimension=dimension,
-        visualization_flag=visualization_flag, file1=file1, file2=file2,equiv_d=equiv_d,p_sigma=p_sigma,t_mu=t_mu,b_sigma=b_sigma,
+        visualization_flag=visualization_flag, file1=file1, file2=file2, equiv_d=equiv_d,p_sigma=p_sigma,t_mu=t_mu,b_sigma=b_sigma,
         phase_ratio=phase_ratio, store_path=store_path, shrink_factor=shrink_factor, gui_flag=False, gan_flag=gan_flag,
         info_box_obj=None, progress_obj=None,subs_file_flag=True,subs_file=subs_file,phases=phases,subs_flag=True).run()
