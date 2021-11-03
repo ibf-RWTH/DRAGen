@@ -198,22 +198,25 @@ class DataTask3D(RVEUtils):
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
 
             # Start the Mesher
-            #grains_df.to_csv('grains_df.csv', index=False)
-            #periodic_rve_df.to_csv('periodic_rve_df.csv', index=False)
+            # grains_df.to_csv('grains_df.csv', index=False)
+            # periodic_rve_df.to_csv('periodic_rve_df.csv', index=False)
+            rve_shape = (max(np.where(rve > 0)[0]) - min(np.where(rve > 0)[0])+1,
+                         max(np.where(rve > 0)[1]) - min(np.where(rve > 0)[1])+1,
+                         max(np.where(rve > 0)[2]) - min(np.where(rve > 0)[2])+1)
             if self.subs_flag == True:
                 print("substructure generation is turned on...")
                 subs_rve = self.sub_run.run(rve_df=periodic_rve_df, grains_df=grains_df, store_path=self.store_path,
                                             logger=self.logger) # returns rve df containing substructures
                 mesher_obj = SubMesher(box_size_x=self.box_size, box_size_y=self.box_size_y, box_size_z=self.box_size_z,
-                                    rve=subs_rve,subs_df=grains_df, store_path=store_path,
-                                    phase_two_isotropic=False, animation=self.animation,
-                                    infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag,
-                                    element_type='C3D8')
+                                       rve_shape=rve_shape, rve=subs_rve, subs_df=grains_df, store_path=store_path,
+                                       phase_two_isotropic=False, animation=self.animation,
+                                       infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag,
+                                       element_type='C3D8')
 
             elif self.subs_flag == False:
                 print("substructure generation is turned off...")
                 mesher_obj = Mesher(box_size_x=self.box_size, box_size_y=self.box_size_y, box_size_z=self.box_size_z,
-                                    rve=periodic_rve_df, grains_df=grains_df, store_path=store_path,
+                                    rve_shape=rve_shape, rve=periodic_rve_df, grains_df=grains_df, store_path=store_path,
                                     phase_two_isotropic=True, animation=self.animation,
                                     infobox_obj=self.infobox_obj, progress_obj=self.progress_obj, gui=self.gui_flag,
                                     element_type='C3D8')
