@@ -54,13 +54,15 @@ class Window(QMainWindow, QFileDialog):
         self._createStatusBar()
         box_size_label = QLabel('RVE-Size-X (µm)')
         self.box_size_Edit = QSpinBox()
-        self.box_size_Edit.setMinimum(10)
+        self.box_size_Edit.setMinimum(1)
+        self.box_size_Edit.setMaximum(1000)
         self.box_size_Edit.setValue(20)
         self.box_size_Edit.valueChanged.connect(self.bandwidth_handler)
 
         box_size_y_label = QLabel('RVE-Size-Y (µm)')
         self.box_size_y_Edit = QSpinBox()
-        self.box_size_y_Edit.setMinimum(10)
+        self.box_size_y_Edit.setMinimum(1)
+        self.box_size_y_Edit.setMaximum(1000)
         self.box_size_y_Edit.setValue(20)
         self.box_size_y_Edit.valueChanged.connect(self.bandwidth_handler)
         self.box_size_y_Edit.setEnabled(False)
@@ -71,7 +73,8 @@ class Window(QMainWindow, QFileDialog):
 
         box_size_z_label = QLabel('RVE-Size-Z (µm)')
         self.box_size_z_Edit = QSpinBox()
-        self.box_size_z_Edit.setMinimum(10)
+        self.box_size_z_Edit.setMinimum(1)
+        self.box_size_z_Edit.setMaximum(1000)
         self.box_size_z_Edit.setValue(20)
         self.box_size_z_Edit.valueChanged.connect(self.bandwidth_handler)
         self.box_size_z_Edit.setEnabled(False)
@@ -83,7 +86,8 @@ class Window(QMainWindow, QFileDialog):
 
         resolution_label = QLabel('Resolution')
         self.resolution_Edit = QDoubleSpinBox()
-        self.resolution_Edit.setMinimum(1.5)
+        self.resolution_Edit.setMinimum(0.1)
+        self.resolution_Edit.setValue(1)
         self.resolution_Edit.setSingleStep(0.1)
 
         n_rves_label = QLabel('Number of RVEs')
