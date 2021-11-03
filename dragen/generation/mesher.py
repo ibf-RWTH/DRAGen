@@ -7,8 +7,8 @@ import os
 import logging
 class Mesher:
 
-    def __init__(self, box_size_x: int, box_size_y: int = None, box_size_z: int = None,  rve: pd.DataFrame = None,
-                 grains_df: pd.DataFrame = None, store_path: str = None,
+    def __init__(self, box_size_x: int, box_size_y: int = None, box_size_z: int = None, rve_shape: tuple = None,
+                 rve: pd.DataFrame = None, grains_df: pd.DataFrame = None, store_path: str = None,
                  phase_two_isotropic=True, animation=True, infobox_obj=None,
                  progress_obj=None, gui=True, element_type='C3D4'):
         self.box_size_x = box_size_x
@@ -31,23 +31,21 @@ class Mesher:
         self.z_max = int(max(rve.z))
         self.z_min = int(min(rve.z))
         self.n_grains = int(max(rve.GrainID))
-        if isinstance(rve.n_pts,pd.Series):
-            self.n_pts_x = int(rve.n_pts[0]) + 1
-        else:
-            self.n_pts_x = int(rve.n_pts)+1
 
+        self.n_pts_x = rve_shape[0]+1
         if isinstance(rve.box_size,pd.Series):
             self.bin_size = rve.box_size[0] / (self.n_pts_x)  ## test
         else:
             self.bin_size = rve.box_size / (self.n_pts_x) ## test
+
         if self.box_size_y is not None:
-            self.n_pts_y = int(self.box_size_y/self.bin_size)
+            self.n_pts_y = rve_shape[1]
         else:
             self.box_size_y = self.box_size_x
             self.n_pts_y =self.n_pts_x
 
         if self.box_size_z is not None:
-            self.n_pts_z = int(self.box_size_z / self.bin_size)
+            self.n_pts_z = rve_shape[2]
         else:
             self.box_size_z = self.box_size_x
             self.n_pts_z = self.n_pts_x
@@ -66,27 +64,17 @@ class Mesher:
         yrng = np.linspace(0, self.box_size_y/1000, self.n_pts_y+1, endpoint=True)
         zrng = np.linspace(0, self.box_size_z/1000, self.n_pts_z+1, endpoint=True)
         grid = pv.RectilinearGrid(xrng, yrng, zrng)
-
         grid = grid.cast_to_unstructured_grid()
         return grid
 
     def gen_grains(self, grid: pv.UnstructuredGrid) -> pv.UnstructuredGrid:
 
         """the grainIDs are written on the cell_array"""
-
-
-        if self.box_size_y is None and self.box_size_z is None:
-            self.rve.sort_values(by=['x', 'y', 'z'], inplace=True)  # This sorting is important for some weird reason
-        if self.box_size_y is not None and self.box_size_z is None:
-            self.rve.sort_values(by=['x', 'y', 'z'], inplace=True)  # This sorting is important for some weird reason
-        elif self.box_size_y is None and self.box_size_z is not None:
-            self.rve.sort_values(by=['z', 'x', 'y'], inplace=True)  # TODO: This sorting is important for some weird reason
-        else:
-            self.rve.sort_values(by=['x', 'y', 'z'], inplace=True)  # This sorting is important for some weird reason
+        self.rve.sort_values(by=['z', 'y', 'x'], inplace=True) # This sorting is important! Keep it that way
 
         # Add the data values to the cell data
-        grid.cell_arrays["GrainID"] = self.rve['GrainID'].to_numpy()
-        grid.cell_arrays["phaseID"] = self.rve['phaseID'].to_numpy()
+        grid.cell_data["GrainID"] = self.rve['GrainID'].to_numpy()
+        grid.cell_data["phaseID"] = self.rve['phaseID'].to_numpy()
         # Now plot the grid!
         if self.animation:
             plotter = pv.Plotter(off_screen=True)
@@ -129,7 +117,7 @@ class Mesher:
             grid_tet = pv.UnstructuredGrid()
             for i in range(1, numberOfGrains + 1):
                 phase = self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0]
-                grain_grid_tet = old_grid.extract_cells(np.where(np.asarray(old_grid.cell_arrays.values())[0] == i))
+                grain_grid_tet = old_grid.extract_cells(np.where(np.asarray(old_grid.cell_data.values())[0] == i))
                 grain_surf_tet = grain_grid_tet.extract_surface(pass_pointid=True, pass_cellid=True)
                 grain_surf_tet.triangulate(inplace=True)
 
@@ -156,8 +144,8 @@ class Mesher:
                     grid_tet = tet_grain_grid.merge(grid_tet, merge_points=True)
 
 
-            grid_tet.cell_arrays['GrainID'] = np.asarray(gid_list)
-            grid_tet.cell_arrays['PhaseID'] = np.asarray(pid_list)
+            grid_tet.cell_data['GrainID'] = np.asarray(gid_list)
+            grid_tet.cell_data['PhaseID'] = np.asarray(pid_list)
             grid = grid_tet.copy()
 
         all_points_df = pd.DataFrame(grid.points, columns=['x', 'y', 'z'])
@@ -179,9 +167,7 @@ class Mesher:
 
         old_grid = grid.copy() #copy doenst copy the dynamically assigned new property...
         for i in range(1, numberOfGrains + 1):
-            phase = self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0]
-            # print(np.where(old_grid.cell_arrays['GrainID']==i))
-            grain_grid = old_grid.extract_cells(np.where(old_grid.cell_arrays['GrainID']==i))
+            grain_grid = old_grid.extract_cells(np.where(old_grid.cell_data['GrainID'] == i))
             grain_surf = grain_grid.extract_surface()
             grain_surf_df = pd.DataFrame(data=grain_surf.points, columns=['x', 'y', 'z'])
             merged_pts_df = grain_surf_df.join(all_points_df_old.set_index(['x', 'y', 'z']), on=['x', 'y', 'z'])
@@ -250,8 +236,7 @@ class Mesher:
         grid_hull_df = grid_hull_df.reset_index()
         grid_hull_df.index.rename('Eqn-Set', inplace=True)
         grid_hull_df = grid_hull_df.reset_index()
-        #print(grid_hull_df.head())
-        #print(min_x, max_x)
+
         ########## Define Corner Sets ###########
         corner_df = grid_hull_df.loc[((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
                                      ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
@@ -260,35 +245,35 @@ class Mesher:
         V1_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == min_y) & (corner_df['z'] == max_z)]
         V1 = V1_df['pointNumber'].values[0]
         V1Eqn = V1_df['Eqn-Set'].values[0]
-        #print(V1_df)
+
         V2_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == min_y) & (corner_df['z'] == max_z)]
         V2 = V2_df['pointNumber'].values[0]
         V2Eqn = V2_df['Eqn-Set'].values[0]
-        #print(V2_df)
+
         V3_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == max_y) & (corner_df['z'] == max_z)]
         V3 = V3_df['pointNumber'].values[0]
         V3Eqn = V3_df['Eqn-Set'].values[0]
-        #print(V3_df)
+
         V4_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == max_y) & (corner_df['z'] == max_z)]
         V4 = V4_df['pointNumber'].values[0]
         V4Eqn = V4_df['Eqn-Set'].values[0]
-        #print(V4_df)
+
         H1_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == min_y) & (corner_df['z'] == min_z)]
         H1 = H1_df['pointNumber'].values[0]
         H1Eqn = H1_df['Eqn-Set'].values[0]
-        #print(H1_df)
+
         H2_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == min_y) & (corner_df['z'] == min_z)]
         H2 = H2_df['pointNumber'].values[0]
         H2Eqn = H2_df['Eqn-Set'].values[0]
-        #print(H2_df)
+
         H3_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == max_y) & (corner_df['z'] == min_z)]
         H3 = H3_df['pointNumber'].values[0]
         H3Eqn = H3_df['Eqn-Set'].values[0]
-        #print(H3_df)
+
         H4_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == max_y) & (corner_df['z'] == min_z)]
         H4 = H4_df['pointNumber'].values[0]
         H4Eqn = H4_df['Eqn-Set'].values[0]
-        #print(H4_df)
+
         ############ Define Edge Sets ###############
         edges_df = grid_hull_df.loc[(((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
                                      ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
@@ -1100,12 +1085,11 @@ class Mesher:
             if line.replace(" ", "") == "*element,type=c3d8rh\n":
                 line = "*element,type=c3d8\n"
             if '*end' in line:
-                line.replace('*end', '**\n')
+                line = line.replace('*end', '**\n')
             f.write(line)
         for i in range(self.n_grains):
             nGrain = i + 1
-            # print('in for nGrain=', nGrain, smooth_mesh.cell_arrays.keys())
-            cells = np.where(smooth_mesh.cell_arrays['GrainID'] == nGrain)[0]
+            cells = np.where(smooth_mesh.cell_data['GrainID'] == nGrain)[0]
             f.write('*Elset, elset=Set-{}\n'.format(nGrain))
             for j, cell in enumerate(cells + 1):
                 if (j + 1) % 16 == 0:
@@ -1117,11 +1101,11 @@ class Mesher:
         phase2_idx = 0
         for i in range(self.n_grains):
             nGrain = i + 1
-            if self.rve.loc[GRID.cell_arrays['GrainID'] == nGrain].phaseID.values[0] == 1:
+            if self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 1:
                 phase1_idx += 1
                 f.write('** Section: Section - {}\n'.format(nGrain))
                 f.write('*Solid Section, elset=Set-{}, material=Ferrite_{}\n'.format(nGrain, phase1_idx))
-            elif self.rve.loc[GRID.cell_arrays['GrainID'] == nGrain].phaseID.values[0] == 2:
+            elif self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 2:
                 if not self.phase_two_isotropic:
                     phase2_idx += 1
                     f.write('** Section: Section - {}\n'.format(nGrain))
@@ -1169,14 +1153,25 @@ class Mesher:
 
 
 if __name__ == '__main__':
-    store_path = './'
-    box_size_x = 50
-    periodic_rve_df = pd.read_csv('periodic_rve_df.csv')
-    grains_df = pd.read_csv('grains_df.csv')
+    store_path = '.'
+    box_size_x = 200
+    periodic_rve_df = pd.read_csv('../periodic_rve_df.csv')
+    grains_df = pd.read_csv('../grains_df.csv')
+    rve = np.load('../RVE_Numpy.npy')
+
+    print(max(np.where(rve > 0)[0]) - min(np.where(rve > 0)[0])+1)
+    print(max(np.where(rve > 0)[1]) - min(np.where(rve > 0)[1])+1)
+    print(max(np.where(rve > 0)[2]) - min(np.where(rve > 0)[2])+1)
+    rve_shape = (max(np.where(rve > 0)[0]) - min(np.where(rve > 0)[0])+1,
+                 max(np.where(rve > 0)[1]) - min(np.where(rve > 0)[1])+1,
+                 max(np.where(rve > 0)[2]) - min(np.where(rve > 0)[2])+1)
+    print(rve_shape)
+
+
     el_type = 'C3D8'
     #el_type = 'C3D4'
-    mesher_obj = Mesher(box_size_x=box_size_x, box_size_y=None, box_size_z=None,
+    mesher_obj = Mesher(box_size_x=box_size_x, box_size_y=None, box_size_z=100, rve_shape=rve_shape,
                         rve=periodic_rve_df, grains_df=grains_df, store_path=store_path,
-                        phase_two_isotropic=True, animation=False,
+                        phase_two_isotropic=True, animation=True,
                         infobox_obj=None, progress_obj=None, gui=False, element_type=el_type)
     mesher_obj.mesh_and_build_abaqus_model()
