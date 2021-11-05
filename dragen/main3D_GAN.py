@@ -33,7 +33,7 @@ class DataTask3D_GAN(RVEUtils):
         self.n_pts = n_pts  # has to be even
         self.bin_size = self.box_size / self.n_pts
         self.step_half = self.bin_size / 2
-        self.shrink_factor = np.cbrt(shrink_factor)
+        self.shrink_factor = np.cbrt(shrink_factor)  # TODO: Lower shrink factor?
         self.gui_flag = gui_flag
         self.gan_flag = gan_flag
         self.solver = solver
@@ -594,35 +594,49 @@ class DataTask3D_GAN(RVEUtils):
             with open(store_path + '/rve.sta', 'a') as sta:
                 sta.writelines("\n\nRVE generation process nearly complete: Creating input for DAMASK Spectral now: \n")
 
-            # 1.) Write out Volume
-            grains_df.sort_values(by=['GrainID'], inplace=True)
-            disc_vols = np.zeros((1, grains_df.shape[0])).flatten().tolist()
-            for i in range(len(grains_df)):
-                # grainID = grains_df.GrainID[i]
-                disc_vols[i] = np.count_nonzero(rve == i + 1) * self.bin_size ** 3
+                # 1.) Write out Volume
+                grains_df.sort_values(by=['GrainID'], inplace=True)
+                disc_vols = np.zeros((1, grains_df.shape[0])).flatten().tolist()
+                for i in range(len(grains_df)):
+                    # grainID = grains_df.GrainID[i]
+                    disc_vols[i] = np.count_nonzero(rve == i + 1) * self.bin_size ** 3
 
-            grains_df['meshed_conti_volume'] = disc_vols
-            grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
+                grains_df['meshed_conti_volume'] = disc_vols
+                grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
 
-            # Startpoint: Rearange the negative ID's
-            last_grain_id = rve.max()
-            if self.inclusions_flag:
-                phase_list = pd.concat([grains_df, inclusions_df])['phaseID'].tolist()
-                for i in range(len(inclusions_df)):
-                    rve[np.where(rve == -(200 + i + 1))] = last_grain_id + i + 1
+                # Startpoint: Rearrange the negative ID's
+                last_grain_id = rve.max()  # BEWARE: For the .vti file, the grid must start at ZERO
+                print('The last grain ID is:', last_grain_id)
+                print('The number of bands is:', self.number_of_bands)
+                if self.inclusions_flag and (self.number_of_bands >= 1):
+                    sta.writelines("Band and Inclusions in RVE: \n")
+                    phase_list = grains_df['phaseID'].tolist()
+                    for i in range(len(inclusions_df)):
+                        rve[np.where(rve == -(200 + i + 1))] = last_grain_id + i + 1
+                        phase_list.append(2)
+                    rve[np.where(rve == -200)] = last_grain_id + i + 2  # Band is last ID
+                    # Add one Martensite for the band
                     phase_list.append(2)
-                rve[np.where(rve == -200)] = last_grain_id + i + 2  # Band is last ID
-                phase_list.append(2)
-            else:
-                phase_list = grains_df['phaseID'].tolist()
-                rve[np.where(rve == -200)] = last_grain_id + 1
-                phase_list.append(2)
-            print(np.asarray(np.unique(rve, return_counts=True)).T)
-            print(phase_list)
+                elif self.number_of_bands >= 1:
+                    sta.writelines("Only Band in RVE: \n")
+                    # Case with bands here add one martensite for the band
+                    phase_list = grains_df['phaseID'].tolist()
+                    rve[np.where(rve == -200)] = last_grain_id + 1
+                    phase_list.append(2)
+                elif self.inclusions_flag:
+                    sta.writelines("Only Inclusions in RVE: \n")
+                    phase_list = grains_df['phaseID'].tolist()
+                    for i in range(len(inclusions_df)):
+                        rve[np.where(rve == -(200 + i + 1))] = last_grain_id + i + 1
+                        phase_list.append(2)
+                else:
+                    sta.writelines("Nothing despite grains in RVE: \n")
+                    # No bands, no inclusions, just turn grains to phase_list
+                    phase_list = grains_df['phaseID'].tolist()
 
-            spectral.write_material(store_path=store_path, grains=phase_list)
-            spectral.write_load(store_path)
-            spectral.write_grid(store_path=store_path, rve=rve, spacing=self.box_size/1000)
+                spectral.write_material(store_path=store_path, grains=phase_list)
+                spectral.write_load(store_path)
+                spectral.write_grid(store_path=store_path, rve=rve, spacing=self.box_size/1000, grains=phase_list)
 
 
             """# 2.) Make Geometry
@@ -635,7 +649,7 @@ class DataTask3D_GAN(RVEUtils):
                 spectral.make_geom(rve=rve, grid_size=self.n_pts, spacing=self.box_size,
                                    store_path=store_path)
 
-            # 3.) Make config / material inpu
+            # 3.) Make config / material input
             if self.inclusions_flag:
                 full_grains = pd.concat([grains_df, inclusions_df])
                 full_grains.reset_index(inplace=True)

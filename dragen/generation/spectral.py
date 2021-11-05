@@ -321,6 +321,7 @@ def write_material(store_path: str, grains: list) -> None:
     matdata['phase']['Martensite'] = martensite
 
     # Material
+    print(grains)
     for p in grains:
         if p == 1:
             matdata = matdata.material_add(phase=['Ferrite'], O=damask.Rotation.from_random(1),
@@ -329,14 +330,15 @@ def write_material(store_path: str, grains: list) -> None:
             matdata = matdata.material_add(phase=['Martensite'], O=damask.Rotation.from_random(1),
                                            homogenization='SX')
 
+    print('Anzahl materialien in Materials.yaml: ', grains.__len__())
     matdata.save(store_path + '/material.yaml')
 
 
 def write_load(store_path: str) -> None:
-    load_case = damask.Config(solver={'mechanical': 'spectral_basic'},
+    load_case = damask.Config(solver={'mechanical': 'spectral_polarization'},
                               loadstep=[])
 
-    F = [1e-2, 0, 0, 0, 'x', 0, 0, 0, 'x']
+    F = ['x', 0, 0, 0, 'x', 0, 0, 0, 2e-2]
     P = ['x' if i != 'x' else 0 for i in F]
 
     load_case['loadstep'].append({'boundary_conditions': {},
@@ -348,15 +350,21 @@ def write_load(store_path: str) -> None:
     load_case.save(store_path + '/load.yaml')
 
 
-def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
+def write_grid(store_path: str, rve: np.ndarray, spacing: float, grains: list) -> None:
     start = int(rve.__len__() / 4)
     stop = int(rve.__len__() / 4 + rve.__len__() / 2)
     real_rve = rve[start:stop, start:stop, start:stop]
+    print(np.asarray(np.unique(real_rve, return_counts=True)).T)
+    real_rve = real_rve - 1  # Grid.vti starts at zero
+    print(np.asarray(np.unique(real_rve, return_counts=True)).T)
 
     grid = damask.Grid(material=real_rve, size=[spacing, spacing, spacing])
-    grid.save(fname=store_path + '/grid.vti')
+    print('Anzahl Materialien im Grid', grid.N_materials)
+    print(grid)
+    grid.save(fname=store_path + '/grid.vti', compress=True)
 
-    """# Create the spatial reference
+
+    # Create the spatial reference
     grid = pv.UniformGrid()
 
     # Set the grid dimensions: shape + 1 because we want to inject our values on
@@ -368,11 +376,19 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
     grid.spacing = (spacing, spacing, spacing)  # These are the cell sizes along each axis
 
     # Add the data values to the cell data
+    x = np.linspace(0, 10, int(rve.__len__() / 2)+1, endpoint=True)
+    y = np.linspace(0, 10, int(rve.__len__() / 2)+1, endpoint=True)
+    z = np.linspace(0, 10, int(rve.__len__() / 2)+1, endpoint=True)
+    xx, yy, zz = np.meshgrid(x,y,z)
+    grid = pv.StructuredGrid(xx, yy, zz)
+
     grid.cell_arrays["material"] = real_rve.flatten(order="C")  # Flatten the array in C-Style
 
     # Now save the grid
-    grid.plot(screenshot=store_path + '/rve.png')
-    grid.save(store_path + '/grid.vti')"""
+    p = pv.Plotter()
+    p.add_mesh(mesh=grid, scalars='material', cmap='viridis', style='surface')
+    p.show(screenshot=store_path + '/RVE.png')
+
 
 
 if __name__ == '__main__':
