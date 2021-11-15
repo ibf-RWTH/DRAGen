@@ -6,6 +6,7 @@ Version:  V 0.1
 File:     new_substructure
 Describe: Write during the internship at IEHK RWTH"""
 from dragen.utilities.RVE_Utils import RVEUtils
+from dragen.substructure.modification import merge_tiny_blocks
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -157,8 +158,8 @@ class Grain(RVEUtils):
             packet.variants = self.trial_variants_select(packet)
             packet.pag_ori = self.orientation
             packet.gen_blocks(t_mu=block_thickness, sigma=b_sigma, lower=lower_t,upper=upper_t)  # complete df
-            packet.get_bt()
-            comp_df = packet.merge_tiny_blocks()
+            comp_df = packet.get_bt()
+            #comp_df = packet.merge_tiny_blocks(merge_tiny_blocks)
 
             self.points_data.loc[comp_df.index, 'packet_id'] = packet['id']
             self.points_data.loc[comp_df.index, 'block_id'] = comp_df['block_id']
@@ -192,6 +193,11 @@ class Grain(RVEUtils):
                 self.points_data.loc[comp_df.index, 'PHI'] = comp_df['PHI']
                 self.points_data.loc[comp_df.index, 'phi2'] = comp_df['phi2']
 
+        if len(list(set(self.points_data["block_id"]))) > 1:
+            if lower_t is None:
+                lower_t = block_thickness/3
+            self.points_data = self.merge_tiny_blocks(lower_t,merge_tiny_blocks)
+
         return self.points_data
 
     def trial_variants_select(self, packet):
@@ -207,6 +213,12 @@ class Grain(RVEUtils):
         possible_v = variants[np.where((hp_list == normal).all(axis = 1))[0],:]
 
         return possible_v
+
+    def merge_tiny_blocks(self,lower, func):
+
+        self.points_data = func(self.points_data, lower)
+        print('all tiny blocks in grain {} are merged'.format(self.grainID))
+        return self.points_data
 
 class Plane:
 
@@ -444,57 +456,6 @@ class Packet():
     def strip_pid(self,bid):
 
         return(int(bid[len(self['id']):]))
-
-    def merge_tiny_blocks(self):
-        lower = self.lower_t
-        while True:
-            if len(list(set(self.points_data['block_id']))) == 1:
-                break
-            tiny_blocks = self.points_data[self.points_data['block_thickness'] < lower]
-            if tiny_blocks.empty:
-                break
-            sampled_df = self.points_data.groupby('block_id', as_index=False).first()
-            sampled_df.sort_values(by=['p_dis'], inplace=True)
-            sampled_df.reset_index(inplace=True)
-            # begin to merge
-            tiny_bid = sampled_df[sampled_df['block_thickness'] < lower]['block_id'].tolist()
-
-            idx = sampled_df[sampled_df['block_id'] == tiny_bid[0]].index
-            old_bt = sampled_df[sampled_df['block_id'] == tiny_bid[0]]['block_thickness'].values[0]
-            n = 1
-            m = 1
-            bt = old_bt
-            dis = sampled_df[sampled_df['block_id'] == tiny_bid[0]]['p_dis'].values[0]
-            while bt < lower:
-                if idx + n < len(sampled_df):
-                    old_bid = sampled_df.loc[idx + n - 1, 'block_id'].values[0]
-                    new_bid = sampled_df.loc[idx + n, 'block_id'].values[0]
-                    increased_bt = sampled_df.loc[idx + n, 'block_thickness'].values[0]
-                    increased_dis = sampled_df.loc[idx + n, 'p_dis'].values[0]
-                    bt += increased_bt
-                    dis += increased_dis
-                    self.points_data.loc[self.points_data['block_id'] == old_bid, 'block_id'] = new_bid
-                    self.points_data.loc[self.points_data['block_id'] == new_bid, 'block_thickness'] = bt
-                    self.points_data.loc[self.points_data['block_id'] == new_bid, 'p_dis'] = dis
-                    n += 1
-                else:
-                    if idx -m >= 0:
-                        old_bid = sampled_df.loc[idx - m + 1, 'block_id'].values[0]
-                        new_bid = sampled_df.loc[idx -m, 'block_id'].values[0]
-                        increased_bt = sampled_df.loc[idx - m, 'block_thickness'].values[0]
-                        increased_dis = sampled_df.loc[idx - m, 'p_dis'].values[0]
-                        bt += increased_bt
-                        dis += increased_dis
-                        self.points_data.loc[self.points_data['block_id'] == old_bid, 'block_id'] = new_bid
-                        self.points_data.loc[self.points_data['block_id'] == new_bid, 'block_thickness'] = bt
-                        self.points_data.loc[self.points_data['block_id'] == new_bid, 'p_dis'] = dis
-                        m += 1
-                    else:
-                        break
-
-        print('all tiny blocks in packet {} are merged'.format(self['id']))
-        return self.points_data
-
 
     def get_bt(self):
 
