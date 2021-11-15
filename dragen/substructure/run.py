@@ -10,9 +10,11 @@ from dragen.substructure.substructure import plot_rve_subs
 import numpy as np
 from dragen.substructure.data import save_data
 from dragen.substructure.substructure import Grain
+from dragen.substructure.modification import mod_bt
 from scipy.stats import moment
 from scipy.stats import gaussian_kde
 import matplotlib.pyplot as plt
+import math
 
 class Run():
 
@@ -159,6 +161,12 @@ class Run():
         self.logger = logger
 
         self.del_zerobt(rve_data)# del blocks with 0 thickness
+        martensite_df = self.rve_data[rve_data['phaseID']==2]
+
+        if self.subs_file_flag:
+            mod_bt(martensite_df,t_mu=average_bt)
+        else:
+            mod_bt(martensite_df, t_mu=self.t_mu)
         # transfer id to number
         rve_data.loc[rve_data['block_id'].isnull(), 'block_id'] = rve_data[rve_data['block_id'].isnull()][
                                                                       'packet_id'] + '0'
