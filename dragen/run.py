@@ -129,10 +129,10 @@ class Run:
 
 
 if __name__ == "__main__":
-    box_size = 32
+    box_size = 10
     box_size_y = None   # if this is None it will be set to the main box_size value
-    box_size_z = 16     # for sheet rve set z to None and y to different value than x the other way round is buggy
-    resolution = 1
+    box_size_z = None     # for sheet rve set z to None and y to different value than x the other way round is buggy
+    resolution = 3
     number_of_rves = 1
     number_of_bands = 0
     bandwidth = 5
