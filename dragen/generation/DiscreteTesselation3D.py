@@ -161,7 +161,7 @@ class Tesselation3D(RVEUtils):
                 Als Workaround werden alle Bandpunkte nach 8 Epochen gelöscht, damit funktioniert es
                 '''
                 delta_grow = freepoints_old - freepoints
-                if (idx in band_idx) and (epoch == 8):
+                if (idx in band_idx) and (epoch == 12):
                     grain_idx.remove(idx)
                     grain_idx_backup.remove(idx)
                 elif (grain_vol > self.final_volume[idx-1]) and not repeat:

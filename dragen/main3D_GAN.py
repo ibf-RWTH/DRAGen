@@ -197,7 +197,7 @@ class DataTask3D_GAN(RVEUtils):
                 grain_vol += vol
                 inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
             else:
-                if (grain[0] > maximum) or (grain[0] > maximum*3) or (grain[2] > maximum*3):
+                if (grain[0] > maximum) or (grain[1] > maximum*5) or (grain[2] > maximum*5):
                     pass
                 else:
                     # Only append if smaller
@@ -456,7 +456,7 @@ class DataTask3D_GAN(RVEUtils):
                     (
                                 self.box_size ** 3 - self.band_filling * self.bandwidth_sum * self.box_size ** 2) * new_phase_ratio)
                 phase2 = self.sample_gan_input_2d(size=800, label=6, boxsize=adjusted_size_martensite,
-                                                  maximum=self.box_size / 5)
+                                                  maximum=self.box_size / 7)
                 grains_df_2 = super().process_df(phase2, float(self.shrink_factor))
                 grains_df_2['phaseID'] = 2  # Martensite_Islands
                 sta.writelines('Sampled {} Martensite-Islands for the matrix! \n'.format(grains_df_2.__len__()))

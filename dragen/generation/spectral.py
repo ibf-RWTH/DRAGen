@@ -363,8 +363,8 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float, grains: list) -
     print(grid)
     grid.save(fname=store_path + '/grid.vti', compress=True)
 
-
-    # Create the spatial reference
+    # Only for visualization
+    pv.set_plot_theme('document')
     grid = pv.UniformGrid()
 
     # Set the grid dimensions: shape + 1 because we want to inject our values on
@@ -387,7 +387,7 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float, grains: list) -
     # Now save the grid
     p = pv.Plotter()
     p.add_mesh(mesh=grid, scalars='material', cmap='viridis', style='surface')
-    p.show(screenshot=store_path + '/RVE.png')
+    p.show(screenshot=store_path + '/RVE.png', auto_close=True)
 
 
 

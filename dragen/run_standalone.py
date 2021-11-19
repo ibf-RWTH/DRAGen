@@ -8,7 +8,7 @@ from dragen.main3D_GAN import DataTask3D_GAN
 if __name__ == "__main__":
     ### Instanciate some variables to vary ###
 
-    bands = False
+    bands = True
     solver_typ = ['Spectral']
     number_of_rve = 1
 
@@ -24,12 +24,17 @@ if __name__ == "__main__":
 
             # Sample a martensite fraction
             idx = np.random.randint(0, data_full.__len__())
-            full_percentage = 0 #data_full.iloc[idx].to_numpy()
+            full_percentage = data_full.iloc[idx].to_numpy()
+            #while float(full_percentage) <= 0.25:
+            #    idx = np.random.randint(0, data_full.__len__())
+            #    full_percentage = data_full.iloc[idx].to_numpy()
+
+            print(full_percentage)
 
             if bands:
                 # Sample a number of bands and corresponding bandwidths
                 idx = np.random.randint(0, n_bands.__len__())
-                number_of_bands = int(np.round(n_bands.iloc[idx].to_numpy()*3/5))
+                number_of_bands = 2 #int(np.round(n_bands.iloc[idx].to_numpy()*3/5))
                 min_bw = 0.0
                 while min_bw <= 1:
                     indices = np.random.randint(0, bandwidths.__len__(), size=number_of_bands)
@@ -39,8 +44,8 @@ if __name__ == "__main__":
                 number_of_bands = 0
                 bandwidth = 0
 
-            obj3D = DataTask3D_GAN(ganfile=ganfile, box_size=20, n_pts=32, number_of_bands=number_of_bands,
-                                   bandwidth=bandwidth, shrink_factor=0.4, band_filling=1.5,
+            obj3D = DataTask3D_GAN(ganfile=ganfile, box_size=30, n_pts=64, number_of_bands=number_of_bands,
+                                   bandwidth=bandwidth, shrink_factor=0.5, band_filling=1.7,
                                    phase_ratio=float(full_percentage), inclusions_ratio=0.01,
                                    inclusions_flag=False, solver=solver, file1=None, file2=None, store_path='../',
                                    gui_flag=False, anim_flag=False, gan_flag=True, exe_flag=False)
