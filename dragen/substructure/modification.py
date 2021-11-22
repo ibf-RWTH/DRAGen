@@ -82,7 +82,6 @@ def build_IDtree(rve_df):
                 block_nodes.append(block_node)
 
             grain_node.children.append(packet_node)
-
     return grain_nodes,packet_nodes,block_nodes
 
 def find_branchend(leave:Node):
@@ -180,6 +179,11 @@ def rebuild_tree(nodes):
             if len(node.children) > 0:
                 node.father.children.extend(node.children)
                 reset_father(node.children, node.father)
+
+def clean_children(node:Node):
+    node.children = list(filter(lambda child: child.father == node, node.children))
+clean_children = np.vectorize(clean_children)
+
 istiny = np.vectorize(istiny)
 find_branchend = np.vectorize(find_branchend)
 isblock,ispacket,isgrain = np.vectorize(isblock),np.vectorize(ispacket),np.vectorize(isgrain)
@@ -189,7 +193,7 @@ isblock,ispacket,isgrain = np.vectorize(isblock),np.vectorize(ispacket),np.vecto
 3.get branchends for tiny blocks
 4. find neighbors for all branchends
 5. relink branchends
-6. old_id->new_id old_bt->new_bt(if block ends)
+6. old_id->new_id old_bt->new_bt (if block ends)
 7. modify rve_df
 8. repeat 1-7 until no tiny blocks
 '''
@@ -197,7 +201,10 @@ def merge_tiny_blocks(rve_df,lower_bt):
 # step 1
     grain_nodes,packet_nodes,block_nodes = build_IDtree(rve_df)
     while True:
-        #print(len(block_nodes))
+
+        if len(grain_nodes) == 1 and len(packet_nodes) == 1 and len(block_nodes) == 1:
+            print("the blocks in grain {} can't be merged anymore".format(grain_nodes[0].subID))
+            break
         old_bid = [block.subID for block in block_nodes]
         bid_to_new = dict(zip(old_bid,old_bid))
         old_pid = [packet.subID for packet in packet_nodes]
@@ -210,7 +217,6 @@ def merge_tiny_blocks(rve_df,lower_bt):
         #step 2
         barr = np.asarray(block_nodes)
         tiny_blocks = list(barr[istiny(block_nodes,lower_bt)])
-
         #print(len(tiny_blocks))
         if len(tiny_blocks) == 0:
             break
@@ -282,6 +288,7 @@ def merge_tiny_blocks(rve_df,lower_bt):
 
         block_nodes = list(filter(lambda node:node.level != node.father.level,block_nodes))
         packet_nodes = list(filter(lambda node:node.level != node.father.level,packet_nodes))
+        clean_children(packet_nodes)
         grain_nodes = list(filter(lambda node:node.level != node.father.level,grain_nodes))
 
     return rve_df
