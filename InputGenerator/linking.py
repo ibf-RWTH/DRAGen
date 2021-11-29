@@ -348,10 +348,32 @@ class Reconstructor:
                     inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
 
         # Del last if to big and more than one value:
-        if grain_vol > 1.1 * max_volume and inp_list.__len__() > 1:
-            # Pop
-            idx = np.random.randint(0, inp_list.__len__())
-            inp_list.pop(idx)
+        print('Maximum Volume is: ', max_volume)
+        while ((grain_vol > 1.05 * max_volume) or (grain_vol < 1.0 * max_volume)) and (inp_list.__len__() > 0):
+            if grain_vol > 1.05 * max_volume:
+                print('Pop Grain')
+                idx = np.random.randint(0, inp_list.__len__())
+                grain_vol -= inp_list[idx][-1]
+                inp_list.pop(idx)
+                print(grain_vol)
+            elif grain_vol < 1.0 * max_volume:
+                print('add Grain')
+                idx = np.random.randint(0, data.__len__())
+                grain = data[['a_final', 'b_final', 'c_final', 'SlopeAB']].iloc[idx].tolist()
+                data = data.drop(labels=data.index[idx], axis=0)
+                if maximum is None:
+                    vol = 4 / 3 * np.pi * grain[0] * grain[1] * grain[2]
+                    grain_vol += vol
+                    inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
+                else:
+                    if (grain[0] > maximum) or (grain[1] > maximum) or (grain[2] > maximum):
+                        pass
+                    else:
+                        # Only append if smaller
+                        vol = 4 / 3 * np.pi * grain[0] * grain[1] * grain[2]
+                        grain_vol += vol
+                        inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
+                print(grain_vol)
 
         header = ['a', 'b', 'c', 'alpha', 'volume']
         self.rve_inp = pd.DataFrame(inp_list, columns=header)

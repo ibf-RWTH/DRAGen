@@ -1,5 +1,4 @@
 
-
 import os
 import sys
 import datetime
@@ -25,9 +24,10 @@ from InputGenerator.linking import Reconstructor
 class DataTask3D_GAN(RVEUtils):
 
     def __init__(self, ganfile, box_size=30, n_pts=50, number_of_bands=0, bandwidth=3, shrink_factor=0.5, band_filling=0.99,
-                 phase_ratio=0.95, inclusions_ratio=0.01, solver='Spectral',
+                 phase_ratio=0.95, inclusions_ratio=0.01, refill_factor=0.8, solver='Spectral',
                  file1=None, file2=None, store_path=None, gui_flag=False, anim_flag=False, gan_flag=False,
                  exe_flag=False, inclusions_flag=True):
+        self.refill_factor = refill_factor
         self.logger = logging.getLogger("RVE-Gen")
         self.box_size = box_size
         self.n_pts = n_pts  # has to be even
@@ -146,6 +146,8 @@ class DataTask3D_GAN(RVEUtils):
         adjusted_size = adjusted_size
         print('Adjusted Size:', adjusted_size)
         Bot.get_rve_input(bs=adjusted_size, maximum=maximum)
+        with open(self.store_path + '/rve.sta', 'a') as sta:
+            sta.writelines('The Ideal volume is: {:.4f}\n'.format(adjusted_size*adjusted_size*adjusted_size))
         return Bot.rve_inp  # This is the RVE-Input data
 
     def sample_gan_input_2d(self, label, boxsize, size=1000, maximum=None):
@@ -183,6 +185,9 @@ class DataTask3D_GAN(RVEUtils):
         # 2.) Sample the right amount of Input
         bs = boxsize
         max_volume = bs * bs * bs
+        with open(self.store_path + '/rve.sta', 'a') as sta:
+            sta.writelines(
+                'The Ideal volume is: {:.4f}\n'.format(float(max_volume)))
         grain_vol = 0
         data = df2.copy()
         inp_list = list()
@@ -197,7 +202,7 @@ class DataTask3D_GAN(RVEUtils):
                 grain_vol += vol
                 inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
             else:
-                if (grain[0] > maximum) or (grain[1] > maximum*5) or (grain[2] > maximum*5):
+                if (grain[0] > maximum) or (grain[1] > maximum * 2) or (grain[2] > maximum * 2):
                     pass
                 else:
                     # Only append if smaller
@@ -216,13 +221,45 @@ class DataTask3D_GAN(RVEUtils):
             loop_counter += 1
 
         with open(self.store_path + '/rve.sta', 'a') as sta:
-            sta.writelines('\nNeeded {}-Loops to sample points for the bands!\n'.format(loop_counter))
+            sta.writelines('Needed {}-Loops to sample points for the bands!\n'.format(loop_counter))
 
         # Del last if to big and more than one value:
-        if grain_vol > 1.5 * max_volume and inp_list.__len__() > 0:
+        print('Maximum Volume is: ', max_volume)
+        if self.number_of_bands >= 1:  # Higher bounds w bands to hit martensite percentage
+            lower_bound = 1.05
+            upper_bound = 1.15
+        else:  # Adjust Bounds if no Bands are present
+            lower_bound = 1.025
+            upper_bound = 1.1
+
+        # Adjust the grain volume to exact value
+        while ((grain_vol > upper_bound * max_volume) or (grain_vol < lower_bound * max_volume)) and (inp_list.__len__() > 0):
             # Pop
-            idx = np.random.randint(0, inp_list.__len__())
-            inp_list.pop(idx)
+            if (grain_vol > upper_bound * max_volume):
+                print('Pop Island')
+                idx = np.random.randint(0, inp_list.__len__())
+                grain_vol -= inp_list[idx][-1]
+                inp_list.pop(idx)
+                print(grain_vol)
+            elif (grain_vol < lower_bound * max_volume):
+                print('Add Island')
+                idx = np.random.randint(0, data.__len__())
+                grain = data[['Axes1', 'Axes2', 'Axes3', 'Slope']].iloc[idx].tolist()
+                data = data.drop(labels=data.index[idx], axis=0)
+                if maximum is None:
+                    vol = 4 / 3 * np.pi * grain[0] * grain[1] * grain[2]
+                    grain_vol += vol
+                    inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
+                else:
+                    if (grain[0] > maximum) or (grain[1] > maximum * 2) or (grain[2] > maximum * 2):
+                        pass
+                    else:
+                        # Only append if smaller
+                        vol = 4 / 3 * np.pi * grain[0] * grain[1] * grain[2]
+                        grain_vol += vol
+                        inp_list.append([grain[0], grain[1], grain[2], grain[3], vol])
+                print(grain_vol)
+            print(inp_list.__len__())
 
         header = ['a', 'b', 'c', 'alpha', 'volume']
         df3 = pd.DataFrame(inp_list, columns=header)
@@ -275,7 +312,7 @@ class DataTask3D_GAN(RVEUtils):
             sta.writelines('Calculating the phase ratio...\n')
 
         print('Bandberechnung')
-        percentage_in_bands = (self.bandwidth_sum * self.box_size ** 2 * self.band_filling) / \
+        percentage_in_bands = (self.bandwidth_sum * self.box_size ** 2) / \
                               (self.box_size ** 3)
         print(percentage_in_bands)
 
@@ -303,12 +340,12 @@ class DataTask3D_GAN(RVEUtils):
         if self.number_of_bands > 0:
             starttime = time.time()
             with open(store_path + '/rve.sta', 'a') as sta:
-                sta.writelines("\n\nRVE generation process has started with Band-creation \n")
+                sta.writelines("\nRVE generation process has started with Band-creation \n")
                 sta.writelines(
                     "The total volume of the RVE is {0}*{0}*{0} = {1} \n".format(self.box_size, self.box_size ** 3))
                 adjusted_size = np.cbrt((self.bandwidth[0] * self.box_size ** 2) * self.band_filling)
                 phase1 = self.sample_gan_input_2d(size=10000, label=6, boxsize=adjusted_size,
-                                                  maximum=self.bandwidth[0] * 1.5)
+                                                  maximum=self.bandwidth[0])
                 bands_df = super().process_df(phase1, float(self.shrink_factor))
                 bands_df['phaseID'] = 2
                 sta.writelines('Sampled {} Martensite-Points for band-Creation! \n'.format(bands_df.__len__()))
@@ -363,14 +400,15 @@ class DataTask3D_GAN(RVEUtils):
                 # ---------------------------------------------------------------------------------------------------
                 # Sample grains for the second band
                 with open(store_path + '/rve.sta', 'a') as sta:
-                    sta.writelines('\n\n Band number {}\n'.format(i+1))
+                    sta.writelines('\n\n Band number {}\n'.format(i + 1))
                     adjusted_size = np.cbrt((self.bandwidth[i] * self.box_size ** 2) * self.band_filling)
                     phase1 = self.sample_gan_input_2d(size=10000, label=6, boxsize=adjusted_size,
-                                                      maximum=self.bandwidth[i] * 1.5)
+                                                      maximum=self.bandwidth[i])
                     new_df = super().process_df(phase1, float(self.shrink_factor))
                     new_df['phaseID'] = 2
                     sta.writelines('Sampled {} Martensite-Points for band-Creation! \n'.format(new_df.__len__()))
-                    sta.writelines('The total conti volume is: {} \n'.format(np.sum(new_df['final_conti_volume'].values)))
+                    sta.writelines \
+                        ('The total conti volume is: {} \n'.format(np.sum(new_df['final_conti_volume'].values)))
                     sta.writelines(
                         'The total discrete volume is: {} \n'.format(np.sum(new_df['final_discrete_volume'].values)))
                     bands_df = pd.concat([bands_df, new_df])
@@ -407,7 +445,7 @@ class DataTask3D_GAN(RVEUtils):
                                                  new_df['alpha'].tolist(), store_path=store_path)
 
                 # Get maximum value from previous RSA as starting pint
-                startindex = int(np.amin(rsa)+1000)*-1
+                startindex = int(np.amin(rsa) + 1000) * -1
                 print(startindex)
                 rsa, x_0, y_0, z_0, rsa_status = discrete_RSA_obj.run_rsa_clustered(
                     previous_rsa=rsa,
@@ -441,7 +479,7 @@ class DataTask3D_GAN(RVEUtils):
                                "islands \n")
                 # Ferrite:
                 adjusted_size_ferrite = np.cbrt(
-                    (self.box_size ** 3 - self.band_filling * self.bandwidth_sum * self.box_size ** 2) * (
+                    (self.box_size ** 3 - self.band_filling * self.bandwidth_sum * self.box_size ** 2) * (  # TODO: Use the refillfactor/BandFilling here
                                 1 - new_phase_ratio))
                 phase1 = self.sample_gan_input(size=800, labels=[0, 1, 2], adjusted_size=adjusted_size_ferrite)
                 grains_df = super().process_df(phase1, float(self.shrink_factor))
@@ -454,9 +492,10 @@ class DataTask3D_GAN(RVEUtils):
                 # Martensite
                 adjusted_size_martensite = np.cbrt(
                     (
-                                self.box_size ** 3 - self.band_filling * self.bandwidth_sum * self.box_size ** 2) * new_phase_ratio)
+                                self.box_size ** 3 - self.refill_factor * self.bandwidth_sum * self.box_size ** 2)
+                    * new_phase_ratio)  # TODO: Nachholfaktor zum Prozentausgleich
                 phase2 = self.sample_gan_input_2d(size=800, label=6, boxsize=adjusted_size_martensite,
-                                                  maximum=self.box_size / 7)
+                                                  maximum=self.box_size / 8)
                 grains_df_2 = super().process_df(phase2, float(self.shrink_factor))
                 grains_df_2['phaseID'] = 2  # Martensite_Islands
                 sta.writelines('Sampled {} Martensite-Islands for the matrix! \n'.format(grains_df_2.__len__()))
@@ -594,49 +633,143 @@ class DataTask3D_GAN(RVEUtils):
             with open(store_path + '/rve.sta', 'a') as sta:
                 sta.writelines("\n\nRVE generation process nearly complete: Creating input for DAMASK Spectral now: \n")
 
-                # 1.) Write out Volume
-                grains_df.sort_values(by=['GrainID'], inplace=True)
-                disc_vols = np.zeros((1, grains_df.shape[0])).flatten().tolist()
-                for i in range(len(grains_df)):
-                    # grainID = grains_df.GrainID[i]
-                    disc_vols[i] = np.count_nonzero(rve == i + 1) * self.bin_size ** 3
+            # 1.) Write out Volume - TODO: Bands
+            grains_df.sort_values(by=['GrainID'], inplace=True)
+            disc_vols = np.zeros((1, grains_df.shape[0])).flatten().tolist()
+            for i in range(len(grains_df)):
+                # grainID = grains_df.GrainID[i]
+                disc_vols[i] = np.count_nonzero(rve == i + 1) * self.bin_size ** 3
 
-                grains_df['meshed_conti_volume'] = disc_vols
-                grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
+            grains_df['meshed_conti_volume'] = disc_vols
+            grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
 
-                # Startpoint: Rearrange the negative ID's
-                last_grain_id = rve.max()  # BEWARE: For the .vti file, the grid must start at ZERO
-                print('The last grain ID is:', last_grain_id)
-                print('The number of bands is:', self.number_of_bands)
-                if self.inclusions_flag and (self.number_of_bands >= 1):
+            # Startpoint: Rearrange the negative ID's
+            last_grain_id = rve.max()  # BEWARE: For the .vti file, the grid must start at ZERO
+            print('The last grain ID is:', last_grain_id)
+            print('The number of bands is:', self.number_of_bands)
+            if self.inclusions_flag and (self.number_of_bands >= 1):
+                with open(store_path + '/rve.sta', 'a') as sta:
                     sta.writelines("Band and Inclusions in RVE: \n")
-                    phase_list = grains_df['phaseID'].tolist()
-                    for i in range(len(inclusions_df)):
-                        rve[np.where(rve == -(200 + i + 1))] = last_grain_id + i + 1
-                        phase_list.append(2)
-                    rve[np.where(rve == -200)] = last_grain_id + i + 2  # Band is last ID
-                    # Add one Martensite for the band
+                phase_list = grains_df['phaseID'].tolist()
+                for i in range(len(inclusions_df)):
+                    rve[np.where(rve == -(200 + i + 1))] = last_grain_id + i + 1
                     phase_list.append(2)
-                elif self.number_of_bands >= 1:
-                    sta.writelines("Only Band in RVE: \n")
-                    # Case with bands here add one martensite for the band
-                    phase_list = grains_df['phaseID'].tolist()
-                    rve[np.where(rve == -200)] = last_grain_id + 1
-                    phase_list.append(2)
-                elif self.inclusions_flag:
-                    sta.writelines("Only Inclusions in RVE: \n")
-                    phase_list = grains_df['phaseID'].tolist()
-                    for i in range(len(inclusions_df)):
-                        rve[np.where(rve == -(200 + i + 1))] = last_grain_id + i + 1
-                        phase_list.append(2)
-                else:
-                    sta.writelines("Nothing despite grains in RVE: \n")
-                    # No bands, no inclusions, just turn grains to phase_list
-                    phase_list = grains_df['phaseID'].tolist()
+                rve[np.where(rve == -200)] = last_grain_id + i + 2  # Band is last ID
+                # Add one Martensite for the band
+                phase_list.append(2)
 
-                spectral.write_material(store_path=store_path, grains=phase_list)
-                spectral.write_load(store_path)
-                spectral.write_grid(store_path=store_path, rve=rve, spacing=self.box_size/1000, grains=phase_list)
+                # Calc the volume and write it to specs.txt
+                martensite_vol = 0
+                ferrite_vol = 0
+                for j in range(phase_list.__len__()):
+                    if phase_list[j] == 1:
+                        vol = np.count_nonzero(rve == j + 1)
+                        ferrite_vol += vol
+                    else:
+                        vol = np.count_nonzero(rve == j + 1)
+                        martensite_vol += vol
+
+                full_points = martensite_vol + ferrite_vol
+                print('Summe der Punkte: ', full_points)
+                print('Größe des RVEs: ', self.n_pts**3)
+
+                ferrite_per = ferrite_vol / full_points
+                martensite_per = martensite_vol / full_points
+
+                with open(store_path + '/Specs.txt', 'a') as specs:
+                    specs.writelines('Percentage of Ferrite: {:.6%}\n'.format(ferrite_per))
+                    specs.writelines('Percentage of Martensite: {:.6%}\n'.format(martensite_per))
+
+            elif self.number_of_bands >= 1:
+                with open(store_path + '/rve.sta', 'a') as sta:
+                    sta.writelines("Only Band in RVE: \n")
+                # Case with bands here add one martensite for the band
+                phase_list = grains_df['phaseID'].tolist()
+                rve[np.where(rve == -200)] = last_grain_id + 1
+                phase_list.append(2)
+
+                # Calc the volume and write it to specs.txt
+                martensite_vol = 0
+                ferrite_vol = 0
+                for j in range(phase_list.__len__()):
+                    if phase_list[j] == 1:
+                        vol = np.count_nonzero(rve == j + 1)
+                        ferrite_vol += vol
+                    else:
+                        vol = np.count_nonzero(rve == j + 1)
+                        martensite_vol += vol
+
+                full_points = martensite_vol + ferrite_vol
+                print('Summe der Punkte: ', full_points)
+                print('Größe des RVEs: ', self.n_pts**3)
+
+                ferrite_per = ferrite_vol / full_points
+                martensite_per = martensite_vol / full_points
+
+                with open(store_path + '/Specs.txt', 'a') as specs:
+                    specs.writelines('Percentage of Ferrite: {:.6%}\n'.format(ferrite_per))
+                    specs.writelines('Percentage of Martensite: {:.6%}\n'.format(martensite_per))
+
+            elif self.inclusions_flag:
+                with open(store_path + '/rve.sta', 'a') as sta:
+                    sta.writelines("Only Inclusions in RVE: \n")
+                phase_list = grains_df['phaseID'].tolist()
+                for i in range(len(inclusions_df)):
+                    rve[np.where(rve == -(200 + i + 1))] = last_grain_id + i + 1
+                    phase_list.append(2)
+
+                # Calc the volume and write it to specs.txt
+                martensite_vol = 0
+                ferrite_vol = 0
+                for j in range(phase_list.__len__()):
+                    if phase_list[j] == 1:
+                        vol = np.count_nonzero(rve == j + 1)
+                        ferrite_vol += vol
+                    else:
+                        vol = np.count_nonzero(rve == j + 1)
+                        martensite_vol += vol
+
+                full_points = martensite_vol + ferrite_vol
+                print('Summe der Punkte: ', full_points)
+                print('Größe des RVEs: ', self.n_pts**3)
+
+                ferrite_per = ferrite_vol / full_points
+                martensite_per = martensite_vol / full_points
+
+                with open(store_path + '/Specs.txt', 'a') as specs:
+                    specs.writelines('Percentage of Ferrite: {:.6%}\n'.format(ferrite_per))
+                    specs.writelines('Percentage of Martensite: {:.6%}\n'.format(martensite_per))
+            else:
+                with open(store_path + '/rve.sta', 'a') as sta:
+                    sta.writelines("Nothing despite grains in RVE: \n")
+                # No bands, no inclusions, just turn grains to phase_list
+                phase_list = grains_df['phaseID'].tolist()
+
+                # Calc the volume and write it to specs.txt
+                martensite_vol = 0
+                ferrite_vol = 0
+                for j in range(phase_list.__len__()):
+                    if phase_list[j] == 1:
+                        vol = np.count_nonzero(rve == j + 1)
+                        ferrite_vol += vol
+                    else:
+                        vol = np.count_nonzero(rve == j + 1)
+                        martensite_vol += vol
+
+                full_points = martensite_vol + ferrite_vol
+                print('Summe der Punkte: ', full_points)
+                print('Größe des RVEs: ', self.n_pts**3)
+
+                ferrite_per = ferrite_vol / full_points
+                martensite_per = martensite_vol / full_points
+
+                with open(store_path + '/Specs.txt', 'a') as specs:
+                    specs.writelines('Percentage of Ferrite: {:.6%}\n'.format(ferrite_per))
+                    specs.writelines('Percentage of Martensite: {:.6%}\n'.format(martensite_per))
+
+            spectral.write_material(store_path=store_path, grains=phase_list)
+            spectral.write_load(store_path)
+            spectral.write_grid(store_path=store_path, rve=rve, spacing=self.box_size / 1000, grains=phase_list)
 
 
             """# 2.) Make Geometry
