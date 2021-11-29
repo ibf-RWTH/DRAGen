@@ -385,9 +385,32 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float, grains: list) -
     grid.cell_arrays["material"] = real_rve.flatten(order="C")  # Flatten the array in C-Style
 
     # Now save the grid
-    p = pv.Plotter()
+    p = pv.Plotter(off_screen=True)
     p.add_mesh(mesh=grid, scalars='material', cmap='viridis', style='surface')
     p.show(screenshot=store_path + '/RVE.png', auto_close=True)
+    p.close()
+
+    # Now plot only the last grain (e.g. the band if there)
+    last_grain_id = real_rve.flatten(order="C").max()
+
+    mask = np.where((grid.cell_arrays['material'] == last_grain_id))
+    cell_ind = np.asarray(mask)
+    subgrid = grid.extract_cells(cell_ind)
+
+    p = pv.Plotter(off_screen=True)
+    p.add_mesh(mesh=subgrid, scalars='material', cmap='viridis', style='surface')
+    p.show(screenshot=store_path + '/RVE_lastGrain_iso.png', auto_close=True, cpos='iso')
+    p.close()
+
+    p = pv.Plotter(off_screen=True)
+    p.add_mesh(mesh=subgrid, scalars='material', cmap='viridis', style='surface')
+    p.show(screenshot=store_path + '/RVE_lastGrain_zy.png', auto_close=True, cpos='zy')
+    p.close()
+
+    p = pv.Plotter(off_screen=True)
+    p.add_mesh(mesh=subgrid, scalars='material', cmap='viridis', style='surface')
+    p.show(screenshot=store_path + '/RVE_lastGrain_yx.png', auto_close=True, cpos='yx')
+    p.close()
 
 
 
