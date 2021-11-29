@@ -8,7 +8,7 @@ File for running a sufficient CWGAN-GP Training
 import os
 import datetime
 import pandas as pd
-from InputGenerator import C_WGAN_GP
+from dragen.InputGenerator import C_WGAN_GP
 
 """
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

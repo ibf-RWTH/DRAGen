@@ -1,5 +1,4 @@
 # Conditional WGAN with gradient penalty
-import glob
 import sys
 
 import torch
@@ -21,7 +20,8 @@ import datetime
 from qhoptim.pyt import QHAdam
 
 # Own Stuff
-from InputGenerator import WGAN_BaseClass, gan_utils
+from InputGenerator import WGAN_BaseClass
+from InputGenerator import gan_utils
 
 
 # Inherit from the original WGAN

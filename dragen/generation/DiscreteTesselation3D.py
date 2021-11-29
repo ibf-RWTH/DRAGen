@@ -3,7 +3,7 @@ import numpy as np
 import datetime
 import logging
 
-from dragen.utilities.RVE_Utils import RVEUtils
+from utilities.RVE_Utils import RVEUtils
 
 
 class Tesselation3D(RVEUtils):

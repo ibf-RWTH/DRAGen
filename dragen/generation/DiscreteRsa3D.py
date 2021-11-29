@@ -7,7 +7,7 @@ import datetime
 import logging
 from scipy.ndimage import convolve
 
-from dragen.utilities.RVE_Utils import RVEUtils
+from utilities.RVE_Utils import RVEUtils
 
 
 class DiscreteRsa3D(RVEUtils):

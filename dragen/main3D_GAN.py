@@ -10,12 +10,12 @@ import logging
 import logging.handlers
 import pandas as pd
 
-from dragen.generation.DiscreteRsa3D import DiscreteRsa3D
-from dragen.generation.DiscreteTesselation3D import Tesselation3D
-from dragen.utilities.RVE_Utils import RVEUtils
-from dragen.generation.mesher import Mesher
-from dragen.postprocessing.voldistribution import PostProcVol
-from dragen.generation import spectral
+from generation.DiscreteRsa3D import DiscreteRsa3D
+from generation.DiscreteTesselation3D import Tesselation3D
+from utilities.RVE_Utils import RVEUtils
+from generation.mesher import Mesher
+from postprocessing.voldistribution import PostProcVol
+from generation import spectral
 
 from InputGenerator.C_WGAN_GP import WGANCGP
 from InputGenerator.linking import Reconstructor

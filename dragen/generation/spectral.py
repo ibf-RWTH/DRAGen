@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 import pyvista as pv
 import damask
-import vtk
+
+import matplotlib.pyplot as plt
 
 
 def make_config(store_path, n_grains, grains_df, band=True) -> None:
@@ -385,7 +386,21 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float, grains: list) -
     grid.cell_arrays["material"] = real_rve.flatten(order="C")  # Flatten the array in C-Style
 
     # Now save the grid
-    p = pv.Plotter(off_screen=True)
+
+    """points = grid.cell_centers().points
+    print(points)
+    points = np.asarray(points)
+    print(points)
+    fig = plt.figure(figsize=(18,18))
+    ax = fig.add_subplot(projection='3d')
+
+    ax.scatter(xs=points[:, 0], ys=points[:, 1], zs=points[:, 2], c=real_rve.flatten(order="C"), s=50)
+    ax.set_xlabel("X Coordinate")
+    ax.set_ylabel("Y Coordinate")
+    ax.set_zlabel("Z Coordinate")
+    fig.savefig(store_path + '/RVE_plt.png')"""
+
+    """p = pv.Plotter(off_screen=True)
     p.add_mesh(mesh=grid, scalars='material', cmap='viridis', style='surface')
     p.show(screenshot=store_path + '/RVE.png', auto_close=True)
     p.close()
@@ -410,7 +425,7 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float, grains: list) -
     p = pv.Plotter(off_screen=True)
     p.add_mesh(mesh=subgrid, scalars='material', cmap='viridis', style='surface')
     p.show(screenshot=store_path + '/RVE_lastGrain_yx.png', auto_close=True, cpos='yx')
-    p.close()
+    p.close()"""
 
 
 

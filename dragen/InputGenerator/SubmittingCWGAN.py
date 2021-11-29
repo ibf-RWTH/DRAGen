@@ -1,6 +1,6 @@
 import pandas as pd
-from InputGenerator.linking import Reconstructor
-from InputGenerator.C_WGAN_GP import WGANCGP
+from linking import Reconstructor
+from C_WGAN_GP import WGANCGP
 import os
 import datetime
 
@@ -16,7 +16,7 @@ df3 = pd.read_csv('Input_RDxTD_AR.csv')
 df4 = pd.read_csv('Einschlüsse_TDxBN_AR.csv')
 df5 = pd.read_csv('Einschlüsse_RDxBN_AR.csv')
 df6 = pd.read_csv('Einschlüsse_RDxTD_AR.csv')
-os.chdir('../')
+os.chdir('../../')
 
 # Set up CWGAN-GP with all data
 store_path = 'OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(0)
