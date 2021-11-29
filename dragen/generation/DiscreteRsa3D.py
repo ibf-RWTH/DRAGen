@@ -296,10 +296,9 @@ class DiscreteRsa3D(RVEUtils):
             #print(free_points_old+band_points_old-free_points-band_points)
             #print(np.count_nonzero(periodic_grain))
             if band_points_old > 0:
-                # Schnitte zulassen...Es geht wohl nicht anders
                 # > xy x grain_points heißt, dass mindestens XX% des Korns im freien Raum platziert werden müssen
                 if ((free_points_old + band_points_old - free_points - band_points) != 1.0 * np.count_nonzero(periodic_grain)) | \
-                        (band_points / band_vol_0 < 0.9):  # Prozentbereich nach außen muss möglich sein (90%)
+                        (band_points / band_vol_0 < 0.90):  # Prozentbereich nach außen muss möglich sein (90%)
                     print('Attempt: ', attempt)
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1

@@ -158,7 +158,7 @@ class Tesselation3D(RVEUtils):
                 2.) If a grain is not growing in reality (difference between freepoints and freepoints_old), the 
                 grain is deleted. This avoids background growing and dumb results
                 Counting (i = i + 1) up only if no deletion happens
-                Als Workaround werden alle Bandpunkte nach 8 Epochen gelöscht, damit funktioniert es
+                Als Workaround werden alle Bandpunkte nach 10 Epochen gelöscht, damit funktioniert es
                 '''
                 delta_grow = freepoints_old - freepoints
                 if (idx in band_idx) and (epoch == 12):
@@ -168,7 +168,7 @@ class Tesselation3D(RVEUtils):
                     grain_idx.remove(idx)
                     if idx in band_idx:
                         grain_idx_backup.remove(idx)
-                elif delta_grow == 0: # and not repeat:    # and not repeat beobachten
+                elif delta_grow == 0:  # and not repeat:    # TODO: Muss man hier auch vom Backup löschen?
                     grain_idx.remove(idx)
                 else:
                     i += 1
