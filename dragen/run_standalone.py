@@ -7,9 +7,9 @@ from main3D_GAN import DataTask3D_GAN
 
 ### Instanciate some variables to vary ###
 
-bands = False
+bands = True
 solver_typ = ['Spectral']
-number_of_rve = 1
+number_of_rve = 5
 
 # Read percentages:
 data_full = pd.read_csv('../ExampleInput/Full_Martensite_Percentage.csv')
@@ -32,18 +32,23 @@ for solver in solver_typ:
 
         if bands:
             # Sample a number of bands and corresponding bandwidths
-            idx = np.random.randint(0, n_bands.__len__())
-            number_of_bands = 1 #int(np.round(n_bands.iloc[idx].to_numpy()*3/5))
+            number_of_bands = int(np.round(n_bands.iloc[idx].to_numpy()*3/5))
+            while number_of_bands < 2:
+                print(number_of_bands)
+                idx = np.random.randint(0, n_bands.__len__())
+                number_of_bands = int(np.round(n_bands.iloc[idx].to_numpy()*3/5))
+
             min_bw = 0.0
             while min_bw <= 1:
                 indices = np.random.randint(0, bandwidths.__len__(), size=number_of_bands)
                 bandwidth = bandwidths.iloc[indices].to_numpy()
                 min_bw = np.amin(bandwidth)
+
         else:
             number_of_bands = 0
             bandwidth = 0
 
-        obj3D = DataTask3D_GAN(ganfile=ganfile, box_size=15, n_pts=30, number_of_bands=number_of_bands,
+        obj3D = DataTask3D_GAN(ganfile=ganfile, box_size=30, n_pts=64, number_of_bands=number_of_bands,
                                bandwidth=bandwidth, shrink_factor=0.5, band_filling=1.3,
                                phase_ratio=float(full_percentage), inclusions_ratio=0.01, refill_factor=1.0,
                                inclusions_flag=False, solver=solver, file1=None, file2=None, store_path='../',
