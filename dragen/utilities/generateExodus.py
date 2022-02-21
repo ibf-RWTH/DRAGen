@@ -222,7 +222,6 @@ class NetCDFWrapper:
             pt_ids = np.where(pts[:, 2] == val)
 
         pt_ids = [pt+1 for pt in pt_ids[0]]
-        print(pt_ids)
         return pt_ids
 
     @staticmethod
