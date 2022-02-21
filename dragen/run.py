@@ -84,7 +84,8 @@ class Run(HelperFunctions):
         RveInfo.inclusion_flag = None
         RveInfo.root = './'
         RveInfo.input_path = './ExampleInput'
-        RveInfo.n_pts = math.ceil(float(box_size_y) * resolution)
+
+        RveInfo.n_pts = math.ceil(float(box_size) * resolution)
         if RveInfo.n_pts % 2 != 0:
             RveInfo.n_pts += 1
 
@@ -192,13 +193,13 @@ class Run(HelperFunctions):
 
 if __name__ == "__main__":
     box_size = 600
-    box_size_y = 300  # if this is None it will be set to the main box_size value
-    box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
-    resolution = 0.08
+    box_size_y = None  # if this is None it will be set to the main box_size value
+    box_size_z = 300  # for sheet rve set z to None and y to different value than x the other way round is buggy
+    resolution = 0.1
     number_of_rves = 1
     number_of_bands = 0
     bandwidth = 5
-    visualization_flag = True
+    visualization_flag = False
     phase_ratio = 1.0
     store_path = '../'
     shrink_factor = 0.4
