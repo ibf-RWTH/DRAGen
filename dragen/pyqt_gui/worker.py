@@ -54,8 +54,7 @@ class Worker(QObject):
 
     def run(self):
         """Long-running task."""
-
-        run_obj =Run(box_size=self.box_size,box_size_y=self.box_size_y,box_size_z=self.box_size_z,
+        run_obj = Run(box_size=self.box_size,box_size_y=self.box_size_y,box_size_z=self.box_size_z,
                      resolution=self.resolution, number_of_rves=self.number_of_rves, number_of_bands=self.number_of_bands,
                      bandwidth=self.bandwidth,dimension=self.dimension, visualization_flag=self.visualization_flag,
                      file1=self.file1, file2=self.file2, phase_ratio=self.phase_ratio, store_path=self.store_path,

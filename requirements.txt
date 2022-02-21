@@ -1,7 +1,7 @@
 torch==1.8.1
 scipy==1.6.1
 geomloss==0.2.4
-numpy==1.19.0
+numpy~=1.21.2
 seaborn==0.11.1
 tetgen==0.5.1
 qhoptim==1.1.0
@@ -9,5 +9,9 @@ matplotlib==3.3.0
 tqdm==4.48.0
 pandas==1.0.5
 pyvista==0.32.1
-PyQt5==5.15.4
+PyQt5~=5.15.0
 scikit_learn==0.24.2
+
+future~=0.18.2
+netCDF4~=1.5.8
+scikit-learn~=0.24.1

@@ -4,27 +4,25 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 from sklearn.neighbors import KernelDensity
+from dragen.utilities.InputInfo import RveInfo
 
 
 class PostProcVol:
-    def __init__(self, output_path, dim_flag):
+    def __init__(self):
 
-        self.dimension = dim_flag
-        self.output_path = output_path
-        self.store_path = output_path + '/Postprocessing'
 
-        if not os.path.isdir(output_path + '/Postprocessing'):
-            os.mkdir(output_path + '/Postprocessing')
+        if not os.path.isdir(RveInfo.store_path + '/Postprocessing'):
+            os.mkdir(RveInfo.store_path + '/Postprocessing')
 
     def gen_in_out_lists(self) -> tuple:
 
-        input_df = pd.read_csv(self.output_path + '/Generation_Data/grain_data_input.csv')
+        input_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/grain_data_input.csv')
 
         # process total input data
-        if self.dimension == 2:
+        if RveInfo.dimension == 2:
             input_df['r_ref_conti'] = np.sqrt(input_df['final_conti_volume'] / np.pi)
             input_df['r_ref_discrete'] = np.sqrt(input_df['final_discrete_volume'] / np.pi)
-        if self.dimension == 3:
+        if RveInfo.dimension == 3:
             input_df['r_ref_conti'] = np.cbrt(3 * input_df['final_conti_volume'] / (4 * np.pi))
             input_df['r_ref_discrete'] = np.cbrt(3 * input_df['final_discrete_volume'] / (4 * np.pi))
         total_vol_conti_in = sum(input_df['final_conti_volume'].to_numpy().flatten().tolist())
@@ -59,14 +57,14 @@ class PostProcVol:
         phase2_ref_r_discrete_in = phase2_input_df['r_ref_discrete'].to_numpy().flatten().tolist()
 
         # process conti output
-        output_df_conti = pd.read_csv(self.output_path + '/Generation_Data/grain_data_output_conti.csv')
+        output_df_conti = pd.read_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_conti.csv')
         # process discrete output
-        output_df_discrete = pd.read_csv(self.output_path + '/Generation_Data/grain_data_output_discrete.csv')
+        output_df_discrete = pd.read_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_discrete.csv')
 
-        if self.dimension == 2:
+        if RveInfo.dimension == 2:
             output_df_conti['r_ref_conti'] = np.sqrt(output_df_conti['meshed_conti_volume'] / np.pi)
             output_df_discrete['r_ref_discrete'] = np.sqrt(output_df_discrete['final_discrete_volume'] / np.pi)
-        if self.dimension == 3:
+        if RveInfo.dimension == 3:
             output_df_conti['r_ref_conti'] = np.cbrt(3 * output_df_conti['meshed_conti_volume'] / (4 * np.pi))
             output_df_discrete['r_ref_discrete'] = np.cbrt(
                 3 * output_df_discrete['final_discrete_volume'] / (4 * np.pi))
@@ -123,7 +121,7 @@ class PostProcVol:
         ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         ax1.set_title(title)
 
-        fig1.savefig(self.store_path + '/phase_distribution_{}.png'.format(title))
+        fig1.savefig(RveInfo.store_path + '/Postprocessing/phase_distribution_{}.png'.format(title))
         plt.close()
 
     def gen_plots(self, input, output, title, filename, input_opt=None, output_opt=None, title_opt=None, ) -> None:
@@ -174,7 +172,7 @@ class PostProcVol:
         plt.xticks(fontsize=20)
         plt.yticks(fontsize=20)
         plt.legend(fontsize=12)
-        plt.savefig(self.store_path + '/vol_distribution_{}.png'.format(filename))
+        plt.savefig(RveInfo.store_path + '/Postprocessing/vol_distribution_{}.png'.format(filename))
         plt.close()
 
 

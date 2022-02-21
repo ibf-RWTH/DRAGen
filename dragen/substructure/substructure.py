@@ -5,7 +5,7 @@ Author:   Linghao Kong
 Version:  V 0.1
 File:     new_substructure
 Describe: Write during the internship at IEHK RWTH"""
-from dragen.utilities.RVE_Utils import RVEUtils
+from dragen.utilities.Helpers import HelperFunctions
 from dragen.substructure.modification import merge_tiny_blocks
 import numpy as np
 import pandas as pd
@@ -14,7 +14,7 @@ from scipy.stats import lognorm
 import math
 import warnings
 
-class Grain(RVEUtils):
+class Grain(HelperFunctions):
 
     def __init__(self,v,grainID = 1,phaseID = 2,orientation = None,alpha = 0,
                  points = None,OR = 'KS'):

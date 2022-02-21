@@ -1,31 +1,27 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import logging
+from dragen.utilities.InputInfo import RveInfo
 
-from dragen.utilities.RVE_Utils import RVEUtils
+from dragen.utilities.Helpers import HelperFunctions
 
 
-class Tesselation2D(RVEUtils):
-    def __init__(self, box_size, n_pts, a, b, alpha, x_0, y_0, shrinkfactor, storepath):
+class Tesselation2D(HelperFunctions):
+    def __init__(self,a, b, alpha, x_0, y_0):
 
-        self.box_size = box_size
-        self.n_pts = n_pts
+
         self.a = a
         self.b = b
         self.alpha = alpha
         self.x_0 = x_0
         self.y_0 = y_0
-        self.shrinkfactor = shrinkfactor
-        self.storepath = storepath
 
-        self.logger = logging.getLogger("RVE-Gen")
-        self.bin_size = box_size / n_pts
         self.a_max = max(a)
         self.b_max = max(b)
-        self.final_volume = [np.pi * a[i] * b[i] / shrinkfactor**2 for i in range(len(a))]
-        super().__init__(box_size, n_pts)
+        self.final_volume = [np.pi * a[i] * b[i] * RveInfo.shrink_factor**2 for i in range(len(a))]
+        super().__init__()
 
-        self.x_grid, self.y_grid= super().gen_grid2D()
+        self.x_grid, self.y_grid= super().gen_grid2d()
 
     def grow(self, iterator, a, b):
         alpha = self.alpha[iterator - 1]
@@ -33,8 +29,8 @@ class Tesselation2D(RVEUtils):
         y_0 = self.y_0[iterator-1]
         a_i = a[iterator - 1]
         b_i = b[iterator - 1]
-        a_i = a_i + a_i/self.a_max*self.bin_size
-        b_i = b_i + b_i/self.b_max*self.bin_size
+        a_i = a_i + a_i/self.a_max*RveInfo.bin_size
+        b_i = b_i + b_i/self.b_max*RveInfo.bin_size
         if iterator == 1:
             print(a_i)
             print(b_i)
@@ -45,7 +41,7 @@ class Tesselation2D(RVEUtils):
 
         return ellipse, a, b
 
-    def tesselation_plotter(self, array, storepath, epoch):
+    def tesselation_plotter(self, array, epoch):
         n_grains = len(self.a)
         rve_x, rve_y = np.where(array >= 1)
         unoccupied_pts_x, unoccupied_pts_y = np.where(array == 0)
@@ -63,9 +59,9 @@ class Tesselation2D(RVEUtils):
         fig = plt.figure()
         plt.scatter(unoccupied_area_x, unoccupied_area_y, c='gray', s=1)
         plt.scatter(grains_x, grains_y, c=array[np.where(array > 0)], s=1, vmin=0, vmax=n_grains, cmap='seismic')
-        plt.xlim(-5, self.box_size + 5)
-        plt.ylim(-5, self.box_size + 5)
-        plt.savefig(storepath+'/Figs/2D_Tesselation_Epoch_{}.png'.format(epoch))
+        plt.xlim(-5, RveInfo.box_size + 5)
+        plt.ylim(-5, RveInfo.box_size + 5)
+        plt.savefig(RveInfo.fig_path+'/2D_Tesselation_Epoch_{}.png'.format(epoch))
         plt.close(fig)
 
     def run_tesselation(self, rsa):
@@ -81,7 +77,7 @@ class Tesselation2D(RVEUtils):
 
         # load some variables
         rve = rsa
-        empty_rve = np.zeros((2 * self.n_pts, 2 * self.n_pts), dtype=np.int32)
+        empty_rve = np.zeros((2 * RveInfo.n_pts, 2 * RveInfo.n_pts), dtype=np.int32)
         empty_rve = super().gen_boundaries_2D(empty_rve)
         rve_boundaries = empty_rve.copy()  # empty rve grid with defined boundaries
 
@@ -102,7 +98,7 @@ class Tesselation2D(RVEUtils):
                 periodic_grain = super().make_periodic_2D(grain, ellipse, iterator=idx)
                 rve[(periodic_grain == idx) & (rve == 0)] = idx
                 freepoints = np.count_nonzero(rve == 0)
-                grain_vol = np.count_nonzero(rve == idx)*self.bin_size**2
+                grain_vol = np.count_nonzero(rve == idx)*RveInfo.bin_size**2
                 if freepoints == 0:
                     break
 
@@ -150,7 +146,7 @@ if __name__ == '__main__':
     y0_path = './2D_y_0.npy'
     x_0 = np.load(x0_path)
     y_0 = np.load(y0_path)
-    tesselation_obj = Tesselation2D(box_size, n_pts, a_test, b_test, x_0, y_0, shrinkfactor)
+    tesselation_obj = Tesselation2D(a_test, b_test, x_0, y_0, shrinkfactor)
     tesselation_obj.run_tesselation()
 
 

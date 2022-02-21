@@ -2,31 +2,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import datetime
-import logging
+
 from scipy.ndimage import convolve
-import sys
-from dragen.utilities.RVE_Utils import RVEUtils
 
-class DiscreteRsa3D(RVEUtils):
+from dragen.utilities.Helpers import HelperFunctions
+from dragen.utilities.InputInfo import RveInfo
 
-    def __init__(self, box_size, box_size_y, box_size_z, n_pts, a, b, c, alpha, store_path, debug=False, infobox_obj=None, progress_obj=None):
 
-        self.box_size = box_size
-        self.box_size_y = box_size_y
-        self.box_size_z = box_size_z
-        self.n_pts = n_pts
+class DiscreteRsa3D(HelperFunctions):
+
+    def __init__(self, a, b, c, alpha):
+
         self.a = a
         self.b = b
         self.c = c
         self.alpha = alpha
-        self.store_path = store_path
-        self.debug = debug
-        self.infobox_obj = infobox_obj
-        self.progress_obj = progress_obj
-        self.logger = logging.getLogger("RVE-Gen")
         self.n_grains = len(a)
 
-        super().__init__(box_size, n_pts=n_pts, box_size_y=box_size_y, box_size_z=box_size_z)
+        super().__init__()
 
         self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
 
@@ -67,8 +60,8 @@ class DiscreteRsa3D(RVEUtils):
         ellipsoid = super().ellipsoid(a, b, c, x_0, y_0, z_0, alpha=alpha)
 
         time_elapse = datetime.datetime.now() - t_0
-        if self.debug:
-            self.logger.info('time spent on ellipsoid{}: {}'.format(iterator, time_elapse.total_seconds()))
+        if RveInfo.debug:
+            RveInfo.logger.info('time spent on ellipsoid{}: {}'.format(iterator, time_elapse.total_seconds()))
         return ellipsoid, x_0, y_0, z_0
 
     def rsa_plotter(self, array, iterator, attempt):
@@ -101,9 +94,9 @@ class DiscreteRsa3D(RVEUtils):
                    vmax=n_grains, cmap='seismic')  # lower -200 for band grains and inclusions
         ax.scatter(free_space_x, free_space_y, free_space_z, color='grey', alpha=0.01)
 
-        ax.set_xlim(-5, self.box_size + 5)
-        ax.set_ylim(-5, self.box_size + 5)
-        ax.set_zlim(-5, self.box_size + 5)
+        ax.set_xlim(-5, RveInfo.box_size + 5)
+        ax.set_ylim(-5, RveInfo.box_size + 5)
+        ax.set_zlim(-5, RveInfo.box_size + 5)
         ax.set_xlabel('x (µm)')
         ax.set_ylabel('y (µm)')
         ax.set_zlabel('z (µm)')
@@ -114,16 +107,15 @@ class DiscreteRsa3D(RVEUtils):
         # ax.view_init(90, 270) #facing against z-direction (counterclockwise rotation)
         # plt.show()
 
-        plt.savefig(self.store_path + '/Figs/3D_Epoch_{}_{}.png'.format(iterator, attempt))
+        plt.savefig(RveInfo.store_path + '/Figs/3D_Epoch_{}_{}.png'.format(iterator, attempt))
         plt.close(fig)
         time_elapse = datetime.datetime.now() - t_0
-        if self.debug:
-            self.logger.info('time spent on plotter for grain {}: {}'.format(iterator, time_elapse.total_seconds()))
+        if RveInfo.debug:
+            RveInfo.logger.info('time spent on plotter for grain {}: {}'.format(iterator, time_elapse.total_seconds()))
 
-    def run_rsa(self, band_ratio_rsa=None, banded_rsa_array=None,
-                animation=False, x0_alt=None, y0_alt=None, z0_alt=None, gui=True):
-        if gui:
-            self.infobox_obj.emit('starting RSA')
+    def run_rsa(self, band_ratio_rsa=None, banded_rsa_array=None, x0_alt=None, y0_alt=None, z0_alt=None):
+        if RveInfo.gui_flag:
+            RveInfo.infobox_obj.emit('starting RSA')
         status = False
         bandratio = band_ratio_rsa
 
@@ -157,7 +149,7 @@ class DiscreteRsa3D(RVEUtils):
             periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=i)
             rsa[(periodic_grain == i) & ((rsa == 0) | (rsa == -200))] = i
 
-            if animation:
+            if RveInfo.anim_flag:
                 self.rsa_plotter(rsa, iterator=i, attempt=attempt)
 
             free_points = np.count_nonzero(rsa == 0)
@@ -176,39 +168,34 @@ class DiscreteRsa3D(RVEUtils):
                     z_0_list.append(z0)
                     i = i + 1
                     attempt = 0
-                    if self.debug:
+                    if RveInfo.debug:
                         time_elapse = datetime.datetime.now() - t_0
-                        self.logger.info(
+                        RveInfo.logger.info(
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
             else:
-                if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)): #free points old - free points should equal non zero in periodic grain
+                # free points old - free points should equal non zero in periodic grain
+                if free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain):
                     print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
-                    # print("not place")
-                    # print(free_points)
-                    # print(free_points_old)
-                    # print(band_points)
-                    # print(band_points_old)
-                    #sys.exit()
                 else:
                     x_0_list.append(x0)
                     y_0_list.append(y0)
                     z_0_list.append(z0)
                     i = i + 1
                     attempt = 0
-                    if self.debug:
+                    if RveInfo.debug:
                         time_elapse = datetime.datetime.now() - t_0
-                        self.logger.info(
+                        RveInfo.logger.info(
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
             progress = int((float(len(x_0_list))/self.n_grains * 100))
-            if gui:
-                self.progress_obj.emit(progress)
+            if RveInfo.gui_flag:
+                RveInfo.progress_obj.emit(progress)
 
         if (len(x_0_list) == self.n_grains) or (i - 1) == self.n_grains:
             status = True
         else:
-            self.logger.info("Not all grains could be placed please decrease shrinkfactor!")
+            RveInfo.logger.info("Not all grains could be placed please decrease shrinkfactor!")
 
         # If a list from previous Band grains is given:
         if x0_alt is None and y0_alt is None and z0_alt is None:
@@ -220,11 +207,10 @@ class DiscreteRsa3D(RVEUtils):
 
         return rsa, x_0_list, y_0_list, z_0_list, status
 
-    def run_rsa_clustered(self, banded_rsa_array, animation=False):
+    def run_rsa_clustered(self, banded_rsa_array):
         """
         Parameters:
             banded_rsa_array: banded area with -200 everywhere
-            animation: Animation flag
 
         Idea: Start with an normal banded rsa (-200 everywhere) and than go on and place the
         martensite islands here till a given volume is reached (percentage). After that, change the -200 back to
@@ -235,7 +221,8 @@ class DiscreteRsa3D(RVEUtils):
         status = False
 
         if banded_rsa_array is None:
-            self.logger.info('This cluster-rsa needs a defined band ')
+            # TODO: besser durch assertion ersetzen?
+            RveInfo.logger.info('This cluster-rsa needs a defined band ')
         else:
             rsa = banded_rsa_array
 
@@ -249,7 +236,7 @@ class DiscreteRsa3D(RVEUtils):
         ax = fig.gca(projection='3d')
         ax.set_aspect('auto')
         ax.voxels(rsa == -200, edgecolor="k")
-        fig.savefig(self.store_path + '/' + 'Cluster.png')
+        fig.savefig(RveInfo.store_path + '/' + 'Cluster.png')
         # --------------------------------------------------
 
         # Init
@@ -279,7 +266,7 @@ class DiscreteRsa3D(RVEUtils):
             # print(np.unique(periodic_grain))
             rsa[(periodic_grain == -(1000 + i)) & ((rsa == 0) | (rsa == -200))] = -(1000 + i)
 
-            if animation:
+            if RveInfo.anim_flag:
                 self.rsa_plotter(rsa, iterator=-(1000 + i), attempt=attempt)
 
             free_points = np.count_nonzero(rsa == 0)
@@ -297,12 +284,12 @@ class DiscreteRsa3D(RVEUtils):
                     z_0_list.append(z0)
                     i = i + 1
                     attempt = 0
-                    if self.debug:
+                    if RveInfo.debug:
                         time_elapse = datetime.datetime.now() - t_0
-                        self.logger.info(
+                        RveInfo.logger.info(
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
             else:
-                if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)):
+                if free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain):
                     print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
@@ -313,14 +300,14 @@ class DiscreteRsa3D(RVEUtils):
                     z_0_list.append(z0)
                     i = i + 1
                     attempt = 0
-                    if self.debug:
+                    if RveInfo.debug:
                         time_elapse = datetime.datetime.now() - t_0
-                        self.logger.info(
+                        RveInfo.logger.info(
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
         if len(x_0_list) == self.n_grains:
             status = True
         else:
-            self.logger.info("Not all grains could be placed please decrease shrinkfactor!")
+            RveInfo.logger.info("Not all grains could be placed please decrease shrinkfactor!")
 
         # Change -200 in rsa_array back to 0
         print(np.asarray(np.unique(rsa, return_counts=True)).T)
@@ -328,7 +315,7 @@ class DiscreteRsa3D(RVEUtils):
         print(np.asarray(np.unique(rsa, return_counts=True)).T)
         return rsa, x_0_list, y_0_list, z_0_list, status
 
-    def run_rsa_inclusions(self, rve, animation=False):
+    def run_rsa_inclusions(self, rve):
         """
         RSA-Algorithm to place Inclusions in the RVE: The main difference between the inclusions and "normal" (e.g.
         ferrite-grains is, that the inclusions don't grow and cannot be placed on grain boundaries, only directly in a
@@ -351,7 +338,6 @@ class DiscreteRsa3D(RVEUtils):
         """
 
         # Startup
-        status = False
         fil = np.asarray([[[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]],
                           [[-1, -1, -1], [-1, 26, -1], [-1, -1, -1]],
                           [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]])
@@ -387,20 +373,3 @@ class DiscreteRsa3D(RVEUtils):
 
         status = True
         return inc_rve, status
-
-
-if __name__ == '__main__':
-    a = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10]
-    b = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
-    c = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
-    animation_test = True
-    debug_test = True
-    # Define Box-dimension
-    box_size = 100
-    # Define resolution of Grid
-    n_pts_test = 50
-    rsa_obj = DiscreteRsa3D(box_size, n_pts_test, a, b, c, debug_test)
-    rsa, x_0_list, y_0_list, z_0_list, status = rsa_obj.run_rsa(np.array, animation_test)
-    np.save('./3D_x0_list', x_0_list, allow_pickle=True, fix_imports=True)
-    np.save('./3D_y0_list', y_0_list, allow_pickle=True, fix_imports=True)
-    np.save('./3D_z0_list', z_0_list, allow_pickle=True, fix_imports=True)

@@ -1,79 +1,74 @@
 import sys
 import pandas as pd
 import numpy as np
-import logging
 import datetime
 from tkinter import messagebox
+from dragen.utilities.InputInfo import RveInfo
 
 
-class RVEUtils:
+class HelperFunctions:
     """Common Representative Volume Element (RVE) operations."""
 
-    def __init__(self, box_size, n_pts, box_size_y=None, box_size_z=None, x_grid=None, y_grid=None, z_grid=None,
-                 bandwidth=None, debug=False) -> None:
-        self.logger = logging.getLogger("RVE-Gen")
-        self.box_size = box_size
-        self.box_size_y = box_size_y
-        self.box_size_z = box_size_z
-        self.n_pts = n_pts
+    def __init__(self, x_grid=None, y_grid=None, z_grid=None) -> None:
+
+        # The following variables are not available in InputInfo due to possible changes
         self.x_grid = x_grid
         self.y_grid = y_grid
         self.z_grid = z_grid
-        self.bandwidth = bandwidth
-        self.debug = debug
 
-        self.bin_size = box_size / n_pts
-        self.step_half = self.bin_size / 2
-
-    def gen_array(self) -> np.zeros:
-        npts_x = self.n_pts
-        if self.box_size_y is None and self.box_size_z is None:
+    @staticmethod
+    def gen_array() -> np.zeros:
+        npts_x = RveInfo.n_pts
+        if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
             array = np.zeros((2 * npts_x, 2 * npts_x, 2 * npts_x), order='C')
-        elif self.box_size_y is not None and self.box_size_z is None:
-            npts_y = int(self.box_size_y/self.bin_size)
+        elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
+            npts_y = int(RveInfo.box_size_y/RveInfo.bin_size)
             array = np.zeros((2 * npts_x, 2 * npts_y, 2 * npts_x), order='C')
 
-        elif self.box_size_y is None and self.box_size_z is not None:
-            npts_z = int(self.box_size_z/self.bin_size)
+        elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
+            npts_z = int(RveInfo.box_size_z/RveInfo.bin_size)
             array = np.zeros((2 * npts_x, 2 * npts_x, 2 * npts_z), order='C')
 
         else:
-            npts_y = int(self.box_size_y / self.bin_size)
-            npts_z = int(self.box_size_z / self.bin_size)
+            npts_y = int(RveInfo.box_size_y / RveInfo.bin_size)
+            npts_z = int(RveInfo.box_size_z / RveInfo.bin_size)
             array = np.zeros((2 * npts_x, 2 * npts_y, 2 * npts_z), order='C')
         return array
 
-    def gen_array_2D(self) -> np.zeros:
-        array = np.zeros((2 * self.n_pts, 2 * self.n_pts))
+    @staticmethod
+    def gen_array_2d() -> np.zeros:
+        array = np.zeros((2 * RveInfo.n_pts, 2 * RveInfo.n_pts))
         return array
 
-    def gen_grid(self):
-        npts_x = self.n_pts
-        if self.box_size_y is None and self.box_size_z is None:
-            xyz = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * npts_x, endpoint=True)
+    @staticmethod
+    def gen_grid():
+        npts_x = RveInfo.n_pts
+        if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
+            xyz = np.linspace(-RveInfo.box_size / 2, RveInfo.box_size + RveInfo.box_size / 2, 2 * npts_x, endpoint=True)
             x_grid, y_grid, z_grid = np.meshgrid(xyz, xyz, xyz, indexing='ij')
-        elif self.box_size_y is not None and self.box_size_z is None:
-            npts_y = int(self.box_size_y / self.bin_size)
-            xz = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * npts_x, endpoint=True)
-            y = np.linspace(-self.box_size_y / 2, self.box_size_y + self.box_size_y / 2, 2 * npts_y, endpoint=True)
+        elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
+            npts_y = int(RveInfo.box_size_y / RveInfo.bin_size)
+            xz = np.linspace(-RveInfo.box_size / 2, RveInfo.box_size + RveInfo.box_size / 2, 2 * npts_x, endpoint=True)
+            y = np.linspace(-RveInfo.box_size_y / 2, RveInfo.box_size_y + RveInfo.box_size_y / 2, 2 * npts_y, endpoint=True)
             x_grid, y_grid, z_grid = np.meshgrid(xz, y, xz, indexing='ij')
 
-        elif self.box_size_y is None and self.box_size_z is not None:
-            npts_z = int(self.box_size_z / self.bin_size)
-            xy = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * npts_x, endpoint=True)
-            z = np.linspace(-self.box_size_z / 2, self.box_size_z + self.box_size_z / 2, 2 * npts_z, endpoint=True)
+        elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
+            npts_z = int(RveInfo.box_size_z / RveInfo.bin_size)
+            xy = np.linspace(-RveInfo.box_size / 2, RveInfo.box_size + RveInfo.box_size / 2, 2 * npts_x, endpoint=True)
+            z = np.linspace(-RveInfo.box_size_z / 2, RveInfo.box_size_z + RveInfo.box_size_z / 2, 2 * npts_z, endpoint=True)
             x_grid, y_grid, z_grid = np.meshgrid(xy, xy, z, indexing='ij')
         else:
-            npts_y = int(self.box_size_y / self.bin_size)
-            npts_z = int(self.box_size_z / self.bin_size)
-            x = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * npts_x, endpoint=True)
-            y = np.linspace(-self.box_size_y / 2, self.box_size_y + self.box_size_y / 2, 2 * npts_y, endpoint=True)
-            z = np.linspace(-self.box_size_z / 2, self.box_size_z + self.box_size_z / 2, 2 * npts_z, endpoint=True)
+            npts_y = int(RveInfo.box_size_y / RveInfo.bin_size)
+            npts_z = int(RveInfo.box_size_z / RveInfo.bin_size)
+            x = np.linspace(-RveInfo.box_size / 2, RveInfo.box_size + RveInfo.box_size / 2, 2 * npts_x, endpoint=True)
+            y = np.linspace(-RveInfo.box_size_y / 2, RveInfo.box_size_y + RveInfo.box_size_y / 2, 2 * npts_y, endpoint=True)
+            z = np.linspace(-RveInfo.box_size_z / 2, RveInfo.box_size_z + RveInfo.box_size_z / 2, 2 * npts_z, endpoint=True)
             x_grid, y_grid, z_grid = np.meshgrid(x, y, z, indexing='ij')
         return x_grid, y_grid, z_grid
 
-    def gen_grid2D(self):
-        xy = np.linspace(-self.box_size / 2, self.box_size + self.box_size / 2, 2 * self.n_pts, endpoint=True)
+    @staticmethod
+    def gen_grid2d():
+        xy = np.linspace(-RveInfo.box_size / 2, RveInfo.box_size + RveInfo.box_size / 2, 2 * RveInfo.n_pts, endpoint=True)
         x_grid, y_grid = np.meshgrid(xy, xy, indexing='ij')
         return x_grid, y_grid
 
@@ -89,9 +84,12 @@ class RVEUtils:
             for rad in data['a']:
                 radius_a.append(rad)
         else:
-            print('ERROR: No "a" in given .csv-Inputfile!')
-            messagebox.showinfo(message='No "a" in given .csv-Inputfile! RVE-Generation was canceled!', title='ERROR')
-            self.logger.info('ERROR: No "a" in given .csv-Inputfile! RVE-Generation was canceled!')
+            if not RveInfo.exe_flag:
+                print('No "a" in given .csv-Inputfile! RVE-Generation was canceled!')
+            else:
+                messagebox.showinfo(message='No "a" in given .csv-Inputfile! RVE-Generation was canceled!',
+                                    title='ERROR')
+            RveInfo.logger.info('ERROR: No "a" in given .csv-Inputfile! RVE-Generation was canceled!')
             sys.exit()
 
         if 'b' in data.head(0) and data['b'].count() != 0:
@@ -99,21 +97,21 @@ class RVEUtils:
                 radius_b.append(rad)
         else:
             radius_b = radius_a
-            self.logger.info('No "b" in given .csv-Inputfile! Assumption: b = a')
+            RveInfo.logger.info('No "b" in given .csv-Inputfile! Assumption: b = a')
 
         if 'c' in data.head(0) and data['c'].count() != 0:
             for rad in data['c']:
                 radius_c.append(rad)
         else:
             radius_c = radius_a
-            self.logger.info('No "c" in given .csv-Inputfile! Assumption: c = a')
+            RveInfo.logger.info('No "c" in given .csv-Inputfile! Assumption: c = a')
 
         if 'alpha' in data.head(0) and data['alpha'].count() != 0:
             for ang in data['alpha']:
                 alpha.append(ang)
         else:
             alpha = [0] * len(radius_a)
-            self.logger.info('No "alpha" in given .csv-Inputfile! Assumption: alpha = 0, no rotation')
+            RveInfo.logger.info('No "alpha" in given .csv-Inputfile! Assumption: alpha = 0, no rotation')
 
         if 'phi1' in data.head(0) and data['phi1'].count() != 0 and 'PHI' in data.head(0) and data['PHI'].count() != 0 \
                 and 'phi2' in data.head(0) and data['phi2'].count() != 0:
@@ -124,7 +122,7 @@ class RVEUtils:
             for tex in data['phi2']:
                 tex_phi2.append(tex)
         else:
-            self.logger.info(
+            RveInfo.logger.info(
                 'No texture parameters (phi1, PHI, phi2) in given .csv-Inputfile! Assumption: random texture')
             i = 0
             while i < len(radius_a):
@@ -151,7 +149,7 @@ class RVEUtils:
 
         max_volume = bs**3
         data["volume"] = 4/3*np.pi*data["a"]*data["b"]*data["c"]
-        data = data.loc[data["a"] < self.box_size/2]
+        data = data.loc[data["a"] < RveInfo.box_size/2]
 
         grain_vol = 0
         inp_list = list()
@@ -209,8 +207,8 @@ class RVEUtils:
         ellipsoid = self.ellipsoid(radius_a, radius_b, radius_c, 0, 0, 0)
         inside = ellipsoid <= 1
         array[inside] = 1
-        d_vol = np.count_nonzero(array)*self.bin_size**3
-        #self.logger.info("Volume for the given radii: {}".format(d_vol))
+        d_vol = np.count_nonzero(array)*RveInfo.bin_size**3
+        #RveInfo.logger.info("Volume for the given radii: {}".format(d_vol))
         return d_vol
 
     def convert_volume_2D(self, radius_a, radius_b):
@@ -219,12 +217,12 @@ class RVEUtils:
         radius_a : Integer, radius along x-axis
         radius_b : Integer, radius along y-axis
         """
-        array = self.gen_array_2D()
+        array = self.gen_array_2d()
         ellipse = self.ellipse(radius_a, radius_b,  0, 0)
         inside = ellipse <= 1
         array[inside] = 1
-        d_vol = np.count_nonzero(array)*self.bin_size**2
-        self.logger.info("Volume for the given radii: {}".format(d_vol))
+        d_vol = np.count_nonzero(array)*RveInfo.bin_size**2
+        RveInfo.logger.info("Volume for the given radii: {}".format(d_vol))
         return d_vol
 
     def band_generator(self, band_array: np.array, plane: str = 'xz'):
@@ -236,7 +234,7 @@ class RVEUtils:
         Bandidentifier will be -200 in rve_array
         """
         band_is_placed = False
-        band_half = self.bandwidth / 2
+        band_half = RveInfo.band_width / 2
 
         empty_array = band_array.copy()
         empty_array[empty_array == -200] = 0
@@ -248,13 +246,13 @@ class RVEUtils:
         elif plane == 'xz':
             r = self.gen_grid()[1]
         else:
-            self.logger.error("Error: plane must be defined as xy, yz or xz! Default: xy")
+            RveInfo.logger.error("Error: plane must be defined as xy, yz or xz! Default: xy")
             sys.exit(1)
 
         while not band_is_placed:
 
             # band_ center doesnt necessarily need to be an integer
-            band_center = int(self.bin_size + np.random.rand() * (self.box_size - self.bin_size))
+            band_center = int(RveInfo.bin_size + np.random.rand() * (RveInfo.box_size - RveInfo.bin_size))
             print('center: ', band_center)
             left_bound = band_center - band_half
             right_bound = band_center + band_half
@@ -274,8 +272,8 @@ class RVEUtils:
             # each other band_vol_0_theo = 0 which must be avoided
             if ((rve_band_vol_old + band_vol_0_theo) == rve_band_vol_new) and not band_vol_0_theo == 0:
                 band_is_placed = True
-                self.logger.info("Band generator - Bandwidth: {}, Left bound: {} and Right bound: {}"
-                                 .format(self.bandwidth, left_bound, right_bound))
+                RveInfo.logger.info("Band generator - Bandwidth: {}, Left bound: {} and Right bound: {}"
+                                 .format(RveInfo.band_width, left_bound, right_bound))
 
         return band_array
 
@@ -287,14 +285,14 @@ class RVEUtils:
             points_array_copy = np.zeros(points_array.shape)
             points_array_copy[(ellipse_points <= 1) & (points_array == -1 * i)] = -100 - i
             if i % 2 != 0:
-                points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
+                points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
+                points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=1)
                 points_array_mod[np.where(points_array_copy == -100 - i)] = iterator
             elif (i == 2) | (i == 6):
-                points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
+                points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
                 points_array_mod[np.where(points_array_copy == -100 - i)] = iterator
             else:
-                points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
+                points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=1)
                 points_array_mod[np.where(points_array_copy == -100 - i)] = iterator
         return points_array_mod
 
@@ -302,109 +300,109 @@ class RVEUtils:
         points_array_mod = np.zeros(points_array.shape)
         points_array_mod[points_array == iterator] = iterator
         t_0 = datetime.datetime.now()
-        if self.box_size_y is None and self.box_size_z is None:
+        if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
             #print("are we here")
             for i in range(1, 27):  # move points in x,y and z dir
                 points_array_copy = np.zeros(points_array.shape)
                 points_array_copy[(ellipse_points <= 1) & (points_array == -1 * i)] = -100 - i
                 if (i == 1) | (i == 3) | (i == 7) | (i == 9) | \
                         (i == 18) | (i == 20) | (i == 24) | (i == 26):  # move points in x,y and z direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 10) | (i == 12) | (i == 15) | (i == 17):  # move points in x and y direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=1)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 4) | (i == 6) | (i == 21) | (i == 23):  # move points in x and z direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 2) | (i == 8) | (i == 19) | (i == 25):  # move points in y and z direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 13) | (i == 14):  # move points in x direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 11) | (i == 16):  # move points in y direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=1)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 5) | (i == 22):  # move points in z direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
-        elif self.box_size_y is not None and self.box_size_z is None:
+        elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
             for i in range(1, 27):  # move points in x,y and z dir
                 points_array_copy = np.zeros(points_array.shape)
                 points_array_copy[(ellipse_points <= 1) & (points_array == -1 * i)] = -100 - i
                 if (i == 1) | (i == 3) | (i == 7) | (i == 9) | \
                         (i == 18) | (i == 20) | (i == 24) | (i == 26):  # move points in x,y and z direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 10) | (i == 12) | (i == 15) | (i == 17):  # move points in x and y direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=1)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 4) | (i == 6) | (i == 21) | (i == 23):  # move points in x and z direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 2) | (i == 8) | (i == 19) | (i == 25):  # move points in y and z direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 13) | (i == 14):  # move points in x direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 5) | (i == 22):  # move points in z direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
 
-        elif self.box_size_y is None and self.box_size_z is not None:
+        elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
             for i in range(1, 27):  # move points in x,y and z dir
                 points_array_copy = np.zeros(points_array.shape)
                 points_array_copy[(ellipse_points <= 1) & (points_array == -1 * i)] = -100 - i
                 if (i == 1) | (i == 3) | (i == 7) | (i == 9) | \
                         (i == 18) | (i == 20) | (i == 24) | (i == 26):  # move points in x,y and z direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 10) | (i == 12) | (i == 15) | (i == 17):  # move points in x and y direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=1)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 4) | (i == 6) | (i == 21) | (i == 23):  # move points in x and z direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 2) | (i == 8) | (i == 19) | (i == 25):  # move points in y and z direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=2)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=2)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 13) | (i == 14):  # move points in x direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=0)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=0)
                     points_array_mod[points_array_copy == -100 - i] = iterator
                 elif (i == 11) | (i == 16):  # move points in y direction
-                    points_array_copy = np.roll(points_array_copy, self.n_pts, axis=1)
+                    points_array_copy = np.roll(points_array_copy, RveInfo.n_pts, axis=1)
                     points_array_mod[points_array_copy == -100 - i] = iterator
 
-        elif self.box_size_y is not None and self.box_size_z is not None:
+        elif RveInfo.box_size_y is not None and RveInfo.box_size_z is not None:
             for i in range(1, 27):  # move points in x,y and z dir
                 points_array_copy = np.zeros(points_array.shape)
                 points_array_copy[(ellipse_points <= 1) & (points_array == -1 * i)] = -100 - i
                 points_array_mod[points_array_copy == -100 - i] = iterator
         time_elapse = datetime.datetime.now() - t_0
-        if self.debug:
-            self.logger.info('time spent on periodicity for grain {}: {}'.format(iterator, time_elapse.total_seconds()))
+        if RveInfo.debug:
+            RveInfo.logger.info('time spent on periodicity for grain {}: {}'.format(iterator, time_elapse.total_seconds()))
         return points_array_mod
 
     def gen_boundaries_2D(self, points_array) -> np.ndarray:
-        box_size = self.box_size
-        x_grid, y_grid = self.gen_grid2D()
+        box_size = RveInfo.box_size
+        x_grid, y_grid = self.gen_grid2d()
         points_array[np.where((x_grid > box_size) & (y_grid > box_size))] = -1
         points_array[(x_grid < box_size) & (y_grid > box_size)] = -2
         points_array[(x_grid < 0) & (y_grid > box_size)] = -3
@@ -417,7 +415,7 @@ class RVEUtils:
 
     def gen_boundaries_3D(self, points_array) -> np.ndarray:
         t_0 = datetime.datetime.now()
-        box_size = self.box_size
+        box_size = RveInfo.box_size
         x_grid, y_grid, z_grid = self.gen_grid()
 
         """
@@ -478,7 +476,7 @@ class RVEUtils:
         Boxsizes have to be adjusted in case we are not modelling a cube
         """
 
-        if self.box_size_y is None and self.box_size_z is None:
+        if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
             # z < 0
             points_array[(x_grid < 0) & (y_grid < 0) & (z_grid < 0)] = -1
             points_array[(x_grid > 0) & (y_grid < 0) & (z_grid < 0)] = -2
@@ -519,8 +517,8 @@ class RVEUtils:
             points_array[(x_grid > box_size) & (y_grid > box_size) & (z_grid > box_size)] = -26
 
 
-        elif self.box_size_y is not None and self.box_size_z is None:
-            box_size_y = self.box_size_y
+        elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
+            box_size_y = RveInfo.box_size_y
             # z < 0
             points_array[(x_grid < 0) & (y_grid < 0) & (z_grid < 0)] = -1
             points_array[(x_grid > 0) & (y_grid < 0) & (z_grid < 0)] = -2
@@ -559,8 +557,8 @@ class RVEUtils:
             points_array[(x_grid > 0) & (y_grid > box_size_y) & (z_grid > box_size)] = -25
             points_array[(x_grid > box_size) & (y_grid > box_size_y) & (z_grid > box_size)] = -26
 
-        elif self.box_size_y is None and self.box_size_z is not None:
-            box_size_z = self.box_size_z
+        elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
+            box_size_z = RveInfo.box_size_z
             # z < 0
             points_array[(x_grid < 0) & (y_grid < 0) & (z_grid < 0)] = -1
             points_array[(x_grid > 0) & (y_grid < 0) & (z_grid < 0)] = -2
@@ -600,8 +598,8 @@ class RVEUtils:
             points_array[(x_grid > box_size) & (y_grid > box_size) & (z_grid > box_size_z)] = -26
 
         else:
-            box_size_y = self.box_size_y
-            box_size_z = self.box_size_z
+            box_size_y = RveInfo.box_size_y
+            box_size_z = RveInfo.box_size_z
             # z < 0
             points_array[(x_grid < 0) & (y_grid < 0) & (z_grid < 0)] = -1
             points_array[(x_grid > 0) & (y_grid < 0) & (z_grid < 0)] = -2
@@ -641,18 +639,18 @@ class RVEUtils:
             points_array[(x_grid > box_size) & (y_grid > box_size_y) & (z_grid > box_size_z)] = -26
 
         time_elapse = datetime.datetime.now() - t_0
-        if self.debug:
-            self.logger.info('time spent on gen_boundaries: {}'.format(time_elapse.total_seconds()))
+        if RveInfo.debug:
+            RveInfo.logger.info('time spent on gen_boundaries: {}'.format(time_elapse.total_seconds()))
         return points_array
 
     def repair_periodicity_2D(self, rve_array: np.ndarray) -> pd.DataFrame:
 
         # load some variables
-        box_size = self.box_size
-        n_pts = self.n_pts
+        box_size = RveInfo.box_size
+        n_pts = RveInfo.n_pts
 
         # Transform np.array to coordinates
-        xy = np.linspace(-box_size / 2, box_size + box_size / 2, 2 * self.n_pts, endpoint=True)
+        xy = np.linspace(-box_size / 2, box_size + box_size / 2, 2 * RveInfo.n_pts, endpoint=True)
         x_grid, y_grid = np.meshgrid(xy, xy, indexing='ij')
 
         rve_x_idx, rve_y_idx = np.where(rve_array >= 1)
@@ -735,12 +733,12 @@ class RVEUtils:
         """this function is used to mirror the three masterfaces on the three slave faces of the rve
         in order to achieve exact periodicity"""
         # load some variables
-        box_size = self.box_size
-        n_pts = self.n_pts
+        box_size = RveInfo.box_size
+        n_pts = RveInfo.n_pts
 
-        if self.box_size_y is None and self.box_size_z is None:
+        if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
             # Transform np.array to coordinates
-             # xyz = np.linspace(-box_size / 2, box_size + box_size / 2, 2 * self.n_pts, endpoint=True)
+             # xyz = np.linspace(-box_size / 2, box_size + box_size / 2, 2 * RveInfo.n_pts, endpoint=True)
             x_grid, y_grid, z_grid = self.gen_grid()
 
             rve_x_idx, rve_y_idx, rve_z_idx = np.where(
@@ -923,11 +921,11 @@ class RVEUtils:
                               ((rve['x'] == max_x) & (rve['y'] == min_y) & (rve['z'] == max_z)) |
                               ((rve['x'] == max_x) & (rve['y'] == max_y) & (rve['z'] == max_z))]
             rve.loc[corners.index, 'GrainID'] = corner1.GrainID.values
-            self.logger.info('Ran repairing successfully for cubic periodicity!')
+            RveInfo.logger.info('Ran repairing successfully for cubic periodicity!')
             return rve
-        elif self.box_size_y is not None and self.box_size_z is None:
+        elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
             # Transform np.array to coordinates
-            x_grid, y_grid, z_grid = self.gen_grid() #np.meshgrid(y, xz, xz)
+            x_grid, y_grid, z_grid = self.gen_grid()  #np.meshgrid(y, xz, xz)
 
             rve_x_idx, rve_y_idx, rve_z_idx = np.where(
                 (rve_array > 0) | (rve_array == -200) | (rve_array < -200))  # Added for the inclusions
@@ -1032,9 +1030,9 @@ class RVEUtils:
 
             rve.loc[left_to_right_top_rear.index, 'GrainID'] = left_to_right_bottom_rear.GrainID.values
 
-            self.logger.info('Ran repairing successfully!')
+            RveInfo.logger.info('Ran repairing successfully!')
             return rve
-        elif self.box_size_y is None and self.box_size_z is not None:
+        elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
             # Transform np.array to coordinates
             x_grid, y_grid, z_grid = self.gen_grid()  #
 
@@ -1143,15 +1141,10 @@ class RVEUtils:
             print(rve)
 
             rve.sort_values(by=['x', 'y', 'z'], inplace=True, axis=0)
-            self.logger.info('Ran repairing successfully!')
+            RveInfo.logger.info('Ran repairing successfully!')
             return rve
         else:
             print('else')
-            # npts_y = int(self.box_size_y / self.bin_size)
-            # npts_z = int(self.box_size_z / self.bin_size)
-            # x = np.linspace(-self.box_size_x / 2, self.box_size_z + self.box_size_z / 2, 2 * npts_x, endpoint=True)
-            # y = np.linspace(-self.box_size_y / 2, self.box_size_z + self.box_size_z / 2, 2 * npts_y, endpoint=True)
-            # z = np.linspace(-self.box_size_z / 2, self.box_size_z + self.box_size_z / 2, 2 * npts_z, endpoint=True)
             x_grid, y_grid, z_grid = self.gen_grid()
 
             rve_x_idx, rve_y_idx, rve_z_idx = np.where(
@@ -1183,7 +1176,7 @@ class RVEUtils:
             return rve
 
     def ellipse(self, a, b, x_0, y_0, alpha=0):
-        x_grid, y_grid = self.gen_grid2D()
+        x_grid, y_grid = self.gen_grid2d()
         # without rotation
         """ellipse = np.sqrt((x_grid - x_0) ** 2 / (a ** 2) + (y_grid - y_0) ** 2 / (b ** 2))"""
 
@@ -1301,7 +1294,7 @@ class RVEUtils:
         for i in range(len(grains_df)):
             #grainID = grains_df.GrainID[i]
 
-            disc_vols[i] = np.count_nonzero(rve == i+1) * self.bin_size**3
+            disc_vols[i] = np.count_nonzero(rve == i+1) * RveInfo.bin_size**3
 
         grains_df['final_discrete_volume'] = disc_vols
         grains_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)

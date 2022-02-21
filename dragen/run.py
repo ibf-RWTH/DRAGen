@@ -1,117 +1,155 @@
-import math
+import datetime
 import os
 import sys
 import logging
-
+import numpy as np
 from dragen.main2D import DataTask2D
 from dragen.main3D import DataTask3D
 from dragen.main3D_GAN import DataTask3D_GAN
-from dragen.postprocessing.voldistribution import PostProcVol
-from dragen.pyqt_gui.ScrollLabel import ScrollLabel
 from dragen.substructure.run import Run as SubRun
+from dragen.utilities.Helpers import HelperFunctions
+from dragen.utilities.InputInfo import RveInfo
 
-class Run:
-    def __init__(self, box_size: int, box_size_y: int = None, box_size_z: int = None, resolution: float = 1, number_of_rves: int = 1,
-                 number_of_bands: int = 0, bandwidth: float = 1,
-                 dimension: int = 3, visualization_flag: bool = False, file1: str = None, file2: str = None,
-                 phase_ratio: float = None, store_path: str = None,
-                 shrink_factor: float = 0.5, band_ratio_rsa: float = 0.75, band_ratio_final: float = 0.75,
-                 gui_flag: bool = False, gan_flag: bool = False, info_box_obj=None, progress_obj=None,
-                 equiv_d: float = None, p_sigma: float = None, t_mu: float = None, b_sigma: float = 0.01,
-                 decreasing_factor: float = 0.95,
-                 lower: float = None, upper: float = None, circularity: float = 1, plt_name: str = None,
-                 save: bool = True,
-                 plot: bool = False, filename: str = None, fig_path: str = None, OR: str = 'KS', subs_flag:bool=False,subs_file_flag=False,
-                 subs_file:str =None,phases:list =['ferrite','martensite']):
 
-        self.box_size = box_size
-        self.box_size_y = box_size_y
-        self.box_size_z = box_size_z
-        self.resolution = resolution
-        self.number_of_rves = number_of_rves
-        self.number_of_bands = number_of_bands
-        self.band_width = bandwidth
-        self.dimension = dimension
-        self.visualization_flag = visualization_flag
-        self.file1 = file1
-        self.file2 = file2
-        self.phase_ratio = phase_ratio
-        self.store_path = store_path
-        self.shrink_factor = shrink_factor
-        self.band_ratio_rsa = band_ratio_rsa
-        self.band_ratio_final = band_ratio_final
-        self.gui_flag = gui_flag
-        self.gan_flag = gan_flag
-        self.infobox_obj = info_box_obj
-        self.progress_obj = progress_obj
-        self.equiv_d = equiv_d
-        self.p_sigma = p_sigma
-        self.t_mu = t_mu
-        self.b_sigma = b_sigma
-        self.decreasing_factor = decreasing_factor
-        self.lower = lower
-        self.upper = upper
-        self.circularity = circularity
-        self.plt_name = plt_name
-        self.save = save
-        self.plot = plot
-        self.filename = filename
-        self.fig_path = fig_path
-        self.OR = OR
-        self.subs_file_flag = subs_file_flag
-        self.subs_file = subs_file
-        self.phases = phases
-        self.subs_flag = subs_flag
+class Run(HelperFunctions):
+    def __init__(
+                 # mandatory arguments:
+                 self, box_size: int, element_type: str, resolution: float, number_of_rves: int,
+                 number_of_bands: int,  dimension: int, visualization_flag: bool,
+                 store_path: str, shrink_factor: float, band_ratio_rsa: float, phase_ratio: float,
+                 band_ratio_final: float, gui_flag: bool, gan_flag: bool,
+                 subs_flag: bool, phases: list, abaqus_flag: bool, damask_flag: bool, moose_flag: bool,
+                 anim_flag: bool, exe_flag: bool,
+                 # optional Arguments or dependent on previous flag
+                 subs_file_flag=False, subs_file: str = None,
+                 box_size_y: int = None, box_size_z: int = None, bandwidth: float = None,
+                 file1: str = None, file2: str = None,  info_box_obj=None,
+                 progress_obj=None, equiv_d: float = None, p_sigma: float = None, t_mu: float = None,
+                 b_sigma: float = 0.01, decreasing_factor: float = 0.95, lower: float = None, upper: float = None,
+                 circularity: float = 1, plt_name: str = None, save: bool = True, plot: bool = False,
+                 filename: str = None, fig_path: str = None, orient_relationship: str = None
+    ):
+
+        super().__init__()
+        RveInfo.box_size = box_size
+        RveInfo.element_type = element_type
+        RveInfo.box_size_y = box_size_y
+        RveInfo.box_size_z = box_size_z
+        RveInfo.resolution = resolution
+        RveInfo.number_of_rves = number_of_rves
+        RveInfo.number_of_bands = number_of_bands
+        RveInfo.band_width = bandwidth
+        RveInfo.dimension = dimension
+        RveInfo.visualization_flag = visualization_flag
+        RveInfo.file1 = file1
+        RveInfo.file2 = file2
+        RveInfo.phase_ratio = phase_ratio
+        RveInfo.store_path = store_path
+        RveInfo.shrink_factor = np.cbrt(shrink_factor)
+        RveInfo.band_ratio_rsa = band_ratio_rsa
+        RveInfo.band_ratio_final = band_ratio_final
+        RveInfo.gui_flag = gui_flag
+        RveInfo.gan_flag = gan_flag
+        RveInfo.infobox_obj = info_box_obj
+        RveInfo.progress_obj = progress_obj
+        RveInfo.equiv_d = equiv_d
+        RveInfo.p_sigma = p_sigma
+        RveInfo.t_mu = t_mu
+        RveInfo.b_sigma = b_sigma
+        RveInfo.decreasing_factor = decreasing_factor
+        RveInfo.lower = lower
+        RveInfo.upper = upper
+        RveInfo.circularity = circularity
+        RveInfo.plt_name = plt_name
+        RveInfo.save = save
+        RveInfo.plot = plot
+        RveInfo.filename = filename
+        RveInfo.fig_path = fig_path
+        RveInfo.orientation_relationship = orient_relationship
+        RveInfo.subs_flag = subs_flag
+        RveInfo.subs_file_flag = subs_file_flag
+        RveInfo.subs_file = subs_file
+        RveInfo.phases = phases
+        RveInfo.abaqus_flag = abaqus_flag
+        RveInfo.damask_flag = damask_flag
+        RveInfo.moose_flag = moose_flag
+        RveInfo.anim_flag = anim_flag
+        RveInfo.exe_flag = exe_flag
+        RveInfo.RVphase2iso_flag = True
+        RveInfo.element_type = 'HEX8'
+        RveInfo.roughness_flag = False
+        RveInfo.band_filling = 0.99
+        RveInfo.inclusion_ratio = 0.01
+        RveInfo.inclusion_flag = None
+        RveInfo.root = './'
+        RveInfo.input_path = './ExampleInput'
+
+    @staticmethod
+    def setup_logging():
+        LOGS_DIR = RveInfo.store_path + '/Logs/'
+        if not os.path.isdir(LOGS_DIR):
+            os.makedirs(LOGS_DIR)
+        f_handler = logging.handlers.TimedRotatingFileHandler(
+            filename=os.path.join(LOGS_DIR, 'dragen-logs'), when='midnight')
+        formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
+        f_handler.setFormatter(formatter)
+        RveInfo.logger.addHandler(f_handler)
+        RveInfo.logger.setLevel(level=logging.DEBUG)
+
+    @staticmethod
+    def initializations(epoch):
+
+        RveInfo.store_path = RveInfo.store_path + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
+        RveInfo.fig_path = RveInfo.store_path + '/Figs'
+        RveInfo.gen_path = RveInfo.store_path + '/Generation_Data'
+
+        if not os.path.isdir(RveInfo.store_path):
+            os.makedirs(RveInfo.store_path)
+
+        if not os.path.isdir(RveInfo.fig_path):
+            os.makedirs(RveInfo.fig_path)
+
+        if not os.path.isdir(RveInfo.gen_path):
+            os.makedirs(RveInfo.gen_path)
+
     def run(self):
-        # calculate n_pts from box_size and resolution
-        n_pts = math.ceil(float(self.box_size) * self.resolution)
-        if n_pts % 2 != 0:
-            n_pts += 1
-        if self.infobox_obj is not None:
-            self.infobox_obj.emit("the chosen resolution lead to {}^{} points in the grid".format(str(n_pts),
-                                                                                                 str(self.dimension)))
+        self.setup_logging()
 
-        sub_run = SubRun(box_size=self.box_size,box_size_y=self.box_size_y,box_size_z=self.box_size_z, n_pts=n_pts,equiv_d=self.equiv_d,p_sigma=self.p_sigma,t_mu=self.t_mu,b_sigma=self.b_sigma,
-                          decreasing_factor=self.decreasing_factor,lower=self.lower,upper=self.upper,circularity=self.circularity,plt_name=self.plt_name,
-                          save=self.save,plot=self.plot,filename=self.filename,fig_path=self.fig_path,subs_file_flag=self.subs_file_flag,
-                          subs_file=self.subs_file,OR=self.OR)
+        if RveInfo.infobox_obj is not None:
+            RveInfo.infobox_obj.emit("the chosen resolution lead to {}^{} "
+                                     "points in the grid".format(str(RveInfo.n_pts), str(RveInfo.dimension)))
 
-        if self.dimension == 2:
-            obj2D = DataTask2D(box_size=self.box_size, n_pts=int(n_pts), number_of_bands=self.number_of_bands,
-                               bandwidth=self.band_width, shrink_factor=self.shrink_factor,
-                               band_ratio_rsa=self.band_ratio_rsa, band_ratio_final=self.band_ratio_final,
-                               file1=self.file1, file2=self.file2, phase_ratio=self.phase_ratio,
-                               store_path=self.store_path,
-                               gui_flag=True, gan_flag=self.gan_flag, anim_flag=self.visualization_flag)
+        if RveInfo.subs_flag:
+            RveInfo.sub_run = SubRun()
 
-            for i in range(self.number_of_rves):
-                grains_df, store_path = obj2D.initializations(self.dimension, epoch=i)
-                obj2D.rve_generation(grains_df, store_path)
+        if RveInfo.dimension == 2:
 
-        elif self.dimension == 3:
+            obj2D = DataTask2D()
+
+            for i in range(RveInfo.number_of_rves):
+                self.initializations(i)
+                obj2D.initializations(RveInfo.dimension, epoch=i)
+                #obj2D.rve_generation(store_path=store_path)
+
+        elif RveInfo.dimension == 3:
             # Teile in zwei Stück für GAN
-            if self.gan_flag:
-                obj3D = DataTask3D_GAN(box_size=self.box_size,
-                                       n_pts=int(n_pts), number_of_bands=self.number_of_bands,
-                                       bandwidth=self.band_width, shrink_factor=self.shrink_factor,
-                                       band_filling=0.99, phase_ratio=self.phase_ratio, inclusions_ratio=0.01,
-                                       inclusions_flag=False,
-                                       file1=None, file2=None, store_path=None, gui_flag=self.gui_flag, anim_flag=True,
-                                       gan_flag=self.gan_flag, exe_flag=False,sub_run=sub_run,subs_flag = self.subs_flag)
+            # TODO: Das kann nur funktionieren wenn DataTask3D_GAN sehr ähnlich zu DataTask3D ist ansonsten CHAOS!
+            if RveInfo.gan_flag:
+                obj3D = DataTask3D_GAN()
+                for i in range(RveInfo.number_of_rves):
+                    self.initializations(i)
+                    obj3D.rve_generation()
+                    if RveInfo.subs_file_flag:
+                        obj3D.post_processing()
             else:
-                obj3D = DataTask3D(box_size=self.box_size, box_size_y=self.box_size_y, box_size_z=self.box_size_z,
-                                   n_pts=int(n_pts), number_of_bands=self.number_of_bands,
-                                   bandwidth=self.band_width, shrink_factor=self.shrink_factor,
-                                   band_ratio_rsa=self.band_ratio_rsa, band_ratio_final=self.band_ratio_final,
-                                   file1=self.file1, file2=self.file2, phase_ratio=self.phase_ratio,
-                                   store_path=self.store_path,
-                                   gui_flag=self.gui_flag, gan_flag=self.gan_flag, anim_flag=self.visualization_flag,
-                                   infobox_obj=self.infobox_obj, progess_obj=self.progress_obj,sub_run=sub_run,phases=self.phases,subs_flag=self.subs_flag)
-            for i in range(self.number_of_rves):
-                grains_df, store_path = obj3D.initializations(self.dimension, epoch=i)
-                obj3D.rve_generation(grains_df, store_path)
-                if self.subs_file_flag:
-                    obj3D.post_processing()
+                obj3D = DataTask3D()
+                for i in range(RveInfo.number_of_rves):
+                    self.initializations(i)
+                    grains_df = obj3D.grain_sampling()
+                    obj3D.rve_generation(grains_df)
+                    if RveInfo.subs_file_flag:
+                        obj3D.post_processing()
+
 
         else:
             LOGS_DIR = 'Logs/'
@@ -129,10 +167,10 @@ class Run:
 
 
 if __name__ == "__main__":
-    box_size = 10
-    box_size_y = None   # if this is None it will be set to the main box_size value
-    box_size_z = None     # for sheet rve set z to None and y to different value than x the other way round is buggy
-    resolution = 3
+    box_size = 600
+    box_size_y = 300  # if this is None it will be set to the main box_size value
+    box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
+    resolution = 0.08
     number_of_rves = 1
     number_of_bands = 0
     bandwidth = 5
@@ -141,27 +179,44 @@ if __name__ == "__main__":
     store_path = '../'
     shrink_factor = 0.4
     dimension = 3
-    gan_flag = False
     # Example Files
     equiv_d = 5
     p_sigma = 0.1
     t_mu = 1.0
     b_sigma = 0.1
     # Example Files
-    file2 = '../ExampleInput/example_pag_inp.csv'
-    #file1 = 'F:/git/merged_substructure/ExampleInput/example_pag_inp.csv'
-    #file2 = 'F:/git/merged_substructure/ExampleInput/example_block_inp.csv'
-    file1 = None
-    #file2 = 'E:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
-        # test pearlite phase
+    file1 = 'D:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
+    # file1 = 'F:/git/merged_substructure/ExampleInput/example_pag_inp.csv'
+    # file2 = 'F:/git/merged_substructure/ExampleInput/example_block_inp.csv'
+    file2 = None
+    # file2 = 'E:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
+    # test pearlite phase
+    subs_flag = False
     subs_file = '../ExampleInput/example_block_inp.csv'
+    subs_file_flag = False
+    gui_flag = False
+    gan_flag = False
+    moose_flag = True
+    abaqus_flag = False
+    damask_flag = False
+    element_type = 'HEX8'
+    band_ratio_rsa = 0.75
+    band_ratio_final = 0.8
+    anim_flag = False
+    exe_flag = False
+
     '''
     specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
     same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in martensite.
     '''
-    phases = ['martensite']
-    Run(box_size, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution, number_of_rves=number_of_rves,
+    phases = ['ferrite']
+    Run(box_size, element_type=element_type, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution,
+        number_of_rves=number_of_rves,
         number_of_bands=number_of_bands, bandwidth=bandwidth, dimension=dimension,
-        visualization_flag=visualization_flag, file1=file1, file2=file2, equiv_d=equiv_d,p_sigma=p_sigma,t_mu=t_mu,b_sigma=b_sigma,
-        phase_ratio=phase_ratio, store_path=store_path, shrink_factor=shrink_factor, gui_flag=False, gan_flag=gan_flag,
-        info_box_obj=None, progress_obj=None,subs_file_flag=True,subs_file=subs_file,phases=phases,subs_flag=True).run()
+        visualization_flag=visualization_flag, file1=file1, file2=file2, equiv_d=equiv_d, p_sigma=p_sigma, t_mu=t_mu,
+        b_sigma=b_sigma,
+        phase_ratio=phase_ratio, store_path=store_path, shrink_factor=shrink_factor, gui_flag=gui_flag,
+        gan_flag=gan_flag,
+        info_box_obj=None, progress_obj=None, subs_file_flag=subs_file_flag, subs_file=subs_file, phases=phases,
+        subs_flag=subs_flag, moose_flag=moose_flag, abaqus_flag=abaqus_flag, damask_flag=damask_flag,
+        band_ratio_rsa=band_ratio_rsa, band_ratio_final=band_ratio_final, anim_flag=anim_flag, exe_flag=exe_flag).run()

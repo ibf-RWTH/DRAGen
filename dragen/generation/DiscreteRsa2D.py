@@ -5,23 +5,21 @@ import datetime
 import logging
 from scipy.ndimage import convolve
 
-from dragen.utilities.RVE_Utils import RVEUtils
+from dragen.utilities.Helpers import HelperFunctions
+from dragen.utilities.InputInfo import RveInfo
 
-class DiscreteRsa2D(RVEUtils):
-    def __init__(self, box_size, n_pts, a, b, alpha, store_path):
+class DiscreteRsa2D(HelperFunctions):
+    def __init__(self, a, b, alpha):
 
-        self.box_size = box_size
-        self.n_pts = n_pts
+
         self.a = a
         self.b = b
         self.alpha = alpha
-        self.store_path = store_path
-        self.logger = logging.getLogger("RVE-Gen")
         self.n_grains = len(a)
 
-        super().__init__(box_size, n_pts)
+        super().__init__()
 
-        self.x_grid, self.y_grid = super().gen_grid2D()
+        self.x_grid, self.y_grid = super().gen_grid2d()
 
     def gen_ellipsoid(self, array, iterator):
         t_0 = datetime.datetime.now()
@@ -71,20 +69,20 @@ class DiscreteRsa2D(RVEUtils):
         plt.scatter(grains_x, grains_y, c=array[np.where(array > 0)], s=1, vmin=0, vmax=n_grains, cmap='seismic')
         # plt.scatter(boundary_x, boundary_y, c='r')
         # plt.scatter(ellipse_outside_x, ellipse_outside_y, c='k')
-        plt.xlim(-5, self.box_size + 5)
-        plt.ylim(-5, self.box_size + 5)
-        plt.savefig(self.store_path+'/Figs/2D_RSA_Epoch_{}_{}.png'.format(iterator, attempt))
+        plt.xlim(-5, RveInfo.box_size + 5)
+        plt.ylim(-5, RveInfo.box_size + 5)
+        plt.savefig(RveInfo.store_path+'/Figs/2D_RSA_Epoch_{}_{}.png'.format(iterator, attempt))
         plt.close(fig)
 
-    def run_rsa(self, animation=False):
+    def run_rsa(self):
 
-        #define some variables
+        # define some variables
         status = False
         x_0_list = list()
         y_0_list = list()
         i = 1
         attempt = 0
-        rsa = super().gen_array_2D()
+        rsa = super().gen_array_2d()
         rsa = super().gen_boundaries_2D(rsa)
         rsa_boundaries = rsa.copy()
 
@@ -97,7 +95,7 @@ class DiscreteRsa2D(RVEUtils):
             periodic_grain = super().make_periodic_2D(grain, ellipse, iterator=i)
             rsa[(periodic_grain == i) & (rsa == 0)] = i
 
-            if animation:
+            if RveInfo.anim_flag:
                 self.rsa_plotter(rsa, self.n_grains, iterator=i, attempt=attempt)
 
             free_points = np.count_nonzero(rsa == 0)
@@ -114,7 +112,7 @@ class DiscreteRsa2D(RVEUtils):
         if len(x_0_list) == self.n_grains:
             status = True
         else:
-            self.logger.info("Not all grains could be placed please decrease shrinkfactor!")
+            RveInfo.logger.info("Not all grains could be placed please decrease shrinkfactor!")
 
         return rsa, x_0_list, y_0_list, status
 
@@ -127,8 +125,8 @@ if __name__ == '__main__':
     box_size = 100
     # Define resolution of Grid
     n_pts = 100
-    rsa_obj = DiscreteRsa2D(box_size, n_pts, a, b)
-    rsa, x_0_list, y_0_list, status = rsa_obj.run_rsa(animation=True)
+    rsa_obj = DiscreteRsa2D(a, b, )
+    rsa, x_0_list, y_0_list, status = rsa_obj.run_rsa()
     print(x_0_list)
     print(y_0_list)
     np.save('./2D_x_0', x_0_list, allow_pickle=True, fix_imports=True)

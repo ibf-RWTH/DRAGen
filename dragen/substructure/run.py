@@ -11,43 +11,20 @@ import numpy as np
 from dragen.substructure.data import save_data
 from dragen.substructure.substructure import Grain
 from dragen.substructure.modification import mod_bt
+from dragen.utilities.InputInfo import RveInfo
 from scipy.stats import moment
 from scipy.stats import gaussian_kde
 import matplotlib.pyplot as plt
-import math
+
 
 class Run():
 
-    def __init__(self,box_size, box_size_y:int,box_size_z:int,n_pts,equiv_d=None, p_sigma=None, t_mu=None, b_sigma=0.001, decreasing_factor=0.95,
-                 lower=None, upper=None, circularity=1, plt_name=None, save=True, plot=False,
-                 filename=None, fig_path=None, subs_file_flag=False,subs_file=None, OR='KS'):
-
-        self.box_size = box_size
-        self.box_size_y = box_size_y
-        self.box_size_z = box_size_z
-        self.n_pts = n_pts
-        self.equiv_d = equiv_d
-        self.p_sigma = p_sigma
-        self.t_mu = t_mu
-        self.b_sigma = b_sigma
-        self.decreasing_factor = decreasing_factor
-        self.lower = lower
-        self.upper = upper
-        self.circularity = circularity
-        self.plt_name = plt_name
-        self.save = save
-        self.plot = plot
-        self.filename = filename
-        self.fig_path = fig_path
-        self.OR = OR
-        self.subs_file = subs_file
-        self.subs_file_flag = subs_file_flag
+    def __init__(self):
         self.rve_data = None
-        self.store_path = None
-        self.logger = None
 
-    def get_orientations(self,block_df, grainID):
-        blocks = block_df[block_df['grain_id'] == grainID+1] # +1...
+    @staticmethod
+    def get_orientations(block_df, grain_id):
+        blocks = block_df[block_df['grain_id'] == grain_id + 1] # +1...
         n_pack = len(list(set(blocks['packet_id'])))
         groups = blocks.groupby('packet_id')
 
@@ -62,13 +39,15 @@ class Run():
 
         return n_pack_to_ori
 
-    def get_bt_distribution(self,block_df):
+    @staticmethod
+    def get_bt_distribution(block_df):
 
         average_bt = block_df['block_thickness'].mean()
         return average_bt
 
-    def del_zerobt(self,df: pd.DataFrame):
-        sampled_df = df.groupby('block_id', as_index=False).first()
+    @staticmethod
+    def del_zerobt(_df: pd.DataFrame):
+        sampled_df = _df.groupby('block_id', as_index=False).first()
         sampled_df.sort_values(by=['x', 'y', 'z'], inplace=True)
         sampled_df.reset_index(inplace=True)
         # get the id of block with zero thickness
@@ -97,20 +76,20 @@ class Run():
 
                 new_bid = sampled_df.loc[nonzero_idx, 'block_id'].values[0]
                 new_bt = sampled_df.loc[nonzero_idx, 'block_thickness'].values[0]
-                df.loc[df['block_id'] == zid, 'block_id'] = new_bid
-                df.loc[df['block_id'] == new_bid, 'block_thickness'] = new_bt  # block id is modified here...
+                _df.loc[_df['block_id'] == zid, 'block_id'] = new_bid
+                _df.loc[_df['block_id'] == new_bid, 'block_thickness'] = new_bt  # block id is modified here...
 
-    def run(self,rve_df,grains_df,store_path,logger):
+    def run(self, rve_df, grains_df):
 
-        logger.info('------------------------------------------------------------------------------')
-        logger.info('substructure generation begins')
-        logger.info('------------------------------------------------------------------------------')
-        rve_data = pd.DataFrame()
-        if self.subs_file_flag == True:
-            assert self.subs_file is not None
-            block_df = pd.read_csv(self.subs_file)
+        RveInfo.logger.info('------------------------------------------------------------------------------')
+        RveInfo.logger.info('substructure generation begins')
+        RveInfo.logger.info('------------------------------------------------------------------------------')
+        _rve_data = pd.DataFrame()
+        if RveInfo.subs_file_flag:
+            assert RveInfo.subs_file is not None, 'no substructure file given'
+            block_df = pd.read_csv(RveInfo.subs_file)
             average_bt = self.get_bt_distribution(block_df)
-            average_bt = self.decreasing_factor * average_bt
+            average_bt = RveInfo.decreasing_factor * average_bt
 
         for i in range(len(grains_df)):
 
@@ -127,86 +106,86 @@ class Run():
 
                 orientation = (grain_data['phi1'], grain_data['PHI'], grain_data['phi2'])
                 grain = Grain(v=grain_data['final_conti_volume'], points=points,
-                              phaseID=phaseID,grainID=grain_id,orientation=orientation)
+                              phaseID=phaseID, grainID=grain_id, orientation=orientation)
 
-                if self.subs_file_flag == True:
+                if RveInfo.subs_file_flag:
                     old_gid = grain_data['old_gid']
                     blocks = block_df[block_df['grain_id'] == old_gid + 1]
                     n_pack = len(list(set(blocks['packet_id'])))
                     orientations = self.get_orientations(block_df, old_gid)
-                    grain.gen_subs(block_thickness=average_bt, b_sigma=self.b_sigma, lower_t=self.lower, upper_t=self.upper,
-                                   circularity=self.circularity,
+                    grain.gen_subs(block_thickness=average_bt, b_sigma=RveInfo.b_sigma,
+                                   lower_t=RveInfo.lower, upper_t=RveInfo.upper,
+                                   circularity=RveInfo.circularity,
                                    n_pack=n_pack, orientations=orientations)
 
                 else:
-                    assert self.equiv_d is not None
-                    assert self.p_sigma is not None
-                    assert self.t_mu is not None
-                    grain.gen_subs(self.equiv_d,sigma=self.p_sigma,block_thickness=self.t_mu,b_sigma=self.b_sigma,lower_t=self.lower,
-                                   upper_t=self.upper,circularity=self.circularity)
-                rve_data = pd.concat([rve_data,grain.points_data])
+                    assert RveInfo.equiv_d is not None, 'no valid definition for equiv_d'
+                    assert RveInfo.p_sigma is not None, 'no valid definition for p_sigma'
+                    assert RveInfo.t_mu is not None, 'no valid definition for t_mu'
+                    grain.gen_subs(RveInfo.equiv_d, sigma=RveInfo.p_sigma, block_thickness=RveInfo.t_mu,
+                                   b_sigma=RveInfo.b_sigma, lower_t=RveInfo.lower, upper_t=RveInfo.upper,
+                                   circularity=RveInfo.circularity)
+                _rve_data = pd.concat([_rve_data, grain.points_data])
 
             else:
 
-                grain_data = pd.DataFrame(points,columns=['x','y','z'])
+                grain_data = pd.DataFrame(points, columns=['x', 'y', 'z'])
                 grain_data['GrainID'] = grain_id
                 grain_data['phaseID'] = phaseID
                 grain_data['packet_id'] = grain_id
                 grain_data['block_id'] = grain_id
                 grain_data['block_orientation'] = np.NaN
-                rve_data = pd.concat([rve_data, grain_data])
+                _rve_data = pd.concat([_rve_data, grain_data])
 
-        self.rve_data = rve_data
-        self.store_path = store_path
-        self.logger = logger
+        self.rve_data = _rve_data
 
-        self.del_zerobt(rve_data)# del blocks with 0 thickness
-        martensite_df = self.rve_data[rve_data['phaseID']==2]
+        self.del_zerobt(_rve_data)  # del blocks with 0 thickness
+        martensite_df = self.rve_data[_rve_data['phaseID']==2]
 
-        if self.subs_file_flag:
-            mod_bt(martensite_df,t_mu=average_bt)
+        if RveInfo.subs_file_flag:
+            mod_bt(martensite_df, t_mu=average_bt)
         else:
-            mod_bt(martensite_df, t_mu=self.t_mu)
+            mod_bt(martensite_df, t_mu=RveInfo.t_mu)
         # transfer id to number
-        rve_data.loc[rve_data['block_id'].isnull(), 'block_id'] = rve_data[rve_data['block_id'].isnull()][
+        _rve_data.loc[_rve_data['block_id'].isnull(), 'block_id'] = _rve_data[_rve_data['block_id'].isnull()][
                                                                       'packet_id'] + '0'
-        packet_id = list(set(rve_data['packet_id']))
+        packet_id = list(set(_rve_data['packet_id']))
         n_id = np.arange(1, len(packet_id) + 1)
         pid_to_nid = dict(zip(packet_id, n_id))
-        pid_in_rve = rve_data['packet_id'].map(lambda pid: pid_to_nid[pid])
+        pid_in_rve = _rve_data['packet_id'].map(lambda pid: pid_to_nid[pid])
 
-        block_id = list(set(rve_data['block_id']))
+        block_id = list(set(_rve_data['block_id']))
         n2_id = np.arange(1, len(block_id) + 1)
         bid_to_nid = dict(zip(block_id, n2_id))
-        bid_in_rve = rve_data['block_id'].map(lambda bid: bid_to_nid[bid])
+        bid_in_rve = _rve_data['block_id'].map(lambda bid: bid_to_nid[bid])
 
-        rve_data['packet_id'] = pid_in_rve
-        rve_data['block_id'] = bid_in_rve
-        rve_data.n_pts = self.n_pts
-        rve_data.box_size = self.box_size
-        rve_data.box_size_y = self.box_size_y
-        rve_data.box_size_z = self.box_size_z
+        _rve_data['packet_id'] = pid_in_rve
+        _rve_data['block_id'] = bid_in_rve
+        _rve_data.n_pts = RveInfo.n_pts
+        _rve_data.box_size = RveInfo.box_size
+        _rve_data.box_size_y = RveInfo.box_size_y
+        _rve_data.box_size_z = RveInfo.box_size_z
 
-        if self.save:
+        if RveInfo.save:
 
-            if self.filename:
+            if RveInfo.filename:
 
-                save_data(rve_data,store_path,self.filename)
+                save_data(_rve_data, RveInfo.store_path, RveInfo.filename)
 
             else:
-                save_data(rve_data,store_path)
+                save_data(_rve_data, RveInfo.store_path)
 
-        if self.plot:
+        if RveInfo.plot:
 
-            for name in self.plt_name:
+            for name in RveInfo.plt_name:
 
-                plot_rve_subs(rve_data,name,self.fig_path)
+                plot_rve_subs(_rve_data, name, RveInfo.fig_path)
 
-        logger.info('substructure generation successful')
-        logger.info('------------------------------------------------------------------------------')
-        return rve_data
+        RveInfo.logger.info('substructure generation successful')
+        RveInfo.logger.info('------------------------------------------------------------------------------')
+        return _rve_data
 
-    def post_processing(self,k,sigma=2):
+    def post_processing(self, k, sigma=2):
         def gaussian_kernel(x1, x2, sigma=2):
             return np.exp(-np.power(x1 - x2, 2).sum() / (2 * sigma ** 2))
 
@@ -220,7 +199,7 @@ class Run():
                 m_list.append(m)
             return np.array(m_list)
 
-        pag_path = self.store_path + '/Generation_Data/grain_data_output_discrete.csv'
+        pag_path = RveInfo.store_path + '/Generation_Data/grain_data_output_discrete.csv'
         pag_df = pd.read_csv(pag_path)
         discrete_vol = pag_df['final_discrete_volume']
         n_pag = len(pag_df)
@@ -228,10 +207,10 @@ class Run():
         std_pagvol = np.std(discrete_vol)
 
         n_pak = int(self.rve_data['packet_id'].max())
-        mean_pakvol = self.box_size**3/n_pak
+        mean_pakvol = RveInfo.box_size**3/n_pak
         variance_pakvol = 0
         for i in range(1,n_pak+1):
-            pakvol = len(self.rve_data[self.rve_data['packet_id']==i])/len(self.rve_data)*self.box_size**3
+            pakvol = len(self.rve_data[self.rve_data['packet_id'] == i])/len(self.rve_data)*RveInfo.box_size**3
             variance_pakvol += (pakvol-mean_pakvol)**2/n_pak
 
         std_pakvol = variance_pakvol**0.5
@@ -242,7 +221,7 @@ class Run():
         std_bt = bt_df['block_thickness'].std()
 
         #compute MMD
-        measured_bt = pd.read_csv(self.subs_file)['block_thickness']
+        measured_bt = pd.read_csv(RveInfo.subs_file)['block_thickness']
         generated_bt = bt_df['block_thickness']
 
         #compute k-moments
@@ -252,8 +231,8 @@ class Run():
         #get MMD
         MMD = gaussian_kernel(gen_bt_kmoments,measured_bt_kmoments,sigma)
 
-        result_path = self.store_path + '/Postprocessing/result.txt'
-        with open(result_path,'w') as f:
+        result_path = RveInfo.store_path + '/Postprocessing/result.txt'
+        with open(result_path, 'w') as f:
             f.write('Parent Austenitic Grains Statistical Info:\n')
             f.write('total number: {}\n'.format(n_pag))
             f.write('average(volume): {}\n'.format(mean_pagvol))
@@ -273,8 +252,8 @@ class Run():
             if MMD <= 0.01:
                 f.write('##warning: the MMD is too small, please check statistical features!')
 
-        if self.subs_file_flag:
-            bt_df = pd.read_csv(self.subs_file)
+        if RveInfo.subs_file_flag:
+            bt_df = pd.read_csv(RveInfo.subs_file)
             measured_bt = np.sort(bt_df['block_thickness'].to_numpy())
             kernel1 = gaussian_kde(measured_bt)
             blocks = self.rve_data.groupby('block_id').first()
@@ -287,9 +266,9 @@ class Run():
             plt.xticks(fontsize=13)
             plt.yticks(fontsize=13)
             plt.legend(fontsize=12.5, loc=1)
-            plt.savefig(self.store_path + '/Postprocessing/compare_distribution.png')
+            plt.savefig(RveInfo.store_path + '/Postprocessing/compare_distribution.png')
 
-        self.logger.info('substructure postprocessing successful')
+        RveInfo.logger.info('substructure postprocessing successful')
 
 
 
@@ -303,5 +282,5 @@ if __name__ == '__main__':
     # test_run.run()
     # end = datetime.datetime.now()
     # print('running time is',end-start)
-    df = rve_data[rve_data['block_id']==1]
+    df = rve_data[rve_data['block_id'] == 1]
     print(df)

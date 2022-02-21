@@ -1,20 +1,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime
-import logging
+from dragen.utilities.InputInfo import RveInfo
+from dragen.utilities.Helpers import HelperFunctions
 
-from dragen.utilities.RVE_Utils import RVEUtils
 
+class Tesselation3D(HelperFunctions):
 
-class Tesselation3D(RVEUtils):
+    def __init__(self, grains_df):
+        super().__init__()
 
-    def __init__(self, box_size, box_size_y, box_size_z, n_pts, grains_df, shrinkfactor, band_ratio, store_path,
-                 debug=False, infobox_obj=None, progress_obj=None, gui=True):
-
-        self.box_size = box_size
-        self.box_size_y = box_size_y
-        self.box_size_z = box_size_z
-        self.n_pts = n_pts
         self.grains_df = grains_df
         self.a = grains_df['a'].tolist()
         self.b = grains_df['b'].tolist()
@@ -24,20 +19,11 @@ class Tesselation3D(RVEUtils):
         self.y_0 = grains_df['y_0'].tolist()
         self.z_0 = grains_df['z_0'].tolist()
         self.final_volume = grains_df['final_discrete_volume'].tolist()
-        self.shrinkfactor = shrinkfactor
-        self.band_ratio = band_ratio
-        self.store_path = store_path
-        self.debug = debug
-        self.infobox_obj = infobox_obj
-        self.progress_obj = progress_obj
-
-        self.logger = logging.getLogger("RVE-Gen")
         self.n_grains = len(self.a)
-        self.bin_size = box_size / n_pts
         self.a_max = max(self.a)
         self.b_max = max(self.b)
         self.c_max = max(self.c)
-        super().__init__(box_size, n_pts=n_pts, box_size_y=box_size_y, box_size_z=box_size_z)
+
         self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
 
 
@@ -50,9 +36,9 @@ class Tesselation3D(RVEUtils):
         a_i = a[iterator - 1]
         b_i = b[iterator - 1]
         c_i = c[iterator - 1]
-        a_i = a_i + a_i / self.a_max * self.bin_size
-        b_i = b_i + b_i / self.b_max * self.bin_size
-        c_i = c_i + c_i / self.c_max * self.bin_size
+        a_i = a_i + a_i / self.a_max * RveInfo.bin_size
+        b_i = b_i + b_i / self.b_max * RveInfo.bin_size
+        c_i = c_i + c_i / self.c_max * RveInfo.bin_size
         a[iterator - 1] = a_i
         b[iterator - 1] = b_i
         c[iterator - 1] = c_i
@@ -92,24 +78,24 @@ class Tesselation3D(RVEUtils):
                     for free_space_tuples_i in free_space_tuples]
         ax.scatter(free_space_x, free_space_y, free_space_z, color='grey', alpha=0.01)
 
-        ax.set_xlim(-5, self.box_size + 5)
-        ax.set_ylim(-5, self.box_size + 5)
-        ax.set_zlim(-5, self.box_size + 5)
+        ax.set_xlim(-5, RveInfo.box_size + 5)
+        ax.set_ylim(-5, RveInfo.box_size + 5)
+        ax.set_zlim(-5, RveInfo.box_size + 5)
         ax.set_xlabel('x (µm)')
         ax.set_ylabel('y (µm)')
         ax.set_zlabel('z (µm)')
         # ax.view_init(90, 270) #facing against z-direction (counterclockwise rotation)
         # plt.show()
-        plt.savefig(self.store_path + '/Figs/3D_Tesselation_Epoch_{}.png'.format(epoch))
+        plt.savefig(RveInfo.store_path + '/Figs/3D_Tesselation_Epoch_{}.png'.format(epoch))
         plt.close(fig)
         time_elapse = datetime.datetime.now() - t_0
-        if self.debug:
-            self.logger.info('time spent on plotter for epoch {}: {}'.format(epoch, time_elapse.total_seconds()))
+        if RveInfo.debug:
+            RveInfo.logger.info('time spent on plotter for epoch {}: {}'.format(epoch, time_elapse.total_seconds()))
 
-    def run_tesselation(self, rsa, animation=True, gui=True, band_idx_start=None, grain_df=None):
-        if gui:
-            self.infobox_obj.emit('starting Tesselation')
-            self.progress_obj.emit(0)
+    def run_tesselation(self, rsa, grain_df=None, band_idx_start=None):
+        if RveInfo.gui_flag:
+            RveInfo.infobox_obj.emit('starting Tesselation')
+            RveInfo.progress_obj.emit(0)
 
         # set some variables
         status = False
@@ -154,7 +140,7 @@ class Tesselation3D(RVEUtils):
 
                 if band_vol_0 > 0:
                     band_ratio = band_vol / band_vol_0
-                    if band_ratio > self.band_ratio:  # Class property
+                    if band_ratio > RveInfo.band_ratio_final:
                         rve[((periodic_grain == idx) & (rve == 0)) | ((periodic_grain == idx) & (rve == -200))] = idx
                     else:
                         rve[((periodic_grain == idx) & (rve == 0))] = idx
@@ -162,7 +148,7 @@ class Tesselation3D(RVEUtils):
                     rve[((periodic_grain == idx) & (rve == 0))] = idx
 
                 freepoints = np.count_nonzero(rve == 0)
-                grain_vol = np.count_nonzero(rve == idx) * self.bin_size ** 3
+                grain_vol = np.count_nonzero(rve == idx) * RveInfo.bin_size ** 3
                 if freepoints == 0:
                     break
 
@@ -193,36 +179,38 @@ class Tesselation3D(RVEUtils):
 
             if not grain_idx:
                 repeat = True
-                if gui:
-                    self.infobox_obj.emit('grain growth had to be reset at {}% of volume filling'.format(packingratio))
+                if RveInfo.gui_flag:
+                    RveInfo.infobox_obj.emit('grain growth had to be reset at {}% of volume filling'.format(packingratio))
                 if packingratio < 90:
-                    if gui:
-                        self.infobox_obj.emit('your microstructure data does not contain \n'
+                    if RveInfo.gui_flag:
+                        RveInfo.infobox_obj.emit('your microstructure data does not contain \n'
                                               'enough data to fill this boxsize\n'
                                               'please decrease the boxsize for reasonable results')
                 grain_idx = grain_idx_backup.copy()
-            if animation:
+            if RveInfo.anim_flag:
                 self.tesselation_plotter(rve, epoch)
             epoch += 1
             packingratio = (1 - freepoints / vol_0) * 100
             # print('packingratio:', packingratio, '%')
-            if gui:
-                self.progress_obj.emit(packingratio)
+            if RveInfo.gui_flag:
+                RveInfo.progress_obj.emit(packingratio)
             else:
-                # TODO: Entweder Gui oder logger?
-                print(packingratio)
+                if RveInfo.gui_flag:
+                    RveInfo.progress_obj.emit('packingratio: ', packingratio)
+                else:
+                    RveInfo.logger.info('packingratio: {}'.format(packingratio))
 
         if packingratio == 100:
             status = True
 
         # Save for further usage
-        np.save(self.store_path + '/' + 'RVE_Numpy.npy', rve)
+        np.save(RveInfo.store_path + '/' + 'RVE_Numpy.npy', rve)
         if grain_df is None:
             grains_df = super().get_final_disc_vol_3D(self.grains_df, rve)
-            grains_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_discrete.csv', index=False)
+            grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_discrete.csv', index=False)
         else:
             grain_df = super().get_final_disc_vol_3D(grain_df, rve)
-            grain_df.to_csv(self.store_path + '/Generation_Data/grain_data_output_discrete.csv', index=False)
+            grain_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_discrete.csv', index=False)
 
         return rve, status
 
