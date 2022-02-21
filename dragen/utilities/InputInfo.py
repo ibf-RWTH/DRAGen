@@ -76,9 +76,11 @@ class RveInfo:
     PHASENUM = {'ferrite': 1, 'martensite': 2, 'Pearlite': 3, 'Bainite': 4}
 
 
-    n_pts = math.ceil(float(box_size) * resolution)
-    if n_pts % 2 != 0:
-        n_pts += 1
-    bin_size = box_size / n_pts
-    step_half = bin_size / 2
+    n_pts = None
+    n_pts_y = None
+    n_pts_z = None
+    bin_size = None
+    step_half = None
+
     logger = logging.getLogger("RVE-Gen")
+    result_log = logging.getLogger("RVE-Result")

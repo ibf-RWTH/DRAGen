@@ -2,6 +2,7 @@ import datetime
 import os
 import sys
 import logging
+import math
 import numpy as np
 from dragen.main2D import DataTask2D
 from dragen.main3D import DataTask3D
@@ -19,10 +20,10 @@ class Run(HelperFunctions):
                  store_path: str, shrink_factor: float, band_ratio_rsa: float, phase_ratio: float,
                  band_ratio_final: float, gui_flag: bool, gan_flag: bool,
                  subs_flag: bool, phases: list, abaqus_flag: bool, damask_flag: bool, moose_flag: bool,
-                 anim_flag: bool, exe_flag: bool,
+                 anim_flag: bool, exe_flag: bool, box_size_y: int,
                  # optional Arguments or dependent on previous flag
                  subs_file_flag=False, subs_file: str = None,
-                 box_size_y: int = None, box_size_z: int = None, bandwidth: float = None,
+                 box_size_z: int = None, bandwidth: float = None,
                  file1: str = None, file2: str = None,  info_box_obj=None,
                  progress_obj=None, equiv_d: float = None, p_sigma: float = None, t_mu: float = None,
                  b_sigma: float = 0.01, decreasing_factor: float = 0.95, lower: float = None, upper: float = None,
@@ -83,6 +84,22 @@ class Run(HelperFunctions):
         RveInfo.inclusion_flag = None
         RveInfo.root = './'
         RveInfo.input_path = './ExampleInput'
+        RveInfo.n_pts = math.ceil(float(box_size_y) * resolution)
+        if RveInfo.n_pts % 2 != 0:
+            RveInfo.n_pts += 1
+
+        if box_size_y:
+            RveInfo.n_pts_y = math.ceil(float(box_size_y) * resolution)
+            if RveInfo.n_pts_y % 2 != 0:
+                RveInfo.n_pts_y += 1
+
+        if box_size_z:
+            RveInfo.n_pts_z = math.ceil(float(box_size_z) * resolution)
+            if RveInfo.n_pts_z % 2 != 0:
+                RveInfo.n_pts_z += 1
+        RveInfo.bin_size = RveInfo.box_size / RveInfo.n_pts
+        RveInfo.step_half = RveInfo.bin_size / 2
+
 
     @staticmethod
     def setup_logging():
@@ -112,9 +129,15 @@ class Run(HelperFunctions):
         if not os.path.isdir(RveInfo.gen_path):
             os.makedirs(RveInfo.gen_path)
 
+        f_handler = logging.handlers.TimedRotatingFileHandler(
+            filename=os.path.join(RveInfo.store_path, 'result-logs'), when='midnight')
+        formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
+        f_handler.setFormatter(formatter)
+        RveInfo.result_log.addHandler(f_handler)
+        RveInfo.result_log.setLevel(level=logging.DEBUG)
+
     def run(self):
         self.setup_logging()
-
         if RveInfo.infobox_obj is not None:
             RveInfo.infobox_obj.emit("the chosen resolution lead to {}^{} "
                                      "points in the grid".format(str(RveInfo.n_pts), str(RveInfo.dimension)))
@@ -129,7 +152,8 @@ class Run(HelperFunctions):
             for i in range(RveInfo.number_of_rves):
                 self.initializations(i)
                 obj2D.initializations(RveInfo.dimension, epoch=i)
-                #obj2D.rve_generation(store_path=store_path)
+                # TODO: 2D fixen
+                #obj2D.rve_generation()
 
         elif RveInfo.dimension == 3:
             # Teile in zwei Stück für GAN
@@ -185,7 +209,7 @@ if __name__ == "__main__":
     t_mu = 1.0
     b_sigma = 0.1
     # Example Files
-    file1 = 'D:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
+    file1 = 'E:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
     # file1 = 'F:/git/merged_substructure/ExampleInput/example_pag_inp.csv'
     # file2 = 'F:/git/merged_substructure/ExampleInput/example_block_inp.csv'
     file2 = None
