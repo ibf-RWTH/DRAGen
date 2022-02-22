@@ -11,6 +11,9 @@ from dragen.generation.Mesher3D import AbaqusMesher
 from dragen.generation.mooseMesher import MooseMesher
 from dragen.postprocessing.voldistribution import PostProcVol
 from dragen.utilities.InputInfo import RveInfo
+from dragen.InputGenerator.C_WGAN_GP import WGANCGP
+
+import dragen.generation.spectral as spectral
 
 class DataTask3D(HelperFunctions):
 
@@ -29,7 +32,7 @@ class DataTask3D(HelperFunctions):
 
         for phase in RveInfo.phases:
             file_idx = RveInfo.PHASENUM[phase] - 1
-            print('current phase is', phase, ';phase input file is', files[file_idx])
+            RveInfo.logger.info('current phase is', phase, ';phase input file is', files[file_idx])
             phase_input_df = super().read_input(files[file_idx], RveInfo.dimension)
             if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
                 adjusted_size = np.cbrt((RveInfo.box_size ** 3 -
@@ -130,10 +133,38 @@ class DataTask3D(HelperFunctions):
                          max(np.where(rve > 0)[2]) - min(np.where(rve > 0)[2]) + 1)
 
             if RveInfo.damask_flag:
-                pass
+                # 1.) Write out Volume
+                grains_df.sort_values(by=['GrainID'], inplace=True)
+                disc_vols = np.zeros((1, grains_df.shape[0])).flatten().tolist()
+                for i in range(len(grains_df)):
+                    disc_vols[i] = np.count_nonzero(rve == i + 1) * RveInfo.bin_size ** 3
+
+                grains_df['meshed_conti_volume'] = disc_vols
+                grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
+
+                # Startpoint: Rearrange the negative ID's
+                last_grain_id = rve.max()  # BEWARE: For the .vti file, the grid must start at ZERO
+                print('The last grain ID is:', last_grain_id)
+                print('The number of bands is:', RveInfo.number_of_bands)
+
+                if RveInfo.number_of_bands >= 1:
+                    print('Nur Bänder')
+                    phase_list = grains_df['phaseID'].tolist()
+                    rve[np.where(rve == -200)] = last_grain_id + 1
+                    phase_list.append(2)
+
+                else:
+                    print('Keine Bänder, nur grains')
+                    phase_list = grains_df['phaseID'].tolist()
+
+                spectral.write_material(store_path=RveInfo.store_path, grains=phase_list)
+                spectral.write_load(RveInfo.store_path)
+                spectral.write_grid(store_path=RveInfo.store_path,
+                                    rve=rve,
+                                    spacing=RveInfo.box_size / 1000,
+                                    grains=phase_list)
 
             if RveInfo.moose_flag:
-
                 MooseMesher(rve_shape=rve_shape, rve=periodic_rve_df, grains_df=grains_df).run()
 
             if RveInfo.abaqus_flag:

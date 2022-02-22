@@ -192,14 +192,14 @@ class Run(HelperFunctions):
 
 
 if __name__ == "__main__":
-    box_size = 600
+    box_size = 20
     box_size_y = None  # if this is None it will be set to the main box_size value
-    box_size_z = 300  # for sheet rve set z to None and y to different value than x the other way round is buggy
-    resolution = 0.1
+    box_size_z = 20  # for sheet rve set z to None and y to different value than x the other way round is buggy
+    resolution = 2
     number_of_rves = 1
     number_of_bands = 0
     bandwidth = 5
-    visualization_flag = False
+    visualization_flag = True
     phase_ratio = 1.0
     store_path = '../'
     shrink_factor = 0.4
@@ -210,10 +210,10 @@ if __name__ == "__main__":
     t_mu = 1.0
     b_sigma = 0.1
     # Example Files
-    file1 = 'E:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
+    file1 = r'C:\Venvs\dragen\ExampleInput\ferrite_54_grains_processed.csv'
     # file1 = 'F:/git/merged_substructure/ExampleInput/example_pag_inp.csv'
     # file2 = 'F:/git/merged_substructure/ExampleInput/example_block_inp.csv'
-    file2 = None
+    file2 = r'C:\Venvs\dragen\ExampleInput\pearlite_21_grains.csv'
     # file2 = 'E:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
     # test pearlite phase
     subs_flag = False
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     gan_flag = False
     moose_flag = True
     abaqus_flag = False
-    damask_flag = False
+    damask_flag = True
     element_type = 'HEX8'
     band_ratio_rsa = 0.75
     band_ratio_final = 0.8
@@ -234,7 +234,7 @@ if __name__ == "__main__":
     specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
     same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in martensite.
     '''
-    phases = ['ferrite']
+    phases = ['ferrite', 'martensite']
     Run(box_size, element_type=element_type, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution,
         number_of_rves=number_of_rves,
         number_of_bands=number_of_bands, bandwidth=bandwidth, dimension=dimension,
