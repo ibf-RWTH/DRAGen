@@ -4,6 +4,8 @@ import sys
 import logging
 import math
 import numpy as np
+from typing import Dict
+
 from dragen.main2D import DataTask2D
 from dragen.main3D import DataTask3D
 from dragen.main3D_GAN import DataTask3D_GAN
@@ -20,18 +22,21 @@ class Run(HelperFunctions):
                  store_path: str, shrink_factor: float, band_ratio_rsa: float, phase_ratio: float,
                  band_ratio_final: float, gui_flag: bool, gan_flag: bool,
                  subs_flag: bool, phases: list, abaqus_flag: bool, damask_flag: bool, moose_flag: bool,
-                 anim_flag: bool, exe_flag: bool, box_size_y: int,
+                 anim_flag: bool, exe_flag: bool, box_size_y: int, file_dict: dict(), inclusion_flag: bool,
+                 inclusion_ratio: float,
                  # optional Arguments or dependent on previous flag
                  subs_file_flag=False, subs_file: str = None,
                  box_size_z: int = None, bandwidth: float = None,
-                 file1: str = None, file2: str = None,  info_box_obj=None,
-                 progress_obj=None, equiv_d: float = None, p_sigma: float = None, t_mu: float = None,
+                 info_box_obj=None, progress_obj=None, equiv_d: float = None, p_sigma: float = None, t_mu: float = None,
                  b_sigma: float = 0.01, decreasing_factor: float = 0.95, lower: float = None, upper: float = None,
                  circularity: float = 1, plt_name: str = None, save: bool = True, plot: bool = False,
                  filename: str = None, fig_path: str = None, orient_relationship: str = None
     ):
 
         super().__init__()
+        # TODO: @Manuel @Max. Ich habe schon häufiger gesehen, dass in anderen Packages Konstanten immer GROß
+        #  geschrieben werden. Ist das auch für uns ne Idee, dann weiß man im CODE auch immer, welche variable man
+        #  auf keinen Fall einfach so ändern sollte
         RveInfo.box_size = box_size
         RveInfo.element_type = element_type
         RveInfo.box_size_y = box_size_y
@@ -42,8 +47,7 @@ class Run(HelperFunctions):
         RveInfo.band_width = bandwidth
         RveInfo.dimension = dimension
         RveInfo.visualization_flag = visualization_flag
-        RveInfo.file1 = file1
-        RveInfo.file2 = file2
+        RveInfo.file_dict = file_dict   # TODO: Change to dict based output
         RveInfo.phase_ratio = phase_ratio
         RveInfo.store_path = store_path
         RveInfo.shrink_factor = np.cbrt(shrink_factor)
@@ -80,8 +84,8 @@ class Run(HelperFunctions):
         RveInfo.element_type = 'HEX8'
         RveInfo.roughness_flag = False
         RveInfo.band_filling = 0.99
-        RveInfo.inclusion_ratio = 0.01
-        RveInfo.inclusion_flag = None
+        RveInfo.inclusion_ratio = inclusion_ratio
+        RveInfo.inclusion_flag = inclusion_flag
         RveInfo.root = './'
         RveInfo.input_path = './ExampleInput'
 
@@ -192,15 +196,15 @@ class Run(HelperFunctions):
 
 
 if __name__ == "__main__":
-    box_size = 20
-    box_size_y = None  # if this is None it will be set to the main box_size value
+    box_size = 40
+    box_size_y = 30  # if this is None it will be set to the main box_size value
     box_size_z = 20  # for sheet rve set z to None and y to different value than x the other way round is buggy
     resolution = 2
     number_of_rves = 1
     number_of_bands = 0
     bandwidth = 5
     visualization_flag = True
-    phase_ratio = 1.0
+    phase_ratio = 1
     store_path = '../'
     shrink_factor = 0.4
     dimension = 3
@@ -209,19 +213,21 @@ if __name__ == "__main__":
     p_sigma = 0.1
     t_mu = 1.0
     b_sigma = 0.1
+    inclusion_flag = True
+    inclusion_ratio = 0.01
     # Example Files
     file1 = r'C:\Venvs\dragen\ExampleInput\ferrite_54_grains_processed.csv'
-    # file1 = 'F:/git/merged_substructure/ExampleInput/example_pag_inp.csv'
+    file1 = r'C:\Venvs\dragen\ExampleInput\TrainedData_2.pkl'
     # file2 = 'F:/git/merged_substructure/ExampleInput/example_block_inp.csv'
     file2 = r'C:\Venvs\dragen\ExampleInput\pearlite_21_grains.csv'
-    # file2 = 'E:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
+    file3 = r'C:\Venvs\dragen\ExampleInput\38Mn-Ferrite.csv'
     # test pearlite phase
     subs_flag = False
     subs_file = '../ExampleInput/example_block_inp.csv'
     subs_file_flag = False
     gui_flag = False
     gan_flag = False
-    moose_flag = True
+    moose_flag = False
     abaqus_flag = False
     damask_flag = True
     element_type = 'HEX8'
@@ -229,19 +235,23 @@ if __name__ == "__main__":
     band_ratio_final = 0.8
     anim_flag = False
     exe_flag = False
+    files = {1: file1, 2: file2, 3: None, 4: None, 5: file3}
 
     '''
     specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
     same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in martensite.
+    
+    Number 5 specifies the inclusions and number 6 the Band phase. Either .csv or .pckl
     '''
-    phases = ['ferrite', 'martensite']
+    phases = ['ferrite', 'martensite', 'Inclusions']
     Run(box_size, element_type=element_type, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution,
         number_of_rves=number_of_rves,
         number_of_bands=number_of_bands, bandwidth=bandwidth, dimension=dimension,
-        visualization_flag=visualization_flag, file1=file1, file2=file2, equiv_d=equiv_d, p_sigma=p_sigma, t_mu=t_mu,
+        visualization_flag=visualization_flag, file_dict=files, equiv_d=equiv_d, p_sigma=p_sigma, t_mu=t_mu,
         b_sigma=b_sigma,
         phase_ratio=phase_ratio, store_path=store_path, shrink_factor=shrink_factor, gui_flag=gui_flag,
         gan_flag=gan_flag,
         info_box_obj=None, progress_obj=None, subs_file_flag=subs_file_flag, subs_file=subs_file, phases=phases,
         subs_flag=subs_flag, moose_flag=moose_flag, abaqus_flag=abaqus_flag, damask_flag=damask_flag,
-        band_ratio_rsa=band_ratio_rsa, band_ratio_final=band_ratio_final, anim_flag=anim_flag, exe_flag=exe_flag).run()
+        band_ratio_rsa=band_ratio_rsa, band_ratio_final=band_ratio_final, anim_flag=anim_flag, exe_flag=exe_flag, inclusion_flag=True,
+        inclusion_ratio=inclusion_ratio).run()

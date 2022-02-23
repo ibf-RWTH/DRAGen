@@ -15,46 +15,50 @@ from dragen.InputGenerator.C_WGAN_GP import WGANCGP
 
 import dragen.generation.spectral as spectral
 
+
 class DataTask3D(HelperFunctions):
 
     def __init__(self):
         super().__init__()
 
-
     def grain_sampling(self):
         """
         In this function the correct number of grains for the chosen Volume is sampled from given csv files
         """
-
-        files = [RveInfo.file1, RveInfo.file2]
+        files = RveInfo.file_dict
         RveInfo.logger.info("RVE generation process has started...")
         total_df = pd.DataFrame()
 
         for phase in RveInfo.phases:
-            file_idx = RveInfo.PHASENUM[phase] - 1
-            RveInfo.logger.info('current phase is', phase, ';phase input file is', files[file_idx])
+            file_idx = RveInfo.PHASENUM[phase]
+            print('current phase is', phase, ';phase input file is', files[file_idx])
             phase_input_df = super().read_input(files[file_idx], RveInfo.dimension)
+            if phase == 'Inclusions':  # Das fehlte vorher
+                phase_ratio = RveInfo.inclusion_ratio
+            elif phase == 'ferrite':
+                phase_ratio = RveInfo.phase_ratio
+            elif phase == 'martensite':
+                phase_ratio = 1 - RveInfo.phase_ratio
+
             if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
                 adjusted_size = np.cbrt((RveInfo.box_size ** 3 -
                                          (RveInfo.box_size ** 2 * RveInfo.number_of_bands * RveInfo.band_width))
-                                        * RveInfo.phase_ratio)
+                                        * phase_ratio)
                 grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
-
             elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
                 adjusted_size = np.cbrt((RveInfo.box_size ** 2 * RveInfo.box_size_y -
                                          (RveInfo.box_size ** 2 * RveInfo.number_of_bands * RveInfo.band_width))
-                                        * RveInfo.phase_ratio)
+                                        * phase_ratio)
                 grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
             elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
                 adjusted_size = np.cbrt((RveInfo.box_size ** 2 * RveInfo.box_size_z -
                                          (RveInfo.box_size ** 2 * RveInfo.number_of_bands * RveInfo.band_width))
-                                        * RveInfo.phase_ratio)
+                                        * phase_ratio)
                 grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
-
             else:
                 adjusted_size = np.cbrt((RveInfo.box_size * RveInfo.box_size_y * RveInfo.box_size_z -
                                          (RveInfo.box_size ** 2 * RveInfo.number_of_bands * RveInfo.band_width))
-                                        * RveInfo.phase_ratio)
+                                        * phase_ratio)
                 grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
 
             grains_df['phaseID'] = RveInfo.PHASENUM[phase]
@@ -62,50 +66,62 @@ class DataTask3D(HelperFunctions):
 
         grains_df = super().process_df(total_df, RveInfo.shrink_factor)
 
-        total_volume = sum(grains_df['final_conti_volume'].values)
+        total_volume = sum(
+            grains_df[grains_df['phaseID'] != 5]['final_conti_volume'].values)  # Inclusions dont influence filling
         estimated_boxsize = np.cbrt(total_volume)
         RveInfo.logger.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
-                         format(total_volume, estimated_boxsize))
+                            format(total_volume, estimated_boxsize))
 
         grains_df.to_csv(RveInfo.gen_path + '/grain_data_input.csv', index=False)
+        print(grains_df)
         return grains_df
 
     def rve_generation(self, grains_df):
 
-        discrete_RSA_obj = DiscreteRsa3D(grains_df['a'].tolist(),
-                                         grains_df['b'].tolist(),
-                                         grains_df['c'].tolist(),
-                                         grains_df['alpha'].tolist())
+        print(grains_df.__len__())
+        print(grains_df[grains_df['phaseID'] == 5].__len__())
+        normal_grains_df = grains_df[grains_df['phaseID'] <= 4]
+        print(normal_grains_df.__len__())
+        discrete_RSA_obj = DiscreteRsa3D(normal_grains_df['a'].tolist(),  # TODO: Das ist noch mit Inclusions hier
+                                         normal_grains_df['b'].tolist(),
+                                         normal_grains_df['c'].tolist(),
+                                         normal_grains_df['alpha'].tolist())
 
         if RveInfo.number_of_bands > 0:
-            # initialize empty grid_array for bands called band_array
-
-            band_array = super().gen_array()
-            band_array = super().gen_boundaries_3D(band_array)
-
-            for i in range(RveInfo.number_of_bands):
-                band_array = super().band_generator(band_array)
-
-            rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(RveInfo.band_ratio_rsa, band_array)
-            grains_df['x_0'] = x_0_list
-            grains_df['y_0'] = y_0_list
-            grains_df['z_0'] = z_0_list
+            # TODO: @Niklas add the new band process here
+            print('Not implemented')
+            breakpoint()
 
         else:
             rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa()
-            grains_df['x_0'] = x_0_list
-            grains_df['y_0'] = y_0_list
-            grains_df['z_0'] = z_0_list
+            normal_grains_df['x_0'] = x_0_list
+            normal_grains_df['y_0'] = y_0_list
+            normal_grains_df['z_0'] = z_0_list
 
         if rsa_status:
-            discrete_tesselation_obj = Tesselation3D(grains_df)
+            discrete_tesselation_obj = Tesselation3D(normal_grains_df)
             rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa)
 
         else:
             RveInfo.logger.info("The rsa did not succeed...")
             sys.exit()
 
-        if rve_status:
+        """
+        PLACE THE INCLUSIONS!
+        """
+        if rve_status and RveInfo.inclusion_flag and RveInfo.inclusion_ratio != 0:
+            inclusions_df = grains_df[grains_df['phaseID'] == 5]
+            discrete_RSA_inc_obj = DiscreteRsa3D(inclusions_df['a'].tolist(),
+                                                 inclusions_df['b'].tolist(),
+                                                 inclusions_df['c'].tolist(),
+                                                 inclusions_df['alpha'].tolist())
+
+            rve, rve_status = discrete_RSA_inc_obj.run_rsa_inclusions(rve)
+
+        """
+        GENERATE INOUT DATA FOR SIMULATIONS HERE
+        """
+        if rsa_status:
             periodic_rve_df = super().repair_periodicity_3D(rve)
             periodic_rve_df['phaseID'] = 0
             print('len rve edge:', np.cbrt(len(periodic_rve_df)))
@@ -153,6 +169,13 @@ class DataTask3D(HelperFunctions):
                     rve[np.where(rve == -200)] = last_grain_id + 1
                     phase_list.append(2)
 
+                if RveInfo.inclusion_ratio > 0 and (RveInfo.inclusion_flag is True):
+                    print('Nur Inclusions')
+                    phase_list = grains_df['phaseID'].tolist()
+                    for i in range(len(inclusions_df)):
+                        rve[np.where(rve == -(200 + i + 1))] = last_grain_id + i + 1
+                    print(phase_list.__len__())
+
                 else:
                     print('Keine Bänder, nur grains')
                     phase_list = grains_df['phaseID'].tolist()
@@ -161,8 +184,7 @@ class DataTask3D(HelperFunctions):
                 spectral.write_load(RveInfo.store_path)
                 spectral.write_grid(store_path=RveInfo.store_path,
                                     rve=rve,
-                                    spacing=RveInfo.box_size / 1000,
-                                    grains=phase_list)
+                                    spacing=RveInfo.box_size / 1000)
 
             if RveInfo.moose_flag:
                 MooseMesher(rve_shape=rve_shape, rve=periodic_rve_df, grains_df=grains_df).run()
@@ -197,22 +219,25 @@ class DataTask3D(HelperFunctions):
             PostProcVol().gen_pie_chart_phases(phase1_ratio_discrete_in, phase2_ratio_discrete_in, 'input_discrete')
             PostProcVol().gen_pie_chart_phases(phase1_ratio_discrete_out, phase2_ratio_discrete_out, 'output_discrete')
 
-            PostProcVol().gen_plots(phase1_ref_r_discrete_in, phase1_ref_r_discrete_out, 'phase 1 discrete', 'phase1vs2_discrete',
-                          phase2_ref_r_discrete_in, phase2_ref_r_discrete_out, 'phase 2 discrete')
+            PostProcVol().gen_plots(phase1_ref_r_discrete_in, phase1_ref_r_discrete_out, 'phase 1 discrete',
+                                    'phase1vs2_discrete',
+                                    phase2_ref_r_discrete_in, phase2_ref_r_discrete_out, 'phase 2 discrete')
             PostProcVol().gen_plots(phase1_ref_r_conti_in, phase1_ref_r_conti_out, 'phase 1 conti', 'phase1vs2_conti',
-                          phase2_ref_r_conti_in, phase2_ref_r_conti_out, 'phase 2 conti')
+                                    phase2_ref_r_conti_in, phase2_ref_r_conti_out, 'phase 2 conti')
             if RveInfo.gui_flag:
                 RveInfo.infobox_obj.emit('checkout the evaluation report of the rve stored at:\n'
-                                      '{}/Postprocessing'.format(RveInfo.store_path))
+                                         '{}/Postprocessing'.format(RveInfo.store_path))
         else:
             print('the only phase is {}'.format(RveInfo.phases[0]))
             if RveInfo.phases[0] == 'ferrite':
                 PostProcVol().gen_plots(phase1_ref_r_conti_in, phase1_ref_r_conti_out, 'conti', 'in_vs_out_conti')
-                PostProcVol().gen_plots(phase1_ref_r_discrete_in, phase1_ref_r_discrete_out, 'discrete', 'in_vs_out_discrete')
+                PostProcVol().gen_plots(phase1_ref_r_discrete_in, phase1_ref_r_discrete_out, 'discrete',
+                                        'in_vs_out_discrete')
 
             elif RveInfo.phases[0] == 'martensite':
                 PostProcVol().gen_plots(phase2_ref_r_conti_in, phase2_ref_r_conti_out, 'conti', 'in_vs_out_conti')
-                PostProcVol().gen_plots(phase2_ref_r_discrete_in, phase2_ref_r_discrete_out, 'discrete', 'in_vs_out_discrete')
+                PostProcVol().gen_plots(phase2_ref_r_discrete_in, phase2_ref_r_discrete_out, 'discrete',
+                                        'in_vs_out_discrete')
 
         if RveInfo.subs_flag:
             RveInfo.sub_run.post_processing(k=3)

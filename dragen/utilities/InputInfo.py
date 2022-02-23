@@ -27,8 +27,7 @@ class RveInfo:
     band_width: any([float, int]) = 2
     dimension: int = 3
     visualization_flag: bool = False
-    file1: str = None
-    file2: str = None
+    file_dict: dict() = None
     phase_ratio: float = None  # 1 means all ferrite, 0 means all Martensite
     store_path: str = None
     shrink_factor: float = None
@@ -73,7 +72,7 @@ class RveInfo:
     inclusion_flag: bool = None
     root: str = './'
     input_path: str = './ExampleInput'
-    PHASENUM = {'ferrite': 1, 'martensite': 2, 'Pearlite': 3, 'Bainite': 4}
+    PHASENUM = {'ferrite': 1, 'martensite': 2, 'Pearlite': 3, 'Bainite': 4, 'Inclusions': 5, 'Bands': 6}
 
 
     n_pts = None
