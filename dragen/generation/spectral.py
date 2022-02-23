@@ -3,7 +3,7 @@ INPUT FOR DAMASK 3 from here on!
 """
 import damask
 import numpy as np
-import pyvista as pv
+from dragen.utilities.InputInfo import RveInfo
 
 
 def write_material(store_path: str, grains: list) -> None:
@@ -57,7 +57,7 @@ def write_material(store_path: str, grains: list) -> None:
 
     matdata['phase']['Ferrite'] = ferrite
     matdata['phase']['Martensite'] = martensite
-    if 3 in grains:
+    if 5 in grains:
         matdata['phase']['ThirdPhase'] = inclusion
 
     # Material
@@ -69,7 +69,7 @@ def write_material(store_path: str, grains: list) -> None:
         elif p == 2:
             matdata = matdata.material_add(phase=['Martensite'], O=damask.Rotation.from_random(1),
                                            homogenization='SX')
-        elif p == 3:
+        elif p == 5:
             matdata = matdata.material_add(phase=['ThirdPhase'], O=damask.Rotation.from_random(1),
                                            homogenization='SX')
 
@@ -93,12 +93,24 @@ def write_load(store_path: str) -> None:
     load_case.save(store_path + '/load.yaml')
 
 
-def write_grid(store_path: str, rve: np.ndarray, spacing: float, grains: list) -> None:
-    start = int(rve.__len__() / 4)
-    stop = int(rve.__len__() / 4 + rve.__len__() / 2)
-    real_rve = rve[start:stop, start:stop, start:stop]
-    print(np.asarray(np.unique(real_rve, return_counts=True)).T)
+def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
+    print(rve.shape)
+    step = 4
+    start1 = int(rve.shape[0] / step)
+    print(start1)
+    stop1 = int(rve.shape[0] / step + rve.shape[0] / step*2)
+    print(stop1)
+    start2 = int(rve.shape[1] / step)
+    print(start2)
+    stop2 = int(rve.shape[1] / step + rve.shape[1] / step*2)
+    print(stop2)
+    start3 = int(rve.shape[2] / step)
+    print(start3)
+    stop3 = int(rve.shape[2] / step + rve.shape[2] / step*2)
+    print(stop3)
+    real_rve = rve[start1:stop1, start2:stop2, start3:stop3]
     real_rve = real_rve - 1  # Grid.vti starts at zero
+    print(real_rve.shape)
     print(np.asarray(np.unique(real_rve, return_counts=True)).T)
 
     grid = damask.Grid(material=real_rve, size=[spacing, spacing, spacing])
@@ -106,23 +118,3 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float, grains: list) -
     print(grid)
     grid.save(fname=store_path + '/grid.vti', compress=True)
 
-    # Only for visualization
-    pv.set_plot_theme('document')
-    grid = pv.UniformGrid()
-
-    # Set the grid dimensions: shape + 1 because we want to inject our values on
-    #   the CELL data
-    grid.dimensions = np.array(real_rve.shape) + 1
-
-    # Edit the spatial reference
-    grid.origin = (0, 0, 0)  # The bottom left corner of the data set
-    grid.spacing = (spacing, spacing, spacing)  # These are the cell sizes along each axis
-
-    # Add the data values to the cell data
-    x = np.linspace(0, 10, int(rve.__len__() / 2) + 1, endpoint=True)
-    y = np.linspace(0, 10, int(rve.__len__() / 2) + 1, endpoint=True)
-    z = np.linspace(0, 10, int(rve.__len__() / 2) + 1, endpoint=True)
-    xx, yy, zz = np.meshgrid(x, y, z)
-    grid = pv.StructuredGrid(xx, yy, zz)
-
-    grid.cell_arrays["material"] = real_rve.flatten(order="C")  # Flatten the array in C-Style
