@@ -42,6 +42,7 @@ class DataTask3D(HelperFunctions):
         for phase in RveInfo.phases:
             file_idx = RveInfo.PHASENUM[phase]
             print('current phase is', phase, ';phase input file is', files[file_idx])
+            print('current phase is', phase, ';phase ratio file is', RveInfo.phase_ratio[file_idx])
 
             # Check file ending:
             if files[file_idx].endswith('.csv'):
@@ -49,35 +50,26 @@ class DataTask3D(HelperFunctions):
             elif files[file_idx].endswith('.pkl'):
                 phase_input_df = super().read_input_gan(files[file_idx], RveInfo.dimension, size=1000)
 
-            if phase == 'Inclusions':  # Das fehlte vorher
-                phase_ratio = RveInfo.inclusion_ratio
-            elif phase == 'ferrite':
-                phase_ratio = RveInfo.phase_ratio
-            elif phase == 'martensite':
-                phase_ratio = 1 - RveInfo.phase_ratio
-            elif phase == 'Bands':
-                phase_ratio = 'pass'
-
-            if phase_ratio != 'pass':
+            if phase != 'Bands':
                 if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
                     adjusted_size = np.cbrt((RveInfo.box_size ** 3 -
                                              (RveInfo.box_size ** 2 * sum_bw))
-                                            * phase_ratio)
+                                            * RveInfo.phase_ratio[file_idx])
                     grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
                 elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
                     adjusted_size = np.cbrt((RveInfo.box_size ** 2 * RveInfo.box_size_y -
                                              (RveInfo.box_size ** 2 * sum_bw))
-                                            * phase_ratio)
+                                            * RveInfo.phase_ratio[file_idx])
                     grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
                 elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
                     adjusted_size = np.cbrt((RveInfo.box_size ** 2 * RveInfo.box_size_z -
                                              (RveInfo.box_size ** 2 * sum_bw))
-                                            * phase_ratio)
+                                            * RveInfo.phase_ratio[file_idx])
                     grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
                 else:
                     adjusted_size = np.cbrt((RveInfo.box_size * RveInfo.box_size_y * RveInfo.box_size_z -
                                              (RveInfo.box_size ** 2 * sum_bw))
-                                            * phase_ratio)
+                                            * RveInfo.phase_ratio[file_idx])
                     grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
 
                 grains_df['phaseID'] = RveInfo.PHASENUM[phase]

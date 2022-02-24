@@ -30,7 +30,7 @@ class RveInfo:
     dimension: int = 3
     visualization_flag: bool = False
     file_dict: dict() = None
-    phase_ratio: float = None  # 1 means all ferrite, 0 means all Martensite TODO: Use a dict
+    phase_ratio: dict() = None  # 1 means all ferrite, 0 means all Martensite TODO: Use a dict
     store_path: str = None
     shrink_factor: float = None
     band_ratio_rsa: float = None

@@ -19,7 +19,7 @@ class Run(HelperFunctions):
                  # mandatory arguments:
                  self, box_size: int, element_type: str, resolution: float, number_of_rves: int,
                  number_of_bands: int,  dimension: int, visualization_flag: bool,
-                 store_path: str, shrink_factor: float,  phase_ratio: float, gui_flag: bool, gan_flag: bool,
+                 store_path: str, shrink_factor: float,  phase_ratio: dict(), gui_flag: bool, gan_flag: bool,
                  subs_flag: bool, phases: list, abaqus_flag: bool, damask_flag: bool, moose_flag: bool,
                  anim_flag: bool, exe_flag: bool, box_size_y: int, file_dict: dict(), inclusion_flag: bool,
                  inclusion_ratio: float, band_filling: float, upper_band_bound: float, lower_band_bound: float,
@@ -185,17 +185,16 @@ class Run(HelperFunctions):
 
 
 if __name__ == "__main__":
-    box_size = 25
-    box_size_y = None  # if this is None it will be set to the main box_size value
+    box_size = 20
+    box_size_y = 40  # if this is None it will be set to the main box_size value
     box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
     resolution = 1.5
     number_of_rves = 1
-    number_of_bands = 2
+    number_of_bands = 1
     band_filling = 1.2
     lower_band_bound = 2
     upper_band_bound = 5
     visualization_flag = True
-    phase_ratio = 1
     store_path = '../'
     shrink_factor = 0.4
     dimension = 3
@@ -225,6 +224,8 @@ if __name__ == "__main__":
     anim_flag = False
     exe_flag = False
     files = {1: file1, 2: file2, 3: None, 4: None, 5: file3, 6: file6}
+    phase_ratio = {1: 0.7, 2: 0.3, 6: None}  # Pass for bands
+    phases = ['ferrite', 'martensite', 'Bands']
 
     '''
     specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
@@ -232,7 +233,7 @@ if __name__ == "__main__":
     
     Number 5 specifies the inclusions and number 6 the Band phase. Either .csv or .pckl
     '''
-    phases = ['ferrite', 'Bands']
+
     Run(box_size, element_type=element_type, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution,
         number_of_rves=number_of_rves,
         number_of_bands=number_of_bands, dimension=dimension,
