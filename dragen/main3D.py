@@ -154,7 +154,7 @@ class DataTask3D(HelperFunctions):
             # initialize empty grid_array for bands called band_array
             rsa = super().gen_array()
             band_rsa = super().gen_boundaries_3D(rsa)
-            rsa_start = super().band_generator(band_array=band_rsa, bandwidth=RveInfo.bandwidths[0], center=18)
+            rsa_start = super().band_generator(band_array=band_rsa, bandwidth=RveInfo.bandwidths[0], center=band_center_0)
 
             # Place first band
             x_0_list = list()
@@ -205,7 +205,7 @@ class DataTask3D(HelperFunctions):
 
                 rsa = super().gen_array()
                 band_rsa = super().gen_boundaries_3D(rsa)
-                band_array_new = super().band_generator(band_array=band_rsa, bandwidth=RveInfo.bandwidths[0], center=4)
+                band_array_new = super().band_generator(band_array=band_rsa, bandwidth=RveInfo.bandwidths[0], center=band_center)
 
                 discrete_RSA_obj = DiscreteRsa3D(new_df['a'].tolist(),
                                                  new_df['b'].tolist(),
@@ -226,7 +226,6 @@ class DataTask3D(HelperFunctions):
         else:
             rsa_status = True
 
-        print(band_list)
         """
         NORMAL RSA HERE
         """
