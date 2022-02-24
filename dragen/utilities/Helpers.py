@@ -150,6 +150,8 @@ class HelperFunctions:
     def read_input_gan(self, file_name, dimension, size) -> pd.DataFrame:
         """
         Reads a .pckl file and transferes it to a df with grains
+        ATTENTION: Assumes data like Area, Aspect Ratio, Slope (Angles)
+            --> Not suitable if Gan is directly trained on axis sizes
         """
         GAN = WGANCGP(df_list=[], storepath=RveInfo.store_path, num_features=3,
                       gen_iters=500000)
@@ -180,7 +182,7 @@ class HelperFunctions:
 
         if not ('phi1' in data.head(0) and data['phi1'].count() != 0 and 'PHI' in data.head(0) and data['PHI'].count() != 0 \
                 and 'phi2' in data.head(0) and data['phi2'].count() != 0):
-            data['phi1'] = np.random.rand(data.__len__()) * 360
+            data['phi1'] = np.random.rand(data.__len__()) * 360  # TODO: Damask package
             data['PHI'] = np.random.rand(data.__len__()) * 180
             data['phi2'] = np.random.rand(data.__len__()) * 360
 
@@ -194,30 +196,37 @@ class HelperFunctions:
             data = data.drop(labels=['c'], axis=1).reset_index(drop=True)
             return data
 
-    def sample_input_3D(self, data, bs) -> pd.DataFrame:
+    def sample_input_3D(self, data, bs, constraint=None) -> pd.DataFrame:
 
+        if constraint is None:
+            constraint = 10000
+        else:
+            constraint = constraint
         max_volume = bs**3
+        print(max_volume)
         data["volume"] = 4/3*np.pi*data["a"]*data["b"]*data["c"]
         data = data.loc[data["a"] < RveInfo.box_size/2]
 
         grain_vol = 0
-        inp_list = list()
         old_idx = list()
         input_df = pd.DataFrame()
         while grain_vol < max_volume:
             idx = np.random.randint(0, data.__len__())
-            old_idx.append(idx)
 
             grain = data.loc[data.index[idx]]
             grain_df = pd.DataFrame(grain).transpose()
             data = data.drop(labels=data.index[idx], axis=0)
+            if (grain['a'] > constraint*2) or (grain['b'] > constraint) or (grain['c'] > constraint*2):  # Dickenunterschied für die Bänbder
+                continue
+
+            old_idx.append(idx)
             vol = grain["volume"]
             grain_vol += vol
             input_df = pd.concat([input_df,grain_df])
-            #input_df = input_df.transpose()
             if len(data) == 0:
                 break
 
+        print('Volume of df', input_df['volume'].sum())
         input_df['old_gid'] = old_idx # get old idx so that the substructure generator knows which grains are chosen in the input data
         return input_df
 
@@ -274,7 +283,7 @@ class HelperFunctions:
         RveInfo.logger.info("Volume for the given radii: {}".format(d_vol))
         return d_vol
 
-    def band_generator(self, band_array: np.array, plane: str = 'xz'):
+    def band_generator(self, band_array: np.array, center, bandwidth, plane: str = 'xz'):
         """Creates a band of given bandwidth for given points in interval [step_half, box_size)
         with bin_size spacing along the axis.
         Parameters :
@@ -283,7 +292,7 @@ class HelperFunctions:
         Bandidentifier will be -200 in rve_array
         """
         band_is_placed = False
-        band_half = RveInfo.band_width / 2
+        band_half = bandwidth / 2
 
         empty_array = band_array.copy()
         empty_array[empty_array == -200] = 0
@@ -301,7 +310,7 @@ class HelperFunctions:
         while not band_is_placed:
 
             # band_ center doesnt necessarily need to be an integer
-            band_center = int(RveInfo.bin_size + np.random.rand() * (RveInfo.box_size - RveInfo.bin_size))
+            band_center = center
             print('center: ', band_center)
             left_bound = band_center - band_half
             right_bound = band_center + band_half
@@ -322,7 +331,7 @@ class HelperFunctions:
             if ((rve_band_vol_old + band_vol_0_theo) == rve_band_vol_new) and not band_vol_0_theo == 0:
                 band_is_placed = True
                 RveInfo.logger.info("Band generator - Bandwidth: {}, Left bound: {} and Right bound: {}"
-                                 .format(RveInfo.band_width, left_bound, right_bound))
+                                 .format(bandwidth, left_bound, right_bound))
 
         return band_array
 
@@ -1278,7 +1287,7 @@ class HelperFunctions:
 
         final_conti_volume = [(4 / 3 * a[i] * b[i] * c[i] * np.pi) for i in range(len(a))]
 
-        for i in range(len(df)):
+        for i in range(len(df)): # TODO: @Manuel, Max, Niklas: Ich glaub das ist super langsam
             discrete_vol.append(self.convert_volume_3D(df['a'][i], df['b'][i], df['c'][i]))
         df['final_discrete_volume'] = discrete_vol
 
@@ -1286,9 +1295,10 @@ class HelperFunctions:
         b_shrinked = [b_i * shrink_factor for b_i in b]
         c_shrinked = [c_i * shrink_factor for c_i in c]
 
-        df['a'] = a_shrinked
-        df['b'] = b_shrinked
-        df['c'] = c_shrinked
+        df['a'] = shrink_factor * df['a']
+        df['b'] = shrink_factor * df['b']
+        df['c'] = shrink_factor * df['c']
+
         df['final_conti_volume'] = final_conti_volume
         # Sortiert und resetet Index bereits
         df.sort_values(by='final_conti_volume', inplace=True, ascending=False)

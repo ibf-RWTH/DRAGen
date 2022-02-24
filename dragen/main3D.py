@@ -29,6 +29,16 @@ class DataTask3D(HelperFunctions):
         RveInfo.logger.info("RVE generation process has started...")
         total_df = pd.DataFrame()
 
+        # TODO: Generiere Bandwidths hier!
+        if RveInfo.number_of_bands > 0:
+            low = RveInfo.lower_band_bound
+            high = RveInfo.upper_band_bound
+            RveInfo.bandwidths = np.random.uniform(low=low, high=high, size=RveInfo.number_of_bands)
+            print(RveInfo.bandwidths)
+            sum_bw = RveInfo.bandwidths.sum()
+        else:
+            sum_bw = 0
+
         for phase in RveInfo.phases:
             file_idx = RveInfo.PHASENUM[phase]
             print('current phase is', phase, ';phase input file is', files[file_idx])
@@ -37,44 +47,51 @@ class DataTask3D(HelperFunctions):
             if files[file_idx].endswith('.csv'):
                 phase_input_df = super().read_input(files[file_idx], RveInfo.dimension)
             elif files[file_idx].endswith('.pkl'):
-                phase_input_df = super().read_input_gan(files[file_idx], RveInfo.dimension, size=10000)
+                phase_input_df = super().read_input_gan(files[file_idx], RveInfo.dimension, size=1000)
 
-            print(phase_input_df)
             if phase == 'Inclusions':  # Das fehlte vorher
                 phase_ratio = RveInfo.inclusion_ratio
             elif phase == 'ferrite':
                 phase_ratio = RveInfo.phase_ratio
             elif phase == 'martensite':
                 phase_ratio = 1 - RveInfo.phase_ratio
+            elif phase == 'Bands':
+                phase_ratio = 'pass'
 
-            if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
-                adjusted_size = np.cbrt((RveInfo.box_size ** 3 -
-                                         (RveInfo.box_size ** 2 * RveInfo.number_of_bands * RveInfo.band_width))
-                                        * phase_ratio)
-                grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
-            elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
-                adjusted_size = np.cbrt((RveInfo.box_size ** 2 * RveInfo.box_size_y -
-                                         (RveInfo.box_size ** 2 * RveInfo.number_of_bands * RveInfo.band_width))
-                                        * phase_ratio)
-                grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
-            elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
-                adjusted_size = np.cbrt((RveInfo.box_size ** 2 * RveInfo.box_size_z -
-                                         (RveInfo.box_size ** 2 * RveInfo.number_of_bands * RveInfo.band_width))
-                                        * phase_ratio)
-                grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
+            if phase_ratio != 'pass':
+                if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
+                    adjusted_size = np.cbrt((RveInfo.box_size ** 3 -
+                                             (RveInfo.box_size ** 2 * sum_bw))
+                                            * phase_ratio)
+                    grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
+                elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
+                    adjusted_size = np.cbrt((RveInfo.box_size ** 2 * RveInfo.box_size_y -
+                                             (RveInfo.box_size ** 2 * sum_bw))
+                                            * phase_ratio)
+                    grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
+                elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
+                    adjusted_size = np.cbrt((RveInfo.box_size ** 2 * RveInfo.box_size_z -
+                                             (RveInfo.box_size ** 2 * sum_bw))
+                                            * phase_ratio)
+                    grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
+                else:
+                    adjusted_size = np.cbrt((RveInfo.box_size * RveInfo.box_size_y * RveInfo.box_size_z -
+                                             (RveInfo.box_size ** 2 * sum_bw))
+                                            * phase_ratio)
+                    grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
+
+                grains_df['phaseID'] = RveInfo.PHASENUM[phase]
+                total_df = pd.concat([total_df, grains_df])
+
             else:
-                adjusted_size = np.cbrt((RveInfo.box_size * RveInfo.box_size_y * RveInfo.box_size_z -
-                                         (RveInfo.box_size ** 2 * RveInfo.number_of_bands * RveInfo.band_width))
-                                        * phase_ratio)
-                grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
-
-            grains_df['phaseID'] = RveInfo.PHASENUM[phase]
-            total_df = pd.concat([total_df, grains_df])
-
+                grains_df = phase_input_df.copy()
+                grains_df['phaseID'] = RveInfo.PHASENUM[phase]
+                total_df = pd.concat([total_df, grains_df])
+        print('Processing now')
         grains_df = super().process_df(total_df, RveInfo.shrink_factor)
 
         total_volume = sum(
-            grains_df[grains_df['phaseID'] != 5]['final_conti_volume'].values)  # Inclusions dont influence filling
+            grains_df[grains_df['phaseID'] <= 6]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
         estimated_boxsize = np.cbrt(total_volume)
         RveInfo.logger.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
                             format(total_volume, estimated_boxsize))
@@ -108,28 +125,161 @@ class DataTask3D(HelperFunctions):
             bands_df.reset_index(inplace=True, drop=True)
             bands_df['GrainID'] = bands_df.index
 
-        discrete_RSA_obj = DiscreteRsa3D(grains_df['a'].tolist(),
-                                         grains_df['b'].tolist(),
-                                         grains_df['c'].tolist(),
-                                         grains_df['alpha'].tolist())
-
+        """
+        BAND GENERATION HERE!
+        """
         if RveInfo.number_of_bands > 0:
-            # TODO: @Niklas add the new band process here
-            print('Not implemented')
-            breakpoint()
+            box_size_y = RveInfo.box_size if RveInfo.box_size_y is None else RveInfo.box_size_y
+            print(box_size_y)
+            band_data = bands_df.copy()
+            adjusted_size = np.cbrt((RveInfo.bandwidths[0] * RveInfo.box_size ** 2) * RveInfo.band_filling * 0.5)
+            bands_df = super().sample_input_3D(band_data, adjusted_size, constraint=RveInfo.bandwidths[0])
+            bands_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
+            bands_df.reset_index(inplace=True, drop=True)
+            bands_df['GrainID'] = bands_df.index
+            print(bands_df)
+            discrete_RSA_obj = DiscreteRsa3D(bands_df['a'].tolist(),
+                                             bands_df['b'].tolist(),
+                                             bands_df['c'].tolist(),
+                                             bands_df['alpha'].tolist())
 
+            # Zum abspeichern der Werte
+            band_list = list()
+
+            # Berechne center and store the values:
+            band_center_0 = int(RveInfo.bin_size + np.random.rand() * (box_size_y - RveInfo.bin_size))
+            band_half_0 = float(RveInfo.bandwidths[0] / 2)
+            band_list.append([band_half_0, band_center_0])
+
+            # initialize empty grid_array for bands called band_array
+            rsa = super().gen_array()
+            band_rsa = super().gen_boundaries_3D(rsa)
+            rsa_start = super().band_generator(band_array=band_rsa, bandwidth=RveInfo.bandwidths[0], center=18)
+
+            # Place first band
+            x_0_list = list()
+            y_0_list = list()
+            z_0_list = list()
+
+            # band_list.append([band_half_0, band_center_0])
+            rsa, x_0, y_0, z_0, rsa_status = discrete_RSA_obj.run_rsa_clustered(previous_rsa=rsa_start,
+                                                                                band_array=rsa_start,
+                                                                                animation=True)
+
+            x_0_list.extend(x_0)
+            y_0_list.extend(y_0)
+            z_0_list.extend(z_0)
+
+            # Place the Rest of the Bands
+            for i in range(1, RveInfo.number_of_bands):
+                print(i)
+                print('RSA zu Beginn Band 2.')
+
+                # ---------------------------------------------------------------------------------------------------
+                # Sample grains for the second band
+                adjusted_size = np.cbrt((RveInfo.bandwidths[i] * RveInfo.box_size ** 2) * RveInfo.band_filling * 0.5)
+                new_df = super().sample_input_3D(band_data, adjusted_size, constraint=RveInfo.bandwidths[0])
+                new_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
+                new_df.reset_index(inplace=True, drop=True)
+                new_df['GrainID'] = new_df.index
+                bands_df = pd.concat([bands_df, new_df])
+                bands_df.reset_index(inplace=True, drop=True)
+                bands_df['GrainID'] = bands_df.index
+                # ---------------------------------------------------------------------------------------------------
+
+                # Berechne neuen Center und prüfe überschneidung
+                intersect = True
+                while intersect == True:
+                    band_center = int(RveInfo.bin_size + np.random.rand() * (box_size_y - RveInfo.bin_size))
+                    band_half = float(RveInfo.bandwidths[0] / 2)
+                    # Intersection when c_old - c_new < b_old + b_new (for each band)
+                    for [bw_old, bc_old] in band_list:
+                        bw_dist = bw_old + band_half
+                        bc_dist = abs(bc_old - band_center)
+                        if bc_dist <= bw_dist:
+                            # one single intercept is enough for breaking the loop
+                            intersect = True
+                            break
+                        else:
+                            intersect = False
+
+                rsa = super().gen_array()
+                band_rsa = super().gen_boundaries_3D(rsa)
+                band_array_new = super().band_generator(band_array=band_rsa, bandwidth=RveInfo.bandwidths[0], center=4)
+
+                discrete_RSA_obj = DiscreteRsa3D(new_df['a'].tolist(),
+                                                 new_df['b'].tolist(),
+                                                 new_df['c'].tolist(),
+                                                 new_df['alpha'].tolist())
+
+                # Get maximum value from previous RSA as starting pint
+                startindex = int(np.amin(rsa) + 1000) * -1
+                print(startindex)
+                rsa, x_0, y_0, z_0, rsa_status = discrete_RSA_obj.run_rsa_clustered(previous_rsa=rsa,
+                                                                                    band_array=band_array_new,
+                                                                                    animation=True,
+                                                                                    startindex=startindex)
+
+                x_0_list.extend(x_0)
+                y_0_list.extend(y_0)
+                z_0_list.extend(z_0)
         else:
-            rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa()
-            grains_df['x_0'] = x_0_list
-            grains_df['y_0'] = y_0_list
-            grains_df['z_0'] = z_0_list
+            rsa_status = True
 
+        print(band_list)
+        """
+        NORMAL RSA HERE
+        """
         if rsa_status:
-            discrete_tesselation_obj = Tesselation3D(grains_df)
-            rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa)
+            discrete_RSA_obj = DiscreteRsa3D(grains_df['a'].tolist(),
+                                             grains_df['b'].tolist(),
+                                             grains_df['c'].tolist(),
+                                             grains_df['alpha'].tolist())
+
+            if RveInfo.number_of_bands > 0:
+                rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa(band_ratio_rsa=1,
+                                                                                         banded_rsa_array=rsa,
+                                                                                         x0_alt=x_0_list,
+                                                                                         y0_alt=y_0_list,
+                                                                                         z0_alt=z_0_list)
+
+            else:
+                rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa()
+
+        """
+        TESSELATOR HERE
+        """
+        if rsa_status:
+            if RveInfo.number_of_bands > 0:
+                rsa = super().rearange_grain_ids_bands(bands_df=bands_df,
+                                                       grains_df=grains_df,
+                                                       rsa=rsa)
+
+                # Concat all the data
+                whole_df = pd.concat([grains_df, bands_df])
+                whole_df.reset_index(inplace=True, drop=True)
+                whole_df['GrainID'] = whole_df.index
+                whole_df['x_0'] = x_0_list
+                whole_df['y_0'] = y_0_list
+                whole_df['z_0'] = z_0_list
+                discrete_tesselation_obj = Tesselation3D(whole_df)
+                rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa, band_idx_start=grains_df.__len__())
+            else:
+                whole_df = grains_df.copy()
+                whole_df.reset_index(inplace=True, drop=True)
+                whole_df['GrainID'] = whole_df.index
+                whole_df['x_0'] = x_0_list
+                whole_df['y_0'] = y_0_list
+                whole_df['z_0'] = z_0_list
+                discrete_tesselation_obj = Tesselation3D(whole_df)
+                rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa)
+
+            # Change the band_ids to -200
+            for i in range(len(grains_df), len(whole_df)):
+                rve[np.where(rve == i + 1)] = -200
 
         else:
-            RveInfo.logger.info("The rsa did not succeed...")
+            RveInfo.logger.info("The tesselation did not succeed...")
             sys.exit()
 
         """
@@ -143,6 +293,7 @@ class DataTask3D(HelperFunctions):
 
             rve, rve_status = discrete_RSA_inc_obj.run_rsa_inclusions(rve)
 
+        print(grains_df[['phaseID', 'GrainID', 'a', 'b', 'c']])
         """
         GENERATE INPUT DATA FOR SIMULATIONS HERE
         """
@@ -174,7 +325,6 @@ class DataTask3D(HelperFunctions):
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = (i + 2)
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
 
-
             # Start the Mesher
             # grains_df.to_csv('grains_df.csv', index=False)
             # periodic_rve_df.to_csv('periodic_rve_df.csv', index=False)
@@ -203,7 +353,7 @@ class DataTask3D(HelperFunctions):
                     rve[np.where(rve == -200)] = last_grain_id + 1
                     phase_list.append(2)
 
-                if RveInfo.inclusion_ratio > 0 and (RveInfo.inclusion_flag is True):
+                elif RveInfo.inclusion_ratio > 0 and (RveInfo.inclusion_flag is True):
                     print('Nur Inclusions')
                     phase_list = grains_df['phaseID'].tolist()
                     for i in range(len(inclusions_df)):

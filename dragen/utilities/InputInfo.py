@@ -1,7 +1,7 @@
 import math
 import logging
 import typing
-
+import numpy as np
 
 class RveInfo:
     """
@@ -24,11 +24,13 @@ class RveInfo:
     resolution: any([float, int]) = 1
     number_of_rves: int = 1
     number_of_bands: int = 0
-    band_width: any([float, int]) = 2
+    bandwidths: np.ndarray = None
+    lower_band_bound: float = None
+    upper_band_bound: float = None
     dimension: int = 3
     visualization_flag: bool = False
     file_dict: dict() = None
-    phase_ratio: float = None  # 1 means all ferrite, 0 means all Martensite
+    phase_ratio: float = None  # 1 means all ferrite, 0 means all Martensite TODO: Use a dict
     store_path: str = None
     shrink_factor: float = None
     band_ratio_rsa: float = None
