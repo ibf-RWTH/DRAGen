@@ -81,19 +81,37 @@ class DataTask3D(HelperFunctions):
 
         grains_df.to_csv(RveInfo.gen_path + '/grain_data_input.csv', index=False)
         print(grains_df)
-        breakpoint()
         return grains_df
 
-    def rve_generation(self, grains_df):
+    def rve_generation(self, total_df):
 
-        print(grains_df.__len__())
-        print(grains_df[grains_df['phaseID'] == 5].__len__())
-        normal_grains_df = grains_df[grains_df['phaseID'] <= 4]
-        print(normal_grains_df.__len__())
-        discrete_RSA_obj = DiscreteRsa3D(normal_grains_df['a'].tolist(),  # TODO: Das ist noch mit Inclusions hier
-                                         normal_grains_df['b'].tolist(),
-                                         normal_grains_df['c'].tolist(),
-                                         normal_grains_df['alpha'].tolist())
+        """
+        Separate the different datas
+            grains_df = Grains which are used in RSA and Tesselation directly
+            inclusions_df = data which is placed directly after the tesselation (not growing)
+            bands_df = data used for the formation of bands
+        """
+        grains_df = total_df[total_df['phaseID'] <= 4]
+        grains_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
+        grains_df.reset_index(inplace=True, drop=True)
+        grains_df['GrainID'] = grains_df.index
+
+        if RveInfo.inclusion_flag and RveInfo.inclusion_ratio > 0:
+            inclusions_df = total_df[total_df['phaseID'] == 5]
+            inclusions_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
+            inclusions_df.reset_index(inplace=True, drop=True)
+            inclusions_df['GrainID'] = inclusions_df.index
+
+        if RveInfo.number_of_bands > 0:
+            bands_df = total_df[total_df['phaseID'] == 6]
+            bands_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
+            bands_df.reset_index(inplace=True, drop=True)
+            bands_df['GrainID'] = bands_df.index
+
+        discrete_RSA_obj = DiscreteRsa3D(grains_df['a'].tolist(),
+                                         grains_df['b'].tolist(),
+                                         grains_df['c'].tolist(),
+                                         grains_df['alpha'].tolist())
 
         if RveInfo.number_of_bands > 0:
             # TODO: @Niklas add the new band process here
@@ -102,12 +120,12 @@ class DataTask3D(HelperFunctions):
 
         else:
             rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa()
-            normal_grains_df['x_0'] = x_0_list
-            normal_grains_df['y_0'] = y_0_list
-            normal_grains_df['z_0'] = z_0_list
+            grains_df['x_0'] = x_0_list
+            grains_df['y_0'] = y_0_list
+            grains_df['z_0'] = z_0_list
 
         if rsa_status:
-            discrete_tesselation_obj = Tesselation3D(normal_grains_df)
+            discrete_tesselation_obj = Tesselation3D(grains_df)
             rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa)
 
         else:
@@ -118,7 +136,6 @@ class DataTask3D(HelperFunctions):
         PLACE THE INCLUSIONS!
         """
         if rve_status and RveInfo.inclusion_flag and RveInfo.inclusion_ratio != 0:
-            inclusions_df = grains_df[grains_df['phaseID'] == 5]
             discrete_RSA_inc_obj = DiscreteRsa3D(inclusions_df['a'].tolist(),
                                                  inclusions_df['b'].tolist(),
                                                  inclusions_df['c'].tolist(),
@@ -127,9 +144,10 @@ class DataTask3D(HelperFunctions):
             rve, rve_status = discrete_RSA_inc_obj.run_rsa_inclusions(rve)
 
         """
-        GENERATE INOUT DATA FOR SIMULATIONS HERE
+        GENERATE INPUT DATA FOR SIMULATIONS HERE
         """
         if rsa_status:
+            # TODO: Hier gibt es einen relativ großen Mesh/Grid-Preprocessing Block --> Auslagern
             periodic_rve_df = super().repair_periodicity_3D(rve)
             periodic_rve_df['phaseID'] = 0
             print('len rve edge:', np.cbrt(len(periodic_rve_df)))
@@ -141,13 +159,21 @@ class DataTask3D(HelperFunctions):
                 # Set grain-ID to number of the grain
                 # Denn Grain-ID ist entweder >0 oder -200 oder >-200
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1, 'phaseID'] = grains_df['phaseID'][i]
-                # debug_df.loc[debug_df.index == i, 'vol_rve_df'] = \
-                #    len(periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1])*RveInfo.bin_size**3
 
-            if RveInfo.number_of_bands > 0:
+            if RveInfo.inclusion_flag and RveInfo.inclusion_ratio > 0:
+                for j in range(inclusions_df.__len__()):
+                    periodic_rve_df.loc[periodic_rve_df['GrainID'] == -(200 + i + 1), 'GrainID'] = (i + j + 2)
+                    periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + j + 3), 'phaseID'] = 2  # Elastisch für Icams
+
+            if RveInfo.number_of_bands > 0 and RveInfo.inclusion_flag and RveInfo.inclusion_ratio > 0:
+                # Set the points where == -200 to phase 2 and to grain ID i + j + 3
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = (i + j + 3)
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + j + 3), 'phaseID'] = 2
+            else:
                 # Set the points where == -200 to phase 2 and to grain ID i + 2
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = (i + 2)
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
+
 
             # Start the Mesher
             # grains_df.to_csv('grains_df.csv', index=False)
@@ -182,6 +208,7 @@ class DataTask3D(HelperFunctions):
                     phase_list = grains_df['phaseID'].tolist()
                     for i in range(len(inclusions_df)):
                         rve[np.where(rve == -(200 + i + 1))] = last_grain_id + i + 1
+                        phase_list.append(5)
                     print(phase_list.__len__())
 
                 else:
@@ -195,11 +222,13 @@ class DataTask3D(HelperFunctions):
                                     spacing=RveInfo.box_size / 1000)
 
             if RveInfo.moose_flag:
+                # TODO: @Manuel @Niklas: Hier auch phase list ausschreiben?
                 MooseMesher(rve_shape=rve_shape, rve=periodic_rve_df, grains_df=grains_df).run()
 
+            # TODO: @Manuel: Hier scheinen noch Teile der alten Logik drinn zu sein
             if RveInfo.abaqus_flag:
                 mesher_obj = None
-                if RveInfo.subs_flag == True:
+                if RveInfo.subs_flag:
                     print("substructure generation is turned on...")
                     # returns rve df containing substructures
                     subs_rve = RveInfo.sub_run.run(rve_df=periodic_rve_df, grains_df=grains_df)
