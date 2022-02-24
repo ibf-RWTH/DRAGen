@@ -4,6 +4,8 @@ import numpy as np
 import datetime
 from tkinter import messagebox
 from dragen.utilities.InputInfo import RveInfo
+from dragen.InputGenerator.C_WGAN_GP import WGANCGP
+from dragen.InputGenerator.linking import Reconstructor
 
 
 class HelperFunctions:
@@ -127,7 +129,7 @@ class HelperFunctions:
             i = 0
             while i < len(radius_a):
                 tex_phi1.append(round((np.random.rand() * 360), 2))
-                tex_PHI.append(round((np.random.rand() * 360), 2))
+                tex_PHI.append(round((np.random.rand() * 180), 2))
                 tex_phi2.append(round((np.random.rand() * 360), 2))
                 i = i + 1
 
@@ -144,6 +146,53 @@ class HelperFunctions:
             grain_df = pd.DataFrame(data=grain_dict,
                                     columns=["a", "b", "alpha", "phi1", "PHI", "phi2"])
             return grain_df
+
+    def read_input_gan(self, file_name, dimension, size) -> pd.DataFrame:
+        """
+        Reads a .pckl file and transferes it to a df with grains
+        """
+        GAN = WGANCGP(df_list=[], storepath=RveInfo.store_path, num_features=3,
+                      gen_iters=500000)
+        # Load Data here
+        GAN.load_trained_states(single=False, file_list=[file_name])
+
+        df = GAN.sample_batch(label=0, size=size)  # Man braucht hier auf jeden Fall Pandas > 1.15
+        # 1.) Switch the axis
+        # locations: [Area, Aspect Ratio, Slope] - Sind so fixed
+        df2 = df.copy().dropna(axis=0)
+        columns = df2.columns
+        df2['Axes1'] = np.nan
+        df2['Axes2'] = np.nan
+        df2['Axes1'] = (df2[columns[0]] * df2[columns[1]] / np.pi) ** 0.5  # Major
+        df2['Axes2'] = df2[columns[0]] / (np.pi * df2['Axes1'])
+        # Switch axis in 45 - 135
+        for j, row in df2.iterrows():
+            if 45 < row[2] <= 135:
+                temp1 = df2['Axes2'].iloc[j]
+                temp2 = df2['Axes1'].iloc[j]
+                df2['Axes1'].iloc[j] = temp1
+                df2['Axes2'].iloc[j] = temp2
+            else:
+                pass
+        # Set c = a due to coming rotation - TODO: Setzt das voraus, muss bei den Trainingsdaten passen
+        df2['Axes3'] = df2['Axes1']
+        data = df2.copy()
+
+        if not ('phi1' in data.head(0) and data['phi1'].count() != 0 and 'PHI' in data.head(0) and data['PHI'].count() != 0 \
+                and 'phi2' in data.head(0) and data['phi2'].count() != 0):
+            data['phi1'] = np.random.rand(data.__len__()) * 360
+            data['PHI'] = np.random.rand(data.__len__()) * 180
+            data['phi2'] = np.random.rand(data.__len__()) * 360
+
+        data.drop(labels=['Area', 'Aspect Ratio'], inplace=True, axis=1)
+        data.columns = ['alpha', 'a', 'b', 'c', 'phi1', 'PHI', 'phi2']
+
+        if dimension == 3:
+            return data
+
+        elif dimension == 2:
+            data = data.drop(labels=['c'], axis=1).reset_index(drop=True)
+            return data
 
     def sample_input_3D(self, data, bs) -> pd.DataFrame:
 

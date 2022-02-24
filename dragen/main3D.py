@@ -32,7 +32,14 @@ class DataTask3D(HelperFunctions):
         for phase in RveInfo.phases:
             file_idx = RveInfo.PHASENUM[phase]
             print('current phase is', phase, ';phase input file is', files[file_idx])
-            phase_input_df = super().read_input(files[file_idx], RveInfo.dimension)
+
+            # Check file ending:
+            if files[file_idx].endswith('.csv'):
+                phase_input_df = super().read_input(files[file_idx], RveInfo.dimension)
+            elif files[file_idx].endswith('.pkl'):
+                phase_input_df = super().read_input_gan(files[file_idx], RveInfo.dimension, size=10000)
+
+            print(phase_input_df)
             if phase == 'Inclusions':  # Das fehlte vorher
                 phase_ratio = RveInfo.inclusion_ratio
             elif phase == 'ferrite':
@@ -74,6 +81,7 @@ class DataTask3D(HelperFunctions):
 
         grains_df.to_csv(RveInfo.gen_path + '/grain_data_input.csv', index=False)
         print(grains_df)
+        breakpoint()
         return grains_df
 
     def rve_generation(self, grains_df):
