@@ -3,10 +3,10 @@ import pandas as pd
 import pyvista as pv
 import datetime
 import os
-from dragen.generation.PvGridGeneration import PyvistaOperations
+from dragen.generation.PvGridGeneration import MeshingHelper
 from dragen.utilities.InputInfo import RveInfo
 
-class AbaqusMesher(PyvistaOperations):
+class AbaqusMesher(MeshingHelper):
 
     def __init__(self, rve_shape: tuple, rve: pd.DataFrame, grains_df: pd.DataFrame):
         super().__init__(rve_shape, rve, grains_df)

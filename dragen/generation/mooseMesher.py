@@ -2,11 +2,11 @@ import numpy as np
 import pandas as pd
 
 from dragen.utilities.generateExodus import NetCDFWrapper
-from dragen.generation.PvGridGeneration import PyvistaOperations
+from dragen.generation.PvGridGeneration import MeshingHelper
 from dragen.utilities.InputInfo import RveInfo
 
 
-class MooseMesher(PyvistaOperations):
+class MooseMesher(MeshingHelper):
 
     def __init__(self, rve_shape: tuple, rve: pd.DataFrame, grains_df: pd.DataFrame):
         super().__init__(rve_shape, rve, grains_df)

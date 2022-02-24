@@ -18,7 +18,7 @@ import tetgen
 class SubMesher(AbaqusMesher):
     """
     SubMesher inherits all the functions from AbaqusMesher and therefore also the functions from PvGridGeneration.py
-    So, no need to take care of inheritance of PyvistaOperations
+    So, no need to take care of inheritance of MeshingHelper
     self.gen_blocks() is already available.
     """
 

@@ -5,7 +5,7 @@ import logging
 import tetgen
 from dragen.utilities.InputInfo import RveInfo
 
-class PyvistaOperations:
+class MeshingHelper:
     def __init__(self, rve_shape: tuple = None, rve: pd.DataFrame = None, grains_df: pd.DataFrame = None):
 
         self.rve = rve
