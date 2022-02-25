@@ -1,4 +1,6 @@
 import sys
+
+import damask
 import pandas as pd
 import numpy as np
 import datetime
@@ -74,7 +76,7 @@ class HelperFunctions:
         x_grid, y_grid = np.meshgrid(xy, xy, indexing='ij')
         return x_grid, y_grid
 
-    def read_input(self, file_name, dimension) -> pd.DataFrame:
+    def read_input(self, file_name, dimension) -> pd.DataFrame: #TODO @Max: Ich würde hier noch mal drübergucken, glaub die funktion ist ziemlich langsam bei große .csvs (Niklas)
         """Reads the given input file and returns the volume along with radii, rotation angles and texture parameters.
         Parameter :
         file_name : String, name of the input file
@@ -128,9 +130,10 @@ class HelperFunctions:
                 'No texture parameters (phi1, PHI, phi2) in given .csv-Inputfile! Assumption: random texture')
             i = 0
             while i < len(radius_a):
-                tex_phi1.append(round((np.random.rand() * 360), 2))
-                tex_PHI.append(round((np.random.rand() * 180), 2))
-                tex_phi2.append(round((np.random.rand() * 360), 2))
+                o = damask.Rotation.from_random(1).as_Euler_angles(degrees=True)  # Rotation based on Damask
+                tex_phi1.append(float(o[:, 0]))
+                tex_PHI.append(float(o[:, 1]))
+                tex_phi2.append(float(o[:, 2]))
                 i = i + 1
 
         if dimension == 3:
@@ -145,6 +148,7 @@ class HelperFunctions:
                           "phi1": tex_phi1, "PHI": tex_PHI, "phi2": tex_phi2}
             grain_df = pd.DataFrame(data=grain_dict,
                                     columns=["a", "b", "alpha", "phi1", "PHI", "phi2"])
+
             return grain_df
 
     def read_input_gan(self, file_name, dimension, size) -> pd.DataFrame:
@@ -180,14 +184,17 @@ class HelperFunctions:
         df2['Axes3'] = df2['Axes1']
         data = df2.copy()
 
-        if not ('phi1' in data.head(0) and data['phi1'].count() != 0 and 'PHI' in data.head(0) and data['PHI'].count() != 0 \
+        if not ('phi1' in data.head(0) and data['phi1'].count() != 0 and 'PHI' in data.head(0) and data['PHI'].count() != 0
                 and 'phi2' in data.head(0) and data['phi2'].count() != 0):
-            data['phi1'] = np.random.rand(data.__len__()) * 360  # TODO: Damask package
-            data['PHI'] = np.random.rand(data.__len__()) * 180
-            data['phi2'] = np.random.rand(data.__len__()) * 360
+            o = damask.Rotation.from_random(data.__len__()).as_Euler_angles(degrees=True)
+            data['phi1'] = o[:, 0]
+            data['PHI'] = o[:, 1]
+            data['phi2'] = o[:, 2]
 
         data.drop(labels=['Area', 'Aspect Ratio'], inplace=True, axis=1)
         data.columns = ['alpha', 'a', 'b', 'c', 'phi1', 'PHI', 'phi2']
+
+        print(data)
 
         if dimension == 3:
             return data

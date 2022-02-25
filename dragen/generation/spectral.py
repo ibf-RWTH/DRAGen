@@ -3,10 +3,11 @@ INPUT FOR DAMASK 3 from here on!
 """
 import damask
 import numpy as np
+import pandas as pd
 from dragen.utilities.InputInfo import RveInfo
 
 
-def write_material(store_path: str, grains: list) -> None:
+def write_material(store_path: str, grains: list, angles: pd.DataFrame) -> None:
     matdata = damask.ConfigMaterial()
 
     # Homog
@@ -61,10 +62,11 @@ def write_material(store_path: str, grains: list) -> None:
         matdata['phase']['ThirdPhase'] = inclusion
 
     # Material
-    print(grains)
+    i = 0
     for p in grains:
+        o = damask.Rotation.from_Euler_angles(angles.loc[i].to_numpy(), degrees=True)
         if p == 1:
-            matdata = matdata.material_add(phase=['Ferrite'], O=damask.Rotation.from_random(1),
+            matdata = matdata.material_add(phase=['Ferrite'], O=o,
                                            homogenization='SX')
         elif p == 2:
             matdata = matdata.material_add(phase=['Martensite'], O=damask.Rotation.from_random(1),
@@ -72,6 +74,7 @@ def write_material(store_path: str, grains: list) -> None:
         elif p == 5:
             matdata = matdata.material_add(phase=['ThirdPhase'], O=damask.Rotation.from_random(1),
                                            homogenization='SX')
+        i += 1
 
     print('Anzahl materialien in Materials.yaml: ', grains.__len__())
     matdata.save(store_path + '/material.yaml')

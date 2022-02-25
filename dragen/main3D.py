@@ -355,8 +355,8 @@ class DataTask3D(HelperFunctions):
                 else:
                     print('Keine Bänder, nur grains')
                     phase_list = grains_df['phaseID'].tolist()
-
-                spectral.write_material(store_path=RveInfo.store_path, grains=phase_list)
+                print(grains_df['phi1'])
+                spectral.write_material(store_path=RveInfo.store_path, grains=phase_list, angles=grains_df[['phi1', 'PHI', 'phi2']])
                 spectral.write_load(RveInfo.store_path)
                 spectral.write_grid(store_path=RveInfo.store_path,
                                     rve=rve,
@@ -366,7 +366,6 @@ class DataTask3D(HelperFunctions):
                 # TODO: @Manuel @Niklas: Hier auch phase list ausschreiben?
                 MooseMesher(rve_shape=rve_shape, rve=periodic_rve_df, grains_df=grains_df).run()
 
-            # TODO: @Manuel: Hier scheinen noch Teile der alten Logik drinn zu sein
             if RveInfo.abaqus_flag:
                 mesher_obj = None
                 if RveInfo.subs_flag:
