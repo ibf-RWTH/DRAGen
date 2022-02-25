@@ -1298,9 +1298,6 @@ class HelperFunctions:
             discrete_vol.append(self.convert_volume_3D(df['a'][i], df['b'][i], df['c'][i]))
         df['final_discrete_volume'] = discrete_vol
 
-        a_shrinked = [a_i * shrink_factor for a_i in a]
-        b_shrinked = [b_i * shrink_factor for b_i in b]
-        c_shrinked = [c_i * shrink_factor for c_i in c]
 
         df['a'] = shrink_factor * df['a']
         df['b'] = shrink_factor * df['b']

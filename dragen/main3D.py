@@ -100,10 +100,10 @@ class DataTask3D(HelperFunctions):
             inclusions_df = data which is placed directly after the tesselation (not growing)
             bands_df = data used for the formation of bands
         """
-        grains_df = total_df[total_df['phaseID'] <= 4]
-        grains_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
+        grains_df = total_df.loc[total_df['phaseID'] <= 4, :]
+        grains_df = grains_df.sort_values(by='final_conti_volume', ascending=False)
         grains_df.reset_index(inplace=True, drop=True)
-        grains_df['GrainID'] = grains_df.index
+        grains_df.loc[:, 'GrainID'] = grains_df.index
 
         if RveInfo.inclusion_flag and RveInfo.inclusion_ratio > 0:
             inclusions_df = total_df[total_df['phaseID'] == 5]
@@ -113,9 +113,9 @@ class DataTask3D(HelperFunctions):
 
         if RveInfo.number_of_bands > 0:
             bands_df = total_df[total_df['phaseID'] == 6]
-            bands_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
+            bands_df = bands_df.sort_values(by='final_conti_volume', ascending=False)
             bands_df.reset_index(inplace=True, drop=True)
-            bands_df['GrainID'] = bands_df.index
+            bands_df.loc[:, 'GrainID'] = bands_df.index
 
         """
         BAND GENERATION HERE!
@@ -330,7 +330,7 @@ class DataTask3D(HelperFunctions):
                 for i in range(len(grains_df)):
                     disc_vols[i] = np.count_nonzero(rve == i + 1) * RveInfo.bin_size ** 3
 
-                grains_df['meshed_conti_volume'] = disc_vols
+                grains_df.loc[:, 'meshed_conti_volume'] = disc_vols
                 grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
 
                 # Startpoint: Rearrange the negative ID's
@@ -365,6 +365,12 @@ class DataTask3D(HelperFunctions):
             if RveInfo.moose_flag:
                 # TODO: @Manuel @Niklas: Hier auch phase list ausschreiben?
                 MooseMesher(rve_shape=rve_shape, rve=periodic_rve_df, grains_df=grains_df).run()
+                # store phases and texture in seperate txt files to make it work within moose
+                grains_df[['phi1', 'PHI', 'phi2']].to_csv(path_or_buf=RveInfo.store_path+'EulerAngles.txt',
+                                                          header=False, index=False)
+                phases = periodic_rve_df.groupby(['GrainID']).mean()['phaseID']
+                print(phases)
+                phases.to_csv(path_or_buf=RveInfo.store_path+'phases.txt',  header=False, index=False)
 
             if RveInfo.abaqus_flag:
                 mesher_obj = None

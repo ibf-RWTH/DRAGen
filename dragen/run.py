@@ -185,12 +185,12 @@ class Run(HelperFunctions):
 
 
 if __name__ == "__main__":
-    box_size = 20
+    box_size = 30
     box_size_y = 20  # if this is None it will be set to the main box_size value
     box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
     resolution = 1.5
     number_of_rves = 1
-    number_of_bands = 1
+    number_of_bands = 0
     band_filling = 1.2
     lower_band_bound = 2
     upper_band_bound = 5
@@ -207,10 +207,10 @@ if __name__ == "__main__":
     inclusion_ratio = 0.01
     # Example Files
     # file1 = r'C:\Venvs\dragen\ExampleInput\ferrite_54_grains_processed.csv'
-    file1 = r'C:\Venvs\dragen\ExampleInput\TrainedData_2.pkl'
-    file6 = r'C:\Venvs\dragen\ExampleInput\TrainedData_2.pkl'
-    file2 = r'C:\Venvs\dragen\ExampleInput\pearlite_21_grains.csv'
-    file3 = r'C:\Venvs\dragen\ExampleInput\38Mn-Ferrite.csv'
+    file1 = r'..\ExampleInput\TrainedData_2.pkl'
+    file6 = r'..\ExampleInput\TrainedData_2.pkl'
+    file2 = r'..\ExampleInput\pearlite_21_grains.csv'
+    file3 = r'..\ExampleInput\38Mn-Ferrite.csv'
     # test pearlite phase
     subs_flag = False
     subs_file = '../ExampleInput/example_block_inp.csv'
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
     same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in martensite.
     
-    Number 5 specifies the inclusions and number 6 the Band phase. Either .csv or .pckl
+    Number 5 specifies the inclusions and number 6 the Band phase. Either .csv or .pkl
     '''
 
     Run(box_size, element_type=element_type, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution,

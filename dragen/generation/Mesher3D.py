@@ -15,7 +15,7 @@ class AbaqusMesher(MeshingHelper):
 
         """simple function to write the assembly definition in the input file"""
 
-        f = open(self.store_path + '/RVE_smooth.inp', 'a')
+        f = open(RveInfo.store_path + '/RVE_smooth.inp', 'a')
         f.write('*End Part\n')
         f.write('**\n')
         f.write('** ASSEMBLY\n')
@@ -169,14 +169,14 @@ class AbaqusMesher(MeshingHelper):
         # rear set
         FrontSet = faces_df.loc[faces_df['z'] == max_z]['Eqn-Set'].to_list()
 
-        OutPutFile = open(self.store_path + '/Nsets.inp', 'w')
+        OutPutFile = open(RveInfo.store_path + '/Nsets.inp', 'w')
         for i in grid_hull_df.index:
             OutPutFile.write('*Nset, nset=Eqn-Set-{}, instance=PART-1-1\n'.format(i + 1))
             OutPutFile.write(' {},\n'.format(int(grid_hull_df.loc[i]['pointNumber'] + 1)))
         OutPutFile.close()
 
         ############### Define Equations ###################################
-        OutPutFile = open(self.store_path + '/LeftToRight.inp', 'w')
+        OutPutFile = open(RveInfo.store_path + '/LeftToRight.inp', 'w')
 
         OutPutFile.write('**** X-DIR \n')
         for i in range(len(LeftSet)):
@@ -211,7 +211,7 @@ class AbaqusMesher(MeshingHelper):
             OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
         OutPutFile.close()
 
-        OutPutFile = open(self.store_path + '/BottomToTop.inp', 'w')
+        OutPutFile = open(RveInfo.store_path + '/BottomToTop.inp', 'w')
 
         OutPutFile.write('**** X-DIR \n')
         for i in range(len(BottomSet)):
@@ -246,7 +246,7 @@ class AbaqusMesher(MeshingHelper):
             OutPutFile.write('Eqn-Set-' + str(V4Eqn + 1) + ',3, 1 \n')
         OutPutFile.close()
 
-        OutPutFile = open(self.store_path + '/FrontToRear.inp', 'w')
+        OutPutFile = open(RveInfo.store_path + '/FrontToRear.inp', 'w')
 
         OutPutFile.write('**** X-DIR \n')
         for i in range(len(RearSet)):
@@ -281,7 +281,7 @@ class AbaqusMesher(MeshingHelper):
             OutPutFile.write('Eqn-Set-' + str(H1Eqn + 1) + ',3,1 \n')
         OutPutFile.close()
 
-        OutPutFile = open(self.store_path + '/Edges.inp', 'w')
+        OutPutFile = open(RveInfo.store_path + '/Edges.inp', 'w')
 
         # Edges in x-y Plane
         # right top edge to left top edge
@@ -566,7 +566,7 @@ class AbaqusMesher(MeshingHelper):
             OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
         OutPutFile.close()
 
-        OutPutFile = open(self.store_path + '/Corners.inp', 'w')
+        OutPutFile = open(RveInfo.store_path + '/Corners.inp', 'w')
 
         # V3 zu V4
         OutPutFile.write('**** X-DIR \n')
@@ -661,7 +661,7 @@ class AbaqusMesher(MeshingHelper):
         OutPutFile.write('Eqn-Set-' + str(V1Eqn + 1) + ',3, 1 \n')
         OutPutFile.close()
 
-        OutPutFile = open(self.store_path + '/VerticeSets.inp', 'w')
+        OutPutFile = open(RveInfo.store_path + '/VerticeSets.inp', 'w')
         OutPutFile.write('*Nset, nset=V1, instance=PART-1-1\n')
         OutPutFile.write(' {},\n'.format(V1 + 1))
         OutPutFile.write('*Nset, nset=V2, instance=PART-1-1\n')
@@ -689,14 +689,14 @@ class AbaqusMesher(MeshingHelper):
         numberofgrains = self.n_grains
 
         phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains+1)]
-        f = open(self.store_path + '/RVE_smooth.inp', 'a')
+        f = open(RveInfo.store_path + '/RVE_smooth.inp', 'a')
 
         f.write('**\n')
         f.write('** MATERIALS\n')
         f.write('**\n')
         for i in range(numberofgrains):
             ngrain = i+1
-            if not self.phase_two_isotropic:
+            if not RveInfo.phase2iso_flag:
                 if phase[i] == 1:
                     phase1_idx += 1
                     f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
@@ -720,7 +720,7 @@ class AbaqusMesher(MeshingHelper):
                     f.write('*User Material, constants=2\n')
                     f.write('{}.,3.\n'.format(phase1_idx))
 
-        if self.phase_two_isotropic:
+        if RveInfo.phase2iso_flag:
             f.write('**\n')
             f.write('*Material, name=Martensite\n')
             f.write('*Elastic\n')
@@ -733,7 +733,7 @@ class AbaqusMesher(MeshingHelper):
         variables should be introduced to give the user an option
         to modify amplidtude, and other parameters"""
 
-        f = open(self.store_path + '/RVE_smooth.inp', 'a')
+        f = open(RveInfo.store_path + '/RVE_smooth.inp', 'a')
         f.write('**\n')
         f.write('*Amplitude, name=Amp-1\n')
         f.write('             0.,              0.,           10.,        10.,\n')
@@ -805,23 +805,23 @@ class AbaqusMesher(MeshingHelper):
         f.close()
 
     def write_grain_data(self) -> None:
-        f = open(self.store_path + '/graindata.inp', 'w+')
+        f = open(RveInfo.store_path + '/graindata.inp', 'w+')
         f.write('!MMM Crystal Plasticity Input File\n')
         phase1_idx = 0
         numberofgrains = self.n_grains
         phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains + 1)]
         grainsize = [np.cbrt(self.rve.loc[self.rve['GrainID'] == i].shape[0] *
-                             self.bin_size**3*3/4/np.pi) for i in range(1, numberofgrains + 1)]
+                             RveInfo.bin_size**3*3/4/np.pi) for i in range(1, numberofgrains + 1)]
 
         for i in range(numberofgrains):
             ngrain = i+1
-            if not self.phase_two_isotropic:
+            if not RveInfo.phase2iso_flag:
                 """phi1 = int(np.random.rand() * 360)
                 PHI = int(np.random.rand() * 360)
                 phi2 = int(np.random.rand() * 360)"""
-                phi1 = self.tex_phi1[i]
-                PHI = self.tex_PHI[i]
-                phi2 = self.tex_phi2[i]
+                phi1 = self.grains_df['phi1'].tolist()[i]
+                PHI = self.grains_df['PHI'].tolist()[i]
+                phi2 = self.grains_df['phi2'].tolist()[i]
                 f.write('Grain: {}: {}: {}: {}: {}\n'.format(ngrain, phi1, PHI, phi2, grainsize[i]))
             else:
                 if phase[i] == 1:
@@ -829,9 +829,9 @@ class AbaqusMesher(MeshingHelper):
                     """phi1 = int(np.random.rand() * 360)
                     PHI = int(np.random.rand() * 360)
                     phi2 = int(np.random.rand() * 360)"""
-                    phi1 = self.tex_phi1[i]
-                    PHI = self.tex_PHI[i]
-                    phi2 = self.tex_phi2[i]
+                    phi1 = self.grains_df['phi1'].tolist()[i]
+                    PHI = self.grains_df['PHI'].tolist()[i]
+                    phi2 = self.grains_df['phi2'].tolist()[i]
                     f.write('Grain: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, PHI, phi2, grainsize[i]))
         f.close()
 
@@ -858,9 +858,9 @@ class AbaqusMesher(MeshingHelper):
         if storename == 'default':
             plotter.show()
         elif storename != 'default' and display:
-            plotter.show(screenshot=self.store_path + storename + '.png')
+            plotter.show(screenshot=RveInfo.store_path + '/' + storename + '.png')
         else:
-            plotter.show(screenshot=self.store_path + storename + '.png', auto_close=True)
+            plotter.show(screenshot=RveInfo.store_path + '/' + storename + '.png', auto_close=True)
 
     def run(self) -> None:
         if RveInfo.gui_flag:
@@ -969,27 +969,3 @@ class AbaqusMesher(MeshingHelper):
                          screenshot=RveInfo.store_path + '/Figs/pyvista_smooth_Mesh_grains.png')
             plotter.close()
 
-
-if __name__ == '__main__':
-    store_path = '.'
-    box_size_x = 200
-    periodic_rve_df = pd.read_csv('../periodic_rve_df.csv')
-    grains_df = pd.read_csv('../grains_df.csv')
-    rve = np.load('../RVE_Numpy.npy')
-
-    print(max(np.where(rve > 0)[0]) - min(np.where(rve > 0)[0])+1)
-    print(max(np.where(rve > 0)[1]) - min(np.where(rve > 0)[1])+1)
-    print(max(np.where(rve > 0)[2]) - min(np.where(rve > 0)[2])+1)
-    rve_shape = (max(np.where(rve > 0)[0]) - min(np.where(rve > 0)[0])+1,
-                 max(np.where(rve > 0)[1]) - min(np.where(rve > 0)[1])+1,
-                 max(np.where(rve > 0)[2]) - min(np.where(rve > 0)[2])+1)
-    print(rve_shape)
-
-
-    el_type = 'C3D8'
-    #el_type = 'C3D4'
-    mesher_obj = Mesher(box_size_x=box_size_x, box_size_y=None, box_size_z=100, rve_shape=rve_shape,
-                        rve=periodic_rve_df, grains_df=grains_df, store_path=store_path,
-                        phase_two_isotropic=True, animation=True,
-                        infobox_obj=None, progress_obj=None, gui=False, element_type=el_type)
-    mesher_obj.run()
