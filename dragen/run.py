@@ -190,7 +190,7 @@ if __name__ == "__main__":
     box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
     resolution = 1.5
     number_of_rves = 1
-    number_of_bands = 0
+    number_of_bands = 1
     band_filling = 1.2
     lower_band_bound = 2
     upper_band_bound = 5

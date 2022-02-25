@@ -64,8 +64,8 @@ def write_material(store_path: str, grains: list, angles: pd.DataFrame) -> None:
     # Material
     i = 0
     for p in grains:
-        o = damask.Rotation.from_Euler_angles(angles.loc[i].to_numpy(), degrees=True)
         if p == 1:
+            o = damask.Rotation.from_Euler_angles(angles.loc[i].to_numpy(), degrees=True)
             matdata = matdata.material_add(phase=['Ferrite'], O=o,
                                            homogenization='SX')
         elif p == 2:
