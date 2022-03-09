@@ -363,8 +363,7 @@ class Ui_MainWindow(object):
         self.Visualization.setGeometry(QtCore.QRect(400, 0, 321, 291))
         self.Visualization.setObjectName("Visualization")
 
-################################## TODO @MAX: was kommt hier???
-
+        ### Main Window
         self.frame_2 = QtWidgets.QFrame(self.centralwidget)
         self.frame_2.setGeometry(QtCore.QRect(10, 340, 320, 101))
         self.frame_2.setFrameShape(QtWidgets.QFrame.StyledPanel)
@@ -394,8 +393,6 @@ class Ui_MainWindow(object):
         self.gridLayout.setVerticalSpacing(10)
         self.gridLayout.setObjectName("gridLayout")
 
-###############################################################################
-        ### Main Window
         # Dimensionality:
         self.dimensionality_label = QtWidgets.QLabel(self.formLayoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
@@ -441,8 +438,9 @@ class Ui_MainWindow(object):
         self.resolutionLabel.setObjectName("resolutionLabel")
         self.gridLayout.addWidget(self.resolutionLabel, 2, 0, 1, 1)
 
-        self.resolutionSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
+        self.resolutionSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget) #TODO: values?
         self.resolutionSpinBox.setDecimals(3)
+        #self.resolutionSpinBox.setMinimum()
         self.resolutionSpinBox.setMaximum(10.0)
         self.resolutionSpinBox.setSingleStep(0.01)
         self.resolutionSpinBox.setObjectName("resolutionSpinBox")
@@ -511,21 +509,33 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.phase_fraction_label, 5, 0, 1, 1)
 
         self.ferriteSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
+        self.ferriteSpinBox.setDecimals(2)
+        self.ferriteSpinBox.setMaximum(1.0)
+        self.ferriteSpinBox.setSingleStep(0.01)
         self.ferriteSpinBox.setEnabled(False)
         self.ferriteSpinBox.setObjectName("ferriteSpinBox")
         self.gridLayout.addWidget(self.ferriteSpinBox, 5, 1, 1, 2)
 
         self.martensiteSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
+        self.martensiteSpinBox.setDecimals(2)
+        self.martensiteSpinBox.setMaximum(1.0)
+        self.martensiteSpinBox.setSingleStep(0.01)
         self.martensiteSpinBox.setEnabled(False)
         self.martensiteSpinBox.setObjectName("martensiteSpinBox")
         self.gridLayout.addWidget(self.martensiteSpinBox, 5, 4, 1, 1)
 
         self.pearliteSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
+        self.pearliteSpinBox.setDecimals(2)
+        self.pearliteSpinBox.setMaximum(1.0)
+        self.pearliteSpinBox.setSingleStep(0.01)
         self.pearliteSpinBox.setEnabled(False)
         self.pearliteSpinBox.setObjectName("pearliteSpinBox")
         self.gridLayout.addWidget(self.pearliteSpinBox, 5, 6, 1, 1)
 
         self.bainiteSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
+        self.bainiteSpinBox.setDecimals(2)
+        self.bainiteSpinBox.setMaximum(1.0)
+        self.bainiteSpinBox.setSingleStep(0.01)
         self.bainiteSpinBox.setEnabled(False)
         self.bainiteSpinBox.setObjectName("bainiteSpinBox")
         self.gridLayout.addWidget(self.bainiteSpinBox, 5, 8, 1, 1)
@@ -574,6 +584,7 @@ class Ui_MainWindow(object):
         self.fileBrowserMartensite.setIcon(icon)
         self.fileBrowserMartensite.setObjectName("fileBrowserMartensite")
         self.gridLayout.addWidget(self.fileBrowserMartensite, 6, 5, 1, 1)
+        self.fileBrowserMartensite.clicked.connect(self.button_handler)
 
         self.lineEditPearlite = QtWidgets.QLineEdit(self.formLayoutWidget)
         self.lineEditPearlite.setEnabled(False)
@@ -591,6 +602,7 @@ class Ui_MainWindow(object):
         self.fileBrowser_Pearlite.setIcon(icon)
         self.fileBrowser_Pearlite.setObjectName("fileBrowser_Pearlite")
         self.gridLayout.addWidget(self.fileBrowser_Pearlite, 6, 7, 1, 1)
+        self.fileBrowser_Pearlite.clicked.connect(self.button_handler)
 
         self.lineEditBainite = QtWidgets.QLineEdit(self.formLayoutWidget)
         self.lineEditBainite.setEnabled(False)
@@ -608,6 +620,7 @@ class Ui_MainWindow(object):
         self.fileBrowserBainite.setIcon(icon)
         self.fileBrowserBainite.setObjectName("fileBrowserBainite")
         self.gridLayout.addWidget(self.fileBrowserBainite, 6, 9, 1, 1)
+        self.fileBrowserBainite.clicked.connect(self.button_handler)
 
         # Microstructure Features:
         self.features_label = QtWidgets.QLabel(self.formLayoutWidget)
@@ -681,22 +694,24 @@ class Ui_MainWindow(object):
         self.lineEdit_store_path.setObjectName("lineEdit_store_path")
         self.gridLayout_2.addWidget(self.lineEdit_store_path, 2, 1, 1, 2)
 
-        self.fileBrowserFerrite_2 = QtWidgets.QPushButton(self.gridLayoutWidget) #TODO @MAX: falsch benannt!?
-        self.fileBrowserFerrite_2.setEnabled(True)
+        self.fileBrowserStore_path = QtWidgets.QPushButton(self.gridLayoutWidget)
+        self.fileBrowserStore_path.setEnabled(True)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.fileBrowserFerrite_2.sizePolicy().hasHeightForWidth())
-        self.fileBrowserFerrite_2.setSizePolicy(sizePolicy)
-        self.fileBrowserFerrite_2.setText("")
-        self.fileBrowserFerrite_2.setIcon(icon)
-        self.fileBrowserFerrite_2.setObjectName("fileBrowserFerrite_2")
-        self.gridLayout_2.addWidget(self.fileBrowserFerrite_2, 2, 3, 1, 1)
+        sizePolicy.setHeightForWidth(self.fileBrowserStore_path.sizePolicy().hasHeightForWidth())
+        self.fileBrowserStore_path.setSizePolicy(sizePolicy)
+        self.fileBrowserStore_path.setText("")
+        self.fileBrowserStore_path.setIcon(icon)
+        self.fileBrowserStore_path.setObjectName("fileBrowserStore_path")
+        self.gridLayout_2.addWidget(self.fileBrowserStore_path, 2, 3, 1, 1)
+        self.fileBrowserStore_path.clicked.connect(self.button_handler)
 
         # Progress Bar & Start Button
         self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
         self.progressBar.setGeometry(QtCore.QRect(10, 790, 281, 23))
-        self.progressBar.setProperty("value", 24)
+        self.progressBar.setMaximum(100)
+        self.progressBar.setProperty("value", 0)
         self.progressBar.setObjectName("progressBar")
 
         self.StartButton = QtWidgets.QPushButton(self.centralwidget)
@@ -704,9 +719,7 @@ class Ui_MainWindow(object):
         self.StartButton.setGeometry(QtCore.QRect(290, 790, 111, 23))
         self.StartButton.setObjectName("StartButton")
 
-##############################################################################################
-
-
+        ###
         MainWindow.setCentralWidget(self.centralwidget)
         self.actionExit = QtWidgets.QAction(MainWindow)
         self.actionExit.setObjectName("actionExit")
@@ -853,16 +866,23 @@ class Ui_MainWindow(object):
             if dlg.exec_():
                 file_path = dlg.selectedFiles()
                 self.lineEditMartensite.setText(file_path[0])
-        """elif self.sender() == self.phase2_button:
+        elif self.MainWindow.sender() == self.fileBrowser_Pearlite:
             dlg = QFileDialog()
+            dlg.setNameFilter("*.csv *.p")
             dlg.setFileMode(QFileDialog.AnyFile)
             if dlg.exec_():
-                self.filepath_phase2 = dlg.selectedFiles()
-                self.phase2_text_Edit.setText(self.filepath_phase2[0])
-        elif self.sender() == self.save_button:
-            self.save_files = QFileDialog.getExistingDirectory(self)
-            self.save_files_Edit.setText(str(self.save_files))"""
-
+                file_path = dlg.selectedFiles()
+                self.lineEditPearlite.setText(file_path[0])
+        elif self.MainWindow.sender() == self.fileBrowserBainite:
+            dlg = QFileDialog()
+            dlg.setNameFilter("*.csv *.p")
+            dlg.setFileMode(QFileDialog.AnyFile)
+            if dlg.exec_():
+                file_path = dlg.selectedFiles()
+                self.lineEditBainite.setText(file_path[0])
+        elif self.MainWindow.sender() == self.fileBrowserStore_path:
+            file_path = QFileDialog.getExistingDirectory()
+            self.lineEdit_store_path.setText(file_path)
 
     """def save_button_handler(self):
         self.save_files = QFileDialog.getExistingDirectory(self)
@@ -878,6 +898,189 @@ class Ui_MainWindow(object):
                 self.threeDcheckBox.setChecked(False)
             elif self.sender() == self.threeDcheckBox:
                 self.twoDcheckBox.setChecked(False)"""
+
+    def submit(self):
+
+        phases = []
+        box_size = self.box_sizeSpinBox.value()
+        if self.box_size_y_check.isChecked():
+            box_size_y = self.box_size_y_Edit.value()
+        else:
+            box_size_y = None
+
+        if self.box_size_z_check.isChecked():
+            box_size_z = self.box_size_z_Edit.value()
+        else:
+            box_size_z = None
+        resolution = self.resolution_Edit.value()
+        n_rves = self.n_rves_Edit.value()
+        n_bands = self.n_bands_Edit.value()
+        band_width = self.band_width_Edit.value()
+
+        if not self.phase1_checkBox.isChecked() and not self.phase2_checkBox.isChecked():
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Please choose at least one phase")
+            msg.setInformativeText("Check one of the checkboxes stating\n Ferrite or Martensite")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+
+        phase1_path = None
+        phase2_path = None
+        phase1_ratio = 0
+        phase2_ratio = 0
+        if self.phase1_checkBox.isChecked():
+            phase1_path = self.phase1_text_Edit.text()
+            phase1_ratio = self.phase1_ratio_Edit.value()
+            if phase1_path is not None and len(phase1_path) > 0:
+                phases.append('ferrite')
+
+        if self.phase2_checkBox.isChecked():
+            phase2_path = self.phase2_text_Edit.text()
+            phase2_ratio = self.phase2_ratio_Edit.value()
+            if phase2_path is not None and len(phase2_path) > 0:
+                phases.append('martensite')
+
+        if phase1_ratio == 0:
+            phase_ratio = phase2_ratio
+        else:
+            phase_ratio = phase1_ratio
+
+        if ARGS['subs_flag']:
+            if phase2_path is None or len(phase2_path) == 0 or phase2_ratio == 0:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("Please choose Martnesite or set Martensite \n ratio non-zero!")
+                msg.setInformativeText("Check the checkbox stating Martensite \nand set Martensite ratio > 0")
+                msg.setWindowTitle("Error")
+                msg.exec_()
+                return
+        store_path = self.save_files_Edit.text()
+
+        store_path_flag = False
+        import_flag = False
+        dimension = None
+        visualization_flag = False
+        dimension_flag = False
+        gan_flag = False
+        equiv_d = ARGS['equiv_d']
+        p_sigma = ARGS['p_sigma']
+        t_mu = ARGS['t_mu']
+        b_sigma = ARGS['b_sigma']
+        decreasing_factor = ARGS['decreasing_factor']
+        lower = ARGS['lower']
+        upper = ARGS['upper']
+        circularity = ARGS['circularity']
+        save = ARGS['save']
+        filename = ARGS['filename']
+        subs_file_flag = ARGS['subs_file_flag']
+        subs_file = ARGS['subs_file']
+        subs_flag = ARGS['subs_flag']
+        if phase1_path is None and phase2_path is None:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("No microstructure was imported")
+            msg.setInformativeText("Please import a microstructure file of the following type:\n .pkl, .csv")
+            msg.setWindowTitle("Error")
+            msg.setDetailedText("input data file is missing")
+            msg.exec_()
+            return
+
+        if phase1_path is not None: #error here
+            if phase1_path[-4:] == '.pkl':
+                gan_flag = True
+                self.infobox_obj.set_text("microstructure imported from:\n{}".format(self.file1))
+                if self.file2 is not None:
+                    self.info_box.add_text("and from:\n{}".format(phase1_path))
+            elif phase1_path[-4:] == '.csv':
+                gan_flag = False
+                self.info_box.set_text("microstructure imported from\n{}".format(phase1_path))
+                if phase2_path is not None:
+                    self.info_box.add_text("and from\n{}".format(phase2_path))
+            else:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("Wrong File Type")
+                msg.setInformativeText("Your imported microstructure file must be of the following type:\n .pkl, .csv")
+                msg.setWindowTitle("Error")
+                msg.setDetailedText("The file you imported was of the type: {}".format(str(phase1_path[-4:])))
+                msg.exec_()
+                return
+
+        if self.twoDcheckBox.isChecked():
+            dimension = 2
+            dimension_flag = True
+        elif self.threeDcheckBox.isChecked():
+            dimension = 3
+            dimension_flag = True
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Please choose dimensionality before starting the generation")
+            msg.setInformativeText("Check one of the checkboxes stating\n 2D - RVE or 3D - RVE")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+
+        if len(store_path) == 0:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Please choose a directory to store the outputdata in")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+
+        if self.visualization.isChecked():
+            visualization_flag = True
+
+        if phase1_path is not None or phase2_path is not None:
+            import_flag = True
+
+        if phase2_path is not None and phase1_ratio == 1:
+            msg = QMessageBox()
+            reply = msg.question(self,'Warning','The second phase file you chose will not be considered in the RVE.\n'
+                                 'Are you sure that you want to keep the phase_ratio at 1.0?', msg.Yes | msg.No)
+            if reply == msg.Yes:
+                pass
+            else:
+                return
+
+        if phase1_path is not None and phase2_ratio == 1:
+            msg = QMessageBox()
+            reply = msg.question(self,'Warning','The first phase file you chose will not be considered in the RVE.\n'
+                                 'Are you sure that you want to keep the phase_ratio at 1.0?', msg.Yes | msg.No)
+            if reply == msg.Yes:
+                pass
+            else:
+                return
+
+        if len(store_path) > 0:
+            store_path_flag = True
+        if dimension_flag and store_path_flag and import_flag:
+            self.info_box.add_text('Staring the generation of {} RVEs'.format(n_rves))
+            self.thread = QThread()
+            self.worker = Worker(box_size=box_size, box_size_y=box_size_y,box_size_z= box_size_z,
+                                 resolution=resolution, number_of_rves=n_rves, number_of_bands=n_bands,
+                                 bandwidth=band_width, dimension=dimension, visualization_flag=visualization_flag,
+                                 file1=phase1_path, file2=phase2_path, phase_ratio=phase_ratio, store_path=store_path,
+                                 gui_flag=True, gan_flag=gan_flag,equiv_d=equiv_d,
+                                 p_sigma=p_sigma, t_mu=t_mu, b_sigma=b_sigma, decreasing_factor=decreasing_factor,
+                                 lower=lower, upper=upper,circularity=circularity, save=save,filename=filename,subs_file_flag=subs_file_flag,subs_file=subs_file,
+                                 subs_flag=subs_flag,phases=phases)
+            self.worker.moveToThread(self.thread)
+            self.thread.started.connect(self.worker.run)
+            self.worker.finished.connect(self.thread.quit)
+            self.worker.finished.connect(self.worker.deleteLater)
+            self.thread.finished.connect(self.thread.deleteLater)
+            self.worker.progress.connect(self.progress_event)
+            self.worker.info_box.connect(self.info_box.add_text)
+            self.thread.start()
+            self.action_submit.setEnabled(False)
+            self.status.showMessage('generation running...')
+            self.thread.finished.connect(lambda: self.action_submit.setEnabled(True))
+            self.thread.finished.connect(lambda: self.status.showMessage('The generation has finished!'))
+
 
 if __name__ == "__main__":
     import sys
