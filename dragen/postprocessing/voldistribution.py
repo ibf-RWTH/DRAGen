@@ -3,6 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import os
+import scipy.stats as stats
 from sklearn.neighbors import KernelDensity
 from dragen.utilities.InputInfo import RveInfo
 
@@ -14,156 +15,79 @@ class PostProcVol:
         if not os.path.isdir(RveInfo.store_path + '/Postprocessing'):
             os.mkdir(RveInfo.store_path + '/Postprocessing')
 
-    def gen_in_out_lists(self) -> tuple:
+    def gen_in_out_lists(self, phaseID) -> tuple:
 
-        input_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/grain_data_input.csv')
+        input_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/experimental_data.csv')
 
         # process total input data
         if RveInfo.dimension == 2:
-            input_df['r_ref_conti'] = np.sqrt(input_df['final_conti_volume'] / np.pi)
-            input_df['r_ref_discrete'] = np.sqrt(input_df['final_discrete_volume'] / np.pi)
+            input_df['r_ref_conti'] = np.sqrt(input_df['volume'] / np.pi)
+            input_df['r_ref_discrete'] = np.sqrt(input_df['volume'] / np.pi)
         if RveInfo.dimension == 3:
-            input_df['r_ref_conti'] = np.cbrt(3 * input_df['final_conti_volume'] / (4 * np.pi))
-            input_df['r_ref_discrete'] = np.cbrt(3 * input_df['final_discrete_volume'] / (4 * np.pi))
-        total_vol_conti_in = sum(input_df['final_conti_volume'].to_numpy().flatten().tolist())
-        total_vol_discrete_in = sum(input_df['final_discrete_volume'].to_numpy().flatten().tolist())
+            input_df['r_ref'] = np.cbrt(3 * input_df['volume'] / (4 * np.pi))
+        total_vol_conti_in = sum(input_df['volume'].to_numpy().flatten().tolist())
 
-        # process phase1 input data
-        phase1_input_df = input_df.loc[input_df['phaseID'] == 1]
-        # conti data
-        phase1_input_list_conti = phase1_input_df['final_conti_volume'].to_numpy().flatten().tolist()
-        phase1_vol_conti_in = sum(phase1_input_list_conti)
-        phase1_ratio_conti_in = phase1_vol_conti_in / total_vol_conti_in
-        phase1_ref_r_conti_in = phase1_input_df['r_ref_conti'].to_numpy().flatten().tolist()
+        # process current_phase input data
+        current_phase_input_df = input_df.loc[input_df['phaseID'] == phaseID]
+        current_phase_ref_r_in = current_phase_input_df['r_ref'].to_numpy().flatten().tolist()
 
-        # discrete data
-        phase1_input_list_discrete = phase1_input_df['final_discrete_volume'].to_numpy().flatten().tolist()
-        phase1_vol_discrete_in = sum(phase1_input_list_discrete)
-        phase1_ratio_discrete_in = phase1_vol_discrete_in / total_vol_discrete_in
-        phase1_ref_r_discrete_in = phase1_input_df['r_ref_discrete'].to_numpy().flatten().tolist()
-
-        # process phase2 input data
-        phase2_input_df = input_df.loc[input_df['phaseID'] == 2]
-        # conti data
-        phase2_input_list_conti = phase2_input_df['final_conti_volume'].to_numpy().flatten().tolist()
-        phase2_vol_conti_in = sum(phase2_input_list_conti)
-        phase2_ratio_conti_in = phase2_vol_conti_in / total_vol_conti_in
-        phase2_ref_r_conti_in = phase2_input_df['r_ref_conti'].to_numpy().flatten().tolist()
-
-        # discrete data
-        phase2_input_list_discrete = phase2_input_df['final_discrete_volume'].to_numpy().flatten().tolist()
-        phase2_vol_discrete_in = sum(phase2_input_list_discrete)
-        phase2_ratio_discrete_in = phase2_vol_discrete_in / total_vol_discrete_in
-        phase2_ref_r_discrete_in = phase2_input_df['r_ref_discrete'].to_numpy().flatten().tolist()
 
         # process conti output
         output_df_conti = pd.read_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_conti.csv')
-        # process discrete output
-        output_df_discrete = pd.read_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_discrete.csv')
 
         if RveInfo.dimension == 2:
-            output_df_conti['r_ref_conti'] = np.sqrt(output_df_conti['meshed_conti_volume'] / np.pi)
-            output_df_discrete['r_ref_discrete'] = np.sqrt(output_df_discrete['final_discrete_volume'] / np.pi)
+            output_df_conti['r_ref'] = np.sqrt(output_df_conti['meshed_conti_volume'] / np.pi)
         if RveInfo.dimension == 3:
-            output_df_conti['r_ref_conti'] = np.cbrt(3 * output_df_conti['meshed_conti_volume'] / (4 * np.pi))
-            output_df_discrete['r_ref_discrete'] = np.cbrt(
-                3 * output_df_discrete['final_discrete_volume'] / (4 * np.pi))
+            output_df_conti['r_ref'] = np.cbrt(3 * output_df_conti['meshed_conti_volume'] / (4 * np.pi))
         total_vol_conti_out = sum(output_df_conti['meshed_conti_volume'].to_numpy().flatten().tolist())
         print(output_df_conti[['meshed_conti_volume', 'phaseID']].head())
         print(total_vol_conti_out)
-        total_vol_discrete_out = sum(output_df_discrete['final_discrete_volume'].to_numpy().flatten().tolist())
 
-        # process phase1 output data
-        phase1_output_df_conti = output_df_conti.loc[output_df_conti['phaseID'] == 1]
-        phase1_output_df_discrete = output_df_discrete.loc[output_df_conti['phaseID'] == 1]
-        # conti data
-        phase1_output_list_conti = phase1_output_df_conti['meshed_conti_volume'].to_numpy().flatten().tolist()
-        phase1_vol_conti_out = sum(phase1_output_list_conti)
-        print(phase1_vol_conti_out)
-        phase1_ratio_conti_out = phase1_vol_conti_out / total_vol_conti_out
-        phase1_ref_r_conti_out = phase1_output_df_conti['r_ref_conti'].to_numpy().flatten().tolist()
-        # discrete data
+        # process current_phase output data
+        current_phase_output_df_conti = output_df_conti.loc[output_df_conti['phaseID'] == phaseID]
 
-        phase1_output_list_discrete = phase1_output_df_discrete['final_discrete_volume'].to_numpy().flatten().tolist()
-        phase1_vol_discrete_out = sum(phase1_output_list_discrete)
-        phase1_ratio_discrete_out = phase1_vol_discrete_out / total_vol_discrete_out
-        phase1_ref_r_discrete_out = phase1_output_df_discrete['r_ref_discrete'].to_numpy().flatten().tolist()
+        current_phase_output_list = current_phase_output_df_conti['meshed_conti_volume'].to_numpy().flatten().tolist()
+        current_phase_vol_out = sum(current_phase_output_list)
+        current_phase_ratio_out = current_phase_vol_out / total_vol_conti_out
+        current_phase_ref_r_out = current_phase_output_df_conti['r_ref'].to_numpy().flatten().tolist()
 
-        # process phase2 input data
-        phase2_output_df_conti = output_df_conti.loc[output_df_conti['phaseID'] == 2]
-        phase2_output_df_discrete = output_df_discrete.loc[output_df_conti['phaseID'] == 2]
-        # conti data
-        phase2_output_list_conti = phase2_output_df_conti['meshed_conti_volume'].to_numpy().flatten().tolist()
-        phase2_vol_conti_out = sum(phase2_output_list_conti)
-        print(phase2_vol_conti_out)
-        phase2_ratio_conti_out = phase2_vol_conti_out / total_vol_conti_out
-        phase2_ref_r_conti_out = phase2_output_df_conti['r_ref_conti'].to_numpy().flatten().tolist()
-        # discrete data
-        phase2_output_list_discrete = phase2_output_df_discrete['final_discrete_volume'].to_numpy().flatten().tolist()
-        phase2_vol_discrete_out = sum(phase2_output_list_discrete)
-        phase2_ratio_discrete_out = phase2_vol_discrete_out / total_vol_discrete_out
-        phase2_ref_r_discrete_out = phase2_output_df_discrete['r_ref_discrete'].to_numpy().flatten().tolist()
+        return current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out
 
-        return phase1_ratio_conti_in, phase1_ref_r_conti_in, phase1_ratio_discrete_in, phase1_ref_r_discrete_in, \
-               phase2_ratio_conti_in, phase2_ref_r_conti_in, phase2_ratio_discrete_in, phase2_ref_r_discrete_in, \
-               phase1_ratio_conti_out, phase1_ref_r_conti_out, phase1_ratio_discrete_out, phase1_ref_r_discrete_out, \
-               phase2_ratio_conti_out, phase2_ref_r_conti_out, phase2_ratio_discrete_out, phase2_ref_r_discrete_out
 
-    def gen_pie_chart_phases(self, phase1_ratio, phase2_ratio, title):
-        # Pie chart, where the slices will be ordered and plotted counter-clockwise:
-        labels = 'Phase1', 'Phase2'
-        sizes = [phase1_ratio, phase2_ratio]
-        explode = (0.1, 0)
-
+    def gen_pie_chart_phases(self, sizes, labels, title):
+        explode = [0.05]*len(sizes)
         fig1, ax1 = plt.subplots()
         ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
-                shadow=True, startangle=90)
+                shadow=True, startangle=90, normalize=False, colors=RveInfo.rwth_colors)
         ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         ax1.set_title(title)
 
         fig1.savefig(RveInfo.store_path + '/Postprocessing/phase_distribution_{}.png'.format(title))
         plt.close()
 
-    def gen_plots(self, input, output, title, filename, input_opt=None, output_opt=None, title_opt=None, ) -> None:
+    def gen_plots(self, input, output, label) -> None:
 
-        kde_1_in = KernelDensity(bandwidth=.25, kernel='gaussian')
-        kde_1_out = KernelDensity(bandwidth=.25, kernel='gaussian')
-        kde_1_in.fit(np.reshape(input, (-1, 1)))
-        kde_1_out.fit(np.reshape(output, (-1, 1)))
+        kernel_in = stats.gaussian_kde(input, bw_method='scott')
+        kernel_out = stats.gaussian_kde(output, bw_method='scott')
 
         # capture x-lim
         max_x = 1.25 * 1.25 * max([int(max(input)), int(max(output))])
-        if input_opt is not None and output_opt is not None:
-            max_x = 1.25 * max([int(max(input)), int(max(output)), int(max(input_opt)), int(max(output_opt))])
 
         x_d = np.linspace(0, max_x, 50000)
         # score_samples returns the log of the probability density
-        logdens_1_in = kde_1_in.score_samples(x_d[:, None])
-        logdens_1_out = kde_1_out.score_samples(x_d[:, None])
+        log_pdf_in = kernel_in.logpdf(x_d)
+        log_pdf_out = kernel_out.logpdf(x_d)
 
         ##
         fig = plt.figure(figsize=(11, 8))
 
         ax = fig.add_subplot(1, 1, 1)
-        ax.plot(x_d, np.exp(logdens_1_in), 'k', label='input data ' + title)
-        ax.plot(x_d, np.exp(logdens_1_out), '--k', label='output data ' + title)
+        ax.plot(x_d, np.exp(log_pdf_in), label='input ' + label, c=RveInfo.rwth_colors[1])
+        ax.plot(x_d, np.exp(log_pdf_out), label='output ' + label, c=RveInfo.rwth_colors[5])
         plt.xlabel('Grain Radius of Reference Sphere (µm)', fontsize=20)
         plt.ylabel('Normalized Density ( - ) ', fontsize=20)
         # caputure max y-lim
-        max_log_dens = [max(np.exp(logdens_1_in)), max(np.exp(logdens_1_out))]
-
-        if input_opt is not None and output_opt is not None:
-            kde_2_in = KernelDensity(bandwidth=.25, kernel='gaussian')
-            kde_2_out = KernelDensity(bandwidth=.25, kernel='gaussian')
-            kde_2_in.fit(np.reshape(input_opt, (-1, 1)))
-            kde_2_out.fit(np.reshape(output_opt, (-1, 1)))
-            logdens_2_in = kde_2_in.score_samples(x_d[:, None])
-            logdens_2_out = kde_2_out.score_samples(x_d[:, None])
-            ax.plot(x_d, np.exp(logdens_2_in), 'r', label='input data ' + title_opt)
-            ax.plot(x_d, np.exp(logdens_2_out), '--r', label='output data ' + title_opt)
-            # caputure max new y-lim
-            max_log_dens = [max(np.exp(logdens_1_in)), max(np.exp(logdens_1_out)),
-                            max(np.exp(logdens_2_in)), max(np.exp(logdens_2_out))]
+        max_log_dens = [max(np.exp(log_pdf_in)), max(np.exp(log_pdf_out))]
 
         max_y = max(max_log_dens)
         max_y = 1.25 * max_y
@@ -172,12 +96,5 @@ class PostProcVol:
         plt.xticks(fontsize=20)
         plt.yticks(fontsize=20)
         plt.legend(fontsize=12)
-        plt.savefig(RveInfo.store_path + '/Postprocessing/vol_distribution_{}.png'.format(filename))
+        plt.savefig(RveInfo.store_path + '/Postprocessing/size_distribution_{}.png'.format(label))
         plt.close()
-
-
-if __name__ == "__main__":
-    outputPath = 'C:/temp/OutputData/2021-05-10_0'
-    dim_flag = 3
-    obj = PostProcVol(outputPath, dim_flag)
-    obj.gen_stack_plot()
