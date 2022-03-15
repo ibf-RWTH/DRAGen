@@ -53,6 +53,7 @@ class RveInfo:
     filename: str = None
     fig_path: str = None
     gen_path: str = None
+    post_path: str = None
 
     orientation_relationship: str = None
     subs_file_flag: bool = None
@@ -74,7 +75,13 @@ class RveInfo:
     inclusion_flag: bool = None
     root: str = './'
     input_path: str = './ExampleInput'
-    PHASENUM = {'ferrite': 1, 'martensite': 2, 'Pearlite': 3, 'Bainite': 4, 'Inclusions': 5, 'Bands': 6}
+    PHASENUM = {'Ferrite': 1, 'Martensite': 2, 'Pearlite': 3, 'Bainite': 4, 'Inclusions': 5, 'Bands': 6}
+    rwth_colors = [(100 / 256, 101 / 256, 103 / 256),  # grey
+                   (0 / 256, 83 / 256, 159 / 256),  # blue
+                   (204 / 256, 7 / 256, 30 / 256),  # red
+                   (142 / 256, 186 / 256, 229 / 256),  # light blue
+                   (246 / 256, 168 / 256, 0 / 256),   # orange
+                   (161 / 256, 16 / 256, 53 / 256)]  # Bordeaux
 
 
     n_pts = None
