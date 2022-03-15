@@ -122,6 +122,7 @@ class Run(HelperFunctions):
         RveInfo.store_path = RveInfo.store_path + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
         RveInfo.fig_path = RveInfo.store_path + '/Figs'
         RveInfo.gen_path = RveInfo.store_path + '/Generation_Data'
+        RveInfo.post_path = RveInfo.store_path + '/Postprocessing'
 
         if not os.path.isdir(RveInfo.store_path):
             os.makedirs(RveInfo.store_path)
@@ -131,6 +132,8 @@ class Run(HelperFunctions):
 
         if not os.path.isdir(RveInfo.gen_path):
             os.makedirs(RveInfo.gen_path)
+        if not os.path.isdir(RveInfo.post_path):
+            os.makedirs(RveInfo.post_path)
 
         f_handler = logging.handlers.TimedRotatingFileHandler(
             filename=os.path.join(RveInfo.store_path, 'result-logs'), when='midnight')
@@ -164,9 +167,8 @@ class Run(HelperFunctions):
             for i in range(RveInfo.number_of_rves):
                 self.initializations(i)
                 total_df = obj3D.grain_sampling()
-                obj3D.rve_generation(total_df)
-                if RveInfo.subs_file_flag:
-                    obj3D.post_processing()
+                rve = obj3D.rve_generation(total_df)
+                obj3D.post_processing(rve)
 
 
         else:
@@ -185,10 +187,10 @@ class Run(HelperFunctions):
 
 
 if __name__ == "__main__":
-    box_size = 30
-    box_size_y = 20  # if this is None it will be set to the main box_size value
+    box_size = 50
+    box_size_y = None  # if this is None it will be set to the main box_size value
     box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
-    resolution = 1.5
+    resolution = 2
     number_of_rves = 1
     number_of_bands = 0
     band_filling = 1.2
@@ -208,24 +210,26 @@ if __name__ == "__main__":
     # Example Files
     # file1 = r'C:\Venvs\dragen\ExampleInput\ferrite_54_grains_processed.csv'
     file1 = r'..\ExampleInput\TrainedData_2.pkl'
-    file6 = r'..\ExampleInput\TrainedData_2.pkl'
-    file2 = r'..\ExampleInput\pearlite_21_grains.csv'
-    file3 = r'..\ExampleInput\38Mn-Ferrite.csv'
+    file2 = r'..\ExampleInput\martensit.csv'
+    file3 = r'..\ExampleInput\pearlite_21_grains.csv'
+    file6 = r'..\ExampleInput\TrainedData_6.pkl'
+
+
     # test pearlite phase
     subs_flag = False
     subs_file = '../ExampleInput/example_block_inp.csv'
-    subs_file_flag = False
+    subs_file_flag = True
     gui_flag = False
     gan_flag = False
     moose_flag = True
-    abaqus_flag = False
+    abaqus_flag = True
     damask_flag = True
     element_type = 'HEX8'
     anim_flag = False
     exe_flag = False
-    files = {1: file1, 2: file2, 3: None, 4: None, 5: file3, 6: file6}
-    phase_ratio = {1: 0.7, 2: 0.3, 6: None}  # Pass for bands
-    phases = ['ferrite', 'martensite', 'Bands']
+    files = {1: file1, 2: file2}
+    phase_ratio = {1: 0.8, 2: 0.2}  # Pass for bands
+    phases = ['Ferrite', 'Martensite']
 
     '''
     specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
