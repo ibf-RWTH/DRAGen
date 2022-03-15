@@ -21,10 +21,10 @@ inclusion_flag = False
 inclusion_ratio = 0.01
 # Example Files
 # file1 = r'C:\Venvs\dragen\ExampleInput\ferrite_54_grains_processed.csv'
-file1 = r'.\ExampleInput\TrainedData_2.pkl'
-file2 = r'.\ExampleInput\martensit.csv'
-file3 = r'.\ExampleInput\pearlite_21_grains.csv'
-file6 = r'.\ExampleInput\TrainedData_6.pkl'
+file1 = r'./ExampleInput/TrainedData_2.pkl'
+file2 = r'./ExampleInput/martensit.csv'
+file3 = r'./ExampleInput/pearlite_21_grains.csv'
+file6 = r'./ExampleInput/TrainedData_6.pkl'
 
 
 # test pearlite phase
