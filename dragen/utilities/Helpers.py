@@ -73,7 +73,7 @@ class HelperFunctions:
     @staticmethod
     def gen_grid2d():
         xy = np.linspace(-RveInfo.box_size / 2, RveInfo.box_size + RveInfo.box_size / 2, 2 * RveInfo.n_pts, endpoint=True)
-        x_grid, y_grid = np.meshgrid(xy, xy, indexing='ij')
+        x_grid, y_grid = np.meshgrid(xy, xy)
         return x_grid, y_grid
 
     def read_input(self, file_name, dimension) -> pd.DataFrame: #TODO @Max: Ich würde hier noch mal drübergucken, glaub die funktion ist ziemlich langsam bei große .csvs (Niklas)
@@ -217,21 +217,34 @@ class HelperFunctions:
         grain_vol = 0
         old_idx = list()
         input_df = pd.DataFrame()
-        while grain_vol < max_volume:
-            idx = np.random.randint(0, data.__len__())
+        while (grain_vol > 1.05 * max_volume) or (grain_vol < 1.0 * max_volume):
 
-            grain = data.loc[data.index[idx]]
-            grain_df = pd.DataFrame(grain).transpose()
-            data = data.drop(labels=data.index[idx], axis=0)
-            if (grain['a'] > constraint*2) or (grain['b'] > constraint) or (grain['c'] > constraint*2):  # Dickenunterschied für die Bänbder
-                continue
+            if grain_vol > 1.05*max_volume:
 
-            old_idx.append(idx)
-            vol = grain["volume"]
-            grain_vol += vol
-            input_df = pd.concat([input_df,grain_df])
-            if len(data) == 0:
-                break
+                grain_vol -= input_df["volume"].iloc[-1]
+
+                input_df = input_df[:-1]  # delete last row if volume was exceeded
+                old_idx.pop(-1)
+
+            elif grain_vol < max_volume:
+                idx = np.random.randint(0, data.__len__())
+
+                grain = data.loc[data.index[idx]]
+                grain_df = pd.DataFrame(grain).transpose()
+                data = data.drop(labels=data.index[idx], axis=0)
+                if (grain['a'] > constraint*2) or (grain['b'] > constraint) or (grain['c'] > constraint*2):  # Dickenunterschied für die Bänbder
+                    continue
+
+                old_idx.append(idx)
+                vol = grain["volume"]
+                grain_vol += vol
+                input_df = pd.concat([input_df,grain_df])
+                if len(data) == 0:
+                    RveInfo.logger.info('Input data was exceeded not enough data!!')
+                    break
+
+
+
 
         print('Volume of df', input_df['volume'].sum())
         input_df['old_gid'] = old_idx # get old idx so that the substructure generator knows which grains are chosen in the input data
