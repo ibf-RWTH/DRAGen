@@ -8,7 +8,6 @@ from typing import Dict
 
 from dragen.main2D import DataTask2D
 from dragen.main3D import DataTask3D
-from dragen.main3D_GAN import DataTask3D_GAN
 from dragen.substructure.run import Run as SubRun
 from dragen.utilities.Helpers import HelperFunctions
 from dragen.utilities.InputInfo import RveInfo
