@@ -424,13 +424,12 @@ class DataTask3D(HelperFunctions):
 
             grain_shapes.reset_index(inplace=True, drop=True)
 
-            plot_kws = {"s": 3}
+            plot_kws = {"s": 2}
             sns.pairplot(data=grain_shapes, hue='inout', plot_kws=plot_kws)
             plt.subplots_adjust(top=.95)
             plt.suptitle(phase)
-
             plt.savefig('{}/Postprocessing/shape_control_{}.png'.format(RveInfo.store_path, phase))
-            plt.show()
+
 
             current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out = \
                 PostProcVol().gen_in_out_lists(phaseID=id)
