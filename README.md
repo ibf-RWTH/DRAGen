@@ -25,7 +25,7 @@ clone this repository into desired destination:<br>
 $ git clone https://git.rwth-aachen.de/ims_iehk/dragen.git
 $ cd dragen
 ```
-make sure conda is installed correctly on your system [look up here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
+make sure conda is installed correctly on your system [look up here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)<br>
 Create a virtual environment as follows:<br>
 ```
 $ conda create --name DRAGen python=3.8
