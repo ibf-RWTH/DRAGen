@@ -56,8 +56,8 @@ class shape:
                     except:
                         print('fail')
 
-        AR = [b[i]/a[i] for i in range(len(a)) if a[i] > 0]
-        slope = [slope[i] for i in range(len(a)) if a[i] > 0]
+        AR = [b[i]/a[i] for i in range(len(a)) if (a[i] > 0) and (b[i]/a[i]) < 100]
+        slope = [slope[i] for i in range(len(a)) if a[i] > 0 and (b[i]/a[i]) < 100]
         ell_dict = {'AR': AR, 'slope': slope}
         ell_data = pd.DataFrame(ell_dict)
 

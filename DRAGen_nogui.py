@@ -1,5 +1,5 @@
 from dragen.run import Run
-box_size = 50
+box_size = 32
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
 resolution = 2

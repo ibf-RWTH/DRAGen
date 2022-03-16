@@ -73,7 +73,7 @@ class PostProcVol:
         # capture x-lim
         max_x = 1.25 * 1.25 * max([int(max(input)), int(max(output))])
 
-        x_d = np.linspace(0, max_x, 50000)
+        x_d = np.linspace(0, max_x, 5000)
         # score_samples returns the log of the probability density
         log_pdf_in = kernel_in.logpdf(x_d)
         log_pdf_out = kernel_out.logpdf(x_d)

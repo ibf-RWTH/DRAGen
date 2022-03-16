@@ -421,7 +421,7 @@ class DataTask3D(HelperFunctions):
             if id == 2:
                 print(grain_shapes_in_thisPhase)
             grain_shapes = pd.concat([grain_shapes, grain_shapes_in_thisPhase])
-
+            grain_shapes = grain_shapes.sort_values(by=['inout'])
             grain_shapes.reset_index(inplace=True, drop=True)
 
             plot_kws = {"s": 2}
