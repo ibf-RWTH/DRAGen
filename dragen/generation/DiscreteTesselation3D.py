@@ -205,13 +205,6 @@ class Tesselation3D(HelperFunctions):
 
         # Save for further usage
         np.save(RveInfo.store_path + '/' + 'RVE_Numpy.npy', rve)
-        if grain_df is None:
-            grains_df = super().get_final_disc_vol_3D(self.grains_df, rve)
-            grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_discrete.csv', index=False)
-        else:
-            grain_df = super().get_final_disc_vol_3D(grain_df, rve)
-            grain_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_discrete.csv', index=False)
-
         return rve, status
 
 

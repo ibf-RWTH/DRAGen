@@ -333,17 +333,12 @@ class DataTask3D(HelperFunctions):
                          max(np.where(rve > 0)[1]) - min(np.where(rve > 0)[1]) + 1,
                          max(np.where(rve > 0)[2]) - min(np.where(rve > 0)[2]) + 1)
 
+            # Write out Volumes
+            grains_df = super().get_final_disc_vol_3D(grains_df, rve)
+            grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output.csv', index=False)
+
             if RveInfo.damask_flag:
-                # 1.) Write out Volume
-                grains_df.sort_values(by=['GrainID'], inplace=True)
-                disc_vols = np.zeros((1, grains_df.shape[0])).flatten().tolist()
-                for i in range(len(grains_df)):
-                    disc_vols[i] = np.count_nonzero(rve == i + 1) * RveInfo.bin_size ** 3
-
-                grains_df.loc[:, 'meshed_conti_volume'] = disc_vols
-                grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
-
-                # Startpoint: Rearrange the negative ID's
+             # Startpoint: Rearrange the negative ID's
                 last_grain_id = rve.max()  # BEWARE: For the .vti file, the grid must start at ZERO
                 print('The last grain ID is:', last_grain_id)
                 print('The number of bands is:', RveInfo.number_of_bands)
@@ -373,7 +368,6 @@ class DataTask3D(HelperFunctions):
                                     spacing=RveInfo.box_size / 1000)
 
             if RveInfo.moose_flag:
-                # TODO: @Manuel @Niklas: Hier auch phase list ausschreiben?
                 MooseMesher(rve_shape=rve_shape, rve=periodic_rve_df, grains_df=grains_df).run()
                 # store phases and texture in seperate txt files to make it work within moose
                 grains_df[['phi1', 'PHI', 'phi2']].to_csv(path_or_buf=RveInfo.store_path+'/EulerAngles.txt',
@@ -425,6 +419,7 @@ class DataTask3D(HelperFunctions):
             grain_shapes.reset_index(inplace=True, drop=True)
 
             plot_kws = {"s": 2}
+            sns.set_palette(sns.color_palette(RveInfo.rwth_colors))
             sns.pairplot(data=grain_shapes, hue='inout', plot_kws=plot_kws)
             grain_shapes.to_csv('{}/Postprocessing/shape_control_{}.csv'.format(RveInfo.store_path, phase))
             plt.subplots_adjust(top=.95)
