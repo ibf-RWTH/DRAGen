@@ -11,7 +11,6 @@ from dragen.utilities.InputInfo import RveInfo
 class PostProcVol:
     def __init__(self):
 
-
         if not os.path.isdir(RveInfo.store_path + '/Postprocessing'):
             os.mkdir(RveInfo.store_path + '/Postprocessing')
 
@@ -21,34 +20,32 @@ class PostProcVol:
 
         # process total input data
         if RveInfo.dimension == 2:
-            input_df['r_ref_conti'] = np.sqrt(input_df['volume'] / np.pi)
-            input_df['r_ref_discrete'] = np.sqrt(input_df['volume'] / np.pi)
+            input_df['r_ref'] = np.sqrt(input_df['volume'] / np.pi)
         if RveInfo.dimension == 3:
             input_df['r_ref'] = np.cbrt(3 * input_df['volume'] / (4 * np.pi))
-        total_vol_conti_in = sum(input_df['volume'].to_numpy().flatten().tolist())
 
         # process current_phase input data
         current_phase_input_df = input_df.loc[input_df['phaseID'] == phaseID]
         current_phase_ref_r_in = current_phase_input_df['r_ref'].to_numpy().flatten().tolist()
 
 
-        # process conti output
-        output_df_conti = pd.read_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_conti.csv')
+        # process output
+        output_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/grain_data_output.csv')
 
         if RveInfo.dimension == 2:
-            output_df_conti['r_ref'] = np.sqrt(output_df_conti['meshed_conti_volume'] / np.pi)
+            output_df['r_ref'] = np.sqrt(output_df['final_discrete_volume'] / np.pi)
         if RveInfo.dimension == 3:
-            output_df_conti['r_ref'] = np.cbrt(3 * output_df_conti['meshed_conti_volume'] / (4 * np.pi))
-        total_vol_conti_out = sum(output_df_conti['meshed_conti_volume'].to_numpy().flatten().tolist())
-        print(output_df_conti[['meshed_conti_volume', 'phaseID']].head())
-        print(total_vol_conti_out)
+            output_df['r_ref'] = np.cbrt(3 * output_df['final_discrete_volume'] / (4 * np.pi))
+        total_vol_out = sum(output_df['final_discrete_volume'].to_numpy().flatten().tolist())
+        print(output_df[['final_discrete_volume', 'phaseID']].head())
+        print(total_vol_out)
 
         # process current_phase output data
-        current_phase_output_df_conti = output_df_conti.loc[output_df_conti['phaseID'] == phaseID]
+        current_phase_output_df_conti = output_df.loc[output_df['phaseID'] == phaseID]
 
-        current_phase_output_list = current_phase_output_df_conti['meshed_conti_volume'].to_numpy().flatten().tolist()
+        current_phase_output_list = current_phase_output_df_conti['final_discrete_volume'].to_numpy().flatten().tolist()
         current_phase_vol_out = sum(current_phase_output_list)
-        current_phase_ratio_out = current_phase_vol_out / total_vol_conti_out
+        current_phase_ratio_out = current_phase_vol_out / total_vol_out
         current_phase_ref_r_out = current_phase_output_df_conti['r_ref'].to_numpy().flatten().tolist()
 
         return current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out
