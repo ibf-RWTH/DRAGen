@@ -2,6 +2,7 @@ import datetime
 import os
 import sys
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import math
 import numpy as np
 from typing import Dict
@@ -28,8 +29,7 @@ class Run(HelperFunctions):
                  info_box_obj=None, progress_obj=None, equiv_d: float = None, p_sigma: float = None, t_mu: float = None,
                  b_sigma: float = 0.01, decreasing_factor: float = 0.95, lower: float = None, upper: float = None,
                  circularity: float = 1, plt_name: str = None, save: bool = True, plot: bool = False,
-                 filename: str = None, fig_path: str = None, orient_relationship: str = None
-    ):
+                 filename: str = None, fig_path: str = None, orient_relationship: str = None):
 
         super().__init__()
         # TODO: @Manuel @Max. Ich habe schon häufiger gesehen, dass in anderen Packages Konstanten immer GROß
@@ -108,8 +108,7 @@ class Run(HelperFunctions):
         LOGS_DIR = RveInfo.store_path + '/Logs/'
         if not os.path.isdir(LOGS_DIR):
             os.makedirs(LOGS_DIR)
-        f_handler = logging.handlers.TimedRotatingFileHandler(
-            filename=os.path.join(LOGS_DIR, 'dragen-logs'), when='midnight')
+        f_handler = TimedRotatingFileHandler(filename=os.path.join(LOGS_DIR, 'dragen-logs'), when='midnight')
         formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
         f_handler.setFormatter(formatter)
         RveInfo.logger.addHandler(f_handler)
