@@ -28,6 +28,8 @@ https://rwth-aachen.sciebo.de/s/szEAcuXubht1Gyv
 
 <details>
 <summary><b>Show more...<b></summary>
+
+
 ## Installation
 make sure conda is installed correctly on your system [look up here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)<br>
 clone this repository into desired destination:<br>
