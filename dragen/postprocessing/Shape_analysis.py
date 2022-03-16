@@ -57,6 +57,7 @@ class shape:
                         print('fail')
 
         AR = [b[i]/a[i] for i in range(len(a)) if a[i] > 0]
+        slope = [slope[i] for i in range(len(a)) if a[i] > 0]
         ell_dict = {'AR': AR, 'slope': slope}
         ell_data = pd.DataFrame(ell_dict)
 
