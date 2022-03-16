@@ -426,6 +426,7 @@ class DataTask3D(HelperFunctions):
 
             plot_kws = {"s": 2}
             sns.pairplot(data=grain_shapes, hue='inout', plot_kws=plot_kws)
+            grain_shapes.to_csv('{}/Postprocessing/shape_control_{}.csv'.format(RveInfo.store_path, phase))
             plt.subplots_adjust(top=.95)
             plt.suptitle(phase)
             plt.savefig('{}/Postprocessing/shape_control_{}.png'.format(RveInfo.store_path, phase))
