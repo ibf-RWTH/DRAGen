@@ -210,7 +210,6 @@ class HelperFunctions:
         else:
             constraint = constraint
         max_volume = bs**3
-        print(max_volume)
         data["volume"] = 4/3*np.pi*data["a"]*data["b"]*data["c"]
         data = data.loc[data["a"] < RveInfo.box_size/2]
 
@@ -243,36 +242,53 @@ class HelperFunctions:
                     RveInfo.logger.info('Input data was exceeded not enough data!!')
                     break
 
-
-
-
         print('Volume of df', input_df['volume'].sum())
         input_df['old_gid'] = old_idx # get old idx so that the substructure generator knows which grains are chosen in the input data
         return input_df
 
-    def sample_input_2D(self, data, bs) -> pd.DataFrame:
-        max_volume = bs*bs
+
+    def sample_input_2D(self, data, bs, constraint=None) -> pd.DataFrame:
+
+        if constraint is None:
+            constraint = 10000
+        else:
+            constraint = constraint
+        max_volume = bs**2
+        data["volume"] = np.pi*data["a"]*data["b"]
+        data = data.loc[data["a"] < RveInfo.box_size/2]
+
         grain_vol = 0
-        data = data.copy()
-        inp_list = list()
-        while grain_vol < max_volume:
-            idx = np.random.randint(0, data.__len__())
-            grain = data[["a", "b", "alpha", "phi1", "PHI", "phi2"]].iloc[idx].tolist()
-            data = data.drop(labels=data.index[idx], axis=0)
-            vol = np.pi * grain[0] * grain[1]
-            grain_vol += vol
-            inp_list.append([grain[0], grain[1], grain[2], grain[3], grain[4], grain[5]])
-            if len(data) == 0:
-                break
+        old_idx = list()
+        input_df = pd.DataFrame()
+        while (grain_vol > 1.05 * max_volume) or (grain_vol < 1.0 * max_volume):
 
-        # Del last if to big and more than one value:
-        if grain_vol >= max_volume and inp_list.__len__() > 1:
-            inp_list.pop(-1)
+            if grain_vol > 1.05*max_volume:
 
-        header = ["a", "b", "alpha", "phi1", "PHI", "phi2"]
-        df = pd.DataFrame(inp_list, columns=header)
+                grain_vol -= input_df["volume"].iloc[-1]
 
-        return df
+                input_df = input_df[:-1]  # delete last row if volume was exceeded
+                old_idx.pop(-1)
+
+            elif grain_vol < max_volume:
+                idx = np.random.randint(0, data.__len__())
+
+                grain = data.loc[data.index[idx]]
+                grain_df = pd.DataFrame(grain).transpose()
+                data = data.drop(labels=data.index[idx], axis=0)
+                if (grain['a'] > constraint*2) or (grain['b'] > constraint):  # Dickenunterschied für die Bänbder
+                    continue
+
+                old_idx.append(idx)
+                vol = grain["volume"]
+                grain_vol += vol
+                input_df = pd.concat([input_df,grain_df])
+                if len(data) == 0:
+                    RveInfo.logger.info('Input data was exceeded not enough data!!')
+                    break
+
+        print('Volume of df', input_df['volume'].sum())
+        input_df['old_gid'] = old_idx # get old idx so that the substructure generator knows which grains are chosen in the input data
+        return input_df
 
     def convert_volume_3D(self, radius_a, radius_b, radius_c):
         """Compute the volume for the given radii.
@@ -723,6 +739,17 @@ class HelperFunctions:
 
     def repair_periodicity_2D(self, rve_array: np.ndarray) -> pd.DataFrame:
 
+        start1 = int(rve_array.shape[0] / 4)
+        stop1 = int(rve_array.shape[0] / 4 + rve_array.shape[0] / 4 * 2)+1
+        start2 = int(rve_array.shape[1] / 4)
+        stop2 = int(rve_array.shape[1] / 4 + rve_array.shape[1] / 4 * 2)+1
+
+        rve = rve_array[start1:stop1, start2:stop2]
+
+        # define first boundary row/column with grainID Values of row and column #0
+        rve[-1, :] = rve[0, :]
+        rve[:, -1] = rve[:, 0]
+
         # load some variables
         box_size = RveInfo.box_size
         n_pts = RveInfo.n_pts
@@ -748,62 +775,6 @@ class HelperFunctions:
         rve = pd.DataFrame(rve_dict)
         rve['box_size'] = box_size
         rve['n_pts'] = n_pts
-
-        boundary_dict = {'x': boundary_x, 'y': boundary_y, 'GrainID': rve_array[rve_array < 0]}
-        boundary = pd.DataFrame(boundary_dict)
-
-        # Extract points that are supposed to be added to the rve
-        new_max_x = min(boundary[boundary['GrainID'] == -1].x)
-        new_max_y = min(boundary[boundary['GrainID'] == -2].y)
-
-        additional_pts = boundary[(boundary['GrainID'] == -1) |
-                                  (boundary['GrainID'] == -2) |
-                                  (boundary['GrainID'] == -8)].copy()
-
-        drop_idx = additional_pts[(additional_pts['GrainID'] == -1) &
-                                  ((additional_pts['x'] > new_max_x) |
-                                   (additional_pts['y'] > new_max_y))].index
-        additional_pts.drop(drop_idx, inplace=True)
-
-        drop_idx = additional_pts[((additional_pts['GrainID'] == -2) &
-                                   (additional_pts['y'] > new_max_y))].index
-        additional_pts.drop(drop_idx, inplace=True)
-
-        drop_idx = additional_pts[((additional_pts['GrainID'] == -8) &
-                                   (additional_pts['x'] > new_max_x))].index
-        additional_pts.drop(drop_idx, inplace=True)
-
-        rve = pd.concat([rve, additional_pts])
-
-        max_x = max(rve.x)
-        min_x = min(rve.x)
-        max_y = max(rve.y)
-        min_y = min(rve.y)
-
-        # fixing grain IDs of corners
-        rve_corners = rve.loc[((rve['x'] == min_x) & (rve['y'] == min_y)) |
-                              ((rve['x'] == max_x) & (rve['y'] == max_y)) |
-                              ((rve['x'] == min_x) & (rve['y'] == max_y)) |
-                              ((rve['x'] == max_x) & (rve['y'] == min_y))].copy()
-
-        cornersGrainID = rve_corners[(rve_corners['x'] == min_x) & (rve_corners['y'] == min_y)].GrainID.values
-
-        rve.loc[rve_corners.index, 'GrainID'] = cornersGrainID
-
-        # fixing grain IDs of Edges
-        rve_edges = rve.loc[(rve['x'] == max_x) | (rve['x'] == min_x) |
-                            (rve['y'] == max_y) | (rve['y'] == min_y)].copy()
-        # Left Edge
-        e_left = rve_edges.loc[rve_edges['x'] == min_x].copy()
-        # Bottom Edge
-        e_bottom = rve_edges.loc[rve_edges['y'] == min_y].copy()
-        # Right Edge
-        e_right = rve_edges.loc[rve_edges['x'] == max_x].copy()
-        # Top Edge
-        e_top = rve_edges.loc[rve_edges['y'] == max_y].copy()
-
-        rve.loc[e_right.index, 'GrainID'] = e_left.GrainID.values
-        rve.loc[e_top.index, 'GrainID'] = e_bottom.GrainID.values
 
         return rve
 
@@ -1368,12 +1339,20 @@ class HelperFunctions:
         grains_df.sort_values(by=['GrainID'], inplace=True)
         disc_vols = np.zeros((1, grains_df.shape[0])).flatten().tolist()
         for i in range(len(grains_df)):
-            #grainID = grains_df.GrainID[i]
-
             disc_vols[i] = np.count_nonzero(rve == i+1) * RveInfo.bin_size**3
 
         grains_df['final_discrete_volume'] = disc_vols
         grains_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
 
+        return grains_df
+
+    def get_final_disc_vol_2D(self, grains_df: pd.DataFrame, rve: np.ndarray) -> pd.DataFrame:
+        grains_df.sort_values(by=['GrainID'], inplace=True)
+        disc_vols = np.zeros((1, grains_df.shape[0])).flatten().tolist()
+        for i in range(len(grains_df)):
+            disc_vols[i] = np.count_nonzero(rve == i+1) * RveInfo.bin_size**2
+
+        grains_df['final_discrete_volume'] = disc_vols
+        grains_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
         return grains_df
 
