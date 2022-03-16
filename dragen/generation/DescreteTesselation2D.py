@@ -7,21 +7,23 @@ from dragen.utilities.Helpers import HelperFunctions
 
 
 class Tesselation2D(HelperFunctions):
-    def __init__(self,a, b, alpha, x_0, y_0):
-
-
-        self.a = a
-        self.b = b
-        self.alpha = alpha
-        self.x_0 = x_0
-        self.y_0 = y_0
-
-        self.a_max = max(a)
-        self.b_max = max(b)
-        self.final_volume = [np.pi * a[i] * b[i] * RveInfo.shrink_factor**2 for i in range(len(a))]
+    def __init__(self, grains_df):
         super().__init__()
 
-        self.x_grid, self.y_grid= super().gen_grid2d()
+        self.grains_df = grains_df
+        self.a = grains_df['a'].tolist()
+        self.b = grains_df['b'].tolist()
+
+        self.alpha = grains_df['alpha'].tolist()
+        self.x_0 = grains_df['x_0'].tolist()
+        self.y_0 = grains_df['y_0'].tolist()
+
+        self.final_volume = grains_df['final_discrete_volume'].tolist()
+        self.n_grains = len(self.a)
+        self.a_max = max(self.a)
+        self.b_max = max(self.b)
+
+        self.x_grid, self.y_grid = super().gen_grid2d()
 
     def grow(self, iterator, a, b):
         alpha = self.alpha[iterator - 1]
@@ -119,8 +121,10 @@ class Tesselation2D(HelperFunctions):
 
             if not grain_idx:
                 repeat = True
+                RveInfo.logger.info('grain growth had to be reset at {}% of volume filling'.format(packingratio))
                 #self.infobox_obj.emit('grain growth had to be reset at {}% of volume filling'.format(packingratio))
-                #if packingratio < 90:
+                if packingratio < 90:
+                    RveInfo.logger.info('your microstructure data does not contain enough data to fill this boxsize please decrease the boxsize for reasonable results')
                 #    self.infobox_obj.emit('your microstructure data does not contain \n'
                 #                          'enough data to fill this boxsize\n'
                 #                          'please decrease the boxsize for reasonable results')
