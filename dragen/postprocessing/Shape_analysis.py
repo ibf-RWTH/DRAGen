@@ -12,6 +12,8 @@ class shape:
 
         a = list()
         b = list()
+        x = list()
+        y = list()
         slope = list()
         thresholds = np.asarray(np.unique(img, return_counts=True)).T
         input_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_discrete.csv')
@@ -36,28 +38,36 @@ class shape:
                         alpha = elps[2]  # np.rad2deg(elps[2])
                         if 45 < np.rad2deg(elps[2]) < 135:
                             if alpha >= 90:
+                                x.append(elps[1][1] / (2*RveInfo.resolution))
+                                y.append(elps[1][0] / (2*RveInfo.resolution))
                                 a.append(elps[1][1] / (2*RveInfo.resolution))
                                 b.append(elps[1][0] / (2*RveInfo.resolution))
                                 slope.append(alpha)
                             else:
-                                a.append(elps[1][1] / (2 * RveInfo.resolution))
-                                b.append(elps[1][0] / (2 * RveInfo.resolution))
+                                x.append(elps[1][1] / (2 * RveInfo.resolution))
+                                y.append(elps[1][0] / (2 * RveInfo.resolution))
+                                a.append(elps[1][1] / (2*RveInfo.resolution))
+                                b.append(elps[1][0] / (2*RveInfo.resolution))
                                 slope.append(alpha)
                         else:
                             if alpha >= 90:
-                                a.append(elps[1][0] / (2 * RveInfo.resolution))
-                                b.append(elps[1][1] / (2 * RveInfo.resolution))
+                                x.append(elps[1][0] / (2 * RveInfo.resolution))
+                                y.append(elps[1][1] / (2 * RveInfo.resolution))
+                                a.append(elps[1][1] / (2*RveInfo.resolution))
+                                b.append(elps[1][0] / (2*RveInfo.resolution))
                                 slope.append(alpha)
 
                             else:
-                                a.append(elps[1][0] / (2 * RveInfo.resolution))
-                                b.append(elps[1][1] / (2 * RveInfo.resolution))
+                                x.append(elps[1][0] / (2 * RveInfo.resolution))
+                                y.append(elps[1][1] / (2 * RveInfo.resolution))
+                                a.append(elps[1][1] / (2*RveInfo.resolution))
+                                b.append(elps[1][0] / (2*RveInfo.resolution))
                                 slope.append(alpha)
                     except:
                         print('fail')
 
-        AR = [b[i]/a[i] for i in range(len(a)) if (a[i] > 0) and (b[i]/a[i]) < 100]
-        slope = [slope[i] for i in range(len(a)) if a[i] > 0 and (b[i]/a[i]) < 100]
+        AR = [a[i]/b[i] for i in range(len(a)) if (a[i] > 0) and (a[i]/b[i]) < 100]
+        slope = [slope[i] for i in range(len(a)) if a[i] > 0 and (a[i]/b[i]) < 100]
         ell_dict = {'AR': AR, 'slope': slope}
         ell_data = pd.DataFrame(ell_dict)
 
