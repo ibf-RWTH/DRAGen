@@ -156,9 +156,9 @@ class Run(HelperFunctions):
 
             for i in range(RveInfo.number_of_rves):
                 self.initializations(i)
-                obj2D.initializations(RveInfo.dimension, epoch=i)
-                # TODO: 2D fixen
-                #obj2D.rve_generation()
+                total_df = obj2D.grain_sampling()
+                rve = obj2D.rve_generation(total_df)
+                obj2D.post_processing(rve)
 
         elif RveInfo.dimension == 3:
             # Kann Gan und nicht GAN

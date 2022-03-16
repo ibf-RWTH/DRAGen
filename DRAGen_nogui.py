@@ -1,8 +1,9 @@
 from dragen.run import Run
-box_size = 16
+dimension = 2
+box_size = 128
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
-resolution = 1.5
+resolution = 2
 number_of_rves = 1
 number_of_bands = 0
 band_filling = 1.2
@@ -11,7 +12,6 @@ upper_band_bound = 5
 visualization_flag = True
 store_path = '../'
 shrink_factor = 0.4
-dimension = 3
 # Example Files
 equiv_d = 5
 p_sigma = 0.1
@@ -36,6 +36,7 @@ gan_flag = False
 moose_flag = True
 abaqus_flag = True
 damask_flag = True
+phase2iso_flag = True
 element_type = 'HEX8'
 anim_flag = False
 exe_flag = False
