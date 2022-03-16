@@ -1,4 +1,3 @@
-
 <h1> DRAGen - <ins>D</ins>iscrete <ins>R</ins>VE <ins>A</ins>utomation and <ins>Gen</ins>eration</h1>
 <!--**D**iscrete **R**VE **A**utomation and **Gen**eration-->
 
@@ -30,20 +29,21 @@ https://rwth-aachen.sciebo.de/s/szEAcuXubht1Gyv
 <details>
 <summary><b>Show more...<b></summary>
 ## Installation
-make sure conda is installed correctly on your system [look up here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
-clone this repository into desired destination:
-git clone https://git.rwth-aachen.de/ims_iehk/dragen.git
-cd dragen
-Create a virtual environment as follows:
-conda create --name DRAGen python=3.8
-conda activate DRAGen
-(if an error occurs check your conda installation)
-make sure the DRAGen env is activated
-install requierments:
-pip install -r requierments.txt
-run first generation with:
-python DRAGen_nogui.py
-
+make sure conda is installed correctly on your system [look up here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)<br>
+clone this repository into desired destination:<br>
+git clone https://git.rwth-aachen.de/ims_iehk/dragen.git<br>
+cd dragen<br>
+Create a virtual environment as follows:<br>
+conda create --name DRAGen python=3.8<br>
+conda activate DRAGen<br>
+(if an error occurs check your conda installation)<br>
+make sure the DRAGen env is activated<br>
+install requierments:<br>
+pip install -r requierments.txt<br>
+run first generation with:<br>
+python DRAGen_nogui.py<br>
+<br>
+<br>
 
 ## Input data
 
