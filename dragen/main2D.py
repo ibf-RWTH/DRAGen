@@ -151,7 +151,7 @@ class DataTask2D(HelperFunctions):
             grain_shapes_in_thisPhase = grain_shapes_in.loc[grain_shapes_in['phaseID'] == id, ['AR', 'slope', 'inout']]
             if id == 2:
                 print(grain_shapes_in_thisPhase)
-            grain_shapes = pd.concat([grain_shapes, grain_shapes_in_thisPhase])
+            grain_shapes = pd.concat([grain_shapes, grain_shapes_in_thisPhase.sample(grain_shapes.__len__(), random_state=1)])
             grain_shapes = grain_shapes.sort_values(by=['inout'])
             grain_shapes.reset_index(inplace=True, drop=True)
 
