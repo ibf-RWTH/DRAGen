@@ -19,7 +19,7 @@ class Run(HelperFunctions):
                  # mandatory arguments:
                  self, box_size: int, element_type: str, resolution: float, number_of_rves: int,
                  number_of_bands: int,  dimension: int, visualization_flag: bool,
-                 store_path: str, shrink_factor: float,  phase_ratio: dict(), gui_flag: bool, gan_flag: bool,
+                 root: str, shrink_factor: float,  phase_ratio: dict(), gui_flag: bool, gan_flag: bool,
                  subs_flag: bool, phases: list, abaqus_flag: bool, damask_flag: bool, moose_flag: bool,
                  anim_flag: bool, exe_flag: bool, box_size_y: int, file_dict: dict(), inclusion_flag: bool,
                  inclusion_ratio: float, band_filling: float, upper_band_bound: float, lower_band_bound: float,
@@ -48,7 +48,6 @@ class Run(HelperFunctions):
         RveInfo.visualization_flag = visualization_flag
         RveInfo.file_dict = file_dict   # TODO: Change to dict based output
         RveInfo.phase_ratio = phase_ratio
-        RveInfo.store_path = store_path
         RveInfo.shrink_factor = np.cbrt(shrink_factor)
         RveInfo.gui_flag = gui_flag
         RveInfo.gan_flag = gan_flag
@@ -83,7 +82,7 @@ class Run(HelperFunctions):
         RveInfo.band_filling = band_filling
         RveInfo.inclusion_ratio = inclusion_ratio
         RveInfo.inclusion_flag = inclusion_flag
-        RveInfo.root = './'
+        RveInfo.root = root
         RveInfo.input_path = './ExampleInput'
 
         RveInfo.n_pts = math.ceil(float(box_size) * resolution)
@@ -105,7 +104,7 @@ class Run(HelperFunctions):
 
     @staticmethod
     def setup_logging():
-        LOGS_DIR = RveInfo.store_path + '/Logs/'
+        LOGS_DIR = RveInfo.root + '/Logs/'
         if not os.path.isdir(LOGS_DIR):
             os.makedirs(LOGS_DIR)
         f_handler = TimedRotatingFileHandler(filename=os.path.join(LOGS_DIR, 'dragen-logs'), when='midnight')
@@ -117,7 +116,8 @@ class Run(HelperFunctions):
     @staticmethod
     def initializations(epoch):
 
-        RveInfo.store_path = RveInfo.store_path + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
+        RveInfo.store_path = RveInfo.root + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
+        RveInfo.logger.debug(RveInfo.store_path)
         RveInfo.fig_path = RveInfo.store_path + '/Figs'
         RveInfo.gen_path = RveInfo.store_path + '/Generation_Data'
         RveInfo.post_path = RveInfo.store_path + '/Postprocessing'
