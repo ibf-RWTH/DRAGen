@@ -29,8 +29,8 @@ class RveInfo:
     upper_band_bound: float = None
     dimension: int = 3
     visualization_flag: bool = False
-    file_dict: dict() = None
-    phase_ratio: dict() = None  # 1 means all ferrite, 0 means all Martensite TODO: Use a dict
+    file_dict: dict = None
+    phase_ratio: dict = None  # 1 means all ferrite, 0 means all Martensite TODO: Use a dict
     store_path: str = None
     shrink_factor: float = None
     band_ratio_rsa: float = None
@@ -68,6 +68,8 @@ class RveInfo:
     anim_flag: bool = None
     exe_flag: bool = None
     phase2iso_flag: bool = None
+    pbc_flag: bool = None
+    submodel_flag: bool = None
     element_type: str = None
     roughness_flag: bool = False
     band_filling: float = 0.99  # Percentage of Filling for the banded structure
