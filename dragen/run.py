@@ -19,9 +19,9 @@ class Run(HelperFunctions):
                  # mandatory arguments:
                  self, box_size: int, element_type: str, resolution: float, number_of_rves: int,
                  number_of_bands: int,  dimension: int, visualization_flag: bool,
-                 root: str, shrink_factor: float,  phase_ratio: dict(), gui_flag: bool, gan_flag: bool,
+                 root: str, shrink_factor: float,  phase_ratio: dict, gui_flag: bool, gan_flag: bool,
                  subs_flag: bool, phases: list, abaqus_flag: bool, damask_flag: bool, moose_flag: bool,
-                 anim_flag: bool, exe_flag: bool, box_size_y: int, file_dict: dict(), inclusion_flag: bool,
+                 anim_flag: bool, exe_flag: bool, box_size_y: int, file_dict: dict, inclusion_flag: bool,
                  inclusion_ratio: float, band_filling: float, upper_band_bound: float, lower_band_bound: float,
                  # optional Arguments or dependent on previous flag
                  pbc_flag: bool = None, submodel_flag: bool = None, phase2iso_flag: bool = None,
@@ -30,7 +30,8 @@ class Run(HelperFunctions):
                  info_box_obj=None, progress_obj=None, equiv_d: float = None, p_sigma: float = None, t_mu: float = None,
                  b_sigma: float = 0.01, decreasing_factor: float = 0.95, lower: float = None, upper: float = None,
                  circularity: float = 1, plt_name: str = None, save: bool = True, plot: bool = False,
-                 filename: str = None, fig_path: str = None, orient_relationship: str = None):
+                 filename: str = None, fig_path: str = None, orient_relationship: str = None
+    ):
 
         super().__init__()
         # TODO: @Manuel @Max. Ich habe schon häufiger gesehen, dass in anderen Packages Konstanten immer GROß

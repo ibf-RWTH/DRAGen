@@ -3,14 +3,14 @@ dimension = 3
 box_size = 600
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = 300  # for sheet rve set z to None and y to different value than x the other way round is buggy
-resolution = 0.05
-number_of_rves = 1
+resolution = 0.08
+number_of_rves = 100
 number_of_bands = 0
 band_filling = 1.2
 lower_band_bound = 2
 upper_band_bound = 5
 visualization_flag = True
-store_path = '../'
+root = '../'
 shrink_factor = 0.4
 # Example Files
 equiv_d = 5
@@ -61,7 +61,7 @@ Run(box_size, element_type=element_type, box_size_y=box_size_y, box_size_z=box_s
     number_of_bands=number_of_bands, dimension=dimension,
     visualization_flag=visualization_flag, file_dict=files, equiv_d=equiv_d, p_sigma=p_sigma, t_mu=t_mu,
     b_sigma=b_sigma,
-    phase_ratio=phase_ratio, store_path=store_path, shrink_factor=shrink_factor, gui_flag=gui_flag,
+    phase_ratio=phase_ratio, root=root, shrink_factor=shrink_factor, gui_flag=gui_flag,
     gan_flag=gan_flag, pbc_flag=pbc_flag, submodel_flag=submodel_flag, phase2iso_flag=phase2iso_flag,
     info_box_obj=None, progress_obj=None, subs_file_flag=subs_file_flag, subs_file=subs_file, phases=phases,
     subs_flag=subs_flag, moose_flag=moose_flag, abaqus_flag=abaqus_flag, damask_flag=damask_flag,
