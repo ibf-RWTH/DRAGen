@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
 import pyvista as pv
+import sys
 import logging
 import tetgen
 from dragen.utilities.InputInfo import RveInfo
+
 
 class MeshingHelper:
     def __init__(self, rve_shape: tuple = None, rve: pd.DataFrame = None, grains_df: pd.DataFrame = None):
@@ -19,7 +21,7 @@ class MeshingHelper:
         self.z_min = int(min(rve.z))
         self.n_grains = int(max(rve.GrainID))
 
-        self.n_pts_x = rve_shape[0]+1
+        self.n_pts_x = rve_shape[0]
         if isinstance(rve.box_size, pd.Series):
             self.bin_size = rve.box_size[0] / self.n_pts_x  # test
         else:
@@ -44,7 +46,6 @@ class MeshingHelper:
 
         """this function generates a structured grid
         in py-vista according to the rve"""
-
         xrng = np.linspace(0, RveInfo.box_size/1000, self.n_pts_x+1, endpoint=True)
         yrng = np.linspace(0, self.box_size_y/1000, self.n_pts_y+1, endpoint=True)
         zrng = np.linspace(0, self.box_size_z/1000, self.n_pts_z+1, endpoint=True)
@@ -60,6 +61,7 @@ class MeshingHelper:
         # Add the data values to the cell data
         grid.cell_data["GrainID"] = self.rve['GrainID'].to_numpy()
         grid.cell_data["phaseID"] = self.rve['phaseID'].to_numpy()
+        print(self.rve['phaseID'])
         # Now plot the grid!
         if RveInfo.anim_flag:
             plotter = pv.Plotter(off_screen=True)
@@ -111,7 +113,9 @@ class MeshingHelper:
                 if RveInfo.element_type == 'C3D4':
                     tet.tetrahedralize(order=1, mindihedral=10, minratio=1.5, supsteiner_level=0, steinerleft=0)
                 elif RveInfo.element_type == 'C3D10':
-                    tet.tetrahedralize(order=2, mindihedral=10, minratio=1.5, supsteiner_level=0, steinerleft=0)
+                    sys.exit('Element type Error! C3D10 currently not supported! Chose C3D4')
+                    node, elem = tet.tetrahedralize(order=2, mindihedral=10, minratio=1.5, supsteiner_level=0, steinerleft=0)
+
                 tet_grain_grid = tet.grid
                 ncells = tet_grain_grid.n_cells
 
@@ -124,13 +128,13 @@ class MeshingHelper:
                 phaseIDList = [phase]
                 phaseID_array = phaseIDList * ncells
                 pid_list.extend(phaseID_array)
-                if i == 0:
+                if i == 1:
                     grid_tet = tet_grain_grid
                 else:
                     grid_tet = tet_grain_grid.merge(grid_tet, merge_points=True)
 
             grid_tet.cell_data['GrainID'] = np.asarray(gid_list)
-            grid_tet.cell_data['PhaseID'] = np.asarray(pid_list)
+            grid_tet.cell_data['phaseID'] = np.asarray(pid_list)
             grid = grid_tet.copy()
 
         all_points_df = pd.DataFrame(grid.points, columns=['x', 'y', 'z'])
