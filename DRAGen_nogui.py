@@ -1,9 +1,9 @@
 from dragen.run import Run
-dimension = 2
-box_size = 64
+dimension = 3
+box_size = 600
 box_size_y = None  # if this is None it will be set to the main box_size value
-box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
-resolution = 2
+box_size_z = 300  # for sheet rve set z to None and y to different value than x the other way round is buggy
+resolution = 0.05
 number_of_rves = 1
 number_of_bands = 0
 band_filling = 1.2
@@ -20,8 +20,10 @@ b_sigma = 0.1
 inclusion_flag = False
 inclusion_ratio = 0.01
 # Example Files
-# file1 = r'C:\Venvs\dragen\ExampleInput\ferrite_54_grains_processed.csv'
-file1 = r'./ExampleInput/TrainedData_2.pkl'
+#
+#
+file1 = r'C:/temp/ElectricsteelData/Data_processed.csv'
+#file1 = r'./ExampleInput/TrainedData_2.pkl'
 file2 = r'./ExampleInput/martensit.csv'
 file3 = r'./ExampleInput/pearlite_21_grains.csv'
 file6 = r'./ExampleInput/TrainedData_6.pkl'
@@ -33,16 +35,19 @@ subs_file = './ExampleInput/example_block_inp.csv'
 subs_file_flag = True
 gui_flag = False
 gan_flag = False
-moose_flag = True
+moose_flag = False
 abaqus_flag = True
-damask_flag = True
+pbc_flag = False
+submodel_flag = True
+damask_flag = False
 phase2iso_flag = True
 element_type = 'HEX8'
 anim_flag = False
 exe_flag = False
-files = {1: file1, 2: file2}
-phase_ratio = {1: 0.8, 2: 0.2}  # Pass for bands
-phases = ['Ferrite', 'Martensite']
+
+files = {1: file1}#, 2: file2}
+phase_ratio = {1: 1}#, 2: 0.2}  # Pass for bands
+phases = ['Ferrite']#, 'Martensite']
 
 '''
 specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
@@ -57,7 +62,7 @@ Run(box_size, element_type=element_type, box_size_y=box_size_y, box_size_z=box_s
     visualization_flag=visualization_flag, file_dict=files, equiv_d=equiv_d, p_sigma=p_sigma, t_mu=t_mu,
     b_sigma=b_sigma,
     phase_ratio=phase_ratio, store_path=store_path, shrink_factor=shrink_factor, gui_flag=gui_flag,
-    gan_flag=gan_flag,
+    gan_flag=gan_flag, pbc_flag=pbc_flag, submodel_flag=submodel_flag, phase2iso_flag=phase2iso_flag,
     info_box_obj=None, progress_obj=None, subs_file_flag=subs_file_flag, subs_file=subs_file, phases=phases,
     subs_flag=subs_flag, moose_flag=moose_flag, abaqus_flag=abaqus_flag, damask_flag=damask_flag,
     anim_flag=anim_flag, exe_flag=exe_flag, inclusion_flag=inclusion_flag,
