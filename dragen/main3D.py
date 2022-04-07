@@ -113,7 +113,7 @@ class DataTask3D(HelperFunctions):
         grains_df = total_df.loc[total_df['phaseID'] <= 4, :]
         grains_df = grains_df.sort_values(by='final_conti_volume', ascending=False)
         grains_df.reset_index(inplace=True, drop=True)
-        grains_df.loc[:, 'GrainID'] = grains_df.index
+        grains_df.loc[:, 'GrainID'] = grains_df.index + 1
 
         if RveInfo.inclusion_flag and RveInfo.inclusion_ratio > 0:
             inclusions_df = total_df[total_df['phaseID'] == 5]
@@ -300,7 +300,7 @@ class DataTask3D(HelperFunctions):
         """
         if rsa_status:
             # TODO: Hier gibt es einen relativ großen Mesh/Grid-Preprocessing Block --> Auslagern
-            periodic_rve_df = super().repair_periodicity_3D(rve)
+            periodic_rve_df, periodic_rve = super().repair_periodicity_3D(rve)
             periodic_rve_df['phaseID'] = 0
             print('len rve edge:', np.cbrt(len(periodic_rve_df)))
             # An den NaN-Werten in dem DF liegt es nicht!
@@ -310,7 +310,7 @@ class DataTask3D(HelperFunctions):
             for i in range(len(grains_df)):
                 # Set grain-ID to number of the grain
                 # Denn Grain-ID ist entweder >0 oder -200 oder >-200
-                periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1, 'phaseID'] = grains_df['phaseID'][i]
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1, 'phaseID'] = grains_df.loc[i, 'phaseID']
 
             if RveInfo.inclusion_flag and RveInfo.inclusion_ratio > 0:
                 for j in range(inclusions_df.__len__()):
@@ -329,10 +329,7 @@ class DataTask3D(HelperFunctions):
             # Start the Mesher
             # grains_df.to_csv('grains_df.csv', index=False)
             # periodic_rve_df.to_csv('periodic_rve_df.csv', index=False)
-            rve_shape = (max(np.where(rve > 0)[0]) - min(np.where(rve > 0)[0]) + 1,
-                         max(np.where(rve > 0)[1]) - min(np.where(rve > 0)[1]) + 1,
-                         max(np.where(rve > 0)[2]) - min(np.where(rve > 0)[2]) + 1)
-
+            rve_shape = periodic_rve.shape
             # Write out Volumes
             grains_df = super().get_final_disc_vol_3D(grains_df, rve)
             grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output.csv', index=False)
