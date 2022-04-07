@@ -24,6 +24,7 @@ class Run(HelperFunctions):
                  anim_flag: bool, exe_flag: bool, box_size_y: int, file_dict: dict(), inclusion_flag: bool,
                  inclusion_ratio: float, band_filling: float, upper_band_bound: float, lower_band_bound: float,
                  # optional Arguments or dependent on previous flag
+                 pbc_flag: bool = None, submodel_flag: bool = None, phase2iso_flag: bool = None,
                  subs_file_flag=False, subs_file: str = None,
                  box_size_z: int = None, bandwidth: float = None,
                  info_box_obj=None, progress_obj=None, equiv_d: float = None, p_sigma: float = None, t_mu: float = None,
@@ -76,8 +77,10 @@ class Run(HelperFunctions):
         RveInfo.moose_flag = moose_flag
         RveInfo.anim_flag = anim_flag
         RveInfo.exe_flag = exe_flag
-        RveInfo.RVphase2iso_flag = True
-        RveInfo.element_type = 'HEX8'
+        RveInfo.phase2iso_flag = phase2iso_flag
+        RveInfo.pbc_flag = pbc_flag
+        RveInfo.submodel_flag = submodel_flag
+        RveInfo.element_type = element_type
         RveInfo.roughness_flag = False
         RveInfo.band_filling = band_filling
         RveInfo.inclusion_ratio = inclusion_ratio
@@ -100,7 +103,6 @@ class Run(HelperFunctions):
                 RveInfo.n_pts_z += 1
         RveInfo.bin_size = RveInfo.box_size / RveInfo.n_pts
         RveInfo.step_half = RveInfo.bin_size / 2
-
 
     @staticmethod
     def setup_logging():
