@@ -7,6 +7,7 @@ File:     new_substructure
 Describe: Write during the internship at IEHK RWTH"""
 from dragen.utilities.Helpers import HelperFunctions
 from dragen.substructure.modification import merge_tiny_blocks
+from dragen.utilities.InputInfo import RveInfo
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -77,8 +78,8 @@ class Grain(HelperFunctions):
     def gen_subs(self, equiv_d=None, sigma=0.1, block_thickness=0.5, b_sigma=0.1, lower_t=None, upper_t=None, circularity=1,n_pack=None,orientations=None):
 
         if n_pack is None:
-            r = equiv_d / 2
-            average_pv = 4 / 3 * np.pi * r ** 3 * circularity ** (1.5)
+            r = RveInfo.equiv_d / 2
+            average_pv = 4 / 3 * np.pi * r ** 3 * RveInfo.circularity ** (1.5)
             av_pn = round(self.volume / average_pv)
             self.points_data['block_variant'] = None
 
@@ -157,7 +158,7 @@ class Grain(HelperFunctions):
             packet.boundary = chosen_norm
             packet.variants = self.trial_variants_select(packet)
             packet.pag_ori = self.orientation
-            packet.gen_blocks(t_mu=block_thickness, sigma=b_sigma, lower=lower_t,upper=upper_t)  # complete df
+            packet.gen_blocks(t_mu=RveInfo.t_mu, sigma=RveInfo.b_sigma, lower=RveInfo.lower,upper=RveInfo.upper)  # complete df
             comp_df = packet.get_bt()
             #comp_df = packet.merge_tiny_blocks(merge_tiny_blocks)
 
@@ -194,9 +195,9 @@ class Grain(HelperFunctions):
                 self.points_data.loc[comp_df.index, 'phi2'] = comp_df['phi2']
 
         if len(list(set(self.points_data["block_id"]))) > 1:
-            if lower_t is None:
-                lower_t = block_thickness/3
-            self.points_data = self.merge_tiny_blocks(lower_t,merge_tiny_blocks)
+            if RveInfo.lower is None:
+                lower_t = RveInfo.t_mu/3
+            self.points_data = self.merge_tiny_blocks(lower_t, merge_tiny_blocks)
 
         return self.points_data
 

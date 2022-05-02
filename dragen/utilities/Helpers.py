@@ -33,7 +33,6 @@ class HelperFunctions:
 
         else:
             array = np.zeros((2 * npts_x, 2 * RveInfo.n_pts_y, 2 * RveInfo.n_pts_z), order='C')
-        print(array.shape)
         return array
 
     @staticmethod
@@ -177,16 +176,15 @@ class HelperFunctions:
         df2['Axes3'] = df2['Axes1']
         data = df2.copy()
 
-        if not ('phi1' in data.head(0) and data['phi1'].count() != 0 and 'PHI' in data.head(0) and data['PHI'].count() != 0
-                and 'phi2' in data.head(0) and data['phi2'].count() != 0):
+        if df.columns.__len__() <= 3:
             o = damask.Rotation.from_random(data.__len__()).as_Euler_angles(degrees=True)
             data['phi1'] = o[:, 0]
             data['PHI'] = o[:, 1]
             data['phi2'] = o[:, 2]
-
-        data.drop(labels=['Area', 'Aspect Ratio'], inplace=True, axis=1)
+        print(data)
+        data = data[[data.columns[2], data.columns[6], data.columns[7], data.columns[8],
+                    data.columns[3], data.columns[4], data.columns[5]]]
         data.columns = ['alpha', 'a', 'b', 'c', 'phi1', 'PHI', 'phi2']
-
         print(data)
 
         if dimension == 3:
@@ -209,6 +207,7 @@ class HelperFunctions:
         grain_vol = 0
         old_idx = list()
         input_df = pd.DataFrame()
+        print('len:', data.__len__())
         while (grain_vol > 1.05 * max_volume) or (grain_vol < 1.0 * max_volume):
 
             if grain_vol > 1.05*max_volume:
@@ -230,7 +229,7 @@ class HelperFunctions:
                 old_idx.append(idx)
                 vol = grain["volume"]
                 grain_vol += vol
-                input_df = pd.concat([input_df,grain_df])
+                input_df = pd.concat([input_df, grain_df])
                 if len(data) == 0:
                     RveInfo.logger.info('Input data was exceeded not enough data!!')
                     break
@@ -807,7 +806,7 @@ class HelperFunctions:
             rve[:, :, -1] = rve[:, :, 0]
 
             rve_x = np.linspace(0, RveInfo.box_size, RveInfo.n_pts+1, endpoint=True)
-            rve_y = np.linspace(0, RveInfo.box_size_y, RveInfo.n_pts, endpoint=True)
+            rve_y = np.linspace(0, RveInfo.box_size_y, RveInfo.n_pts_y, endpoint=True)
             rve_z = np.linspace(0, RveInfo.box_size, RveInfo.n_pts+1, endpoint=True)
 
         elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
@@ -844,6 +843,7 @@ class HelperFunctions:
         rve_df = pd.DataFrame(rve_dict)
         rve_df['box_size'] = box_size
         rve_df['n_pts'] = n_pts
+
         return rve_df, rve
 
     def ellipse(self, a, b, x_0, y_0, alpha=0):

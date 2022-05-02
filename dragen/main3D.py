@@ -14,6 +14,7 @@ from dragen.generation.mooseMesher import MooseMesher
 from dragen.postprocessing.voldistribution import PostProcVol
 from dragen.postprocessing.Shape_analysis import shape
 from dragen.utilities.InputInfo import RveInfo
+from dragen.substructure.run import Run as substrucRun
 from dragen.InputGenerator.C_WGAN_GP import WGANCGP
 
 import dragen.generation.spectral as spectral
@@ -378,7 +379,7 @@ class DataTask3D(HelperFunctions):
                 if RveInfo.subs_flag:
                     print("substructure generation is turned on...")
                     # returns rve df containing substructures
-                    subs_rve = RveInfo.sub_run.run(rve_df=periodic_rve_df, grains_df=grains_df)
+                    subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)
                     mesher_obj = SubMesher(rve_shape=rve_shape, rve=subs_rve, subs_df=grains_df)
 
                 elif RveInfo.subs_flag == False:
@@ -408,7 +409,10 @@ class DataTask3D(HelperFunctions):
                 grain_shapes = pd.concat([grain_shapes, grain_shapes_slice])
             slice_ID += 4
             grain_shapes['inout'] = 'out'
+            grain_shapes = grain_shapes.rename(columns={"AR": "AR (-)", "slope": "slope (°)"})
             grain_shapes_in_thisPhase = grain_shapes_in.loc[grain_shapes_in['phaseID'] == id, ['AR', 'slope', 'inout']]
+            grain_shapes_in_thisPhase = grain_shapes_in_thisPhase.sample(n=grain_shapes.__len__())
+            grain_shapes_in_thisPhase = grain_shapes_in_thisPhase.rename(columns={"AR": "AR (-)", "slope": "slope (°)"})
             if id == 2:
                 print(grain_shapes_in_thisPhase)
             grain_shapes = pd.concat([grain_shapes, grain_shapes_in_thisPhase])
@@ -443,5 +447,5 @@ class DataTask3D(HelperFunctions):
                                          '{}/Postprocessing'.format(RveInfo.store_path))
 
         if RveInfo.subs_flag:
-            RveInfo.sub_run.post_processing(k=3)
+            substrucRun().post_processing(k=3)
         RveInfo.logger.info("RVE generation process has successfully completed...")

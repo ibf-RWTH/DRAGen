@@ -94,3 +94,8 @@ class RveInfo:
 
     logger = logging.getLogger("RVE-Gen")
     result_log = logging.getLogger("RVE-Result")
+
+    ######### Constants defined outside run #########
+    rve_data_substructure = None
+
+
