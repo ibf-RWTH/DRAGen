@@ -361,17 +361,19 @@ class BuildAbaqus2D:
         f = open(RveInfo.store_path + '/rve-part.inp', 'r')
         lines = f.readlines()
         f.close()
-        startingLine = lines.index('*NODE\n')
+        lines = [line.lower() for line in lines]
+        startingLine = lines.index('*node\n')
         f = open(RveInfo.store_path + '/RVE_smooth.inp', 'a')
         f.write('*Part, name=PART-1\n')
         idx = [i for i, s in enumerate(lines) if '*element' in s.lower()][0]
         lines[idx] = '*ELEMENT, TYPE=C3D8\n'
-        for line in lines[startingLine:]:
+        for line in lines[startingLine:-1]:
             f.write(line)
         f.close()
 
     def generate_elementsets(self):
         f = open(RveInfo.store_path + '/RVE_smooth.inp', 'a')
+        f.write('**\n')
         for i in range(self.n_grains):
             nGrain = i + 1
             print('in for nGrain=', nGrain, self.mesh.cell_data.keys())
@@ -1183,7 +1185,7 @@ class BuildAbaqus2D:
 
         for i in range(numberofgrains):
             ngrain = i+1
-            if not RveInfo.phase_two_isotropic:
+            if not RveInfo.phase2iso_flag:
                 phi1 = self.tex_phi1[i]
                 PHI = self.tex_PHI[i]
                 phi2 = self.tex_phi2[i]
@@ -1223,40 +1225,3 @@ class BuildAbaqus2D:
         plotter = pv.Plotter()
         plotter.add_mesh(self.mesh, show_edges=True, scalars='GrainID', cmap='flag')
         plotter.show()
-
-if __name__ == '__main__':
-    #mesh_path = '../mesh.msh'
-    grains_df_path = 'grains_df.csv'
-    rve_df_path = 'test_rve.csv'
-
-    #mesh = pv.read_meshio(mesh_path)
-    grains_df = pd.read_csv(grains_df_path)
-    rve_df = pd.read_csv(rve_df_path)
-
-    mesher_obj = Mesher_2D(rve_df, grains_df,store_path='./', animation=False)
-    #smooth_mesh= mesher_obj.run_mesher_2D()
-    grid = mesher_obj.gen_blocks()
-    grid = mesher_obj.gen_grains(grid)
-    mesh = mesher_obj.smoothen_2D(grid)
-    p = pv.Plotter()
-    p.add_mesh(mesh, scalars='GrainID', show_edges=True)
-    p.show()
-
-    abaqus_obj = BuildAbaqus2D(mesh, rve_df=rve_df, grains_df=grains_df).run()
-
-    '''this grid_hull_df needs to be removed if the upper block is used for the independent parts'''
-    grid_hull_df = pd.DataFrame(mesh.points.tolist(), columns=['x', 'y', 'z'])
-    max_x = max(grid_hull_df.x)
-    min_x = min(grid_hull_df.x)
-    max_y = max(grid_hull_df.y)
-    min_y = min(grid_hull_df.y)
-    grid_hull_df = grid_hull_df.loc[(grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x) |
-                                    (grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)]
-    abaqus_obj.pbc(grid_hull_df)
-    abaqus_obj.write_material_def()  # functions here
-    abaqus_obj.write_step_def()  # it will lead to a faulty inputfile
-    abaqus_obj.write_grain_data()
-
-    #plotter = pv.Plotter()
-    #plotter.add_mesh(mesh, show_edges=True, scalars='GrainID', cmap='flag')
-    #plotter.show()

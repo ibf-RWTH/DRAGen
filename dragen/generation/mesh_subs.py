@@ -171,7 +171,7 @@ class SubMesher(AbaqusMesher):
         pid_list = list()
 
         ######################################
-        if RveInfo.element_type != 'C3D8':
+        if RveInfo.element_type != 'C3D8' and RveInfo.element_type != 'HEX8':
             old_grid = grid.copy()
             grid_tet = pv.UnstructuredGrid()
             for i in range(1, numberOfBlocks + 1):
@@ -341,5 +341,11 @@ class SubMesher(AbaqusMesher):
         self.make_assembly()  # Don't change the order
         self.pbc(GRID, grid_hull_df)  # of these four
         self.write_material_def()  # functions here
-        self.write_step_def()  # it will lead to a faulty inputfile
+        if RveInfo.pbc_flag:
+            self.write_pbc_step_def()  # it will lead to a faulty inputfile
+        if RveInfo.submodel_flag:
+            self.write_submodel_step_def()
+        else:
+            print('pbcs were assumed')
+            self.write_pbc_step_def()
         self.write_block_data()

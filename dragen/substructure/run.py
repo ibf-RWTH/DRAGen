@@ -95,8 +95,8 @@ class Run():
 
             grain_data = grains_df.iloc[i]
             phaseID = int(grain_data['phaseID'])
-            grain_id = grain_data['GrainID'] + 1
-            x = rve_df[rve_df['GrainID'] == grain_id]['x'].to_numpy().reshape((-1, 1)) #needs + 1 finally
+            grain_id = grain_data['GrainID']
+            x = rve_df[rve_df['GrainID'] == grain_id]['x'].to_numpy().reshape((-1, 1))
             y = rve_df[rve_df['GrainID'] == grain_id]['y'].to_numpy().reshape((-1, 1))
             z = rve_df[rve_df['GrainID'] == grain_id]['z'].to_numpy().reshape((-1, 1))
 
@@ -137,6 +137,7 @@ class Run():
                 grain_data['block_orientation'] = np.NaN
                 _rve_data = pd.concat([_rve_data, grain_data])
 
+        RveInfo.rve_data_substructure = _rve_data
         self.rve_data = _rve_data
 
         self.del_zerobt(_rve_data)  # del blocks with 0 thickness
@@ -186,6 +187,7 @@ class Run():
         return _rve_data
 
     def post_processing(self, k, sigma=2):
+        rve_data = RveInfo.rve_data_substructure
         def gaussian_kernel(x1, x2, sigma=2):
             return np.exp(-np.power(x1 - x2, 2).sum() / (2 * sigma ** 2))
 
@@ -199,24 +201,24 @@ class Run():
                 m_list.append(m)
             return np.array(m_list)
 
-        pag_path = RveInfo.store_path + '/Generation_Data/grain_data_output_discrete.csv'
+        pag_path = RveInfo.store_path + '/Generation_Data/grain_data_output.csv'
         pag_df = pd.read_csv(pag_path)
         discrete_vol = pag_df['final_discrete_volume']
         n_pag = len(pag_df)
         mean_pagvol = np.mean(discrete_vol)
         std_pagvol = np.std(discrete_vol)
 
-        n_pak = int(self.rve_data['packet_id'].max())
+        n_pak = int(rve_data['packet_id'].max())
         mean_pakvol = RveInfo.box_size**3/n_pak
         variance_pakvol = 0
-        for i in range(1,n_pak+1):
-            pakvol = len(self.rve_data[self.rve_data['packet_id'] == i])/len(self.rve_data)*RveInfo.box_size**3
+        for i in range(1, n_pak+1):
+            pakvol = len(rve_data[rve_data['packet_id'] == i])/len(rve_data)*RveInfo.box_size**3
             variance_pakvol += (pakvol-mean_pakvol)**2/n_pak
 
         std_pakvol = variance_pakvol**0.5
 
-        n_block = int(self.rve_data['block_id'].max())
-        bt_df = self.rve_data.groupby(['block_id']).first()
+        n_block = int(rve_data['block_id'].max())
+        bt_df = rve_data.groupby(['block_id']).first()
         mean_bt = bt_df['block_thickness'].mean()
         std_bt = bt_df['block_thickness'].std()
 
@@ -256,7 +258,7 @@ class Run():
             bt_df = pd.read_csv(RveInfo.subs_file)
             measured_bt = np.sort(bt_df['block_thickness'].to_numpy())
             kernel1 = gaussian_kde(measured_bt)
-            blocks = self.rve_data.groupby('block_id').first()
+            blocks = rve_data.groupby('block_id').first()
             generated_bt = np.sort(blocks['block_thickness'].to_numpy())
             kernel2 = gaussian_kde(generated_bt)
             plt.plot(measured_bt, kernel1(measured_bt), label='Real_Distribution')

@@ -25,15 +25,28 @@ class AbaqusMesher(MeshingHelper):
         f.write('*Instance, name=Part-1-1, part=Part-1\n')
         f.write('*End Instance\n')
         f.write('**\n')
-        f.write('*Include, Input=Nsets.inp\n')
-        f.write('*Include, input=LeftToRight.inp\n')
-        f.write('*Include, input=BottomToTop.inp\n')
-        f.write('*Include, input=FrontToRear.inp\n')
-        f.write('*Include, input=Edges.inp\n')
-        f.write('*Include, input=Corners.inp\n')
-        f.write('*Include, input=VerticeSets.inp\n')
+        if RveInfo.submodel_flag:
+            f.write('*Include, Input=HullPointSet.inp\n')
+        if RveInfo.pbc_flag:
+            f.write('*Include, Input=Nsets.inp\n')
+            f.write('*Include, input=LeftToRight.inp\n')
+            f.write('*Include, input=BottomToTop.inp\n')
+            f.write('*Include, input=FrontToRear.inp\n')
+            f.write('*Include, input=Edges.inp\n')
+            f.write('*Include, input=Corners.inp\n')
+            f.write('*Include, input=VerticeSets.inp\n')
         f.write('*End Assembly\n')
         f.close()
+
+    def submodelSet(self, grid_hull_df: pd.DataFrame) -> None:
+        OutPutFile = open(RveInfo.store_path + '/HullPointSet.inp', 'w')
+        grid_hull_df.sort_values(by=['x', 'y', 'z'], inplace=True)
+        grid_hull_df.index.rename('pointNumber', inplace=True)
+        grid_hull_df = grid_hull_df.reset_index()
+        for i in grid_hull_df.index:
+            OutPutFile.write('*Nset, nset=SET-Hull, instance=PART-1-1\n'.format(i + 1))
+            OutPutFile.write(' {},\n'.format(int(grid_hull_df.loc[i]['pointNumber'] + 1)))
+        OutPutFile.close()
 
     def pbc(self, rve: pv.UnstructuredGrid, grid_hull_df: pd.DataFrame) -> None:
 
@@ -727,7 +740,62 @@ class AbaqusMesher(MeshingHelper):
             f.write('0.21, 0.3\n')
         f.close()
 
-    def write_step_def(self) -> None:
+    def write_submodel_step_def(self) -> None:
+
+        """simple function to write step definition
+        variables should be introduced to give the user an option
+        to modify amplidtude, and other parameters"""
+
+        f = open(RveInfo.store_path + '/RVE_smooth.inp', 'a')
+        f.write('**\n')
+        f.write('** ----------------------------------------------------------------\n')
+        f.write('**\n')
+        f.write('** STEP: Step-1\n')
+        f.write('**\n')
+        f.write('*Step, name=Step-1, nlgeom=YES, inc=10000000, solver=ITERATIVE\n')
+        f.write('*Static\n')
+        f.write('0.001, 10., 1.05e-15, 0.25\n')
+        f.write('**\n')
+        f.write('** CONTROLS\n')
+        f.write('**\n')
+        f.write('*Controls, reset\n')
+        f.write('*CONTROLS, PARAMETER=TIME INCREMENTATION\n')
+        f.write('35, 50, 9, 50, 28, 5, 12, 45\n')
+        f.write('**\n')
+        f.write('*CONTROLS, PARAMETERS=LINE SEARCH\n')
+        f.write('10\n')
+        f.write('*SOLVER CONTROL\n')
+        f.write('1e-5,200,\n')
+        f.write('**\n')
+        f.write('** BOUNDARY CONDITIONS\n')
+        f.write('**\n')
+        f.write('** Name: Sub-BC-1 Type: Submodel\n')
+        f.write('*Boundary, submodel, step=1\n')
+        f.write('Set-Hull, 1, 1\n')
+        f.write('Set-Hull, 2, 2\n')
+        f.write('Set-Hull, 3, 3\n')
+        f.write('**\n')
+        f.write('** OUTPUT REQUESTS\n')
+        f.write('**\n')
+        f.write('*Restart, write, frequency=0\n')
+        f.write('**\n')
+        f.write('** FIELD OUTPUT: F-Output-1\n')
+        f.write('**\n')
+        f.write('*Output, field, frequency=10\n')
+        f.write('*Node Output\n')
+        f.write('CF, COORD, RF, U\n')
+        f.write('*Element Output, directions=YES\n')
+        f.write('EVOL, LE, PE, PEEQ, PEMAG, S, SDV\n')
+        f.write('*Contact Output\n')
+        f.write('CDISP, CSTRESS\n')
+        f.write('**\n')
+        f.write('** HISTORY OUTPUT: H-Output-1\n')
+        f.write('**\n')
+        f.write('*Output, history, variable=PRESELECT\n')
+        f.write('*End Step\n')
+        f.close()
+
+    def write_pbc_step_def(self) -> None:
 
         """simple function to write step definition
         variables should be introduced to give the user an option
@@ -946,10 +1014,16 @@ class AbaqusMesher(MeshingHelper):
                                         (grid_hull_df['y'] == y_max) | (grid_hull_df['y'] == y_min) |
                                         (grid_hull_df['z'] == z_max) | (grid_hull_df['z'] == z_min)]
 
-        self.make_assembly()         # Don't change the order
-        self.pbc(GRID, grid_hull_df)      # of these four
-        self.write_material_def()    # functions here
-        self.write_step_def()        # it will lead to a faulty inputfile
+        self.make_assembly()
+        if RveInfo.submodel_flag:
+            self.submodelSet(grid_hull_df)
+        if RveInfo.pbc_flag:
+            self.pbc(GRID, grid_hull_df)
+        self.write_material_def()
+        if RveInfo.submodel_flag:
+            self.write_submodel_step_def()
+        if RveInfo.pbc_flag:
+            self.write_pbc_step_def()
         self.write_grain_data()
 
         if RveInfo.anim_flag:

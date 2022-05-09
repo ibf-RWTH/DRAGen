@@ -74,12 +74,10 @@ class MooseMesher(MeshingHelper):
         exoFile.put_time(timestep, time)
 
         exoFile.set_element_variable_number(1)
-        exoFile.set_element_variable_name('grainid', 1)
-
-        for idx in blockIds:
-            subgrid = grid.extract_cells(np.where(grid.cell_data['GrainID'] == idx))
-
-            cell_ids = subgrid.cell_data['vtkOriginalCellIds']
-            exoFile.set_element_variable_values(idx, 'grainid', timestep, cell_ids)
+        exoFile.set_element_variable_name('phaseID', 1)
+        for i in range(nBlocks):
+            idx = np.where(grid.cell_data['GrainID'] == i+1)[0]
+            id = grid.extract_cells(idx).cell_data['phaseID']
+            exoFile.set_element_variable_values(i+1, 'phaseID', timestep, id)
 
         exoFile.close()

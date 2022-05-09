@@ -2,13 +2,13 @@ import datetime
 import os
 import sys
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import math
 import numpy as np
 from typing import Dict
 
 from dragen.main2D import DataTask2D
 from dragen.main3D import DataTask3D
-from dragen.main3D_GAN import DataTask3D_GAN
 from dragen.substructure.run import Run as SubRun
 from dragen.utilities.Helpers import HelperFunctions
 from dragen.utilities.InputInfo import RveInfo
@@ -19,11 +19,12 @@ class Run(HelperFunctions):
                  # mandatory arguments:
                  self, box_size: int, element_type: str, resolution: float, number_of_rves: int,
                  number_of_bands: int,  dimension: int, visualization_flag: bool,
-                 store_path: str, shrink_factor: float,  phase_ratio: dict(), gui_flag: bool, gan_flag: bool,
+                 root: str, shrink_factor: float,  phase_ratio: dict, gui_flag: bool, gan_flag: bool,
                  subs_flag: bool, phases: list, abaqus_flag: bool, damask_flag: bool, moose_flag: bool,
-                 anim_flag: bool, exe_flag: bool, box_size_y: int, file_dict: dict(), inclusion_flag: bool,
+                 anim_flag: bool, exe_flag: bool, box_size_y: int, file_dict: dict, inclusion_flag: bool,
                  inclusion_ratio: float, band_filling: float, upper_band_bound: float, lower_band_bound: float,
                  # optional Arguments or dependent on previous flag
+                 pbc_flag: bool = None, submodel_flag: bool = None, phase2iso_flag: bool = None,
                  subs_file_flag=False, subs_file: str = None,
                  box_size_z: int = None, bandwidth: float = None,
                  info_box_obj=None, progress_obj=None, equiv_d: float = None, p_sigma: float = None, t_mu: float = None,
@@ -49,7 +50,6 @@ class Run(HelperFunctions):
         RveInfo.visualization_flag = visualization_flag
         RveInfo.file_dict = file_dict   # TODO: Change to dict based output
         RveInfo.phase_ratio = phase_ratio
-        RveInfo.store_path = store_path
         RveInfo.shrink_factor = np.cbrt(shrink_factor)
         RveInfo.gui_flag = gui_flag
         RveInfo.gan_flag = gan_flag
@@ -78,13 +78,15 @@ class Run(HelperFunctions):
         RveInfo.moose_flag = moose_flag
         RveInfo.anim_flag = anim_flag
         RveInfo.exe_flag = exe_flag
-        RveInfo.RVphase2iso_flag = True
-        RveInfo.element_type = 'HEX8'
+        RveInfo.phase2iso_flag = phase2iso_flag
+        RveInfo.pbc_flag = pbc_flag
+        RveInfo.submodel_flag = submodel_flag
+        RveInfo.element_type = element_type
         RveInfo.roughness_flag = False
         RveInfo.band_filling = band_filling
         RveInfo.inclusion_ratio = inclusion_ratio
         RveInfo.inclusion_flag = inclusion_flag
-        RveInfo.root = './'
+        RveInfo.root = root
         RveInfo.input_path = './ExampleInput'
 
         RveInfo.n_pts = math.ceil(float(box_size) * resolution)
@@ -103,14 +105,12 @@ class Run(HelperFunctions):
         RveInfo.bin_size = RveInfo.box_size / RveInfo.n_pts
         RveInfo.step_half = RveInfo.bin_size / 2
 
-
     @staticmethod
     def setup_logging():
-        LOGS_DIR = RveInfo.store_path + '/Logs/'
+        LOGS_DIR = RveInfo.root + '/Logs/'
         if not os.path.isdir(LOGS_DIR):
             os.makedirs(LOGS_DIR)
-        f_handler = logging.handlers.TimedRotatingFileHandler(
-            filename=os.path.join(LOGS_DIR, 'dragen-logs'), when='midnight')
+        f_handler = TimedRotatingFileHandler(filename=os.path.join(LOGS_DIR, 'dragen-logs'), when='midnight')
         formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
         f_handler.setFormatter(formatter)
         RveInfo.logger.addHandler(f_handler)
@@ -119,9 +119,11 @@ class Run(HelperFunctions):
     @staticmethod
     def initializations(epoch):
 
-        RveInfo.store_path = RveInfo.store_path + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
+        RveInfo.store_path = RveInfo.root + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
+        RveInfo.logger.debug(RveInfo.store_path)
         RveInfo.fig_path = RveInfo.store_path + '/Figs'
         RveInfo.gen_path = RveInfo.store_path + '/Generation_Data'
+        RveInfo.post_path = RveInfo.store_path + '/Postprocessing'
 
         if not os.path.isdir(RveInfo.store_path):
             os.makedirs(RveInfo.store_path)
@@ -131,6 +133,8 @@ class Run(HelperFunctions):
 
         if not os.path.isdir(RveInfo.gen_path):
             os.makedirs(RveInfo.gen_path)
+        if not os.path.isdir(RveInfo.post_path):
+            os.makedirs(RveInfo.post_path)
 
         f_handler = logging.handlers.TimedRotatingFileHandler(
             filename=os.path.join(RveInfo.store_path, 'result-logs'), when='midnight')
@@ -154,9 +158,9 @@ class Run(HelperFunctions):
 
             for i in range(RveInfo.number_of_rves):
                 self.initializations(i)
-                obj2D.initializations(RveInfo.dimension, epoch=i)
-                # TODO: 2D fixen
-                #obj2D.rve_generation()
+                total_df = obj2D.grain_sampling()
+                rve = obj2D.rve_generation(total_df)
+                obj2D.post_processing(rve)
 
         elif RveInfo.dimension == 3:
             # Kann Gan und nicht GAN
@@ -164,9 +168,8 @@ class Run(HelperFunctions):
             for i in range(RveInfo.number_of_rves):
                 self.initializations(i)
                 total_df = obj3D.grain_sampling()
-                obj3D.rve_generation(total_df)
-                if RveInfo.subs_file_flag:
-                    obj3D.post_processing()
+                rve = obj3D.rve_generation(total_df)
+                obj3D.post_processing(rve)
 
 
         else:
@@ -185,10 +188,10 @@ class Run(HelperFunctions):
 
 
 if __name__ == "__main__":
-    box_size = 30
-    box_size_y = 20  # if this is None it will be set to the main box_size value
+    box_size = 50
+    box_size_y = None  # if this is None it will be set to the main box_size value
     box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
-    resolution = 1.5
+    resolution = 2
     number_of_rves = 1
     number_of_bands = 0
     band_filling = 1.2
@@ -208,24 +211,26 @@ if __name__ == "__main__":
     # Example Files
     # file1 = r'C:\Venvs\dragen\ExampleInput\ferrite_54_grains_processed.csv'
     file1 = r'..\ExampleInput\TrainedData_2.pkl'
-    file6 = r'..\ExampleInput\TrainedData_2.pkl'
-    file2 = r'..\ExampleInput\pearlite_21_grains.csv'
-    file3 = r'..\ExampleInput\38Mn-Ferrite.csv'
+    file2 = r'..\ExampleInput\martensit.csv'
+    file3 = r'..\ExampleInput\pearlite_21_grains.csv'
+    file6 = r'..\ExampleInput\TrainedData_6.pkl'
+
+
     # test pearlite phase
     subs_flag = False
     subs_file = '../ExampleInput/example_block_inp.csv'
-    subs_file_flag = False
+    subs_file_flag = True
     gui_flag = False
     gan_flag = False
     moose_flag = True
-    abaqus_flag = False
+    abaqus_flag = True
     damask_flag = True
     element_type = 'HEX8'
     anim_flag = False
     exe_flag = False
-    files = {1: file1, 2: file2, 3: None, 4: None, 5: file3, 6: file6}
-    phase_ratio = {1: 0.7, 2: 0.3, 6: None}  # Pass for bands
-    phases = ['ferrite', 'martensite', 'Bands']
+    files = {1: file1, 2: file2}
+    phase_ratio = {1: 0.8, 2: 0.2}  # Pass for bands
+    phases = ['Ferrite', 'Martensite']
 
     '''
     specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
