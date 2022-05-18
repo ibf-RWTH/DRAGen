@@ -40,6 +40,7 @@ class Ui_MainWindow(object):
         self.banding_tab = QtWidgets.QWidget()
         self.banding_tab.setObjectName("banding_tab")
         self.InfoPages.addTab(self.banding_tab, "")
+        self.banding_tab.setEnabled(False)
 
         self.gridLayoutWidget_2 = QtWidgets.QWidget(self.banding_tab)
         self.gridLayoutWidget_2.setGeometry(QtCore.QRect(20, 10, 161, 80))
@@ -89,6 +90,7 @@ class Ui_MainWindow(object):
         self.substructure = QtWidgets.QWidget()
         self.substructure.setObjectName("substructure")
         self.InfoPages.addTab(self.substructure, "")
+        self.substructure.setEnabled(False)
 
         self.gridLayoutWidget_3 = QtWidgets.QWidget(self.substructure)
         self.gridLayoutWidget_3.setGeometry(QtCore.QRect(10, 0, 160, 21))
@@ -99,13 +101,16 @@ class Ui_MainWindow(object):
         self.grid_mode.setObjectName("grid_mode")
 
         self.substruct_filemode_radio = QtWidgets.QRadioButton(self.gridLayoutWidget_3)
+        self.substruct_filemode_radio.setChecked(True)
         self.substruct_filemode_radio.setObjectName("substruct_filemode_radio")
         self.grid_mode.addWidget(self.substruct_filemode_radio, 0, 0, 1, 1)
+        self.substruct_filemode_radio.toggled.connect(self.widget_handler)
 
         self.substruct_user_mode_radio = QtWidgets.QRadioButton(self.gridLayoutWidget_3)
-        self.substruct_user_mode_radio.setChecked(True)
+        self.substruct_user_mode_radio.setChecked(False)
         self.substruct_user_mode_radio.setObjectName("substruct_user_mode_radio")
         self.grid_mode.addWidget(self.substruct_user_mode_radio, 0, 1, 1, 1)
+        self.substruct_user_mode_radio.toggled.connect(self.widget_handler)
 
         self.tabWidget = QtWidgets.QTabWidget(self.substructure)
         self.tabWidget.setGeometry(QtCore.QRect(6, 29, 721, 261))
@@ -635,6 +640,7 @@ class Ui_MainWindow(object):
         self.Banding_button = QtWidgets.QCheckBox(self.formLayoutWidget)
         self.Banding_button.setObjectName("Banding_button")
         self.gridLayout.addWidget(self.Banding_button, 7, 1, 1, 2)
+        self.Banding_button.stateChanged.connect(self.features_handler)
 
         self.inclusions_button = QtWidgets.QCheckBox(self.formLayoutWidget)
         self.inclusions_button.setObjectName("inclusions_button")
@@ -643,9 +649,10 @@ class Ui_MainWindow(object):
         self.substructure_button = QtWidgets.QCheckBox(self.formLayoutWidget)
         self.substructure_button.setObjectName("substructure_button")
         self.gridLayout.addWidget(self.substructure_button, 7, 6, 1, 1)
+        self.substructure_button.stateChanged.connect(self.features_handler)
 
         self.roughness_button = QtWidgets.QCheckBox(self.formLayoutWidget)
-        self.roughness_button.setEnabled(False)
+        #self.roughness_button.setEnabled(False)
         self.roughness_button.setObjectName("roughness_button")
         self.gridLayout.addWidget(self.roughness_button, 7, 8, 1, 1)
 
@@ -727,8 +734,9 @@ class Ui_MainWindow(object):
         self.actionFiles.setObjectName("actionFiles")
 
         self.retranslateUi(MainWindow)
-        self.InfoPages.setCurrentIndex(1)
-        self.tabWidget.setCurrentIndex(1)
+        self.InfoPages.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(0)
+        self.user_tab.setDisabled(True)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -792,13 +800,7 @@ class Ui_MainWindow(object):
         self.actionExit.setText(_translate("MainWindow", "Exit"))
         self.actionFiles.setText(_translate("MainWindow", "Files"))
 
-    def _createMenu(self):
-        self.menu = self.MainWindow.menuBar().addMenu("&Menu")
-        self.menu.addAction('&Exit', self.MainWindow.close)
-        self.menu.addAction('&Import phase data', self.MainWindow.getfiles)
-        self.menu.addAction('&Save files', self.MainWindow.save_files)
-
-    def _createStatusBar(self):
+    def _createStatusBar(self): ####überarbeiten!!!
         self.status = QStatusBar()
         self.status.showMessage("Please enter the required information")
         self.MainWindow.setStatusBar(self.status)
@@ -883,6 +885,33 @@ class Ui_MainWindow(object):
         elif self.MainWindow.sender() == self.fileBrowserStore_path:
             file_path = QFileDialog.getExistingDirectory()
             self.lineEdit_store_path.setText(file_path)
+
+    def features_handler(self, state):
+
+        if self.MainWindow.sender() == self.Banding_button:
+            if state == Qt.Checked:
+                self.InfoPages.setCurrentIndex(0)
+                self.banding_tab.setEnabled(True)
+            else:
+                self.banding_tab.setDisabled(True)
+        elif self.MainWindow.sender() == self.substructure_button:
+            if state == Qt.Checked:
+                self.InfoPages.setCurrentIndex(1)
+                self.substructure.setEnabled(True)
+            else:
+                self.substructure.setDisabled(True)
+
+    def widget_handler(self):
+
+        if self.substruct_filemode_radio.isChecked():
+            self.file_tab.setEnabled(True)
+            self.tabWidget.setCurrentIndex(0)
+            self.user_tab.setDisabled(True)
+        elif self.substruct_user_mode_radio.isChecked():
+            self.user_tab.setEnabled(True)
+            self.tabWidget.setCurrentIndex(1)
+            self.file_tab.setDisabled(True)
+
 
     """def save_button_handler(self):
         self.save_files = QFileDialog.getExistingDirectory(self)
