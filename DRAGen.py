@@ -292,6 +292,7 @@ class Ui_MainWindow(object):
         self.substructure_packet_size_checkBox_user.setText("")
         self.substructure_packet_size_checkBox_user.setObjectName("substructure_packet_size_checkBox_user")
         self.grid_user.addWidget(self.substructure_packet_size_checkBox_user, 1, 2, 1, 1)
+        self.substructure_packet_size_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
 
         self.label_circularity_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
         self.label_circularity_user.setObjectName("label_circularity_user")
@@ -304,10 +305,11 @@ class Ui_MainWindow(object):
         self.substructure_circularity_SpinBox_user.setObjectName("substructure_circularity_SpinBox_user")
         self.grid_user.addWidget(self.substructure_circularity_SpinBox_user, 2, 1, 1, 1)
 
-        self.substructure_packet_size_file_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_5) # TODO @MAX: falsche Position/Benennung file&user!?
-        self.substructure_packet_size_file_checkBox_user.setText("")
-        self.substructure_packet_size_file_checkBox_user.setObjectName("substructure_packet_size_file_checkBox_user")
-        self.grid_user.addWidget(self.substructure_packet_size_file_checkBox_user, 2, 2, 1, 1)
+        self.substructure_circularity_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
+        self.substructure_circularity_checkBox_user.setText("")
+        self.substructure_circularity_checkBox_user.setObjectName("substructure_circularity_checkBox_user")
+        self.grid_user.addWidget(self.substructure_circularity_checkBox_user, 2, 2, 1, 1)
+        self.substructure_circularity_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
 
         self.label_block_thickness_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
         self.label_block_thickness_user.setObjectName("label_block_thickness_user")
@@ -331,17 +333,18 @@ class Ui_MainWindow(object):
         self.substructure_decreasing_fact_SpinBox_user.setObjectName("substructure_decreasing_fact_SpinBox_user")
         self.grid_user.addWidget(self.substructure_decreasing_fact_SpinBox_user, 4, 1, 1, 1)
 
-        self.substructure_decreasing_fact_file_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
-        self.substructure_decreasing_fact_file_checkBox_user.setText("")
-        self.substructure_decreasing_fact_file_checkBox_user.setObjectName("substructure_decreasing_fact_file_checkBox_user")
-        self.grid_user.addWidget(self.substructure_decreasing_fact_file_checkBox_user, 4, 2, 1, 1)
+        self.substructure_decreasing_fact_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
+        self.substructure_decreasing_fact_checkBox_user.setText("")
+        self.substructure_decreasing_fact_checkBox_user.setObjectName("substructure_decreasing_fact_checkBox_user")
+        self.grid_user.addWidget(self.substructure_decreasing_fact_checkBox_user, 4, 2, 1, 1)
+        self.substructure_decreasing_fact_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
 
         self.label_block_thickness_sigma_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
         self.label_block_thickness_sigma_user.setObjectName("label_block_thickness_sigma_user")
         self.grid_user.addWidget(self.label_block_thickness_sigma_user, 5, 0, 1, 1)
 
         self.substructure_block_thickness_sigma_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
-        self.substructure_block_thickness_sigma_SpinBox_user.setEnabled(True)
+        self.substructure_block_thickness_sigma_SpinBox_user.setEnabled(False)
         self.substructure_block_thickness_sigma_SpinBox_user.setMinimum(0.01)
         self.substructure_block_thickness_sigma_SpinBox_user.setSingleStep(0.01)
         self.substructure_block_thickness_sigma_SpinBox_user.setObjectName("substructure_block_thickness_sigma_SpinBox_user")
@@ -351,6 +354,7 @@ class Ui_MainWindow(object):
         self.substructure_block_thickness_sigma_checkBox_user.setText("")
         self.substructure_block_thickness_sigma_checkBox_user.setObjectName("substructure_block_thickness_sigma_checkBox_user")
         self.grid_user.addWidget(self.substructure_block_thickness_sigma_checkBox_user, 5, 2, 1, 1)
+        self.substructure_block_thickness_sigma_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
 
         self.label_min_block_thickness_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
         self.label_min_block_thickness_user.setObjectName("label_min_block_thickness_user")
@@ -367,6 +371,7 @@ class Ui_MainWindow(object):
         self.substructure_min_block_thickness_checkBox_user.setText("")
         self.substructure_min_block_thickness_checkBox_user.setObjectName("substructure_min_block_thickness_checkBox_user")
         self.grid_user.addWidget(self.substructure_min_block_thickness_checkBox_user, 6, 2, 1, 1)
+        self.substructure_min_block_thickness_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
 
         self.label_max_block_thickness_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
         self.label_max_block_thickness_user.setObjectName("label_max_block_thickness_user")
@@ -383,21 +388,24 @@ class Ui_MainWindow(object):
         self.substructure_max_block_thickness_checkBox_user.setText("")
         self.substructure_max_block_thickness_checkBox_user.setObjectName("substructure_max_block_thickness_checkBox_user")
         self.grid_user.addWidget(self.substructure_max_block_thickness_checkBox_user, 7, 2, 1, 1)
+        self.substructure_max_block_thickness_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
 
         self.label_save_result_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
         self.label_save_result_user.setObjectName("label_save_result_user")
         self.grid_user.addWidget(self.label_save_result_user, 8, 0, 1, 1)
 
         self.substructure_save_result_lineEdit_user = QtWidgets.QLineEdit(self.gridLayoutWidget_5)
-        self.substructure_save_result_lineEdit_user.setEnabled(False)
+        self.substructure_save_result_lineEdit_user.setEnabled(True)
         self.substructure_save_result_lineEdit_user.setText('substructure_data.csv')
         self.substructure_save_result_lineEdit_user.setObjectName("substructure_save_result_lineEdit_user")
         self.grid_user.addWidget(self.substructure_save_result_lineEdit_user, 8, 1, 1, 1)
 
         self.substructure_save_result_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
         self.substructure_save_result_checkBox_user.setText("")
+        self.substructure_save_result_checkBox_user.setChecked(True)
         self.substructure_save_result_checkBox_user.setObjectName("substructure_save_result_checkBox_user")
         self.grid_user.addWidget(self.substructure_save_result_checkBox_user, 8, 2, 1, 1)
+        self.substructure_save_result_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
 
         # Status Tab
         self.status_tab = QtWidgets.QWidget()
@@ -985,6 +993,22 @@ class Ui_MainWindow(object):
             self.substructure_max_block_thickness_SpinBox_file.setEnabled(self.substructure_max_block_thickness_checkBox_file.isChecked())
         elif self.MainWindow.sender() == self.substructure_save_result_checkBox_file:
             self.substructure_save_result_lineEdit_file.setEnabled(self.substructure_save_result_checkBox_file.isChecked())
+
+    def substructure_user_checkbox_handler(self):
+        if self.MainWindow.sender() == self.substructure_packet_size_checkBox_user:
+            self.substructure_packet_size_SpinBox_user.setEnabled(self.substructure_packet_size_checkBox_user.isChecked())
+        elif self.MainWindow.sender() == self.substructure_circularity_checkBox_user:
+            self.substructure_circularity_SpinBox_user.setEnabled(self.substructure_circularity_checkBox_user.isChecked())
+        elif self.MainWindow.sender() == self.substructure_decreasing_fact_checkBox_user:
+            self.substructure_decreasing_fact_SpinBox_user.setEnabled(self.substructure_decreasing_fact_checkBox_user.isChecked())
+        elif self.MainWindow.sender() == self.substructure_block_thickness_sigma_checkBox_user:
+            self.substructure_block_thickness_sigma_SpinBox_user.setEnabled(self.substructure_block_thickness_sigma_checkBox_user.isChecked())
+        elif self.MainWindow.sender() == self.substructure_min_block_thickness_checkBox_user:
+            self.substructure_min_block_thickness_SpinBox_user.setEnabled(self.substructure_min_block_thickness_checkBox_user.isChecked())
+        elif self.MainWindow.sender() == self.substructure_max_block_thickness_checkBox_user:
+            self.substructure_max_block_thickness_SpinBox_user.setEnabled(self.substructure_max_block_thickness_checkBox_user.isChecked())
+        elif self.MainWindow.sender() == self.substructure_save_result_checkBox_user:
+            self.substructure_save_result_lineEdit_user.setEnabled(self.substructure_save_result_checkBox_user.isChecked())
 
     """def save_button_handler(self):
         self.save_files = QFileDialog.getExistingDirectory(self)
