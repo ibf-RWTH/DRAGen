@@ -3,6 +3,7 @@ import logging
 import typing
 import numpy as np
 
+
 class RveInfo:
     """
     This class simply stores all the constant values which are needed for the current RVE-Generation.
@@ -39,14 +40,22 @@ class RveInfo:
     gan_flag: bool = None
     infobox_obj = None
     progress_obj = None
-    equiv_d: float = None
-    p_sigma: float = None
-    t_mu: float = None
-    b_sigma: float = None
-    decreasing_factor: float = None
-    lower: float = None
-    upper: float = None
-    circularity: float = None
+    """
+    substructure generation parameters 
+    """
+    num_cores: int = 1  # if > 1, multiprocessing used
+    # packet related parameters
+    pak_file: str = None
+    equiv_d: float = 2.0
+    circularity: float = 1.0
+    p_sigma: float = 0.1
+    # block related parameters
+    block_file: str = None
+    t_mu: float = 1.0
+    b_sigma: float = 0.1
+    decreasing_factor: float = 0.99  # check later
+    lower: float = 0.5
+    upper: float = 1.5
     plt_name: str = None
     save = None
     plot = None
@@ -63,7 +72,10 @@ class RveInfo:
     abaqus_flag: bool = None
     damask_flag: bool = None
     moose_flag: bool = None
-    debug: bool = False
+    debug: bool = True
+    """In debug mode, the validity of passed parameters and returned results will be checked to ensure properly-set 
+        parameters. But this can slow down the running. So after debugging, it can be turned off to speed running up.
+    """
     sub_run = None
     anim_flag: bool = None
     exe_flag: bool = None
@@ -82,9 +94,8 @@ class RveInfo:
                    (0 / 256, 83 / 256, 159 / 256),  # blue
                    (204 / 256, 7 / 256, 30 / 256),  # red
                    (142 / 256, 186 / 256, 229 / 256),  # light blue
-                   (246 / 256, 168 / 256, 0 / 256),   # orange
+                   (246 / 256, 168 / 256, 0 / 256),  # orange
                    (161 / 256, 16 / 256, 53 / 256)]  # Bordeaux
-
 
     n_pts = None
     n_pts_y = None
@@ -97,5 +108,3 @@ class RveInfo:
 
     ######### Constants defined outside run #########
     rve_data_substructure = None
-
-
