@@ -438,16 +438,16 @@ class Ui_MainWindow(object):
 
         ### Main Window
         self.frame_2 = QtWidgets.QFrame(self.centralwidget)
-        self.frame_2.setGeometry(QtCore.QRect(10, 340, 320, 101))
+        self.frame_2.setGeometry(QtCore.QRect(10, 340, 620, 101))
         self.frame_2.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_2.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_2.setObjectName("frame_2")
         self.gridLayoutWidget = QtWidgets.QWidget(self.frame_2)
-        self.gridLayoutWidget.setGeometry(QtCore.QRect(0, 10, 311, 91))
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(0, 10, 611, 91))
         self.gridLayoutWidget.setObjectName("gridLayoutWidget")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.gridLayoutWidget)
         self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.gridLayout_2.setHorizontalSpacing(5)
+        self.gridLayout_2.setHorizontalSpacing(10)
         self.gridLayout_2.setVerticalSpacing(10)
         self.gridLayout_2.setObjectName("gridLayout_2")
 
@@ -738,24 +738,45 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.framework_label.sizePolicy().hasHeightForWidth())
         self.framework_label.setSizePolicy(sizePolicy)
         self.framework_label.setObjectName("framework_label")
-        self.gridLayout_2.addWidget(self.framework_label, 0, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.framework_label, 0, 0, 1, 2)
+
+        self.btngroup1 = QButtonGroup()
+        self.btngroup2 = QButtonGroup()
 
         self.abaqus_button = QtWidgets.QRadioButton(self.gridLayoutWidget)
+        self.btngroup1.addButton(self.abaqus_button)
         self.abaqus_button.setObjectName("abaqus_button")
         self.abaqus_button.setChecked(True)
-        self.gridLayout_2.addWidget(self.abaqus_button, 0, 1, 1, 1)
+        self.gridLayout_2.addWidget(self.abaqus_button, 0, 1)
         self.abaqus_button.toggled.connect(self.framework_handler)
 
         self.damask_button = QtWidgets.QRadioButton(self.gridLayoutWidget)
+        self.btngroup1.addButton(self.damask_button)
         self.damask_button.setObjectName("damask_button")
-        self.gridLayout_2.addWidget(self.damask_button, 0, 2, 1, 1)
+        self.gridLayout_2.addWidget(self.damask_button, 0, 2)
         self.damask_button.toggled.connect(self.framework_handler)
 
         self.moose_button = QtWidgets.QRadioButton(self.gridLayoutWidget)
+        self.btngroup1.addButton(self.moose_button)
         #self.moose_button.setChecked(True)
         self.moose_button.setObjectName("moose_button")
-        self.gridLayout_2.addWidget(self.moose_button, 0, 3, 1, 1)
+        self.gridLayout_2.addWidget(self.moose_button, 0, 3)
         self.moose_button.toggled.connect(self.framework_handler)
+
+        self.boundary_label = QtWidgets.QLabel(self.gridLayoutWidget)
+        self.boundary_label.setObjectName("boundary_label")
+        self.gridLayout_2.addWidget(self.boundary_label, 0, 4, 1, 1)
+
+        self.PBC_button = QtWidgets.QRadioButton(self.gridLayoutWidget)
+        self.btngroup2.addButton(self.PBC_button)
+        self.PBC_button.setObjectName("PBC_button")
+        self.PBC_button.setChecked(True)
+        self.gridLayout_2.addWidget(self.PBC_button, 0, 5, 1, 1)
+
+        self.submodel_button = QtWidgets.QRadioButton(self.gridLayoutWidget)
+        self.btngroup2.addButton(self.submodel_button)
+        self.submodel_button.setObjectName("submodel_button")
+        self.gridLayout_2.addWidget(self.submodel_button, 0, 6, 1, 1)
 
         # Element Type:
         self.element_type_label = QtWidgets.QLabel(self.gridLayoutWidget)
@@ -851,6 +872,9 @@ class Ui_MainWindow(object):
         self.abaqus_button.setText(_translate("MainWindow", "Abaqus"))
         self.moose_button.setText(_translate("MainWindow", "Moose"))
         self.framework_label.setText(_translate("MainWindow", "Framework:"))
+        self.boundary_label.setText(_translate("MainWindow", "BC:"))
+        self.PBC_button.setText(_translate("MainWindow", "periodic"))
+        self.submodel_button.setText(_translate("MainWindow", "submodel"))
         self.label_store_path.setText(_translate("MainWindow", "Output directory"))
         self.lineEdit_store_path.setText(_translate("MainWindow", "C:\\temp"))
         self.Banding_button.setText(_translate("MainWindow", "Banding"))
@@ -1018,13 +1042,22 @@ class Ui_MainWindow(object):
     def framework_handler(self):
         if self.moose_button.isChecked():
             self.comboBox_element_type.setEnabled(True)
+            self.boundary_label.hide()
+            self.PBC_button.hide()
+            self.submodel_button.hide()
             self.comboBox_element_type.clear()
             self.comboBox_element_type.addItem("HEX8 (Moose)")
         elif self.damask_button.isChecked():
             self.comboBox_element_type.setEnabled(False)
+            self.boundary_label.hide()
+            self.PBC_button.hide()
+            self.submodel_button.hide()
             self.comboBox_element_type.clear()
-        else: #self.abaqus_button.isChecked():
+        elif self.abaqus_button.isChecked():
             self.comboBox_element_type.setEnabled(True)
+            self.boundary_label.show()
+            self.PBC_button.show()
+            self.submodel_button.show()
             self.comboBox_element_type.clear()
             self.comboBox_element_type.addItem("C3D4 (Abaqus Tet)")
             self.comboBox_element_type.addItem("C3D8 (Abaqus Hex)")
@@ -1070,6 +1103,8 @@ class Ui_MainWindow(object):
         ARGS['damask_flag'] = False
         ARGS['moose_flag'] = False
         ARGS['element_type'] = None
+        ARGS['submodel_flag'] = False
+        ARGS['pbc_flag'] = False
 
         if self.two_d_button.isChecked():
             ARGS['dimension'] = 2
@@ -1274,11 +1309,15 @@ class Ui_MainWindow(object):
             ARGS['abaqus_flag'] = True
             element_type_dict = {0: 'C3D4', 1: 'C3D8'}
             ARGS['element_type'] = element_type_dict.get(self.comboBox_element_type.currentIndex())
+            ARGS['submodel_flag'] = self.submodel_button.isChecked()
+            ARGS['pbc_flag'] = self.PBC_button.isChecked()
         elif self.damask_button.isChecked():
             ARGS['damask_flag'] = True
+            # ToDo: pbc_flag = true for damask?
         else:
             ARGS['moose_flag'] = True
             ARGS['element_type'] = 'HEX8'
+            # ToDo: pbc_flag = true for moose?
 
         store_path_flag = False
         import_flag = False
