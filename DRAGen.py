@@ -5,23 +5,6 @@ from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtGui import QPixmap, QIcon
 from dragen.pyqt_gui.worker import Worker
 
-ARGS = dict()
-ARGS['subs_flag'] = False
-ARGS['equiv_d'] = None
-ARGS['p_sigma'] = 0.1
-ARGS['t_mu'] = None
-ARGS['b_sigma'] = 0.1
-ARGS['decreasing_factor'] = 0.95
-ARGS['lower'] = None
-ARGS['upper'] = None
-ARGS['circularity'] = 1
-ARGS['save'] = True
-ARGS['filename'] = 'substruct_data.csv'
-ARGS['subs_file_flag'] = False
-ARGS['subs_file'] = None
-ARGS['subs_flag'] = False
-ARGS['phases'] = ['martensite']
-
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         self.MainWindow = MainWindow
@@ -514,6 +497,7 @@ class Ui_MainWindow(object):
 
         self.box_sizeSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
         self.box_sizeSpinBox.setProperty("value", 25.0)
+        self.box_sizeSpinBox.setMaximum(1000)
         self.box_sizeSpinBox.setObjectName("box_sizeSpinBox")
         self.gridLayout.addWidget(self.box_sizeSpinBox, 1, 1, 1, 2)
         self.box_sizeSpinBox.valueChanged.connect(self.bandwidth_handler)
@@ -528,10 +512,11 @@ class Ui_MainWindow(object):
         self.resolutionLabel.setObjectName("resolutionLabel")
         self.gridLayout.addWidget(self.resolutionLabel, 2, 0, 1, 1)
 
-        self.resolutionSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget) #TODO: values?
+        self.resolutionSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
         self.resolutionSpinBox.setDecimals(3)
-        #self.resolutionSpinBox.setMinimum()
-        self.resolutionSpinBox.setMaximum(10.0)
+        self.resolutionSpinBox.setMaximum(20.0)
+        self.resolutionSpinBox.setMinimum(0.001)
+        self.resolutionSpinBox.setValue(1)
         self.resolutionSpinBox.setSingleStep(0.01)
         self.resolutionSpinBox.setObjectName("resolutionSpinBox")
         self.gridLayout.addWidget(self.resolutionSpinBox, 2, 1, 1, 2)
@@ -741,7 +726,7 @@ class Ui_MainWindow(object):
         self.substructure_button.stateChanged.connect(self.features_handler)
 
         self.roughness_button = QtWidgets.QCheckBox(self.formLayoutWidget)
-        #self.roughness_button.setEnabled(False)
+        self.roughness_button.setEnabled(False)
         self.roughness_button.setObjectName("roughness_button")
         self.gridLayout.addWidget(self.roughness_button, 7, 8, 1, 1)
 
@@ -759,15 +744,18 @@ class Ui_MainWindow(object):
         self.abaqus_button.setObjectName("abaqus_button")
         self.abaqus_button.setChecked(True)
         self.gridLayout_2.addWidget(self.abaqus_button, 0, 1, 1, 1)
+        self.abaqus_button.toggled.connect(self.framework_handler)
 
         self.damask_button = QtWidgets.QRadioButton(self.gridLayoutWidget)
         self.damask_button.setObjectName("damask_button")
         self.gridLayout_2.addWidget(self.damask_button, 0, 2, 1, 1)
+        self.damask_button.toggled.connect(self.framework_handler)
 
         self.moose_button = QtWidgets.QRadioButton(self.gridLayoutWidget)
         #self.moose_button.setChecked(True)
         self.moose_button.setObjectName("moose_button")
         self.gridLayout_2.addWidget(self.moose_button, 0, 3, 1, 1)
+        self.moose_button.toggled.connect(self.framework_handler)
 
         # Element Type:
         self.element_type_label = QtWidgets.QLabel(self.gridLayoutWidget)
@@ -776,10 +764,8 @@ class Ui_MainWindow(object):
 
         self.comboBox_element_type = QtWidgets.QComboBox(self.gridLayoutWidget)
         self.comboBox_element_type.setObjectName("comboBox_element_type")
-        self.comboBox_element_type.addItem("")
-        self.comboBox_element_type.addItem("")
-        self.comboBox_element_type.addItem("")
-        self.comboBox_element_type.addItem("")
+        self.comboBox_element_type.addItem("C3D4 (Abaqus Tet)")
+        self.comboBox_element_type.addItem("C3D8 (Abaqus Hex)")
         self.gridLayout_2.addWidget(self.comboBox_element_type, 1, 1, 1, 3)
 
         # Output directory:
@@ -864,10 +850,6 @@ class Ui_MainWindow(object):
         self.damask_button.setText(_translate("MainWindow", "Damask"))
         self.abaqus_button.setText(_translate("MainWindow", "Abaqus"))
         self.moose_button.setText(_translate("MainWindow", "Moose"))
-        self.comboBox_element_type.setItemText(0, _translate("MainWindow", "HEX8 (Moose)"))
-        self.comboBox_element_type.setItemText(1, _translate("MainWindow", "C3D4 (Abaqus Tet)"))
-        self.comboBox_element_type.setItemText(2, _translate("MainWindow", "C3D10 (Abaqus Tet)"))
-        self.comboBox_element_type.setItemText(3, _translate("MainWindow", "C3D8 (Abaqus Hex)"))
         self.framework_label.setText(_translate("MainWindow", "Framework:"))
         self.label_store_path.setText(_translate("MainWindow", "Output directory"))
         self.lineEdit_store_path.setText(_translate("MainWindow", "C:\\temp"))
@@ -942,28 +924,28 @@ class Ui_MainWindow(object):
     def button_handler(self):
         if self.MainWindow.sender() == self.fileBrowserFerrite:
             dlg = QFileDialog()
-            dlg.setNameFilter("*.csv *.pkl *.p")
+            dlg.setNameFilter("*.csv *.pkl")
             dlg.setFileMode(QFileDialog.AnyFile)
             if dlg.exec_():
                 file_path = dlg.selectedFiles()
                 self.lineEditFerrite.setText(file_path[0])
         elif self.MainWindow.sender() == self.fileBrowserMartensite:
             dlg = QFileDialog()
-            dlg.setNameFilter("*.csv *.pkl *.p")
+            dlg.setNameFilter("*.csv *.pkl")
             dlg.setFileMode(QFileDialog.AnyFile)
             if dlg.exec_():
                 file_path = dlg.selectedFiles()
                 self.lineEditMartensite.setText(file_path[0])
         elif self.MainWindow.sender() == self.fileBrowser_Pearlite:
             dlg = QFileDialog()
-            dlg.setNameFilter("*.csv *.pkl *.p")
+            dlg.setNameFilter("*.csv *.pkl")
             dlg.setFileMode(QFileDialog.AnyFile)
             if dlg.exec_():
                 file_path = dlg.selectedFiles()
                 self.lineEditPearlite.setText(file_path[0])
         elif self.MainWindow.sender() == self.fileBrowserBainite:
             dlg = QFileDialog()
-            dlg.setNameFilter("*.csv *.pkl *.p")
+            dlg.setNameFilter("*.csv *.pkl")
             dlg.setFileMode(QFileDialog.AnyFile)
             if dlg.exec_():
                 file_path = dlg.selectedFiles()
@@ -1033,11 +1015,21 @@ class Ui_MainWindow(object):
         elif self.MainWindow.sender() == self.substructure_save_result_checkBox_user:
             self.substructure_save_result_lineEdit_user.setEnabled(self.substructure_save_result_checkBox_user.isChecked())
 
-    """def save_button_handler(self):
-        self.save_files = QFileDialog.getExistingDirectory(self)
-        self.save_files_Edit.setText(str(self.save_files))
+    def framework_handler(self):
+        if self.moose_button.isChecked():
+            self.comboBox_element_type.setEnabled(True)
+            self.comboBox_element_type.clear()
+            self.comboBox_element_type.addItem("HEX8 (Moose)")
+        elif self.damask_button.isChecked():
+            self.comboBox_element_type.setEnabled(False)
+            self.comboBox_element_type.clear()
+        else: #self.abaqus_button.isChecked():
+            self.comboBox_element_type.setEnabled(True)
+            self.comboBox_element_type.clear()
+            self.comboBox_element_type.addItem("C3D4 (Abaqus Tet)")
+            self.comboBox_element_type.addItem("C3D8 (Abaqus Hex)")
 
-    def dimension_handler(self, state):
+    """def dimension_handler(self, state):
         # checking if state is checked
         if state == Qt.Checked:
 
@@ -1050,14 +1042,43 @@ class Ui_MainWindow(object):
 
     def submit(self):
 
-        if self.two_d_button.isChecked():
-            dimension = 2
-            dimension_flag = True
-        else:
-            dimension = 3
-            dimension_flag = True
+        ARGS = dict()
+        ARGS['dimension'] = None
+        ARGS['dimension_flag'] = False
+        ARGS['box_size'] = None
+        ARGS['resolution'] = None
+        ARGS['n_rves'] = None
+        ARGS['n_bands'] = None
+        ARGS['subs_flag'] = False
+        ARGS['equiv_d'] = None
+        ARGS['p_sigma'] = 0.1
+        ARGS['t_mu'] = None
+        ARGS['b_sigma'] = 0.1
+        ARGS['decreasing_factor'] = 0.95
+        ARGS['lower'] = None
+        ARGS['upper'] = None
+        ARGS['circularity'] = 1
+        ARGS['save'] = True
+        ARGS['filename'] = 'substruct_data.csv'
+        ARGS['subs_file_flag'] = False
+        ARGS['subs_file'] = None
+        ARGS['subs_flag'] = False
+        ARGS['phases'] = []
+        ARGS['files'] = {}
+        ARGS['phase_ratio'] = {}
+        ARGS['abaqus_flag'] = False
+        ARGS['damask_flag'] = False
+        ARGS['moose_flag'] = False
+        ARGS['element_type'] = None
 
-        box_size = self.box_sizeSpinBox.value()
+        if self.two_d_button.isChecked():
+            ARGS['dimension'] = 2
+            ARGS['dimension_flag'] = True
+        else:
+            ARGS['dimension'] = 3
+            ARGS['dimension_flag'] = True
+
+        ARGS['box_size'] = self.box_sizeSpinBox.value()
         box_size_y = None #ToDo @Max: sheet function in GUI?
         box_size_z = None
         #if self.box_size_y_check.isChecked():
@@ -1069,10 +1090,9 @@ class Ui_MainWindow(object):
         #    box_size_z = self.box_size_z_Edit.value()
         #else:
         #    box_size_z = None
-        resolution = self.resolutionSpinBox.value()
-        n_rves = self.NoRVEsSpinBox.value()
+        ARGS['resolution'] = self.resolutionSpinBox.value()
+        ARGS['n_rves'] = self.NoRVEsSpinBox.value()
 
-        phases = []
         file1 = None
         file2 = None
         file3 = None
@@ -1093,7 +1113,7 @@ class Ui_MainWindow(object):
             phase1_ratio = self.ferriteSpinBox.value()
             sum_ratio += phase1_ratio
             if len(file1) > 0:
-                phases.append('Ferrite')
+                ARGS['phases'].append('Ferrite')
             else:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -1106,7 +1126,7 @@ class Ui_MainWindow(object):
             phase2_ratio = self.martensiteSpinBox.value()
             sum_ratio += phase2_ratio
             if len(file2) > 0 and sum_ratio <= 1:
-                phases.append('Martensite')
+                ARGS['phases'].append('Martensite')
             elif sum_ratio > 1:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -1126,7 +1146,7 @@ class Ui_MainWindow(object):
             phase3_ratio = self.pearliteSpinBox.value()
             sum_ratio += phase3_ratio
             if len(file3) > 0 and sum_ratio <= 1:
-                phases.append('Pearlite')
+                ARGS['phases'].append('Pearlite')
             elif sum_ratio > 1:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -1146,7 +1166,7 @@ class Ui_MainWindow(object):
             phase4_ratio = self.bainiteSpinBox.value()
             sum_ratio += phase4_ratio
             if len(file3) > 0 and sum_ratio <= 1:
-                phases.append('Bainite')
+                ARGS['phases'].append('Bainite')
             elif sum_ratio > 1:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -1168,14 +1188,15 @@ class Ui_MainWindow(object):
             msg.setWindowTitle("Error")
             msg.exec_()
             return
-        files = {1: file1, 2: file2, 3: file3, 4: file4}
+        ARGS['files'] = {1: file1, 2: file2, 3: file3, 4: file4}
+        ARGS['phase_ratio'] = {1: phase1_ratio, 2: phase2_ratio, 3: phase3_ratio, 4: phase4_ratio}
 
         if self.Banding_button.isChecked():
-            n_bands = self.NoBandsSpinBox.value()
+            ARGS['n_bands'] = self.NoBandsSpinBox.value()
             band_width = self.band_thicknessSpinBox.value()
 
-        #if self.inclusions_button.isChecked(): #TODO: @Max welche Parameter benötigt? Dafür zusätzlichen Tab?
-
+        if self.inclusions_button.isChecked(): #TODO: @Max welche Parameter benötigt? Dafür zusätzlichen Tab?
+            pass
         if self.substructure_button.isChecked():
             if self.substructure_filemode_radio.isChecked():
                 ARGS['subs_file_flag'] = True
@@ -1239,7 +1260,7 @@ class Ui_MainWindow(object):
         #if self.roughness_button.isChecked(): # TODO: @Max welche Parameter benötigt? Dafür zusätzlichen Tab?
 
 #TODO: @Max festlegen in welcher zweiten Phase Substrukturen erlaubt sind? Insgesamt nur 2 Phasen möglich?
-        if ARGS['subs_flag']:
+        if ARGS['subs_flag']==True:
             if file2 is None or len(file2) == 0 or phase2_ratio == 0:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -1249,18 +1270,15 @@ class Ui_MainWindow(object):
                 msg.exec_()
                 return
 
-# ToDo: @Max Framework und Element Type Auswahl in flags schreiben
-        abaqus_flag = False
-        damask_flag = False
-        moose_flag = False
         if self.abaqus_button.isChecked():
-            abaqus_flag = True
+            ARGS['abaqus_flag'] = True
+            element_type_dict = {0: 'C3D4', 1: 'C3D8'}
+            ARGS['element_type'] = element_type_dict.get(self.comboBox_element_type.currentIndex())
         elif self.damask_button.isChecked():
-            damask_flag = True
+            ARGS['damask_flag'] = True
         else:
-            moose_flag = True
-        element_type_dict = {0: 'HEX8', 1: 'C3D4', 2: 'C3D10', 3: 'C3D8'}
-        element_type = element_type_dict.get(self.comboBox_element_type.currentIndex())
+            ARGS['moose_flag'] = True
+            ARGS['element_type'] = 'HEX8'
 
         store_path_flag = False
         import_flag = False
@@ -1284,11 +1302,6 @@ class Ui_MainWindow(object):
 
         if file1 is not None: #error here TODO: @Max was für file-Kombinationen erlaubt?
             if file1[-4:] == '.pkl':
-                gan_flag = True
-                self.textBrowser.setText("microstructure imported from:\n{}".format(file1))
-                if self.file2 is not None:
-                    self.textBrowser.setText("and from:\n{}".format(file2))
-            elif file1[-2:] == '.p':
                 gan_flag = True
                 self.textBrowser.setText("microstructure imported from:\n{}".format(file1))
                 if self.file2 is not None:
