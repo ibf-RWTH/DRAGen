@@ -16,7 +16,7 @@ class PostProcVol:
 
     def gen_in_out_lists(self, phaseID) -> tuple:
 
-        input_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/experimental_data.csv')
+        input_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/input_data.csv')
 
         # process total input data
         if RveInfo.dimension == 2:
@@ -51,14 +51,16 @@ class PostProcVol:
         return current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out
 
 
-    def gen_pie_chart_phases(self, sizes, labels, title):
-        explode = [0.05]*len(sizes)
-        fig1, ax1 = plt.subplots()
-        ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%',
-                shadow=True, startangle=90, normalize=False, colors=RveInfo.rwth_colors)
-        ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-        ax1.set_title(title)
+    def gen_pie_chart_phases(self, ratios, labels, title):
+        explode = [0.075]*len(ratios)
+        textprops = {"fontsize": 24} # Font size of text in pie chart
+        fig1, ax1 = plt.subplots(figsize=(8, 8))
 
+
+        ax1.pie(ratios, explode=explode, labels=labels, autopct='%1.1f%%',
+                shadow=True, startangle=90, normalize=False, radius=2,
+                textprops=textprops, colors=RveInfo.rwth_colors)
+        ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
         fig1.savefig(RveInfo.store_path + '/Postprocessing/phase_distribution_{}.png'.format(title))
         plt.close()
 
@@ -81,8 +83,8 @@ class PostProcVol:
         ax = fig.add_subplot(1, 1, 1)
         ax.plot(x_d, np.exp(log_pdf_in), label='input ' + label, c=RveInfo.rwth_colors[1])
         ax.plot(x_d, np.exp(log_pdf_out), label='output ' + label, c=RveInfo.rwth_colors[5])
-        plt.xlabel('Grain Radius of Reference Sphere (µm)', fontsize=20)
-        plt.ylabel('Normalized Density ( - ) ', fontsize=20)
+        plt.xlabel('Grain Radius of Reference Sphere (µm)', fontsize=28)
+        plt.ylabel('Normalized Density ( - ) ', fontsize=28)
         # caputure max y-lim
         max_log_dens = [max(np.exp(log_pdf_in)), max(np.exp(log_pdf_out))]
 
@@ -90,8 +92,8 @@ class PostProcVol:
         max_y = 1.25 * max_y
         plt.xlim(0, max_x)
         plt.ylim(0, max_y)
-        plt.xticks(fontsize=20)
-        plt.yticks(fontsize=20)
-        plt.legend(fontsize=12)
+        plt.xticks(fontsize=24)
+        plt.yticks(fontsize=24)
+        plt.legend(fontsize=24)
         plt.savefig(RveInfo.store_path + '/Postprocessing/size_distribution_{}.png'.format(label))
         plt.close()

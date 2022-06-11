@@ -248,11 +248,12 @@ class DiscreteRsa3D(HelperFunctions):
         #placement_rsa[np.where(shadow_rsa_placement == 0)] = -200
 
         # --------------------------------------------------
-        fig = plt.figure(figsize=(30, 30))
-        ax = fig.gca(projection='3d')
-        ax.set_aspect('auto')
-        ax.voxels(rsa == -200, edgecolor="k")
-        fig.savefig(RveInfo.store_path + '/' + 'Cluster_{}.png'.format(time.time()))
+        #fig = plt.figure(figsize=(30, 30))
+        #ax = fig.gca(projection='3d')
+        #ax.set_aspect('auto')
+        #ax.voxels(rsa == -200, edgecolor="k")
+        #fig.savefig(RveInfo.store_path + '/' + 'Cluster_{}.png'.format(time.time()))
+        #plt.close()
         # --------------------------------------------------
 
         # Init
@@ -378,8 +379,8 @@ class DiscreteRsa3D(HelperFunctions):
             grain[(ellipsoid <= 1) & ((grain == 0) | (grain == -200))] = -(200 + i)
             periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=-(200 + i))
 
-            inc_rve[(periodic_grain == -(200 + i)) & ((new_rve == 0) | (new_rve == -200))] = -(
-                        200 + i)  # -for Inclusions
+            inc_rve[(periodic_grain == -(200 + i)) & ((new_rve == 0) | (new_rve == -200))] = \
+                -(200 + i)  # -for Inclusions
 
             # Checking
             check = set(rve[np.where(inc_rve == -(200 + i))])

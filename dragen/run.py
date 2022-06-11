@@ -18,15 +18,17 @@ class Run(HelperFunctions):
     def __init__(
                  # mandatory arguments:
                  self, box_size: int, element_type: str, resolution: float, number_of_rves: int,
-                 number_of_bands: int,  dimension: int, visualization_flag: bool,
-                 root: str, shrink_factor: float,  phase_ratio: dict, gui_flag: bool, gan_flag: bool,
-                 subs_flag: bool, phases: list, abaqus_flag: bool, damask_flag: bool, moose_flag: bool,
-                 anim_flag: bool, exe_flag: bool, box_size_y: int, file_dict: dict, inclusion_flag: bool,
+                 number_of_bands: int,  dimension: int, slope_offset: float, smoothing_flag: bool,
+                 visualization_flag: bool, root: str, shrink_factor: float,  phase_ratio: dict,
+                 gui_flag: bool, gan_flag: bool, subs_flag: bool, phases: list, abaqus_flag: bool,
+                 damask_flag: bool, moose_flag: bool, anim_flag: bool,  file_dict: dict, inclusion_flag: bool,
                  inclusion_ratio: float, band_filling: float, upper_band_bound: float, lower_band_bound: float,
+
                  # optional Arguments or dependent on previous flag
+                 band_orientation: str = None,
                  pbc_flag: bool = None, submodel_flag: bool = None, phase2iso_flag: bool = None,
                  subs_file_flag=False, subs_file: str = None,
-                 box_size_z: int = None, bandwidth: float = None,
+                 box_size_y: int = None, box_size_z: int = None,
                  info_box_obj=None, progress_obj=None, equiv_d: float = None, p_sigma: float = None, t_mu: float = None,
                  b_sigma: float = 0.01, decreasing_factor: float = 0.95, lower: float = None, upper: float = None,
                  circularity: float = 1, plt_name: str = None, save: bool = True, plot: bool = False,
@@ -46,7 +48,10 @@ class Run(HelperFunctions):
         RveInfo.number_of_bands = number_of_bands
         RveInfo.lower_band_bound = lower_band_bound
         RveInfo.upper_band_bound = upper_band_bound
+        RveInfo.band_orientation = band_orientation
         RveInfo.dimension = dimension
+        RveInfo.slope_offset = slope_offset
+        RveInfo.smoothing_flag = smoothing_flag
         RveInfo.visualization_flag = visualization_flag
         RveInfo.file_dict = file_dict   # TODO: Change to dict based output
         RveInfo.phase_ratio = phase_ratio
@@ -77,7 +82,7 @@ class Run(HelperFunctions):
         RveInfo.damask_flag = damask_flag
         RveInfo.moose_flag = moose_flag
         RveInfo.anim_flag = anim_flag
-        RveInfo.exe_flag = exe_flag
+
         RveInfo.phase2iso_flag = phase2iso_flag
         RveInfo.pbc_flag = pbc_flag
         RveInfo.submodel_flag = submodel_flag
@@ -227,7 +232,7 @@ if __name__ == "__main__":
     damask_flag = True
     element_type = 'HEX8'
     anim_flag = False
-    exe_flag = False
+
     files = {1: file1, 2: file2}
     phase_ratio = {1: 0.8, 2: 0.2}  # Pass for bands
     phases = ['Ferrite', 'Martensite']
@@ -248,6 +253,6 @@ if __name__ == "__main__":
         gan_flag=gan_flag,
         info_box_obj=None, progress_obj=None, subs_file_flag=subs_file_flag, subs_file=subs_file, phases=phases,
         subs_flag=subs_flag, moose_flag=moose_flag, abaqus_flag=abaqus_flag, damask_flag=damask_flag,
-        anim_flag=anim_flag, exe_flag=exe_flag, inclusion_flag=inclusion_flag,
+        anim_flag=anim_flag, inclusion_flag=inclusion_flag,
         inclusion_ratio=inclusion_ratio, band_filling=band_filling, lower_band_bound=lower_band_bound,
         upper_band_bound=upper_band_bound).run()

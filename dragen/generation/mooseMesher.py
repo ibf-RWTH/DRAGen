@@ -14,16 +14,18 @@ class MooseMesher(MeshingHelper):
     def run(self):
         grid = self.gen_blocks()
         grid = self.gen_grains(grid)
-        grid = self.smoothen_mesh(grid)
+        grid = self.smoothen_mesh(grid, n_iter=200)
 
         points = grid.points
         nNodes = grid.n_points
         nElems = grid.n_cells
         nBlocks = len(np.unique(grid.cell_data['GrainID']))
+        print('nBlocks: ', len(np.unique(grid.cell_data['GrainID'])))
+        print('GraindIDs_grid: ', np.unique(grid.cell_data['GrainID']))
         blockIds = np.unique(grid.cell_data['GrainID'])
         # NetCDF4 starts counting at 1, cell id of 0 leads to errors
         grainIds = ['grain-{}'.format(i + 1) for i in range(nBlocks)]
-
+        print('grainIds: ', grainIds)
         assert RveInfo.element_type == 'HEX8', 'only Hexagonal elements supported for Moose'
 
         nNodeSets = 6

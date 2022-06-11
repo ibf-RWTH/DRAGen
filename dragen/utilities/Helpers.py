@@ -65,7 +65,7 @@ class HelperFunctions:
     @staticmethod
     def gen_grid2d():
         xy = np.linspace(-RveInfo.box_size / 2, RveInfo.box_size + RveInfo.box_size / 2, 2 * RveInfo.n_pts, endpoint=True)
-        x_grid, y_grid = np.meshgrid(xy, xy)
+        x_grid, y_grid = np.meshgrid(xy, xy, indexing='ij')
         return x_grid, y_grid
 
     def read_input(self, file_name, dimension) -> pd.DataFrame: #TODO @Max: Ich würde hier noch mal drübergucken, glaub die funktion ist ziemlich langsam bei große .csvs (Niklas)
@@ -80,7 +80,7 @@ class HelperFunctions:
             for rad in data['a']:
                 radius_a.append(rad)
         else:
-            if not RveInfo.exe_flag:
+            if not RveInfo.gui_flag:
                 print('No "a" in given .csv-Inputfile! RVE-Generation was canceled!')
             else:
                 messagebox.showinfo(message='No "a" in given .csv-Inputfile! RVE-Generation was canceled!',
@@ -181,11 +181,12 @@ class HelperFunctions:
             data['phi1'] = o[:, 0]
             data['PHI'] = o[:, 1]
             data['phi2'] = o[:, 2]
-        print(data)
-        data = data[[data.columns[2], data.columns[6], data.columns[7], data.columns[8],
-                    data.columns[3], data.columns[4], data.columns[5]]]
+            data = data[[data.columns[2], data.columns[3], data.columns[4], data.columns[5],
+                         data.columns[6], data.columns[7], data.columns[8]]]
+        else:
+            data = data[[data.columns[2], data.columns[6], data.columns[7], data.columns[8],
+                        data.columns[3], data.columns[4], data.columns[5]]]
         data.columns = ['alpha', 'a', 'b', 'c', 'phi1', 'PHI', 'phi2']
-        print(data)
 
         if dimension == 3:
             return data
@@ -310,7 +311,7 @@ class HelperFunctions:
         RveInfo.logger.info("Volume for the given radii: {}".format(d_vol))
         return d_vol
 
-    def band_generator(self, band_array: np.array, center, bandwidth, plane: str = 'xz'):
+    def band_generator(self, band_array: np.array, center, bandwidth):
         """Creates a band of given bandwidth for given points in interval [step_half, box_size)
         with bin_size spacing along the axis.
         Parameters :
@@ -324,11 +325,11 @@ class HelperFunctions:
         empty_array = band_array.copy()
         empty_array[empty_array == -200] = 0
 
-        if plane == 'xy':
+        if RveInfo.band_orientation == 'xy':
             r = self.gen_grid()[2]
-        elif plane == 'yz':
+        elif RveInfo.band_orientation == 'yz':
             r = self.gen_grid()[0]
-        elif plane == 'xz':
+        elif RveInfo.band_orientation == 'xz':
             r = self.gen_grid()[1]
         else:
             RveInfo.logger.error("Error: plane must be defined as xy, yz or xz! Default: xy")
@@ -775,7 +776,9 @@ class HelperFunctions:
         # load some variables
         box_size = RveInfo.box_size
         n_pts = RveInfo.n_pts
-
+        print('####repair####')
+        print(np.unique(rve_array))
+        print('####repair####')
         # define first boundary row/column with grainID Values of row and column #0
         if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
             start1 = int(rve_array.shape[0] / 4)
@@ -838,7 +841,7 @@ class HelperFunctions:
             rve_y = np.linspace(0, RveInfo.box_size_y, RveInfo.n_pts_y, endpoint=True)
             rve_z = np.linspace(0, RveInfo.box_size_z, RveInfo.n_pts_z, endpoint=True)
 
-        xx, yy, zz = np.meshgrid(rve_x, rve_y, rve_z)
+        xx, yy, zz = np.meshgrid(rve_x, rve_y, rve_z, indexing='ij')
         rve_dict = {'x': xx.flatten(), 'y': yy.flatten(), 'z': zz.flatten(), 'GrainID': rve.flatten()}
         rve_df = pd.DataFrame(rve_dict)
         rve_df['box_size'] = box_size
@@ -856,10 +859,10 @@ class HelperFunctions:
                   1 / b ** 2 * ((self.x_grid - x_0) * np.sin(np.deg2rad(alpha))
                                           + (self.y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2"""
 
-        ellipse = 1 / (a ** 2) * ((x_grid - x_0) * np.cos(np.deg2rad(alpha))
-                                  + (y_grid - y_0) * np.sin(np.deg2rad(alpha))) ** 2 + \
-                  1 / (b ** 2) * (-(x_grid - x_0) * np.sin(np.deg2rad(alpha))
-                                  + (y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2
+        ellipse = 1 / (a ** 2) * ((x_grid - x_0) * np.cos(np.deg2rad(alpha+RveInfo.slope_offset))
+                                  + (y_grid - y_0) * np.sin(np.deg2rad(alpha+RveInfo.slope_offset))) ** 2 + \
+                  1 / (b ** 2) * (-(x_grid - x_0) * np.sin(np.deg2rad(alpha+RveInfo.slope_offset))
+                                  + (y_grid - y_0) * np.cos(np.deg2rad(alpha+RveInfo.slope_offset))) ** 2
 
         return ellipse
 
@@ -882,10 +885,10 @@ class HelperFunctions:
                               (self.z_grid - z_0) * np.cos(np.deg2rad(slope))) ** 2"""
 
         # rotation around z-axis
-        ellipsoid = 1 / a ** 2 * ((x_grid - x_0) * np.cos(np.deg2rad(alpha)) +
-                                  (y_grid - y_0) * np.sin(np.deg2rad(alpha))) ** 2 + \
-                    1 / b ** 2 * (-(x_grid - x_0) * np.sin(np.deg2rad(alpha)) +
-                                  (y_grid - y_0) * np.cos(np.deg2rad(alpha))) ** 2 + \
+        ellipsoid = 1 / a ** 2 * ((x_grid - x_0) * np.cos(np.deg2rad(alpha+RveInfo.slope_offset)) +
+                                  (y_grid - y_0) * np.sin(np.deg2rad(alpha+RveInfo.slope_offset))) ** 2 + \
+                    1 / b ** 2 * (-(x_grid - x_0) * np.sin(np.deg2rad(alpha+RveInfo.slope_offset)) +
+                                  (y_grid - y_0) * np.cos(np.deg2rad(alpha+RveInfo.slope_offset))) ** 2 + \
                     1 / c ** 2 * (z_grid - z_0) ** 2
 
         return ellipsoid

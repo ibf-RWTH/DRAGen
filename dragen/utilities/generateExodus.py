@@ -26,6 +26,9 @@ class NetCDFWrapper:
         self._data.createDimension('num_elem', num_elems)
         self._data.createDimension('num_el_blk', num_blocks)
         self._data.createDimension('time_step', None)
+        #print(self._data.dimensions['num_el_blk1'])
+        #breakpoint()
+
 
         # Create variables
         self._data.createVariable('time_whole', 'f8', 'time_step', shuffle=False)
@@ -76,7 +79,6 @@ class NetCDFWrapper:
 
         for i in range(num_el_blk):
             self._data.variables['eb_names'][i, 0:len(names[i])] = [c for c in names[i]]
-
         return
 
     def set_elem_blk_info(self, blk_id, elem_type, num_blk_elems, num_elem_nodes):

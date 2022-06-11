@@ -9,7 +9,8 @@ class shape:
         pass
 
     def thresh_callback(self, img, max_id, phaseID):
-
+        if RveInfo.inclusion_flag or RveInfo.number_of_bands>0:
+            print('inclusions and bands will be neglected in shape analysis')
         a = list()
         b = list()
         x = list()
@@ -17,9 +18,10 @@ class shape:
         slope = list()
         thresholds = np.asarray(np.unique(img, return_counts=True)).T
         output_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/grain_data_output.csv')
-
         for t in thresholds:
             grain_id = int(t[0]*max_id)
+            if grain_id >= max_id:
+                continue
             phase = output_df.loc[grain_id, 'phaseID']
             if phase == phaseID:
                 grain = np.zeros_like(img)
@@ -42,27 +44,27 @@ class shape:
                                 #y.append(elps[1][0] / (2*RveInfo.resolution))
                                 a.append(elps[1][1] / (2*RveInfo.resolution))
                                 b.append(elps[1][0] / (2*RveInfo.resolution))
-                                slope.append(alpha-90)
+                                slope.append(alpha)
                             else:
                                 #x.append(elps[1][1] / (2 * RveInfo.resolution))
                                 #y.append(elps[1][0] / (2 * RveInfo.resolution))
                                 a.append(elps[1][1] / (2*RveInfo.resolution))
                                 b.append(elps[1][0] / (2*RveInfo.resolution))
-                                slope.append(alpha+90)
+                                slope.append(alpha)
                         else:
                             if alpha >= 90:
                                 #x.append(elps[1][0] / (2 * RveInfo.resolution))
                                 #y.append(elps[1][1] / (2 * RveInfo.resolution))
                                 a.append(elps[1][1] / (2*RveInfo.resolution))
                                 b.append(elps[1][0] / (2*RveInfo.resolution))
-                                slope.append(alpha-90)
+                                slope.append(alpha)
 
                             else:
                                 #x.append(elps[1][0] / (2 * RveInfo.resolution))
                                 #y.append(elps[1][1] / (2 * RveInfo.resolution))
                                 a.append(elps[1][1] / (2*RveInfo.resolution))
                                 b.append(elps[1][0] / (2*RveInfo.resolution))
-                                slope.append(alpha+90)
+                                slope.append(alpha)
                     except:
                         print('fail')
 
@@ -89,6 +91,8 @@ class shape:
 
         rve = rve - 1  # Grid.vti starts at zero
         max_id = rve.max()
+        print(np.unique(rve))
+        print(max_id)
         rve = rve/rve.max()
 
         if RveInfo.dimension == 3:
@@ -101,7 +105,7 @@ class shape:
 
     @staticmethod
     def get_input_ellipses():
-        input_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/experimental_data.csv')
+        input_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/input_data.csv')
         mask = (input_df['a'] > input_df['b'])
         input_df.loc[mask, 'AR'] = input_df['a'] / input_df['b']
         input_df.loc[~mask, 'AR'] = input_df['b'] / input_df['a']

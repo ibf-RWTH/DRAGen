@@ -56,8 +56,7 @@ class MeshingHelper:
     def gen_grains(self, grid: pv.UnstructuredGrid) -> pv.UnstructuredGrid:
 
         """the grainIDs are written on the cell_array"""
-        self.rve.sort_values(by=['z', 'y', 'x'], inplace=True) # This sorting is important! Keep it that way
-
+        self.rve.sort_values(by=['z', 'y', 'x'], inplace=True)  # This sorting is important! Keep it that way
         # Add the data values to the cell data
         grid.cell_data["GrainID"] = self.rve['GrainID'].to_numpy()
         grid.cell_data["phaseID"] = self.rve['phaseID'].to_numpy()
@@ -82,11 +81,14 @@ class MeshingHelper:
 
         return grid
 
-    def smoothen_mesh(self, grid: pv.UnstructuredGrid) -> pv.UnstructuredGrid:
-
+    def smoothen_mesh(self, grid: pv.UnstructuredGrid, n_iter: int) -> pv.UnstructuredGrid:
+        if not RveInfo.smoothing_flag:
+            n_iter = 0
         """information about grainboundary elements of hex-mesh
         is extracted here and stored in pv.Polydata and
-        in a pd.Dataframe"""
+        in a pd.Dataframe
+        n_iter: smoothing depending on framework that triggers the smoothing?
+        """
         x_max = max(grid.points[:, 0])
         x_min = min(grid.points[:, 0])
         y_max = max(grid.points[:, 1])
@@ -156,15 +158,16 @@ class MeshingHelper:
 
         old_grid = grid.copy()  # copy doesn't copy the dynamically assigned new property...
         for i in range(1, numberOfGrains + 1):
+
             grain_grid = old_grid.extract_cells(np.where(old_grid.cell_data['GrainID'] == i))
             grain_surf = grain_grid.extract_surface()
             grain_surf_df = pd.DataFrame(data=grain_surf.points, columns=['x', 'y', 'z'])
             merged_pts_df = grain_surf_df.join(all_points_df_old.set_index(['x', 'y', 'z']), on=['x', 'y', 'z'])
-            grain_surf_smooth = grain_surf.smooth(n_iter=250)
+            grain_surf_smooth = grain_surf.smooth(n_iter=n_iter)
             smooth_pts_df = pd.DataFrame(data=grain_surf_smooth.points, columns=['x', 'y', 'z'])
             all_points_df.loc[merged_pts_df['ori_idx'], ['x', 'y', 'z']] = smooth_pts_df.values
             grain_vol = grain_grid.volume
-            self.grains_df.loc[self.grains_df['GrainID'] == i-1, 'meshed_conti_volume'] = grain_vol * 10 ** 9
+            self.grains_df.loc[self.grains_df['GrainID'] == i, 'meshed_conti_volume'] = grain_vol * 10 ** 9
 
         self.grains_df[['GrainID', 'meshed_conti_volume', 'phaseID']].\
             to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_conti.csv', index=False)
