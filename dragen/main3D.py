@@ -30,7 +30,7 @@ class DataTask3D(HelperFunctions):
         In this function the correct number of grains for the chosen Volume is sampled from given csv files
         """
         files = RveInfo.file_dict
-        RveInfo.logger.info("RVE generation process has started...")
+        RveInfo.LOGGER.info("RVE generation process has started...")
         total_df = pd.DataFrame()
 
         # TODO: Generiere Bandwidths hier!
@@ -91,11 +91,11 @@ class DataTask3D(HelperFunctions):
         print('Processing now')
 
 
-        grains_df = super().process_df(total_df, RveInfo.shrink_factor)
+        grains_df = super().process_df(total_df, RveInfo.SHRINK_FACTOR)
         total_volume = sum(
             grains_df[grains_df['phaseID'] <= 6]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
         estimated_boxsize = np.cbrt(total_volume)
-        RveInfo.logger.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
+        RveInfo.LOGGER.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
                             format(total_volume, estimated_boxsize))
 
         input_data.to_csv(RveInfo.gen_path + '/input_data.csv', index=False)
@@ -282,7 +282,7 @@ class DataTask3D(HelperFunctions):
                 rve[np.where(rve == i + 1)] = -200
 
         else:
-            RveInfo.logger.info("The RSA did not succeed...")
+            RveInfo.LOGGER.info("The RSA did not succeed...")
             sys.exit()
 
         """
@@ -490,4 +490,4 @@ class DataTask3D(HelperFunctions):
 
         if RveInfo.subs_flag:
             substrucRun().post_processing(k=3)
-        RveInfo.logger.info("RVE generation process has successfully completed...")
+        RveInfo.LOGGER.info("RVE generation process has successfully completed...")

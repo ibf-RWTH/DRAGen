@@ -112,7 +112,7 @@ class DiscreteRsa2D(HelperFunctions):
         if len(x_0_list) == self.n_grains:
             status = True
         else:
-            RveInfo.logger.info("Not all grains could be placed please decrease shrinkfactor!")
+            RveInfo.LOGGER.info("Not all grains could be placed please decrease shrinkfactor!")
 
         return rsa, x_0_list, y_0_list, status
 

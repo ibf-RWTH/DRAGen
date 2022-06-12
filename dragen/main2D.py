@@ -28,7 +28,7 @@ class DataTask2D(HelperFunctions):
         In this function the correct number of grains for the chosen Volume is sampled from given csv files
         """
         files = RveInfo.file_dict
-        RveInfo.logger.info("RVE generation process has started...")
+        RveInfo.LOGGER.info("RVE generation process has started...")
         total_df = pd.DataFrame()
 
         # TODO: Generiere Bandwidths hier!
@@ -73,11 +73,11 @@ class DataTask2D(HelperFunctions):
         print('Processing now')
 
 
-        grains_df = super().process_df_2D(total_df, RveInfo.shrink_factor)
+        grains_df = super().process_df_2D(total_df, RveInfo.SHRINK_FACTOR)
         total_volume = sum(
             grains_df[grains_df['phaseID'] <= 6]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
         estimated_boxsize = np.cbrt(total_volume)
-        RveInfo.logger.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
+        RveInfo.LOGGER.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
                             format(total_volume, estimated_boxsize))
 
         experimental_data.to_csv(RveInfo.gen_path + '/experimental_data.csv', index=False)
@@ -98,7 +98,7 @@ class DataTask2D(HelperFunctions):
             rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa)
 
         else:
-            RveInfo.logger.info("The rsa did not succeed...")
+            RveInfo.LOGGER.info("The rsa did not succeed...")
             sys.exit()
 
         if rve_status:
@@ -130,7 +130,7 @@ class DataTask2D(HelperFunctions):
             mesh = mesher_obj.run_mesher_2D()
             BuildAbaqus2D(mesh, periodic_rve_df, grains_df).run()
 
-        RveInfo.logger.info("2D RVE generation process has successfully completed...")
+        RveInfo.LOGGER.info("2D RVE generation process has successfully completed...")
         return rve
 
     def post_processing(self, rve):
@@ -183,4 +183,4 @@ class DataTask2D(HelperFunctions):
 
         if RveInfo.subs_flag:
             RveInfo.sub_run.post_processing(k=3)
-        RveInfo.logger.info("RVE generation process has successfully completed...")
+        RveInfo.LOGGER.info("RVE generation process has successfully completed...")

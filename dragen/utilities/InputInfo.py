@@ -17,7 +17,7 @@ class RveInfo:
     .
     WARNING!!! BE VERY CAREFUL WHEN OVERWRITING THESE VALUES OUTSIDE OF THE dragen\run.py!!!!!
     """
-    box_size: any([float, int]) = 20  #
+    box_size: any([float, int]) = None#
     """box_size describes the edge length of the rve in a cubic case, if the rve is not cubic it describes the length
     of the edge in x-direction"""
 
@@ -29,22 +29,22 @@ class RveInfo:
     """If this value is set to any other value than None the rve will take this value in µm and the 
     periodicity will be turned off in z-direction"""
 
-    resolution: any([float, int]) = 1
+    resolution: any([float, int]) = None
     """ number of elements along rve-edge = box_size*resolution: higher resolution --> finer mesh """
 
-    number_of_rves: int = 1
-    """choose a number of RVEs to be generated (Default 1)"""
+    number_of_rves: int = None
+    """choose a number of RVEs to be generated"""
 
-    dimension: int = 3
+    dimension: int = None
     """ choose as 2 or 3 for either a 2D or 3D RVE """
 
-    slope_offset = 0
+    slope_offset = None
     """angle of macro specimen relative to rolling direction for sheet material"""
 
     smoothing_flag: bool = None
 
     # martensite band parameters
-    number_of_bands: int = 0
+    number_of_bands: int = None
     """chose a number of bands for each rve"""
 
     bandwidths: np.ndarray = None
@@ -56,7 +56,7 @@ class RveInfo:
     upper_band_bound: float = None
     """this parameter sets a lower limit for the band thickness"""
 
-    visualization_flag: bool = False
+    visualization_flag: bool = None
     """if set to True, Band generation will be plotted"""
 
     file_dict: dict = None
@@ -68,14 +68,11 @@ class RveInfo:
     store_path: str = None
     """output path for generation files"""
 
-    shrink_factor: float = None
-    """factor by which all ellipsoids are shrinked before beeing placed in the volume"""
-
     band_ratio_rsa: float = None
 
     band_ratio_final: float = None
 
-    band_filling: float = 0.99
+    band_filling: float = None
     """Percentage of Filling for the banded structure/ similar to shrinkfactor just for the band"""
 
     band_orientation: str = None
@@ -85,7 +82,7 @@ class RveInfo:
     """set to False when using the nogui_script"""
 
     gan_flag: bool = None
-    """@Nklas is this actually still needed?"""
+    # TODO: @Nklas is this actually still needed?"""
 
     infobox_obj = None
     """internal object for GUI"""
@@ -163,9 +160,6 @@ class RveInfo:
     root: str = './'
     """root path"""
 
-    input_path: str = './ExampleInput'
-    """path to input files"""
-
     PHASENUM = {'Ferrite': 1, 'Martensite': 2, 'Pearlite': 3, 'Bainite': 4, 'Inclusions': 5, 'Bands': 6}
     """Numbers linked to currently defined phases"""
 
@@ -192,8 +186,13 @@ class RveInfo:
     step_half = None
     """half a bin"""
 
-    logger = logging.getLogger("RVE-Gen")
-    result_log = logging.getLogger("RVE-Result")
+    LOGGER = logging.getLogger("RVE-Gen")
+    RESULT_LOG = logging.getLogger("RVE-Result")
 
     ######### Constants defined outside run #########
     rve_data_substructure = None
+
+    ######### Fixed Constants can only be changed here #########
+
+    SHRINK_FACTOR: float = np.cbrt(0.4)
+    """factor by which all ellipsoids are shrinked before beeing placed in the volume"""

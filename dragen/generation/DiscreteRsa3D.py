@@ -64,7 +64,7 @@ class DiscreteRsa3D(HelperFunctions):
 
         time_elapse = datetime.datetime.now() - t_0
         if RveInfo.debug:
-            RveInfo.logger.info('time spent on ellipsoid{}: {}'.format(iterator, time_elapse.total_seconds()))
+            RveInfo.LOGGER.info('time spent on ellipsoid{}: {}'.format(iterator, time_elapse.total_seconds()))
         return ellipsoid, x_0, y_0, z_0
 
     def rsa_plotter(self, array, iterator, attempt):
@@ -114,7 +114,7 @@ class DiscreteRsa3D(HelperFunctions):
         plt.close(fig)
         time_elapse = datetime.datetime.now() - t_0
         if RveInfo.debug:
-            RveInfo.logger.info('time spent on plotter for grain {}: {}'.format(iterator, time_elapse.total_seconds()))
+            RveInfo.LOGGER.info('time spent on plotter for grain {}: {}'.format(iterator, time_elapse.total_seconds()))
 
     def run_rsa(self, band_ratio_rsa=None, banded_rsa_array=None, x0_alt=None, y0_alt=None, z0_alt=None):
         if RveInfo.gui_flag:
@@ -173,7 +173,7 @@ class DiscreteRsa3D(HelperFunctions):
                     attempt = 0
                     if RveInfo.debug:
                         time_elapse = datetime.datetime.now() - t_0
-                        RveInfo.logger.info(
+                        RveInfo.LOGGER.info(
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
             else:
                 # free points old - free points should equal non zero in periodic grain
@@ -189,7 +189,7 @@ class DiscreteRsa3D(HelperFunctions):
                     attempt = 0
                     if RveInfo.debug:
                         time_elapse = datetime.datetime.now() - t_0
-                        RveInfo.logger.info(
+                        RveInfo.LOGGER.info(
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
             progress = int((float(len(x_0_list))/self.n_grains * 100))
             if RveInfo.gui_flag:
@@ -198,7 +198,7 @@ class DiscreteRsa3D(HelperFunctions):
         if (len(x_0_list) == self.n_grains) or (i - 1) == self.n_grains:
             status = True
         else:
-            RveInfo.logger.info("Not all grains could be placed please decrease shrinkfactor!")
+            RveInfo.LOGGER.info("Not all grains could be placed please decrease shrinkfactor!")
 
         # If a list from previous Band grains is given:
         if x0_alt is None and y0_alt is None and z0_alt is None:
@@ -225,7 +225,7 @@ class DiscreteRsa3D(HelperFunctions):
         status = False
 
         if previous_rsa is None:
-            RveInfo.logger.info('This cluster-rsa needs a defined band ')
+            RveInfo.LOGGER.info('This cluster-rsa needs a defined band ')
         else:
             # Use this array for checking, because here is only the band "free"
             rsa = band_array.copy()
@@ -324,7 +324,7 @@ class DiscreteRsa3D(HelperFunctions):
         if len(x_0_list) >= 0.9 * self.n_grains:
             status = True
         else:
-            RveInfo.logger.info("Not all grains could be placed please decrease shrinkfactor!")
+            RveInfo.LOGGER.info("Not all grains could be placed please decrease shrinkfactor!")
 
         # Change -200 in rsa_array back to 0
         print(np.asarray(np.unique(placement_rsa, return_counts=True)).T)

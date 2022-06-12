@@ -83,9 +83,9 @@ class Run():
 
     def run(self, rve_df, grains_df):
 
-        RveInfo.logger.info('------------------------------------------------------------------------------')
-        RveInfo.logger.info('substructure generation begins')
-        RveInfo.logger.info('------------------------------------------------------------------------------')
+        RveInfo.LOGGER.info('------------------------------------------------------------------------------')
+        RveInfo.LOGGER.info('substructure generation begins')
+        RveInfo.LOGGER.info('------------------------------------------------------------------------------')
         _rve_data = pd.DataFrame()
         if RveInfo.subs_file_flag:
             assert RveInfo.subs_file is not None, 'no substructure file given'
@@ -183,8 +183,8 @@ class Run():
             for name in RveInfo.plt_name:
                 plot_rve_subs(_rve_data, name, RveInfo.fig_path)
 
-        RveInfo.logger.info('substructure generation successful')
-        RveInfo.logger.info('------------------------------------------------------------------------------')
+        RveInfo.LOGGER.info('substructure generation successful')
+        RveInfo.LOGGER.info('------------------------------------------------------------------------------')
         return _rve_data
 
     def post_processing(self, k, sigma=2):
@@ -272,7 +272,7 @@ class Run():
             plt.legend(fontsize=12.5, loc=1)
             plt.savefig(RveInfo.store_path + '/Postprocessing/compare_distribution.png')
 
-        RveInfo.logger.info('substructure postprocessing successful')
+        RveInfo.LOGGER.info('substructure postprocessing successful')
 
 
 def get_sampler() -> [InputDataSampler, UserPakVolumeSampler, UserPakVolumeSampler]:

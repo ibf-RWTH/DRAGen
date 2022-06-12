@@ -85,7 +85,7 @@ class HelperFunctions:
             else:
                 messagebox.showinfo(message='No "a" in given .csv-Inputfile! RVE-Generation was canceled!',
                                     title='ERROR')
-            RveInfo.logger.info('ERROR: No "a" in given .csv-Inputfile! RVE-Generation was canceled!')
+            RveInfo.LOGGER.info('ERROR: No "a" in given .csv-Inputfile! RVE-Generation was canceled!')
             sys.exit()
 
         if 'b' in data.head(0) and data['b'].count() != 0:
@@ -93,21 +93,21 @@ class HelperFunctions:
                 radius_b.append(rad)
         else:
             radius_b = radius_a
-            RveInfo.logger.info('No "b" in given .csv-Inputfile! Assumption: b = a')
+            RveInfo.LOGGER.info('No "b" in given .csv-Inputfile! Assumption: b = a')
 
         if 'c' in data.head(0) and data['c'].count() != 0:
             for rad in data['c']:
                 radius_c.append(rad)
         else:
             radius_c = radius_a
-            RveInfo.logger.info('No "c" in given .csv-Inputfile! Assumption: c = a')
+            RveInfo.LOGGER.info('No "c" in given .csv-Inputfile! Assumption: c = a')
 
         if 'alpha' in data.head(0) and data['alpha'].count() != 0:
             for ang in data['alpha']:
                 alpha.append(ang)
         else:
             alpha = [0] * len(radius_a)
-            RveInfo.logger.info('No "alpha" in given .csv-Inputfile! Assumption: alpha = 0, no rotation')
+            RveInfo.LOGGER.info('No "alpha" in given .csv-Inputfile! Assumption: alpha = 0, no rotation')
 
         if 'phi1' in data.head(0) and data['phi1'].count() != 0 and 'PHI' in data.head(0) and data['PHI'].count() != 0 \
                 and 'phi2' in data.head(0) and data['phi2'].count() != 0:
@@ -118,7 +118,7 @@ class HelperFunctions:
             for tex in data['phi2']:
                 tex_phi2.append(tex)
         else:
-            RveInfo.logger.info(
+            RveInfo.LOGGER.info(
                 'No texture parameters (phi1, PHI, phi2) in given .csv-Inputfile! Assumption: random texture')
             i = 0
             while i < len(radius_a):
@@ -232,7 +232,7 @@ class HelperFunctions:
                 grain_vol += vol
                 input_df = pd.concat([input_df, grain_df])
                 if len(data) == 0:
-                    RveInfo.logger.info('Input data was exceeded not enough data!!')
+                    RveInfo.LOGGER.info('Input data was exceeded not enough data!!')
                     break
 
         print('Volume of df', input_df['volume'].sum())
@@ -275,7 +275,7 @@ class HelperFunctions:
                 grain_vol += vol
                 input_df = pd.concat([input_df,grain_df])
                 if len(data) == 0:
-                    RveInfo.logger.info('Input data was exceeded not enough data!!')
+                    RveInfo.LOGGER.info('Input data was exceeded not enough data!!')
                     break
 
         print('Volume of df', input_df['volume'].sum())
@@ -294,7 +294,7 @@ class HelperFunctions:
         inside = ellipsoid <= 1
         array[inside] = 1
         d_vol = np.count_nonzero(array)*RveInfo.bin_size**3
-        #RveInfo.logger.info("Volume for the given radii: {}".format(d_vol))
+        #RveInfo.LOGGER.info("Volume for the given radii: {}".format(d_vol))
         return d_vol
 
     def convert_volume_2D(self, radius_a, radius_b):
@@ -308,7 +308,7 @@ class HelperFunctions:
         inside = ellipse <= 1
         array[inside] = 1
         d_vol = np.count_nonzero(array)*RveInfo.bin_size**2
-        RveInfo.logger.info("Volume for the given radii: {}".format(d_vol))
+        RveInfo.LOGGER.info("Volume for the given radii: {}".format(d_vol))
         return d_vol
 
     def band_generator(self, band_array: np.array, center, bandwidth):
@@ -332,7 +332,7 @@ class HelperFunctions:
         elif RveInfo.band_orientation == 'xz':
             r = self.gen_grid()[1]
         else:
-            RveInfo.logger.error("Error: plane must be defined as xy, yz or xz! Default: xy")
+            RveInfo.LOGGER.error("Error: plane must be defined as xy, yz or xz! Default: xy")
             sys.exit(1)
 
         while not band_is_placed:
@@ -358,8 +358,8 @@ class HelperFunctions:
             # each other band_vol_0_theo = 0 which must be avoided
             if ((rve_band_vol_old + band_vol_0_theo) == rve_band_vol_new) and not band_vol_0_theo == 0:
                 band_is_placed = True
-                RveInfo.logger.info("Band generator - Bandwidth: {}, Left bound: {} and Right bound: {}"
-                                 .format(bandwidth, left_bound, right_bound))
+                RveInfo.LOGGER.info("Band generator - Bandwidth: {}, Left bound: {} and Right bound: {}"
+                                    .format(bandwidth, left_bound, right_bound))
 
         return band_array
 
@@ -483,7 +483,7 @@ class HelperFunctions:
                 points_array_mod[points_array_copy == -100 - i] = iterator
         time_elapse = datetime.datetime.now() - t_0
         if RveInfo.debug:
-            RveInfo.logger.info('time spent on periodicity for grain {}: {}'.format(iterator, time_elapse.total_seconds()))
+            RveInfo.LOGGER.info('time spent on periodicity for grain {}: {}'.format(iterator, time_elapse.total_seconds()))
         return points_array_mod
 
     def gen_boundaries_2D(self, points_array) -> np.ndarray:
@@ -726,7 +726,7 @@ class HelperFunctions:
 
         time_elapse = datetime.datetime.now() - t_0
         if RveInfo.debug:
-            RveInfo.logger.info('time spent on gen_boundaries: {}'.format(time_elapse.total_seconds()))
+            RveInfo.LOGGER.info('time spent on gen_boundaries: {}'.format(time_elapse.total_seconds()))
         return points_array
 
     def repair_periodicity_2D(self, rve_array: np.ndarray) -> pd.DataFrame:

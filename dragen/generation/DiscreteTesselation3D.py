@@ -90,7 +90,7 @@ class Tesselation3D(HelperFunctions):
         plt.close(fig)
         time_elapse = datetime.datetime.now() - t_0
         if RveInfo.debug:
-            RveInfo.logger.info('time spent on plotter for epoch {}: {}'.format(epoch, time_elapse.total_seconds()))
+            RveInfo.LOGGER.info('time spent on plotter for epoch {}: {}'.format(epoch, time_elapse.total_seconds()))
 
     def run_tesselation(self, rsa, grain_df=None, band_idx_start=None):
         if RveInfo.gui_flag:
@@ -198,7 +198,7 @@ class Tesselation3D(HelperFunctions):
                 if RveInfo.gui_flag:
                     RveInfo.progress_obj.emit('packingratio: ', packingratio)
                 else:
-                    RveInfo.logger.info('packingratio: {}'.format(packingratio))
+                    RveInfo.LOGGER.info('packingratio: {}'.format(packingratio))
 
         if packingratio == 100:
             status = True

@@ -121,10 +121,10 @@ class Tesselation2D(HelperFunctions):
 
             if not grain_idx:
                 repeat = True
-                RveInfo.logger.info('grain growth had to be reset at {}% of volume filling'.format(packingratio))
+                RveInfo.LOGGER.info('grain growth had to be reset at {}% of volume filling'.format(packingratio))
                 #self.infobox_obj.emit('grain growth had to be reset at {}% of volume filling'.format(packingratio))
                 if packingratio < 90:
-                    RveInfo.logger.info('your microstructure data does not contain enough data to fill this boxsize please decrease the boxsize for reasonable results')
+                    RveInfo.LOGGER.info('your microstructure data does not contain enough data to fill this boxsize please decrease the boxsize for reasonable results')
                 #    self.infobox_obj.emit('your microstructure data does not contain \n'
                 #                          'enough data to fill this boxsize\n'
                 #                          'please decrease the boxsize for reasonable results')

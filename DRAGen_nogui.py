@@ -49,7 +49,6 @@ file6 = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\DP800/Trai
 subs_flag = False
 subs_file = 'C:/temp/substructdata/bainite_Seite1_Dicke.csv'
 subs_file_flag = True
-gui_flag = False
 gan_flag = False
 moose_flag = True
 abaqus_flag = True
@@ -64,6 +63,17 @@ files = {1: file1}  # , 2: file2, 6: file6}
 phase_ratio = {1: 1}  # , 2: 0.2, 6: 0}  # Pass for bands
 phases = ['Ferrite']  # , 'Martensite', 'Bands']
 
+upper = None
+lower = None
+circularity = 1
+decreasing_factor = 0.4
+plt_name = 'no_gui_plt.png'
+save = 'save'
+plot = False
+filename = 'substructure_plot.png'
+fig_path = root+filename
+orientation_relationship = 'KS'
+
 '''
 specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
 same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in martensite.
@@ -71,15 +81,15 @@ same order as phases. file1->ferrite, file2->martensite. The substructures will 
 Number 5 specifies the inclusions and number 6 the Band phase. Either .csv or .pkl
 '''
 
-Run(box_size, element_type=element_type, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution,
-    number_of_rves=number_of_rves,
-    number_of_bands=number_of_bands, dimension=dimension, slope_offset=slope_offset, smoothing_flag = True,
-    visualization_flag=visualization_flag, file_dict=files, equiv_d=equiv_d, p_sigma=p_sigma, t_mu=t_mu,
-    b_sigma=b_sigma,
-    phase_ratio=phase_ratio, root=root, shrink_factor=shrink_factor, gui_flag=gui_flag,
-    gan_flag=gan_flag, pbc_flag=pbc_flag, submodel_flag=submodel_flag, phase2iso_flag=phase2iso_flag,
-    info_box_obj=None, progress_obj=None, subs_file_flag=subs_file_flag, subs_file=subs_file, phases=phases,
-    subs_flag=subs_flag, moose_flag=moose_flag, abaqus_flag=abaqus_flag, damask_flag=damask_flag,
-    anim_flag=anim_flag, inclusion_flag=inclusion_flag,
-    inclusion_ratio=inclusion_ratio, band_filling=band_filling, lower_band_bound=lower_band_bound,
-    upper_band_bound=upper_band_bound, band_orientation=band_orientation,).run()
+Run(dimension=dimension, box_size=box_size, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution,
+    number_of_rves=number_of_rves, slope_offset=slope_offset, abaqus_flag=abaqus_flag, damask_flag=damask_flag,
+    moose_flag=moose_flag, element_type=element_type, pbc_flag=pbc_flag, submodel_flag=submodel_flag,
+    phase2iso_flag=phase2iso_flag, smoothing_flag=smoothing_flag, gui_flag=False, anim_flag=anim_flag,
+    visualization_flag=visualization_flag, root=root, info_box_obj=None, progress_obj=None, phase_ratio=phase_ratio,
+    file_dict=files, phases=phases, number_of_bands=number_of_bands, upper_band_bound=upper_band_bound,
+    lower_band_bound=lower_band_bound, band_orientation=band_orientation, band_filling=band_filling,
+    inclusion_flag=inclusion_flag, inclusion_ratio=inclusion_ratio, subs_flag=subs_flag, subs_file_flag=subs_file_flag,
+    subs_file=subs_file, equiv_d=equiv_d, p_sigma=p_sigma, t_mu=t_mu, b_sigma=b_sigma,
+    decreasing_factor=decreasing_factor, lower=lower, upper=upper, circularity=circularity, plt_name=plt_name,
+    save=save, plot=plot, filename=filename, fig_path=fig_path, orientation_relationship=orientation_relationship).run()
+

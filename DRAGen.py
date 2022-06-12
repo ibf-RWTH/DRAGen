@@ -7,10 +7,13 @@ from dragen.pyqt_gui.worker import Worker
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap("./dragen/thumbnails/Folder-Generic-Silver-icon.png"), QtGui.QIcon.Normal,
+                       QtGui.QIcon.Off)
         self.MainWindow = MainWindow
         MainWindow.setObjectName("Main Window")
         MainWindow.setWindowTitle("DRAGen - RVE Generator")
-        MainWindow.resize(735, 876)
+        MainWindow.setFixedSize(750, 850) #size(735, 876)
         self.thumbnail_path = sys.argv[0][:-10] + "\\dragen\\thumbnails\\"
         MainWindow.setWindowIcon(QIcon(self.thumbnail_path + '\\Drache.ico'))
 
@@ -18,16 +21,16 @@ class Ui_MainWindow(object):
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.scrollArea = QtWidgets.QScrollArea(self.centralwidget)
-        self.scrollArea.setGeometry(QtCore.QRect(10, 460, 711, 331))
+        self.scrollArea.setGeometry(QtCore.QRect(10, 460, 720, 330))
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
 
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 709, 319))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(10, 460, 720, 330))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.InfoPages = QtWidgets.QTabWidget(self.scrollAreaWidgetContents)
         self.InfoPages.setEnabled(True)
-        self.InfoPages.setGeometry(QtCore.QRect(-5, 0, 716, 336))
+        self.InfoPages.setGeometry(QtCore.QRect(-5, 0, 720, 330))
         self.InfoPages.setTabShape(QtWidgets.QTabWidget.Rounded)
         self.InfoPages.setUsesScrollButtons(True)
         self.InfoPages.setTabsClosable(False)
@@ -36,377 +39,6 @@ class Ui_MainWindow(object):
         self.InfoPages.setObjectName("InfoPages")
 
         ### Tab window
-        # Banding Feature Tab
-        self.banding_tab = QtWidgets.QWidget()
-        self.banding_tab.setObjectName("banding_tab")
-        self.InfoPages.addTab(self.banding_tab, "")
-        self.banding_tab.setEnabled(False)
-
-        self.gridLayoutWidget_2 = QtWidgets.QWidget(self.banding_tab)
-        self.gridLayoutWidget_2.setGeometry(QtCore.QRect(20, 10, 161, 80))
-        self.gridLayoutWidget_2.setObjectName("gridLayoutWidget_2")
-
-        self.gridLayout_3 = QtWidgets.QGridLayout(self.gridLayoutWidget_2)
-        self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
-        self.gridLayout_3.setObjectName("gridLayout_3")
-
-        self.NoBand_label = QtWidgets.QLabel(self.gridLayoutWidget_2)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.NoBand_label.sizePolicy().hasHeightForWidth())
-        self.NoBand_label.setSizePolicy(sizePolicy)
-        self.NoBand_label.setObjectName("NoBand_label")
-        self.gridLayout_3.addWidget(self.NoBand_label, 0, 0, 1, 1)
-
-        self.NoBandsSpinBox = QtWidgets.QSpinBox(self.gridLayoutWidget_2)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.NoBandsSpinBox.sizePolicy().hasHeightForWidth())
-        self.NoBandsSpinBox.setSizePolicy(sizePolicy)
-        self.NoBandsSpinBox.setObjectName("NoBandsSpinBox")
-        self.gridLayout_3.addWidget(self.NoBandsSpinBox, 0, 1, 1, 1)
-        
-        self.band_thickness_label = QtWidgets.QLabel(self.gridLayoutWidget_2)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.band_thickness_label.sizePolicy().hasHeightForWidth())
-        self.band_thickness_label.setSizePolicy(sizePolicy)
-        self.band_thickness_label.setObjectName("band_thickness_label")
-        self.gridLayout_3.addWidget(self.band_thickness_label, 1, 0, 1, 1)
-
-        self.band_thicknessSpinBox = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_2)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.band_thicknessSpinBox.sizePolicy().hasHeightForWidth())
-        self.band_thicknessSpinBox.setSizePolicy(sizePolicy)
-        self.band_thicknessSpinBox.setObjectName("band_thicknessSpinBox")
-        self.gridLayout_3.addWidget(self.band_thicknessSpinBox, 1, 1, 1, 1)
-        
-        # Substructure Feature Tab
-        self.substructure = QtWidgets.QWidget()
-        self.substructure.setObjectName("substructure")
-        self.InfoPages.addTab(self.substructure, "")
-        self.substructure.setEnabled(False)
-
-        self.gridLayoutWidget_3 = QtWidgets.QWidget(self.substructure)
-        self.gridLayoutWidget_3.setGeometry(QtCore.QRect(10, 0, 240, 21))
-        self.gridLayoutWidget_3.setObjectName("gridLayoutWidget_3")
-
-        self.grid_mode = QtWidgets.QGridLayout(self.gridLayoutWidget_3)
-        self.grid_mode.setContentsMargins(0, 0, 0, 0)
-        self.grid_mode.setObjectName("grid_mode")
-
-        self.substructure_filemode_radio = QtWidgets.QRadioButton(self.gridLayoutWidget_3)
-        self.substructure_filemode_radio.setChecked(True)
-        self.substructure_filemode_radio.setObjectName("substructure_filemode_radio")
-        self.grid_mode.addWidget(self.substructure_filemode_radio, 0, 0, 1, 2)
-        self.substructure_filemode_radio.toggled.connect(self.widget_handler)
-
-        self.substructure_user_mode_radio = QtWidgets.QRadioButton(self.gridLayoutWidget_3)
-        self.substructure_user_mode_radio.setChecked(False)
-        self.substructure_user_mode_radio.setObjectName("substructure_user_mode_radio")
-        self.grid_mode.addWidget(self.substructure_user_mode_radio, 0, 2, 1, 2)
-        self.substructure_user_mode_radio.toggled.connect(self.widget_handler)
-
-        self.tabWidget = QtWidgets.QTabWidget(self.substructure)
-        self.tabWidget.setGeometry(QtCore.QRect(6, 29, 721, 461))
-        self.tabWidget.setObjectName("tabWidget")
-
-        # Substructure Feature Tab -> File Tab
-        self.file_tab = QtWidgets.QWidget()
-        self.tabWidget.addTab(self.file_tab, "")
-        self.file_tab.setObjectName("file_tab")
-
-        self.gridLayoutWidget_4 = QtWidgets.QWidget(self.file_tab)
-        self.gridLayoutWidget_4.setGeometry(QtCore.QRect(0, 0, 421, 201))
-        self.gridLayoutWidget_4.setObjectName("gridLayoutWidget_4")
-
-        self.grid_file = QtWidgets.QGridLayout(self.gridLayoutWidget_4)
-        self.grid_file.setContentsMargins(0, 0, 0, 0)
-        self.grid_file.setObjectName("grid_file")
-
-        self.label_substructure_file = QtWidgets.QLabel(self.gridLayoutWidget_4)
-        self.label_substructure_file.setObjectName("label_substructure_file")
-        self.grid_file.addWidget(self.label_substructure_file, 0, 0, 1, 1)
-
-        self.substructure_file_lineEdit_file = QtWidgets.QLineEdit(self.gridLayoutWidget_4)
-        self.substructure_file_lineEdit_file.setObjectName("substructure_file_lineEdit_file")
-        self.grid_file.addWidget(self.substructure_file_lineEdit_file, 0, 1, 1, 1)
-
-        self.substructure_file_browser_file = QtWidgets.QPushButton(self.gridLayoutWidget_4)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.substructure_file_browser_file.sizePolicy().hasHeightForWidth())
-        self.substructure_file_browser_file.setSizePolicy(sizePolicy)
-        self.substructure_file_browser_file.setText("")
-        icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("./dragen/thumbnails/Folder-Generic-Silver-icon.png"), QtGui.QIcon.Normal,
-                       QtGui.QIcon.Off)
-        self.substructure_file_browser_file.setIcon(icon)
-        self.substructure_file_browser_file.setObjectName("substructure_file_browser_file")
-        self.grid_file.addWidget(self.substructure_file_browser_file, 0, 2, 1, 1)
-        self.substructure_file_browser_file.clicked.connect(self.button_handler)
-
-        self.label_packet_size_file = QtWidgets.QLabel(self.gridLayoutWidget_4)
-        self.label_packet_size_file.setObjectName("label_packet_size_file")
-        self.grid_file.addWidget(self.label_packet_size_file, 1, 0, 1, 1)
-
-        self.substructure_packet_size_SpinBox_file = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_4)
-        self.substructure_packet_size_SpinBox_file.setEnabled(False)
-        self.substructure_packet_size_SpinBox_file.setMinimum(0.01)
-        self.substructure_packet_size_SpinBox_file.setSingleStep(0.01)
-        self.substructure_packet_size_SpinBox_file.setObjectName("substructure_packet_size_SpinBox")
-        self.grid_file.addWidget(self.substructure_packet_size_SpinBox_file, 1, 1, 1, 1)
-
-        self.substructure_packet_size_checkBox_file = QtWidgets.QCheckBox(self.gridLayoutWidget_4)
-        self.substructure_packet_size_checkBox_file.setText("")
-        self.substructure_packet_size_checkBox_file.setObjectName("substructure_packet_size_checkBox_file")
-        self.grid_file.addWidget(self.substructure_packet_size_checkBox_file, 1, 2, 1, 1)
-        self.substructure_packet_size_checkBox_file.stateChanged.connect(self.substructure_file_checkbox_handler)
-
-        self.label_block_thicknes_file = QtWidgets.QLabel(self.gridLayoutWidget_4)
-        self.label_block_thicknes_file.setObjectName("label_block_thicknes_file")
-        self.grid_file.addWidget(self.label_block_thicknes_file, 2, 0, 1, 1)
-
-        self.substructure_block_thickness_SpinBox_file = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_4)
-        self.substructure_block_thickness_SpinBox_file.setEnabled(False)
-        self.substructure_block_thickness_SpinBox_file.setMinimum(0.01)
-        self.substructure_block_thickness_SpinBox_file.setSingleStep(0.01)
-        self.substructure_block_thickness_SpinBox_file.setObjectName("substructure_block_thickness_SpinBox_file")
-        self.grid_file.addWidget(self.substructure_block_thickness_SpinBox_file, 2, 1, 1, 1)
-
-        self.substructure_block_thickness_checkBox_file = QtWidgets.QCheckBox(self.gridLayoutWidget_4)
-        self.substructure_block_thickness_checkBox_file.setText("")
-        self.substructure_block_thickness_checkBox_file.setObjectName("substructure_block_thickness_checkBox_file")
-        self.grid_file.addWidget(self.substructure_block_thickness_checkBox_file, 2, 2, 1, 1)
-        self.substructure_block_thickness_checkBox_file.stateChanged.connect(self.substructure_file_checkbox_handler)
-
-        self.label_decreasing_fact_file = QtWidgets.QLabel(self.gridLayoutWidget_4)
-        self.label_decreasing_fact_file.setObjectName("label_decreasing_fact_file")
-        self.grid_file.addWidget(self.label_decreasing_fact_file, 3, 0, 1, 1)
-
-        self.substructure_decreasing_fact_SpinBox_file = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_4)
-        self.substructure_decreasing_fact_SpinBox_file.setEnabled(False)
-        self.substructure_decreasing_fact_SpinBox_file.setValue(0.95)
-        self.substructure_decreasing_fact_SpinBox_file.setSingleStep(0.01)
-        self.substructure_decreasing_fact_SpinBox_file.setObjectName("substructure_decreasing_fact_SpinBox_file")
-        self.grid_file.addWidget(self.substructure_decreasing_fact_SpinBox_file, 3, 1, 1, 1)
-
-        self.substructure_decreasing_fact_checkBox_file = QtWidgets.QCheckBox(self.gridLayoutWidget_4)
-        self.substructure_decreasing_fact_checkBox_file.setText("")
-        self.substructure_decreasing_fact_checkBox_file.setObjectName("substructure_decreasing_fact_checkBox_file")
-        self.grid_file.addWidget(self.substructure_decreasing_fact_checkBox_file, 3, 2, 1, 1)
-        self.substructure_decreasing_fact_checkBox_file.stateChanged.connect(self.substructure_file_checkbox_handler)
-
-        self.label_min_block_thickness_file = QtWidgets.QLabel(self.gridLayoutWidget_4)
-        self.label_min_block_thickness_file.setObjectName("label_min_block_thickness_file")
-        self.grid_file.addWidget(self.label_min_block_thickness_file, 4, 0, 1, 1)
-
-        self.substructure_min_block_thickness_SpinBox_file = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_4)
-        self.substructure_min_block_thickness_SpinBox_file.setEnabled(False)
-        self.substructure_min_block_thickness_SpinBox_file.setValue(0.0)
-        self.substructure_min_block_thickness_SpinBox_file.setSingleStep(0.1)
-        self.substructure_min_block_thickness_SpinBox_file.setObjectName("substructure_min_block_thickness_SpinBox_file")
-        self.grid_file.addWidget(self.substructure_min_block_thickness_SpinBox_file, 4, 1, 1, 1)
-
-        self.substructure_min_block_thickness_checkBox_file = QtWidgets.QCheckBox(self.gridLayoutWidget_4)
-        self.substructure_min_block_thickness_checkBox_file.setText("")
-        self.substructure_min_block_thickness_checkBox_file.setObjectName("substructure_min_block_thickness_checkBox_file")
-        self.grid_file.addWidget(self.substructure_min_block_thickness_checkBox_file, 4, 2, 1, 1)
-        self.substructure_min_block_thickness_checkBox_file.stateChanged.connect(self.substructure_file_checkbox_handler)
-
-        self.label_max_block_thickness_file = QtWidgets.QLabel(self.gridLayoutWidget_4)
-        self.label_max_block_thickness_file.setObjectName("label_max_block_thickness_file")
-        self.grid_file.addWidget(self.label_max_block_thickness_file, 5, 0, 1, 1)
-
-        self.substructure_max_block_thickness_SpinBox_file = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_4)
-        self.substructure_max_block_thickness_SpinBox_file.setEnabled(False)
-        self.substructure_max_block_thickness_SpinBox_file.setValue(1.0)
-        self.substructure_max_block_thickness_SpinBox_file.setSingleStep(0.1)
-        self.substructure_max_block_thickness_SpinBox_file.setObjectName("substructure_max_block_thickness_SpinBox_file")
-        self.grid_file.addWidget(self.substructure_max_block_thickness_SpinBox_file, 5, 1, 1, 1)
-
-        self.substructure_max_block_thickness_checkBox_file = QtWidgets.QCheckBox(self.gridLayoutWidget_4)
-        self.substructure_max_block_thickness_checkBox_file.setText("")
-        self.substructure_max_block_thickness_checkBox_file.setObjectName("substructure_max_block_thickness_checkBox_file")
-        self.grid_file.addWidget(self.substructure_max_block_thickness_checkBox_file, 5, 2, 1, 1)
-        self.substructure_max_block_thickness_checkBox_file.stateChanged.connect(self.substructure_file_checkbox_handler)
-
-        self.label_save_result_file = QtWidgets.QLabel(self.gridLayoutWidget_4)
-        self.label_save_result_file.setObjectName("label_save_result_file")
-        self.grid_file.addWidget(self.label_save_result_file, 6, 0, 1, 1)
-
-        self.substructure_save_result_lineEdit_file = QtWidgets.QLineEdit(self.gridLayoutWidget_4)
-        self.substructure_save_result_lineEdit_file.setEnabled(False)
-        self.substructure_save_result_lineEdit_file.setText('substructure_data.csv')
-        self.substructure_save_result_lineEdit_file.setObjectName("substructure_save_result_lineEdit_file")
-        self.grid_file.addWidget(self.substructure_save_result_lineEdit_file, 6, 1, 1, 1)
-
-        self.substructure_save_result_checkBox_file = QtWidgets.QCheckBox(self.gridLayoutWidget_4)
-        self.substructure_save_result_checkBox_file.setText("")
-        self.substructure_save_result_checkBox_file.setObjectName("substructure_save_result_checkBox_file")
-        self.grid_file.addWidget(self.substructure_save_result_checkBox_file, 6, 2, 1, 1)
-        self.substructure_save_result_checkBox_file.stateChanged.connect(self.substructure_file_checkbox_handler)
-
-        # Substructure Feature Tab -> User Tab
-        self.user_tab = QtWidgets.QWidget()
-        self.user_tab.setObjectName("user_tab")
-        self.tabWidget.addTab(self.user_tab, "")
-
-        self.gridLayoutWidget_5 = QtWidgets.QWidget(self.user_tab)
-        self.gridLayoutWidget_5.setGeometry(QtCore.QRect(0, 3, 421, 238))
-        self.gridLayoutWidget_5.setObjectName("gridLayoutWidget_5")
-
-        self.grid_user = QtWidgets.QGridLayout(self.gridLayoutWidget_5)
-        self.grid_user.setContentsMargins(0, 0, 0, 0)
-        self.grid_user.setObjectName("grid_user")
-
-        self.label_packet_eq_d_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
-        self.label_packet_eq_d_user.setObjectName("label_packet_eq_d_user")
-        self.grid_user.addWidget(self.label_packet_eq_d_user, 0, 0, 1, 1)
-
-        self.substructure_packet_eq_d_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
-        self.substructure_packet_eq_d_SpinBox_user.setEnabled(True)
-        self.substructure_packet_eq_d_SpinBox_user.setMinimum(2.0)
-        self.substructure_packet_eq_d_SpinBox_user.setSingleStep(0.1)
-        self.substructure_packet_eq_d_SpinBox_user.setObjectName("substructure_packet_eq_d_SpinBox_user")
-        self.grid_user.addWidget(self.substructure_packet_eq_d_SpinBox_user, 0, 1, 1, 1)
-
-        self.label_packet_size_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
-        self.label_packet_size_user.setObjectName("label_packet_size_user")
-        self.grid_user.addWidget(self.label_packet_size_user, 1, 0, 1, 1)
-
-        self.substructure_packet_size_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
-        self.substructure_packet_size_SpinBox_user.setEnabled(False)
-        self.substructure_packet_size_SpinBox_user.setMinimum(0.01)
-        self.substructure_packet_size_SpinBox_user.setSingleStep(0.01)
-        self.substructure_packet_size_SpinBox_user.setObjectName("substructure_packet_size_SpinBox_user")
-        self.grid_user.addWidget(self.substructure_packet_size_SpinBox_user, 1, 1, 1, 1)
-
-        self.substructure_packet_size_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
-        self.substructure_packet_size_checkBox_user.setText("")
-        self.substructure_packet_size_checkBox_user.setObjectName("substructure_packet_size_checkBox_user")
-        self.grid_user.addWidget(self.substructure_packet_size_checkBox_user, 1, 2, 1, 1)
-        self.substructure_packet_size_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
-
-        self.label_circularity_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
-        self.label_circularity_user.setObjectName("label_circularity_user")
-        self.grid_user.addWidget(self.label_circularity_user, 2, 0, 1, 1)
-
-        self.substructure_circularity_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
-        self.substructure_circularity_SpinBox_user.setEnabled(False)
-        self.substructure_circularity_SpinBox_user.setValue(1.0)
-        self.substructure_circularity_SpinBox_user.setSingleStep(0.1)
-        self.substructure_circularity_SpinBox_user.setObjectName("substructure_circularity_SpinBox_user")
-        self.grid_user.addWidget(self.substructure_circularity_SpinBox_user, 2, 1, 1, 1)
-
-        self.substructure_circularity_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
-        self.substructure_circularity_checkBox_user.setText("")
-        self.substructure_circularity_checkBox_user.setObjectName("substructure_circularity_checkBox_user")
-        self.grid_user.addWidget(self.substructure_circularity_checkBox_user, 2, 2, 1, 1)
-        self.substructure_circularity_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
-
-        self.label_block_thickness_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
-        self.label_block_thickness_user.setObjectName("label_block_thickness_user")
-        self.grid_user.addWidget(self.label_block_thickness_user, 3, 0, 1, 1)
-
-        self.substructure_block_thickness_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
-        self.substructure_block_thickness_SpinBox_user.setEnabled(True)
-        self.substructure_block_thickness_SpinBox_user.setMinimum(0.50)
-        self.substructure_block_thickness_SpinBox_user.setSingleStep(0.1)
-        self.substructure_block_thickness_SpinBox_user.setObjectName("substructure_block_thickness_SpinBox_user")
-        self.grid_user.addWidget(self.substructure_block_thickness_SpinBox_user, 3, 1, 1, 1)
-
-        self.label_decreasing_fact_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
-        self.label_decreasing_fact_user.setObjectName("label_decreasing_fact_user")
-        self.grid_user.addWidget(self.label_decreasing_fact_user, 4, 0, 1, 1)
-
-        self.substructure_decreasing_fact_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
-        self.substructure_decreasing_fact_SpinBox_user.setEnabled(False)
-        self.substructure_decreasing_fact_SpinBox_user.setValue(0.95)
-        self.substructure_decreasing_fact_SpinBox_user.setSingleStep(0.01)
-        self.substructure_decreasing_fact_SpinBox_user.setObjectName("substructure_decreasing_fact_SpinBox_user")
-        self.grid_user.addWidget(self.substructure_decreasing_fact_SpinBox_user, 4, 1, 1, 1)
-
-        self.substructure_decreasing_fact_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
-        self.substructure_decreasing_fact_checkBox_user.setText("")
-        self.substructure_decreasing_fact_checkBox_user.setObjectName("substructure_decreasing_fact_checkBox_user")
-        self.grid_user.addWidget(self.substructure_decreasing_fact_checkBox_user, 4, 2, 1, 1)
-        self.substructure_decreasing_fact_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
-
-        self.label_block_thickness_sigma_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
-        self.label_block_thickness_sigma_user.setObjectName("label_block_thickness_sigma_user")
-        self.grid_user.addWidget(self.label_block_thickness_sigma_user, 5, 0, 1, 1)
-
-        self.substructure_block_thickness_sigma_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
-        self.substructure_block_thickness_sigma_SpinBox_user.setEnabled(False)
-        self.substructure_block_thickness_sigma_SpinBox_user.setMinimum(0.01)
-        self.substructure_block_thickness_sigma_SpinBox_user.setSingleStep(0.01)
-        self.substructure_block_thickness_sigma_SpinBox_user.setObjectName("substructure_block_thickness_sigma_SpinBox_user")
-        self.grid_user.addWidget(self.substructure_block_thickness_sigma_SpinBox_user, 5, 1, 1, 1)
-
-        self.substructure_block_thickness_sigma_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
-        self.substructure_block_thickness_sigma_checkBox_user.setText("")
-        self.substructure_block_thickness_sigma_checkBox_user.setObjectName("substructure_block_thickness_sigma_checkBox_user")
-        self.grid_user.addWidget(self.substructure_block_thickness_sigma_checkBox_user, 5, 2, 1, 1)
-        self.substructure_block_thickness_sigma_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
-
-        self.label_min_block_thickness_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
-        self.label_min_block_thickness_user.setObjectName("label_min_block_thickness_user")
-        self.grid_user.addWidget(self.label_min_block_thickness_user, 6, 0, 1, 1)
-
-        self.substructure_min_block_thickness_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
-        self.substructure_min_block_thickness_SpinBox_user.setEnabled(False)
-        self.substructure_min_block_thickness_SpinBox_user.setValue(0.0)
-        self.substructure_min_block_thickness_SpinBox_user.setSingleStep(0.1)
-        self.substructure_min_block_thickness_SpinBox_user.setObjectName("substructure_min_block_thickness_SpinBox_user")
-        self.grid_user.addWidget(self.substructure_min_block_thickness_SpinBox_user, 6, 1, 1, 1)
-
-        self.substructure_min_block_thickness_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
-        self.substructure_min_block_thickness_checkBox_user.setText("")
-        self.substructure_min_block_thickness_checkBox_user.setObjectName("substructure_min_block_thickness_checkBox_user")
-        self.grid_user.addWidget(self.substructure_min_block_thickness_checkBox_user, 6, 2, 1, 1)
-        self.substructure_min_block_thickness_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
-
-        self.label_max_block_thickness_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
-        self.label_max_block_thickness_user.setObjectName("label_max_block_thickness_user")
-        self.grid_user.addWidget(self.label_max_block_thickness_user, 7, 0, 1, 1)
-
-        self.substructure_max_block_thickness_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
-        self.substructure_max_block_thickness_SpinBox_user.setEnabled(False)
-        self.substructure_max_block_thickness_SpinBox_user.setValue(1.0)
-        self.substructure_max_block_thickness_SpinBox_user.setSingleStep(0.1)
-        self.substructure_max_block_thickness_SpinBox_user.setObjectName("substructure_max_block_thickness_SpinBox_user")
-        self.grid_user.addWidget(self.substructure_max_block_thickness_SpinBox_user, 7, 1, 1, 1)
-
-        self.substructure_max_block_thickness_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
-        self.substructure_max_block_thickness_checkBox_user.setText("")
-        self.substructure_max_block_thickness_checkBox_user.setObjectName("substructure_max_block_thickness_checkBox_user")
-        self.grid_user.addWidget(self.substructure_max_block_thickness_checkBox_user, 7, 2, 1, 1)
-        self.substructure_max_block_thickness_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
-
-        self.label_save_result_user = QtWidgets.QLabel(self.gridLayoutWidget_5)
-        self.label_save_result_user.setObjectName("label_save_result_user")
-        self.grid_user.addWidget(self.label_save_result_user, 8, 0, 1, 1)
-
-        self.substructure_save_result_lineEdit_user = QtWidgets.QLineEdit(self.gridLayoutWidget_5)
-        self.substructure_save_result_lineEdit_user.setEnabled(True)
-        self.substructure_save_result_lineEdit_user.setText('substructure_data.csv')
-        self.substructure_save_result_lineEdit_user.setObjectName("substructure_save_result_lineEdit_user")
-        self.grid_user.addWidget(self.substructure_save_result_lineEdit_user, 8, 1, 1, 1)
-
-        self.substructure_save_result_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
-        self.substructure_save_result_checkBox_user.setText("")
-        self.substructure_save_result_checkBox_user.setChecked(True)
-        self.substructure_save_result_checkBox_user.setObjectName("substructure_save_result_checkBox_user")
-        self.grid_user.addWidget(self.substructure_save_result_checkBox_user, 8, 2, 1, 1)
-        self.substructure_save_result_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
-
         # Status Tab
         self.status_tab = QtWidgets.QWidget()
         self.InfoPages.addTab(self.status_tab, "")
@@ -421,6 +53,546 @@ class Ui_MainWindow(object):
         self.verticalScrollBar.setGeometry(QtCore.QRect(790, 0, 20, 336))
         self.verticalScrollBar.setOrientation(QtCore.Qt.Vertical)
         self.verticalScrollBar.setObjectName("verticalScrollBar")
+
+        # Banding Feature Tab
+        self.banding_tab = QtWidgets.QWidget()
+        self.banding_tab.setObjectName("banding_tab")
+        self.InfoPages.addTab(self.banding_tab, "")
+        self.banding_tab.setEnabled(False)
+
+        self.gridLayoutWidget_2 = QtWidgets.QWidget(self.banding_tab)
+        self.gridLayoutWidget_2.setGeometry(QtCore.QRect(20, 10, 230, 120))
+        self.gridLayoutWidget_2.setObjectName("gridLayoutWidget_2")
+
+        self.gridLayout_3 = QtWidgets.QGridLayout(self.gridLayoutWidget_2)
+        self.gridLayout_3.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_3.setObjectName("gridLayout_3")
+
+        self.NoBand_label = QtWidgets.QLabel(self.gridLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.NoBand_label.sizePolicy().hasHeightForWidth())
+        self.NoBand_label.setSizePolicy(sizePolicy)
+        self.NoBand_label.setObjectName("NoBand_label")
+        self.gridLayout_3.addWidget(self.NoBand_label, 0, 0, 1, 2)
+
+        self.NoBandsSpinBox = QtWidgets.QSpinBox(self.gridLayoutWidget_2)
+        self.NoBandsSpinBox.setMinimum(1)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.NoBandsSpinBox.sizePolicy().hasHeightForWidth())
+        self.NoBandsSpinBox.setSizePolicy(sizePolicy)
+        self.NoBandsSpinBox.setObjectName("NoBandsSpinBox")
+        self.gridLayout_3.addWidget(self.NoBandsSpinBox, 0, 2, 1, 1)
+
+        self.band_lower_label = QtWidgets.QLabel(self.gridLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.band_lower_label.sizePolicy().hasHeightForWidth())
+        self.band_lower_label.setSizePolicy(sizePolicy)
+        self.band_lower_label.setObjectName("band_lower_label")
+        self.gridLayout_3.addWidget(self.band_lower_label, 1, 0, 1, 2)
+
+        self.band_lowerSpinBox = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.band_lowerSpinBox.sizePolicy().hasHeightForWidth())
+        self.band_lowerSpinBox.setSizePolicy(sizePolicy)
+        self.band_lowerSpinBox.setObjectName("band_lowerSpinBox")
+        self.gridLayout_3.addWidget(self.band_lowerSpinBox, 1, 2, 1, 1)
+        self.band_lowerSpinBox.valueChanged.connect(self.bandwidth_handler)
+
+
+        self.band_upper_label = QtWidgets.QLabel(self.gridLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.band_upper_label.sizePolicy().hasHeightForWidth())
+        self.band_upper_label.setSizePolicy(sizePolicy)
+        self.band_upper_label.setObjectName("band_upper_label")
+        self.gridLayout_3.addWidget(self.band_upper_label, 2, 0, 1, 2)
+
+        self.band_upperSpinBox = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.band_upperSpinBox.sizePolicy().hasHeightForWidth())
+        self.band_upperSpinBox.setSizePolicy(sizePolicy)
+        self.band_upperSpinBox.setObjectName("band_upperSpinBox")
+        self.gridLayout_3.addWidget(self.band_upperSpinBox, 2, 2, 1, 1)
+        self.band_upperSpinBox.valueChanged.connect(self.bandwidth_handler)
+
+        self.band_file_label = QtWidgets.QLabel(self.gridLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.band_file_label.sizePolicy().hasHeightForWidth())
+
+        self.band_file_label.setSizePolicy(sizePolicy)
+        self.band_file_label.setObjectName("band_file_label")
+        self.gridLayout_3.addWidget(self.band_file_label, 3, 0, 1, 1)
+
+        self.lineEditBand = QtWidgets.QLineEdit(self.gridLayoutWidget_2)
+        self.lineEditBand.setObjectName("lineEditBand")
+        self.gridLayout_3.addWidget(self.lineEditBand, 3, 2, 1, 1)
+
+        self.fileBrowserBand = QtWidgets.QPushButton(self.gridLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.fileBrowserBand.sizePolicy().hasHeightForWidth())
+        self.fileBrowserBand.setSizePolicy(sizePolicy)
+        self.fileBrowserBand.setText("")
+        self.fileBrowserBand.setIcon(icon)
+        self.fileBrowserBand.setObjectName("fileBrowserBand")
+        self.gridLayout_3.addWidget(self.fileBrowserBand, 3, 3, 1, 1)
+        self.fileBrowserBand.clicked.connect(self.button_handler)
+
+        # Inclusion Feature Tab
+        self.inclusion_tab = QtWidgets.QWidget()
+        self.inclusion_tab.setObjectName("inclusion_tab")
+        self.InfoPages.addTab(self.inclusion_tab, "")
+        self.inclusion_tab.setEnabled(False)
+
+        self.gridLayoutWidget_3 = QtWidgets.QWidget(self.inclusion_tab)
+        self.gridLayoutWidget_3.setGeometry(QtCore.QRect(20, 10, 230, 120))
+        self.gridLayoutWidget_3.setObjectName("gridLayoutWidget_3")
+
+        self.gridLayout_4 = QtWidgets.QGridLayout(self.gridLayoutWidget_3)
+        self.gridLayout_4.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_4.setObjectName("gridLayout_4")
+
+        self.inclusion_file_label = QtWidgets.QLabel(self.gridLayoutWidget_3)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.inclusion_file_label.sizePolicy().hasHeightForWidth())
+
+        self.inclusion_file_label.setSizePolicy(sizePolicy)
+        self.inclusion_file_label.setObjectName("inclusion_file_label")
+        self.gridLayout_4.addWidget(self.inclusion_file_label, 0, 0, 1, 2)
+
+        self.lineEditInclusion = QtWidgets.QLineEdit(self.gridLayoutWidget_3)
+        self.lineEditInclusion.setObjectName("lineEditInclusion")
+        self.gridLayout_4.addWidget(self.lineEditInclusion, 0, 2, 1, 1)
+
+        self.fileBrowserInclusion = QtWidgets.QPushButton(self.gridLayoutWidget_3)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.fileBrowserInclusion.sizePolicy().hasHeightForWidth())
+        self.fileBrowserInclusion.setSizePolicy(sizePolicy)
+        self.fileBrowserInclusion.setText("")
+        self.fileBrowserInclusion.setIcon(icon)
+        self.fileBrowserInclusion.setObjectName("fileBrowserInclusion")
+        self.gridLayout_4.addWidget(self.fileBrowserInclusion, 0, 3, 1, 1)
+        self.fileBrowserInclusion.clicked.connect(self.button_handler)
+
+        self.inclusion_ratio_label = QtWidgets.QLabel(self.gridLayoutWidget_3)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.inclusion_ratio_label.sizePolicy().hasHeightForWidth())
+
+        self.inclusion_ratio_label.setSizePolicy(sizePolicy)
+        self.inclusion_ratio_label.setObjectName("inclusion_ratio_label")
+        self.gridLayout_4.addWidget(self.inclusion_ratio_label, 1, 0, 1, 2)
+
+        self.inclusionSpinBox = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_3)
+        self.inclusionSpinBox.setMinimum(0.01)
+        self.lineEditInclusion.setObjectName("inclusionSpinBox")
+        self.gridLayout_4.addWidget(self.inclusionSpinBox, 1, 2, 1, 1)
+
+        # Substructure Feature Tab
+        self.substructure = QtWidgets.QWidget()
+        self.substructure.setObjectName("substructure")
+        self.InfoPages.addTab(self.substructure, "")
+        self.substructure.setEnabled(False)
+
+        self.gridLayoutWidget_4 = QtWidgets.QWidget(self.substructure)
+        self.gridLayoutWidget_4.setGeometry(QtCore.QRect(10, 0, 240, 21))
+        self.gridLayoutWidget_4.setObjectName("gridLayoutWidget_4")
+
+        self.grid_mode = QtWidgets.QGridLayout(self.gridLayoutWidget_4)
+        self.grid_mode.setContentsMargins(0, 0, 0, 0)
+        self.grid_mode.setObjectName("grid_mode")
+
+        self.substructure_filemode_radio = QtWidgets.QRadioButton(self.gridLayoutWidget_4)
+        self.substructure_filemode_radio.setChecked(True)
+        self.substructure_filemode_radio.setObjectName("substructure_filemode_radio")
+        self.grid_mode.addWidget(self.substructure_filemode_radio, 0, 0, 1, 2)
+        self.substructure_filemode_radio.toggled.connect(self.widget_handler)
+
+        self.substructure_user_mode_radio = QtWidgets.QRadioButton(self.gridLayoutWidget_4)
+        self.substructure_user_mode_radio.setChecked(False)
+        self.substructure_user_mode_radio.setObjectName("substructure_user_mode_radio")
+        self.grid_mode.addWidget(self.substructure_user_mode_radio, 0, 2, 1, 2)
+        self.substructure_user_mode_radio.toggled.connect(self.widget_handler)
+
+        self.tabWidget = QtWidgets.QTabWidget(self.substructure)
+        self.tabWidget.setGeometry(QtCore.QRect(6, 29, 721, 461))
+        self.tabWidget.setObjectName("tabWidget")
+
+        # Substructure Feature Tab -> File Tab
+        self.file_tab = QtWidgets.QWidget()
+        self.tabWidget.addTab(self.file_tab, "")
+        self.file_tab.setObjectName("file_tab")
+
+        self.gridLayoutWidget_5 = QtWidgets.QWidget(self.file_tab)
+        self.gridLayoutWidget_5.setGeometry(QtCore.QRect(0, 0, 421, 201))
+        self.gridLayoutWidget_5.setObjectName("gridLayoutWidget_5")
+
+        self.grid_file = QtWidgets.QGridLayout(self.gridLayoutWidget_5)
+        self.grid_file.setContentsMargins(0, 0, 0, 0)
+        self.grid_file.setObjectName("grid_file")
+
+        self.label_substructure_file = QtWidgets.QLabel(self.gridLayoutWidget_5)
+        self.label_substructure_file.setObjectName("label_substructure_file")
+        self.grid_file.addWidget(self.label_substructure_file, 0, 0, 1, 1)
+
+        self.substructure_file_lineEdit_file = QtWidgets.QLineEdit(self.gridLayoutWidget_5)
+        self.substructure_file_lineEdit_file.setObjectName("substructure_file_lineEdit_file")
+        self.grid_file.addWidget(self.substructure_file_lineEdit_file, 0, 1, 1, 1)
+
+        self.substructure_file_browser_file = QtWidgets.QPushButton(self.gridLayoutWidget_5)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.substructure_file_browser_file.sizePolicy().hasHeightForWidth())
+        self.substructure_file_browser_file.setSizePolicy(sizePolicy)
+        self.substructure_file_browser_file.setText("")
+
+        self.substructure_file_browser_file.setIcon(icon)
+        self.substructure_file_browser_file.setObjectName("substructure_file_browser_file")
+        self.grid_file.addWidget(self.substructure_file_browser_file, 0, 2, 1, 1)
+        self.substructure_file_browser_file.clicked.connect(self.button_handler)
+
+        self.label_packet_size_file = QtWidgets.QLabel(self.gridLayoutWidget_5)
+        self.label_packet_size_file.setObjectName("label_packet_size_file")
+        self.grid_file.addWidget(self.label_packet_size_file, 1, 0, 1, 1)
+
+        self.substructure_packet_size_SpinBox_file = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
+        self.substructure_packet_size_SpinBox_file.setEnabled(False)
+        self.substructure_packet_size_SpinBox_file.setMinimum(0.01)
+        self.substructure_packet_size_SpinBox_file.setSingleStep(0.01)
+        self.substructure_packet_size_SpinBox_file.setObjectName("substructure_packet_size_SpinBox")
+        self.grid_file.addWidget(self.substructure_packet_size_SpinBox_file, 1, 1, 1, 1)
+
+        self.substructure_packet_size_checkBox_file = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
+        self.substructure_packet_size_checkBox_file.setText("")
+        self.substructure_packet_size_checkBox_file.setObjectName("substructure_packet_size_checkBox_file")
+        self.grid_file.addWidget(self.substructure_packet_size_checkBox_file, 1, 2, 1, 1)
+        self.substructure_packet_size_checkBox_file.stateChanged.connect(self.substructure_file_checkbox_handler)
+
+        self.label_block_thicknes_file = QtWidgets.QLabel(self.gridLayoutWidget_5)
+        self.label_block_thicknes_file.setObjectName("label_block_thicknes_file")
+        self.grid_file.addWidget(self.label_block_thicknes_file, 2, 0, 1, 1)
+
+        self.substructure_block_thickness_SpinBox_file = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
+        self.substructure_block_thickness_SpinBox_file.setEnabled(False)
+        self.substructure_block_thickness_SpinBox_file.setMinimum(0.01)
+        self.substructure_block_thickness_SpinBox_file.setSingleStep(0.01)
+        self.substructure_block_thickness_SpinBox_file.setObjectName("substructure_block_thickness_SpinBox_file")
+        self.grid_file.addWidget(self.substructure_block_thickness_SpinBox_file, 2, 1, 1, 1)
+
+        self.substructure_block_thickness_checkBox_file = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
+        self.substructure_block_thickness_checkBox_file.setText("")
+        self.substructure_block_thickness_checkBox_file.setObjectName("substructure_block_thickness_checkBox_file")
+        self.grid_file.addWidget(self.substructure_block_thickness_checkBox_file, 2, 2, 1, 1)
+        self.substructure_block_thickness_checkBox_file.stateChanged.connect(self.substructure_file_checkbox_handler)
+
+        self.label_decreasing_fact_file = QtWidgets.QLabel(self.gridLayoutWidget_5)
+        self.label_decreasing_fact_file.setObjectName("label_decreasing_fact_file")
+        self.grid_file.addWidget(self.label_decreasing_fact_file, 3, 0, 1, 1)
+
+        self.substructure_decreasing_fact_SpinBox_file = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
+        self.substructure_decreasing_fact_SpinBox_file.setEnabled(False)
+        self.substructure_decreasing_fact_SpinBox_file.setValue(0.95)
+        self.substructure_decreasing_fact_SpinBox_file.setSingleStep(0.01)
+        self.substructure_decreasing_fact_SpinBox_file.setObjectName("substructure_decreasing_fact_SpinBox_file")
+        self.grid_file.addWidget(self.substructure_decreasing_fact_SpinBox_file, 3, 1, 1, 1)
+
+        self.substructure_decreasing_fact_checkBox_file = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
+        self.substructure_decreasing_fact_checkBox_file.setText("")
+        self.substructure_decreasing_fact_checkBox_file.setObjectName("substructure_decreasing_fact_checkBox_file")
+        self.grid_file.addWidget(self.substructure_decreasing_fact_checkBox_file, 3, 2, 1, 1)
+        self.substructure_decreasing_fact_checkBox_file.stateChanged.connect(self.substructure_file_checkbox_handler)
+
+        self.label_min_block_thickness_file = QtWidgets.QLabel(self.gridLayoutWidget_5)
+        self.label_min_block_thickness_file.setObjectName("label_min_block_thickness_file")
+        self.grid_file.addWidget(self.label_min_block_thickness_file, 4, 0, 1, 1)
+
+        self.substructure_min_block_thickness_SpinBox_file = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
+        self.substructure_min_block_thickness_SpinBox_file.setEnabled(False)
+        self.substructure_min_block_thickness_SpinBox_file.setValue(0.0)
+        self.substructure_min_block_thickness_SpinBox_file.setSingleStep(0.1)
+        self.substructure_min_block_thickness_SpinBox_file.setObjectName("substructure_min_block_thickness_SpinBox_file")
+        self.grid_file.addWidget(self.substructure_min_block_thickness_SpinBox_file, 4, 1, 1, 1)
+
+        self.substructure_min_block_thickness_checkBox_file = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
+        self.substructure_min_block_thickness_checkBox_file.setText("")
+        self.substructure_min_block_thickness_checkBox_file.setObjectName("substructure_min_block_thickness_checkBox_file")
+        self.grid_file.addWidget(self.substructure_min_block_thickness_checkBox_file, 4, 2, 1, 1)
+        self.substructure_min_block_thickness_checkBox_file.stateChanged.connect(self.substructure_file_checkbox_handler)
+
+        self.label_max_block_thickness_file = QtWidgets.QLabel(self.gridLayoutWidget_5)
+        self.label_max_block_thickness_file.setObjectName("label_max_block_thickness_file")
+        self.grid_file.addWidget(self.label_max_block_thickness_file, 5, 0, 1, 1)
+
+        self.substructure_max_block_thickness_SpinBox_file = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_5)
+        self.substructure_max_block_thickness_SpinBox_file.setEnabled(False)
+        self.substructure_max_block_thickness_SpinBox_file.setValue(1.0)
+        self.substructure_max_block_thickness_SpinBox_file.setSingleStep(0.1)
+        self.substructure_max_block_thickness_SpinBox_file.setObjectName("substructure_max_block_thickness_SpinBox_file")
+        self.grid_file.addWidget(self.substructure_max_block_thickness_SpinBox_file, 5, 1, 1, 1)
+
+        self.substructure_max_block_thickness_checkBox_file = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
+        self.substructure_max_block_thickness_checkBox_file.setText("")
+        self.substructure_max_block_thickness_checkBox_file.setObjectName("substructure_max_block_thickness_checkBox_file")
+        self.grid_file.addWidget(self.substructure_max_block_thickness_checkBox_file, 5, 2, 1, 1)
+        self.substructure_max_block_thickness_checkBox_file.stateChanged.connect(self.substructure_file_checkbox_handler)
+
+        self.label_save_result_file = QtWidgets.QLabel(self.gridLayoutWidget_5)
+        self.label_save_result_file.setObjectName("label_save_result_file")
+        self.grid_file.addWidget(self.label_save_result_file, 6, 0, 1, 1)
+
+        self.substructure_save_result_lineEdit_file = QtWidgets.QLineEdit(self.gridLayoutWidget_5)
+        self.substructure_save_result_lineEdit_file.setEnabled(False)
+        self.substructure_save_result_lineEdit_file.setText('substructure_data.csv')
+        self.substructure_save_result_lineEdit_file.setObjectName("substructure_save_result_lineEdit_file")
+        self.grid_file.addWidget(self.substructure_save_result_lineEdit_file, 6, 1, 1, 1)
+
+        self.substructure_save_result_checkBox_file = QtWidgets.QCheckBox(self.gridLayoutWidget_5)
+        self.substructure_save_result_checkBox_file.setText("")
+        self.substructure_save_result_checkBox_file.setObjectName("substructure_save_result_checkBox_file")
+        self.grid_file.addWidget(self.substructure_save_result_checkBox_file, 6, 2, 1, 1)
+        self.substructure_save_result_checkBox_file.stateChanged.connect(self.substructure_file_checkbox_handler)
+
+        # Substructure Feature Tab -> User Tab
+        self.user_tab = QtWidgets.QWidget()
+        self.user_tab.setObjectName("user_tab")
+        self.tabWidget.addTab(self.user_tab, "")
+
+        self.gridLayoutWidget_6 = QtWidgets.QWidget(self.user_tab)
+        self.gridLayoutWidget_6.setGeometry(QtCore.QRect(0, 3, 421, 238))
+        self.gridLayoutWidget_6.setObjectName("gridLayoutWidget_6")
+
+        self.grid_user = QtWidgets.QGridLayout(self.gridLayoutWidget_6)
+        self.grid_user.setContentsMargins(0, 0, 0, 0)
+        self.grid_user.setObjectName("grid_user")
+
+        self.label_packet_eq_d_user = QtWidgets.QLabel(self.gridLayoutWidget_6)
+        self.label_packet_eq_d_user.setObjectName("label_packet_eq_d_user")
+        self.grid_user.addWidget(self.label_packet_eq_d_user, 0, 0, 1, 1)
+
+        self.substructure_packet_eq_d_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_6)
+        self.substructure_packet_eq_d_SpinBox_user.setEnabled(True)
+        self.substructure_packet_eq_d_SpinBox_user.setMinimum(2.0)
+        self.substructure_packet_eq_d_SpinBox_user.setSingleStep(0.1)
+        self.substructure_packet_eq_d_SpinBox_user.setObjectName("substructure_packet_eq_d_SpinBox_user")
+        self.grid_user.addWidget(self.substructure_packet_eq_d_SpinBox_user, 0, 1, 1, 1)
+
+        self.label_packet_size_user = QtWidgets.QLabel(self.gridLayoutWidget_6)
+        self.label_packet_size_user.setObjectName("label_packet_size_user")
+        self.grid_user.addWidget(self.label_packet_size_user, 1, 0, 1, 1)
+
+        self.substructure_packet_size_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_6)
+        self.substructure_packet_size_SpinBox_user.setEnabled(False)
+        self.substructure_packet_size_SpinBox_user.setMinimum(0.01)
+        self.substructure_packet_size_SpinBox_user.setSingleStep(0.01)
+        self.substructure_packet_size_SpinBox_user.setObjectName("substructure_packet_size_SpinBox_user")
+        self.grid_user.addWidget(self.substructure_packet_size_SpinBox_user, 1, 1, 1, 1)
+
+        self.substructure_packet_size_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_6)
+        self.substructure_packet_size_checkBox_user.setText("")
+        self.substructure_packet_size_checkBox_user.setObjectName("substructure_packet_size_checkBox_user")
+        self.grid_user.addWidget(self.substructure_packet_size_checkBox_user, 1, 2, 1, 1)
+        self.substructure_packet_size_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
+
+        self.label_circularity_user = QtWidgets.QLabel(self.gridLayoutWidget_6)
+        self.label_circularity_user.setObjectName("label_circularity_user")
+        self.grid_user.addWidget(self.label_circularity_user, 2, 0, 1, 1)
+
+        self.substructure_circularity_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_6)
+        self.substructure_circularity_SpinBox_user.setEnabled(False)
+        self.substructure_circularity_SpinBox_user.setValue(1.0)
+        self.substructure_circularity_SpinBox_user.setSingleStep(0.1)
+        self.substructure_circularity_SpinBox_user.setObjectName("substructure_circularity_SpinBox_user")
+        self.grid_user.addWidget(self.substructure_circularity_SpinBox_user, 2, 1, 1, 1)
+
+        self.substructure_circularity_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_6)
+        self.substructure_circularity_checkBox_user.setText("")
+        self.substructure_circularity_checkBox_user.setObjectName("substructure_circularity_checkBox_user")
+        self.grid_user.addWidget(self.substructure_circularity_checkBox_user, 2, 2, 1, 1)
+        self.substructure_circularity_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
+
+        self.label_block_thickness_user = QtWidgets.QLabel(self.gridLayoutWidget_6)
+        self.label_block_thickness_user.setObjectName("label_block_thickness_user")
+        self.grid_user.addWidget(self.label_block_thickness_user, 3, 0, 1, 1)
+
+        self.substructure_block_thickness_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_6)
+        self.substructure_block_thickness_SpinBox_user.setEnabled(True)
+        self.substructure_block_thickness_SpinBox_user.setMinimum(0.50)
+        self.substructure_block_thickness_SpinBox_user.setSingleStep(0.1)
+        self.substructure_block_thickness_SpinBox_user.setObjectName("substructure_block_thickness_SpinBox_user")
+        self.grid_user.addWidget(self.substructure_block_thickness_SpinBox_user, 3, 1, 1, 1)
+
+        self.label_decreasing_fact_user = QtWidgets.QLabel(self.gridLayoutWidget_6)
+        self.label_decreasing_fact_user.setObjectName("label_decreasing_fact_user")
+        self.grid_user.addWidget(self.label_decreasing_fact_user, 4, 0, 1, 1)
+
+        self.substructure_decreasing_fact_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_6)
+        self.substructure_decreasing_fact_SpinBox_user.setEnabled(False)
+        self.substructure_decreasing_fact_SpinBox_user.setValue(0.95)
+        self.substructure_decreasing_fact_SpinBox_user.setSingleStep(0.01)
+        self.substructure_decreasing_fact_SpinBox_user.setObjectName("substructure_decreasing_fact_SpinBox_user")
+        self.grid_user.addWidget(self.substructure_decreasing_fact_SpinBox_user, 4, 1, 1, 1)
+
+        self.substructure_decreasing_fact_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_6)
+        self.substructure_decreasing_fact_checkBox_user.setText("")
+        self.substructure_decreasing_fact_checkBox_user.setObjectName("substructure_decreasing_fact_checkBox_user")
+        self.grid_user.addWidget(self.substructure_decreasing_fact_checkBox_user, 4, 2, 1, 1)
+        self.substructure_decreasing_fact_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
+
+        self.label_block_thickness_sigma_user = QtWidgets.QLabel(self.gridLayoutWidget_6)
+        self.label_block_thickness_sigma_user.setObjectName("label_block_thickness_sigma_user")
+        self.grid_user.addWidget(self.label_block_thickness_sigma_user, 5, 0, 1, 1)
+
+        self.substructure_block_thickness_sigma_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_6)
+        self.substructure_block_thickness_sigma_SpinBox_user.setEnabled(False)
+        self.substructure_block_thickness_sigma_SpinBox_user.setMinimum(0.01)
+        self.substructure_block_thickness_sigma_SpinBox_user.setSingleStep(0.01)
+        self.substructure_block_thickness_sigma_SpinBox_user.setObjectName("substructure_block_thickness_sigma_SpinBox_user")
+        self.grid_user.addWidget(self.substructure_block_thickness_sigma_SpinBox_user, 5, 1, 1, 1)
+
+        self.substructure_block_thickness_sigma_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_6)
+        self.substructure_block_thickness_sigma_checkBox_user.setText("")
+        self.substructure_block_thickness_sigma_checkBox_user.setObjectName("substructure_block_thickness_sigma_checkBox_user")
+        self.grid_user.addWidget(self.substructure_block_thickness_sigma_checkBox_user, 5, 2, 1, 1)
+        self.substructure_block_thickness_sigma_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
+
+        self.label_min_block_thickness_user = QtWidgets.QLabel(self.gridLayoutWidget_6)
+        self.label_min_block_thickness_user.setObjectName("label_min_block_thickness_user")
+        self.grid_user.addWidget(self.label_min_block_thickness_user, 6, 0, 1, 1)
+
+        self.substructure_min_block_thickness_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_6)
+        self.substructure_min_block_thickness_SpinBox_user.setEnabled(False)
+        self.substructure_min_block_thickness_SpinBox_user.setValue(0.0)
+        self.substructure_min_block_thickness_SpinBox_user.setSingleStep(0.1)
+        self.substructure_min_block_thickness_SpinBox_user.setObjectName("substructure_min_block_thickness_SpinBox_user")
+        self.grid_user.addWidget(self.substructure_min_block_thickness_SpinBox_user, 6, 1, 1, 1)
+
+        self.substructure_min_block_thickness_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_6)
+        self.substructure_min_block_thickness_checkBox_user.setText("")
+        self.substructure_min_block_thickness_checkBox_user.setObjectName("substructure_min_block_thickness_checkBox_user")
+        self.grid_user.addWidget(self.substructure_min_block_thickness_checkBox_user, 6, 2, 1, 1)
+        self.substructure_min_block_thickness_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
+
+        self.label_max_block_thickness_user = QtWidgets.QLabel(self.gridLayoutWidget_6)
+        self.label_max_block_thickness_user.setObjectName("label_max_block_thickness_user")
+        self.grid_user.addWidget(self.label_max_block_thickness_user, 7, 0, 1, 1)
+
+        self.substructure_max_block_thickness_SpinBox_user = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_6)
+        self.substructure_max_block_thickness_SpinBox_user.setEnabled(False)
+        self.substructure_max_block_thickness_SpinBox_user.setValue(1.0)
+        self.substructure_max_block_thickness_SpinBox_user.setSingleStep(0.1)
+        self.substructure_max_block_thickness_SpinBox_user.setObjectName("substructure_max_block_thickness_SpinBox_user")
+        self.grid_user.addWidget(self.substructure_max_block_thickness_SpinBox_user, 7, 1, 1, 1)
+
+        self.substructure_max_block_thickness_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_6)
+        self.substructure_max_block_thickness_checkBox_user.setText("")
+        self.substructure_max_block_thickness_checkBox_user.setObjectName("substructure_max_block_thickness_checkBox_user")
+        self.grid_user.addWidget(self.substructure_max_block_thickness_checkBox_user, 7, 2, 1, 1)
+        self.substructure_max_block_thickness_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
+
+        self.label_save_result_user = QtWidgets.QLabel(self.gridLayoutWidget_6)
+        self.label_save_result_user.setObjectName("label_save_result_user")
+        self.grid_user.addWidget(self.label_save_result_user, 8, 0, 1, 1)
+
+        self.substructure_save_result_lineEdit_user = QtWidgets.QLineEdit(self.gridLayoutWidget_6)
+        self.substructure_save_result_lineEdit_user.setEnabled(True)
+        self.substructure_save_result_lineEdit_user.setText('substructure_data.csv')
+        self.substructure_save_result_lineEdit_user.setObjectName("substructure_save_result_lineEdit_user")
+        self.grid_user.addWidget(self.substructure_save_result_lineEdit_user, 8, 1, 1, 1)
+
+        self.substructure_save_result_checkBox_user = QtWidgets.QCheckBox(self.gridLayoutWidget_6)
+        self.substructure_save_result_checkBox_user.setText("")
+        self.substructure_save_result_checkBox_user.setChecked(True)
+        self.substructure_save_result_checkBox_user.setObjectName("substructure_save_result_checkBox_user")
+        self.grid_user.addWidget(self.substructure_save_result_checkBox_user, 8, 2, 1, 1)
+        self.substructure_save_result_checkBox_user.stateChanged.connect(self.substructure_user_checkbox_handler)
+
+        # Visualization Tab
+        self.visualization_tab = QtWidgets.QWidget()
+        self.visualization_tab.setObjectName("visualization_tab")
+        self.InfoPages.addTab(self.visualization_tab, "")
+
+        self.gridLayoutWidget_7 = QtWidgets.QWidget(self.visualization_tab)
+        self.gridLayoutWidget_7.setGeometry(QtCore.QRect(20, 10, 230, 120))
+        self.gridLayoutWidget_7.setObjectName("gridLayoutWidget_7")
+
+        self.gridLayout_6 = QtWidgets.QGridLayout(self.gridLayoutWidget_7)
+        self.gridLayout_6.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_6.setObjectName("gridLayout_6")
+
+        self.visualization_flag_button = QtWidgets.QCheckBox(self.gridLayoutWidget_7)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.visualization_flag_button.sizePolicy().hasHeightForWidth())
+        self.gridLayout_6.addWidget(self.visualization_flag_button, 0, 0, 1, 1)
+
+        self.visualization_flag_label = QtWidgets.QLabel(self.gridLayoutWidget_7)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.visualization_flag_label.sizePolicy().hasHeightForWidth())
+        self.gridLayout_6.addWidget(self.visualization_flag_label, 0, 1, 1, 1)
+
+        self.animation_flag_button = QtWidgets.QCheckBox(self.gridLayoutWidget_7)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.animation_flag_button.sizePolicy().hasHeightForWidth())
+        self.gridLayout_6.addWidget(self.animation_flag_button, 1, 0, 1, 1)
+
+        self.animation_flag_label = QtWidgets.QLabel(self.gridLayoutWidget_7)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.animation_flag_label.sizePolicy().hasHeightForWidth())
+        self.gridLayout_6.addWidget(self.animation_flag_label, 1, 1, 1, 1)
+
+        # Specimen Orientation Tab
+        self.specimen_tab = QtWidgets.QWidget()
+        self.specimen_tab.setObjectName("specimen_tab")
+        self.InfoPages.addTab(self.specimen_tab, "")
+
+        self.gridLayoutWidget_8 = QtWidgets.QWidget(self.specimen_tab)
+        self.gridLayoutWidget_8.setGeometry(QtCore.QRect(20, 10, 300, 120))
+        self.gridLayoutWidget_8.setObjectName("gridLayoutWidget_7")
+
+        self.gridLayout_7 = QtWidgets.QGridLayout(self.gridLayoutWidget_8)
+        self.gridLayout_7.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_7.setObjectName("gridLayout_7")
+
+        self.slope_offset_label = QtWidgets.QLabel(self.gridLayoutWidget_8)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.slope_offset_label.sizePolicy().hasHeightForWidth())
+        self.gridLayout_7.addWidget(self.slope_offset_label, 0, 0, 1, 1)
+
+        self.slope_offset_spinBox = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_8)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.slope_offset_spinBox.sizePolicy().hasHeightForWidth())
+        self.gridLayout_7.addWidget(self.slope_offset_spinBox, 0, 1, 1, 1)
 
         # Log Tab
         self.log_tab = QtWidgets.QWidget()
@@ -501,6 +673,36 @@ class Ui_MainWindow(object):
         self.box_sizeSpinBox.setObjectName("box_sizeSpinBox")
         self.gridLayout.addWidget(self.box_sizeSpinBox, 1, 1, 1, 2)
         self.box_sizeSpinBox.valueChanged.connect(self.bandwidth_handler)
+
+        self.box_size_y_Button = QtWidgets.QCheckBox(self.formLayoutWidget)
+        self.box_size_y_Button.setChecked(False)
+        self.box_size_y_Button.setObjectName("box_size_y_Button")
+        self.gridLayout.addWidget(self.box_size_y_Button, 1, 3, 1, 2)
+        self.box_size_y_Button.stateChanged.connect(self.button_handler)
+
+        self.box_size_y_SpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
+        self.box_size_y_SpinBox.setProperty("value", 25.0)
+        self.box_size_y_SpinBox.setMaximum(1000)
+        self.box_size_y_SpinBox.setObjectName("box_size_y_SpinBox")
+        self.gridLayout.addWidget(self.box_size_y_SpinBox, 1, 4, 1, 1)
+        self.box_size_y_SpinBox.setEnabled(False)
+
+
+        self.box_size_z_Button = QtWidgets.QCheckBox(self.formLayoutWidget)
+        self.box_size_z_Button.setChecked(False)
+        self.box_size_z_Button.setObjectName("box_size_z_Button")
+        self.gridLayout.addWidget(self.box_size_z_Button, 1, 5, 1, 2)
+        self.box_size_z_Button.stateChanged.connect(self.button_handler)
+
+        self.box_size_z_SpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
+        self.box_size_z_SpinBox.setProperty("value", 25.0)
+        self.box_size_z_SpinBox.setMaximum(1000)
+        self.box_size_z_SpinBox.setObjectName("box_size_z_SpinBox")
+        self.gridLayout.addWidget(self.box_size_z_SpinBox, 1, 6, 1, 1)
+        self.box_size_z_SpinBox.setEnabled(False)
+
+
+
 
         # Resolution:
         self.resolutionLabel = QtWidgets.QLabel(self.formLayoutWidget)
@@ -719,6 +921,7 @@ class Ui_MainWindow(object):
         self.inclusions_button = QtWidgets.QCheckBox(self.formLayoutWidget)
         self.inclusions_button.setObjectName("inclusions_button")
         self.gridLayout.addWidget(self.inclusions_button, 7, 4, 1, 1)
+        self.inclusions_button.stateChanged.connect(self.features_handler)
 
         self.substructure_button = QtWidgets.QCheckBox(self.formLayoutWidget)
         self.substructure_button.setObjectName("substructure_button")
@@ -832,7 +1035,7 @@ class Ui_MainWindow(object):
         self.actionFiles.setObjectName("actionFiles")
 
         self.retranslateUi(MainWindow)
-        self.InfoPages.setCurrentIndex(2)
+        self.InfoPages.setCurrentIndex(0)
         self.tabWidget.setCurrentIndex(0)
         self.user_tab.setDisabled(True)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -841,8 +1044,13 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "DRAGen - RVE Generator"))
         self.NoBand_label.setText(_translate("MainWindow", "Number of Bands"))
-        self.band_thickness_label.setText(_translate("MainWindow", "Band Thickness"))
-        self.InfoPages.setTabText(self.InfoPages.indexOf(self.banding_tab), _translate("MainWindow", "Banding Feature"))
+        self.band_lower_label.setText(_translate("MainWindow", "Band lower thickness boundary"))
+        self.band_upper_label.setText(_translate("MainWindow", "Band upper thickness boundary"))
+        self.band_file_label.setText(_translate("MainWindow", "Input file for banded grains"))
+
+        self.inclusion_file_label.setText(_translate("MainWindow", "Input file for inclusions/pores"))
+        self.inclusion_ratio_label.setText(_translate("MainWindow", "phase ratio for inclusions/pores"))
+
         self.substructure_filemode_radio.setText(_translate("MainWindow", "File Mode"))
         self.substructure_user_mode_radio.setText(_translate("MainWindow", "User Mode"))
         self.label_block_thicknes_file.setText(_translate("MainWindow", "block thickness (sigma)"))
@@ -852,7 +1060,7 @@ class Ui_MainWindow(object):
         self.label_decreasing_fact_file.setText(_translate("MainWindow", "decreasing factor"))
         self.label_min_block_thickness_file.setText(_translate("MainWindow", "minimum blockthickness"))
         self.label_substructure_file.setText(_translate("MainWindow", "Substructure File"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.file_tab), _translate("MainWindow", "File"))
+
         self.label_max_block_thickness_user.setText(_translate("MainWindow", "maximum blockthickness"))
         self.label_decreasing_fact_user.setText(_translate("MainWindow", "decreasing factor"))
         self.label_packet_eq_d_user.setText(_translate("MainWindow", "Packet equiv_d"))
@@ -862,11 +1070,27 @@ class Ui_MainWindow(object):
         self.label_block_thickness_sigma_user.setText(_translate("MainWindow", "block thickness (sigma)"))
         self.label_packet_size_user.setText(_translate("MainWindow", "Packet size (sigma)"))
         self.label_circularity_user.setText(_translate("MainWindow", "circulatrity (packets)"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.user_tab), _translate("MainWindow", "User"))
-        self.InfoPages.setTabText(self.InfoPages.indexOf(self.substructure), _translate("MainWindow", "Substructure Feature"))
+
+        self.visualization_flag_label.setText(_translate("MainWindow", "Plot figures of RSA and Tesselation"))
+        self.animation_flag_label.setText(_translate("MainWindow", "Plot figures of Banding RSA"))
+
+        self.slope_offset_label.setText(_translate("MainWindow", "enter the angle for your specimenorientation\n"
+                                                                 "0 means rolling direction along x-axis\n"
+                                                                 "90 means rolling direction along y-axis"))
+
         self.InfoPages.setTabText(self.InfoPages.indexOf(self.status_tab), _translate("MainWindow", "Status"))
+        self.InfoPages.setTabText(self.InfoPages.indexOf(self.banding_tab), _translate("MainWindow", "Banding Feature"))
+        self.InfoPages.setTabText(self.InfoPages.indexOf(self.inclusion_tab), _translate("MainWindow", "Inclusion Feature"))
+        self.InfoPages.setTabText(self.InfoPages.indexOf(self.substructure), _translate("MainWindow", "Substructure Feature"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.file_tab), _translate("MainWindow", "File"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.user_tab), _translate("MainWindow", "User"))
+        self.InfoPages.setTabText(self.InfoPages.indexOf(self.visualization_tab), _translate("MainWindow", "Visualization"))
+        self.InfoPages.setTabText(self.InfoPages.indexOf(self.specimen_tab), _translate("MainWindow", "Specimen Orient."))
         self.InfoPages.setTabText(self.InfoPages.indexOf(self.log_tab), _translate("MainWindow", "Log"))
+
         self.StartButton.setText(_translate("MainWindow", "Start Generation"))
+        self.box_size_y_Button.setText(_translate("MainWindow", "y: "))
+        self.box_size_z_Button.setText(_translate("MainWindow", "z: "))
         self.element_type_label.setText(_translate("MainWindow", "Element Type"))
         self.damask_button.setText(_translate("MainWindow", "Damask"))
         self.abaqus_button.setText(_translate("MainWindow", "Abaqus"))
@@ -884,6 +1108,7 @@ class Ui_MainWindow(object):
         self.NoRVEsLabel.setText(_translate("MainWindow", "Number of RVEs:"))
         self.resolutionLabel.setText(_translate("MainWindow", "Resolution:"))
         self.BoxsizeLabel.setText(_translate("MainWindow", "Boxsize: "))
+
         self.phases_label.setText(_translate("MainWindow", "Microstructure Phases:"))
         self.dimensionality_label.setText(_translate("MainWindow", "Dimensionality:"))
         self.filepath_label.setText(_translate("MainWindow", "Inputfile path:"))
@@ -943,7 +1168,11 @@ class Ui_MainWindow(object):
                 self.fileBrowserBainite.setEnabled(False)
 
     def bandwidth_handler(self):
-        self.band_thicknessSpinBox.setMaximum(self.box_sizeSpinBox.value()/10)
+        min_thickness = 1/self.resolutionSpinBox.value()
+        if self.MainWindow.sender() == self.band_lowerSpinBox:
+            self.band_upperSpinBox.setMinimum(self.band_lowerSpinBox.value()+min_thickness)
+        elif self.MainWindow.sender() == self.band_upperSpinBox:
+            self.band_lowerSpinBox.setMaximum(self.band_upperSpinBox.value()-min_thickness)
 
     def button_handler(self):
         if self.MainWindow.sender() == self.fileBrowserFerrite:
@@ -974,6 +1203,20 @@ class Ui_MainWindow(object):
             if dlg.exec_():
                 file_path = dlg.selectedFiles()
                 self.lineEditBainite.setText(file_path[0])
+        elif self.MainWindow.sender() == self.fileBrowserBand:
+            dlg = QFileDialog()
+            dlg.setNameFilter("*.csv *.pkl")
+            dlg.setFileMode(QFileDialog.AnyFile)
+            if dlg.exec_():
+                file_path = dlg.selectedFiles()
+                self.lineEditBand.setText(file_path[0])
+        elif self.MainWindow.sender() == self.fileBrowserInclusion:
+            dlg = QFileDialog()
+            dlg.setNameFilter("*.csv *.pkl")
+            dlg.setFileMode(QFileDialog.AnyFile)
+            if dlg.exec_():
+                file_path = dlg.selectedFiles()
+                self.lineEditInclusion.setText(file_path[0])
         elif self.MainWindow.sender() == self.fileBrowserStore_path:
             file_path = QFileDialog.getExistingDirectory()
             self.lineEdit_store_path.setText(file_path)
@@ -985,19 +1228,38 @@ class Ui_MainWindow(object):
                 file_path = dlg.selectedFiles()
                 self.substructure_file_lineEdit_file.setText(file_path[0])
 
+        elif self.MainWindow.sender() == self.box_size_y_Button and self.three_d_button.isChecked():
+            if self.box_size_y_Button.isChecked():
+                self.box_size_y_SpinBox.setEnabled(True)
+            else:
+                self.box_size_y_SpinBox.setDisabled(True)
+
+        elif self.MainWindow.sender() == self.box_size_z_Button and self.three_d_button.isChecked():
+            if self.box_size_z_Button.isChecked():
+                self.box_size_z_SpinBox.setEnabled(True)
+            else:
+                self.box_size_z_SpinBox.setDisabled(True)
+
     def features_handler(self, state):
         if self.MainWindow.sender() == self.Banding_button:
             if state == Qt.Checked:
-                self.InfoPages.setCurrentIndex(0)
+                self.InfoPages.setCurrentIndex(1)
                 self.banding_tab.setEnabled(True)
             else:
                 self.banding_tab.setDisabled(True)
+        elif self.MainWindow.sender() == self.inclusions_button:
+            if state == Qt.Checked:
+                self.InfoPages.setCurrentIndex(2)
+                self.inclusion_tab.setEnabled(True)
+            else:
+                self.inclusion_tab.setDisabled(True)
         elif self.MainWindow.sender() == self.substructure_button:
             if state == Qt.Checked:
-                self.InfoPages.setCurrentIndex(1)
+                self.InfoPages.setCurrentIndex(3)
                 self.substructure.setEnabled(True)
             else:
                 self.substructure.setDisabled(True)
+
 
     def widget_handler(self):
         if self.substructure_filemode_radio.isChecked():
@@ -1076,8 +1338,6 @@ class Ui_MainWindow(object):
     def submit(self):
 
         ARGS = dict()
-        ARGS['dimension'] = None
-        ARGS['dimension_flag'] = False
         ARGS['box_size'] = None
         ARGS['resolution'] = None
         ARGS['n_rves'] = None
@@ -1108,33 +1368,32 @@ class Ui_MainWindow(object):
 
         if self.two_d_button.isChecked():
             ARGS['dimension'] = 2
-            ARGS['dimension_flag'] = True
+            dimension_flag = True
         else:
             ARGS['dimension'] = 3
-            ARGS['dimension_flag'] = True
+            dimension_flag = True
 
         ARGS['box_size'] = self.box_sizeSpinBox.value()
-        box_size_y = None #ToDo @Max: sheet function in GUI?
-        box_size_z = None
-        #if self.box_size_y_check.isChecked():
-        #    box_size_y = self.box_size_y_Edit.value()
-        #else:
-        #    box_size_y = None
 
-        #if self.box_size_z_check.isChecked():
-        #    box_size_z = self.box_size_z_Edit.value()
-        #else:
-        #    box_size_z = None
+        ARGS['box_size_z'] = None
+        if self.box_size_y_Button.isChecked():
+            ARGS['box_size_y'] = self.box_size_y_SpinBox.value()
+        else:
+            ARGS['box_size_y'] = None
+
+        if self.box_size_z_Button.isChecked():
+            ARGS['box_size_z'] = self.box_size_z_SpinBox.value()
+        else:
+            ARGS['box_size_z'] = None
+
         ARGS['resolution'] = self.resolutionSpinBox.value()
-        ARGS['n_rves'] = self.NoRVEsSpinBox.value()
+        ARGS['number_of_rves'] = self.NoRVEsSpinBox.value()
+        ARGS['slope_offset'] = self.slope_offset_spinBox.value()
 
-        file1 = None
-        file2 = None
-        file3 = None
-        file4 = None
-        sum_ratio = 0
-
-        if not self.ferrite_button.isChecked() and not self.martensite_button.isChecked() and not self.Pearlite_button.isChecked() and not self.Bainite_button.isChecked():
+        if not self.ferrite_button.isChecked() \
+                and not self.martensite_button.isChecked() \
+                and not self.Pearlite_button.isChecked() \
+                and not self.Bainite_button.isChecked():
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
             msg.setText("Please choose at least one phase!")
@@ -1143,12 +1402,16 @@ class Ui_MainWindow(object):
             msg.exec_()
             return
 
+        ARGS['phases'] = list()
+        ARGS['phase_ratio'] = dict()
         if self.ferrite_button.isChecked():
             file1 = self.lineEditFerrite.text()
             phase1_ratio = self.ferriteSpinBox.value()
-            sum_ratio += phase1_ratio
+
             if len(file1) > 0:
                 ARGS['phases'].append('Ferrite')
+                ARGS['files'][1] = file1
+                ARGS['phase_ratio'][1] = phase1_ratio
             else:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -1156,19 +1419,15 @@ class Ui_MainWindow(object):
                 msg.setWindowTitle("Error")
                 msg.exec_()
                 return
+
         if self.martensite_button.isChecked():
             file2 = self.lineEditMartensite.text()
             phase2_ratio = self.martensiteSpinBox.value()
-            sum_ratio += phase2_ratio
-            if len(file2) > 0 and sum_ratio <= 1:
+
+            if len(file2) > 0:
                 ARGS['phases'].append('Martensite')
-            elif sum_ratio > 1:
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Critical)
-                msg.setText("Sum of phase ratios is larger than 1.00!")
-                msg.setWindowTitle("Error")
-                msg.exec_()
-                return
+                ARGS['files'][2] = file2
+                ARGS['phase_ratio'][2] = phase2_ratio
             else:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -1176,19 +1435,15 @@ class Ui_MainWindow(object):
                 msg.setWindowTitle("Error")
                 msg.exec_()
                 return
+
         if self.Pearlite_button.isChecked():
             file3 = self.lineEditPearlite.text()
             phase3_ratio = self.pearliteSpinBox.value()
-            sum_ratio += phase3_ratio
-            if len(file3) > 0 and sum_ratio <= 1:
+
+            if len(file3) > 0:
                 ARGS['phases'].append('Pearlite')
-            elif sum_ratio > 1:
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Critical)
-                msg.setText("Sum of phase ratios is larger than 1.00!")
-                msg.setWindowTitle("Error")
-                msg.exec_()
-                return
+                ARGS['files'][3] = file3
+                ARGS['phase_ratio'][3] = phase3_ratio
             else:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -1196,19 +1451,15 @@ class Ui_MainWindow(object):
                 msg.setWindowTitle("Error")
                 msg.exec_()
                 return
+
         if self.Bainite_button.isChecked():
             file4 = self.lineEditBainite.text()
             phase4_ratio = self.bainiteSpinBox.value()
-            sum_ratio += phase4_ratio
-            if len(file3) > 0 and sum_ratio <= 1:
+
+            if len(file4) > 0:
                 ARGS['phases'].append('Bainite')
-            elif sum_ratio > 1:
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Critical)
-                msg.setText("Sum of phase ratios is larger than 1.00!")
-                msg.setWindowTitle("Error")
-                msg.exec_()
-                return
+                ARGS['files'][4] = file4
+                ARGS['phase_ratio'][4] = phase4_ratio
             else:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -1216,22 +1467,58 @@ class Ui_MainWindow(object):
                 msg.setWindowTitle("Error")
                 msg.exec_()
                 return
-        if sum_ratio == 0:
+
+        if self.inclusions_button.isChecked():
+            file5 = self.lineEditInclusion.text()
+            phase5_ratio = self.inclusionSpinBox.value()
+            if len(file5) > 0:
+                ARGS['phases'].append('Inclusions')
+                ARGS['phase_ratio'][5] = phase5_ratio
+                ARGS['files'][5] = file5
+            else:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("Please select a data input file for the inclusions/pores!")
+                msg.setWindowTitle("Error")
+                msg.exec_()
+                return
+
+            # TODO: hier fehlt noch die void/solid option
+
+        if self.Banding_button.isChecked():
+            file6 = self.lineEditBand.text()
+            if len(file6) > 0:
+                ARGS['n_bands'] = self.NoBandsSpinBox.value()
+                ARGS['band_lower'] = self.band_lowerSpinBox.value()
+                ARGS['band_upper'] = self.band_upperSpinBox.value()
+                ARGS['phases'].append('Bands')
+                ARGS['phase_ratio'][6] = 0
+                ARGS['files'][6] = file6
+            else:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("Please select a data input file for the inclusions/pores!")
+                msg.setWindowTitle("Error")
+                msg.exec_()
+                return
+
+        sum_ratio = sum(ARGS['phase_ratio'].values())
+
+        if sum_ratio != 1 and sum_ratio != 0:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("The sum of all phase ratios must equal to 1!")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+        elif sum_ratio == 0:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
             msg.setText("Please enter phase ratios for selected phases!")
             msg.setWindowTitle("Error")
             msg.exec_()
             return
-        ARGS['files'] = {1: file1, 2: file2, 3: file3, 4: file4}
-        ARGS['phase_ratio'] = {1: phase1_ratio, 2: phase2_ratio, 3: phase3_ratio, 4: phase4_ratio}
 
-        if self.Banding_button.isChecked():
-            ARGS['n_bands'] = self.NoBandsSpinBox.value()
-            band_width = self.band_thicknessSpinBox.value()
-
-        if self.inclusions_button.isChecked(): #TODO: @Max welche Parameter benötigt? Dafür zusätzlichen Tab?
-            pass
         if self.substructure_button.isChecked():
             if self.substructure_filemode_radio.isChecked():
                 ARGS['subs_file_flag'] = True
@@ -1292,9 +1579,9 @@ class Ui_MainWindow(object):
                     ARGS['save'] = False
                 ARGS['subs_file'] = None
 
-        #if self.roughness_button.isChecked(): # TODO: @Max welche Parameter benötigt? Dafür zusätzlichen Tab?
+        #if self.roughness_button.isChecked(): # TODO: Nach release hinzufügen?
 
-#TODO: @Max festlegen in welcher zweiten Phase Substrukturen erlaubt sind? Insgesamt nur 2 Phasen möglich?
+        #TODO: @Max festlegen in welcher zweiten Phase Substrukturen erlaubt sind? Insgesamt nur 2 Phasen möglich?
         if ARGS['subs_flag']==True:
             if file2 is None or len(file2) == 0 or phase2_ratio == 0:
                 msg = QMessageBox()
@@ -1313,53 +1600,14 @@ class Ui_MainWindow(object):
             ARGS['pbc_flag'] = self.PBC_button.isChecked()
         elif self.damask_button.isChecked():
             ARGS['damask_flag'] = True
-            # ToDo: pbc_flag = true for damask?
+
         else:
             ARGS['moose_flag'] = True
             ARGS['element_type'] = 'HEX8'
-            # ToDo: pbc_flag = true for moose?
 
-        store_path_flag = False
-        import_flag = False
-        dimension = None
-        visualization_flag = False
-        dimension_flag = False
-        gan_flag = False
-        equiv_d = ARGS['equiv_d']
-        p_sigma = ARGS['p_sigma']
-        t_mu = ARGS['t_mu']
-        b_sigma = ARGS['b_sigma']
-        decreasing_factor = ARGS['decreasing_factor']
-        lower = ARGS['lower']
-        upper = ARGS['upper']
-        circularity = ARGS['circularity']
-        save = ARGS['save']
-        filename = ARGS['filename']
-        subs_file_flag = ARGS['subs_file_flag']
-        subs_file = ARGS['subs_file']
-        subs_flag = ARGS['subs_flag']
-
-        if file1 is not None: #error here TODO: @Max was für file-Kombinationen erlaubt?
-            if file1[-4:] == '.pkl':
-                gan_flag = True
-                self.textBrowser.setText("microstructure imported from:\n{}".format(file1))
-                if self.file2 is not None:
-                    self.textBrowser.setText("and from:\n{}".format(file2))
-            elif file1[-4:] == '.csv':
-                gan_flag = False
-                self.textBrowser.setText("microstructure imported from\n{}".format(file1))
-                if file2 is not None:
-                    self.textBrowser.setText("and from\n{}".format(file2))
-            else:
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Critical)
-                msg.setText("Error: File Type")
-                msg.setWindowTitle("Error")
-                msg.exec_()
-                return
-
-        store_path = self.lineEdit_store_path.text()
-        if len(store_path) == 0:
+        ARGS['store_path'] = self.lineEdit_store_path.text()
+        ARGS['root'] = self.lineEdit_store_path.text()
+        if len(ARGS['store_path']) == 0:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
             msg.setText("Please choose a directory to store the Output data in!")
@@ -1370,22 +1618,25 @@ class Ui_MainWindow(object):
             store_path_flag = True
 
 # TODO: @Max was sind das für flags? weiterhin benötigt?
-        #if self.visualization.isChecked():
-        #    visualization_flag = True
-        if file1 is not None or file2 is not None:
+        if self.visualization_flag_button.isChecked():
+            ARGS['visualization_flag'] = True
+        else:
+            ARGS['visualization_flag'] = False
+
+        if self.animation_flag_button.isChecked():
+            ARGS['animation_flag'] = True
+        else:
+            ARGS['visualization_flag'] = False
+
+        if len(ARGS['files'].values()) > 0:
             import_flag = True
+        else:
+            import_flag = False
 
         if dimension_flag and store_path_flag and import_flag:
-            self.textBrowser.setText('Staring the generation of {} RVEs'.format(n_rves))
+            self.textBrowser.setText('Staring the generation of {} RVEs'.format(ARGS['n_rves']))
             self.thread = QThread()
-            self.worker = Worker(box_size=box_size, box_size_y=box_size_y,box_size_z= box_size_z,
-                                 resolution=resolution, number_of_rves=n_rves, number_of_bands=n_bands,
-                                 bandwidth=band_width, dimension=dimension, visualization_flag=visualization_flag,
-                                 file1=file1, file2=file2, phase_ratio=phase_ratio, store_path=store_path,
-                                 gui_flag=True, gan_flag=gan_flag,equiv_d=equiv_d,
-                                 p_sigma=p_sigma, t_mu=t_mu, b_sigma=b_sigma, decreasing_factor=decreasing_factor,
-                                 lower=lower, upper=upper,circularity=circularity, save=save,filename=filename,subs_file_flag=subs_file_flag,subs_file=subs_file,
-                                 subs_flag=subs_flag,phases=phases)
+            self.worker = Worker(ARGS)
             self.worker.moveToThread(self.thread)
             self.thread.started.connect(self.worker.run)
             self.worker.finished.connect(self.thread.quit)

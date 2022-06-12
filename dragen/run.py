@@ -16,23 +16,70 @@ from dragen.utilities.InputInfo import RveInfo
 
 class Run(HelperFunctions):
     def __init__(
-                 # mandatory arguments:
-                 self, box_size: int, element_type: str, resolution: float, number_of_rves: int,
-                 number_of_bands: int,  dimension: int, slope_offset: float, smoothing_flag: bool,
-                 visualization_flag: bool, root: str, shrink_factor: float,  phase_ratio: dict,
-                 gui_flag: bool, gan_flag: bool, subs_flag: bool, phases: list, abaqus_flag: bool,
-                 damask_flag: bool, moose_flag: bool, anim_flag: bool,  file_dict: dict, inclusion_flag: bool,
-                 inclusion_ratio: float, band_filling: float, upper_band_bound: float, lower_band_bound: float,
+            # mandatory arguments:
+            # box parameters:
+            self,
+            dimension: int,
+            box_size: int,
+            box_size_y: int,
+            box_size_z: int,
+            resolution: float,
+            number_of_rves: int,
 
-                 # optional Arguments or dependent on previous flag
-                 band_orientation: str = None,
-                 pbc_flag: bool = None, submodel_flag: bool = None, phase2iso_flag: bool = None,
-                 subs_file_flag=False, subs_file: str = None,
-                 box_size_y: int = None, box_size_z: int = None,
-                 info_box_obj=None, progress_obj=None, equiv_d: float = None, p_sigma: float = None, t_mu: float = None,
-                 b_sigma: float = 0.01, decreasing_factor: float = 0.95, lower: float = None, upper: float = None,
-                 circularity: float = 1, plt_name: str = None, save: bool = True, plot: bool = False,
-                 filename: str = None, fig_path: str = None, orient_relationship: str = None
+
+            # specimen orientation parameters
+            slope_offset: float,
+
+            # simulation framework parameters:
+            abaqus_flag: bool,
+            damask_flag: bool,
+            moose_flag: bool,
+            element_type: str,
+            pbc_flag: bool,
+            submodel_flag: bool,
+            phase2iso_flag: bool,
+            smoothing_flag: bool,
+
+            # generation parameters
+            gui_flag: bool,
+
+            anim_flag: bool,
+            visualization_flag: bool,
+            root: str,
+            info_box_obj, progress_obj,
+
+            # microstructure parameters
+            phase_ratio: dict,
+            file_dict: dict,
+            phases: list,
+
+            # band related  parameters:
+            number_of_bands: int,
+            upper_band_bound: float, lower_band_bound: float,
+            band_orientation: str, band_filling: float,
+
+            # inclusion related  parameters:
+            inclusion_flag: bool,
+            inclusion_ratio: float,
+
+            # substructure related parameters:
+            subs_flag: bool,
+            subs_file_flag: bool,
+            subs_file: str,
+            equiv_d: float,
+            p_sigma: float,
+            t_mu: float,
+            b_sigma: float,
+            decreasing_factor: float,
+            lower: float,
+            upper: float,
+            circularity: float,
+            plt_name: str,
+            save: bool,
+            plot: bool,
+            filename: str,
+            fig_path: str,
+            orientation_relationship: str
     ):
 
         super().__init__()
@@ -53,11 +100,9 @@ class Run(HelperFunctions):
         RveInfo.slope_offset = slope_offset
         RveInfo.smoothing_flag = smoothing_flag
         RveInfo.visualization_flag = visualization_flag
-        RveInfo.file_dict = file_dict   # TODO: Change to dict based output
+        RveInfo.file_dict = file_dict  # TODO: Change to dict based output
         RveInfo.phase_ratio = phase_ratio
-        RveInfo.shrink_factor = np.cbrt(shrink_factor)
         RveInfo.gui_flag = gui_flag
-        RveInfo.gan_flag = gan_flag
         RveInfo.infobox_obj = info_box_obj
         RveInfo.progress_obj = progress_obj
         RveInfo.equiv_d = equiv_d
@@ -73,7 +118,7 @@ class Run(HelperFunctions):
         RveInfo.plot = plot
         RveInfo.filename = filename
         RveInfo.fig_path = fig_path
-        RveInfo.orientation_relationship = orient_relationship
+        RveInfo.orientation_relationship = orientation_relationship
         RveInfo.subs_flag = subs_flag
         RveInfo.subs_file_flag = subs_file_flag
         RveInfo.subs_file = subs_file
@@ -86,7 +131,7 @@ class Run(HelperFunctions):
         RveInfo.phase2iso_flag = phase2iso_flag
         RveInfo.pbc_flag = pbc_flag
         RveInfo.submodel_flag = submodel_flag
-        RveInfo.element_type = element_type
+
         RveInfo.roughness_flag = False
         RveInfo.band_filling = band_filling
         RveInfo.inclusion_ratio = inclusion_ratio
@@ -118,14 +163,14 @@ class Run(HelperFunctions):
         f_handler = TimedRotatingFileHandler(filename=os.path.join(LOGS_DIR, 'dragen-logs'), when='midnight')
         formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
         f_handler.setFormatter(formatter)
-        RveInfo.logger.addHandler(f_handler)
-        RveInfo.logger.setLevel(level=logging.DEBUG)
+        RveInfo.LOGGER.addHandler(f_handler)
+        RveInfo.LOGGER.setLevel(level=logging.DEBUG)
 
     @staticmethod
     def initializations(epoch):
 
         RveInfo.store_path = RveInfo.root + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
-        RveInfo.logger.debug(RveInfo.store_path)
+        RveInfo.LOGGER.debug(RveInfo.store_path)
         RveInfo.fig_path = RveInfo.store_path + '/Figs'
         RveInfo.gen_path = RveInfo.store_path + '/Generation_Data'
         RveInfo.post_path = RveInfo.store_path + '/Postprocessing'
@@ -145,8 +190,8 @@ class Run(HelperFunctions):
             filename=os.path.join(RveInfo.store_path, 'result-logs'), when='midnight')
         formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] %(message)s')
         f_handler.setFormatter(formatter)
-        RveInfo.result_log.addHandler(f_handler)
-        RveInfo.result_log.setLevel(level=logging.DEBUG)
+        RveInfo.RESULT_LOG.addHandler(f_handler)
+        RveInfo.RESULT_LOG.setLevel(level=logging.DEBUG)
 
     def run(self):
         self.setup_logging()
@@ -192,67 +237,4 @@ class Run(HelperFunctions):
             sys.exit()
 
 
-if __name__ == "__main__":
-    box_size = 50
-    box_size_y = None  # if this is None it will be set to the main box_size value
-    box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
-    resolution = 2
-    number_of_rves = 1
-    number_of_bands = 0
-    band_filling = 1.2
-    lower_band_bound = 2
-    upper_band_bound = 5
-    visualization_flag = True
-    store_path = '../'
-    shrink_factor = 0.4
-    dimension = 3
-    # Example Files
-    equiv_d = 5
-    p_sigma = 0.1
-    t_mu = 1.0
-    b_sigma = 0.1
-    inclusion_flag = False
-    inclusion_ratio = 0.01
-    # Example Files
-    # file1 = r'C:\Venvs\dragen\ExampleInput\ferrite_54_grains_processed.csv'
-    file1 = r'..\ExampleInput\TrainedData_2.pkl'
-    file2 = r'..\ExampleInput\martensit.csv'
-    file3 = r'..\ExampleInput\pearlite_21_grains.csv'
-    file6 = r'..\ExampleInput\TrainedData_6.pkl'
 
-
-    # test pearlite phase
-    subs_flag = False
-    subs_file = '../ExampleInput/example_block_inp.csv'
-    subs_file_flag = True
-    gui_flag = False
-    gan_flag = False
-    moose_flag = True
-    abaqus_flag = True
-    damask_flag = True
-    element_type = 'HEX8'
-    anim_flag = False
-
-    files = {1: file1, 2: file2}
-    phase_ratio = {1: 0.8, 2: 0.2}  # Pass for bands
-    phases = ['Ferrite', 'Martensite']
-
-    '''
-    specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
-    same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in martensite.
-    
-    Number 5 specifies the inclusions and number 6 the Band phase. Either .csv or .pkl
-    '''
-
-    Run(box_size, element_type=element_type, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution,
-        number_of_rves=number_of_rves,
-        number_of_bands=number_of_bands, dimension=dimension,
-        visualization_flag=visualization_flag, file_dict=files, equiv_d=equiv_d, p_sigma=p_sigma, t_mu=t_mu,
-        b_sigma=b_sigma,
-        phase_ratio=phase_ratio, store_path=store_path, shrink_factor=shrink_factor, gui_flag=gui_flag,
-        gan_flag=gan_flag,
-        info_box_obj=None, progress_obj=None, subs_file_flag=subs_file_flag, subs_file=subs_file, phases=phases,
-        subs_flag=subs_flag, moose_flag=moose_flag, abaqus_flag=abaqus_flag, damask_flag=damask_flag,
-        anim_flag=anim_flag, inclusion_flag=inclusion_flag,
-        inclusion_ratio=inclusion_ratio, band_filling=band_filling, lower_band_bound=lower_band_bound,
-        upper_band_bound=upper_band_bound).run()
