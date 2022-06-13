@@ -19,15 +19,37 @@ _Note: For developing it is highly recommended to use Python versions 3.6 to 3.8
 **If further questions appear please check the lower section or get in touch with us.**
 
 
-
-
-
-## Download
-https://rwth-aachen.sciebo.de/s/szEAcuXubht1Gyv
+## Installation
+clone this repository into desired destination:<br>
+```
+$ git clone https://git.rwth-aachen.de/ims_iehk/dragen.git
+$ cd dragen
+```
+make sure conda is installed correctly on your system [look up here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)<br>
+Create a virtual environment as follows:<br>
+```
+$ conda create --name DRAGen python=3.8
+$ conda activate DRAGen
+```
+(if an error occurs check your conda installation)<br>
+make sure the DRAGen env is activated it should look somewhat like this:<br>
+```
+(DRAGen)....$ 
+```
+install requirements:<br>
+```
+(DRAGen)....$ pip install -r requierments.txt
+```
+run first generation with:<br>
+```
+(DRAGen)....$ python DRAGen_nogui.py
+```
 
 
 <details>
 <summary><b>Show more...<b></summary>
+
+
 
 ## Input data
 
