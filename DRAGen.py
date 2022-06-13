@@ -2,9 +2,9 @@
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QThread
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtGui import QIcon
 from dragen.pyqt_gui.worker import Worker
-from dragen.pyqt_gui.ScrollLabel import ScrollLabel
+
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
