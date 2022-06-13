@@ -4,6 +4,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtGui import QPixmap, QIcon
 from dragen.pyqt_gui.worker import Worker
+from dragen.pyqt_gui.ScrollLabel import ScrollLabel
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -13,7 +14,7 @@ class Ui_MainWindow(object):
         self.MainWindow = MainWindow
         MainWindow.setObjectName("Main Window")
         MainWindow.setWindowTitle("DRAGen - RVE Generator")
-        MainWindow.setFixedSize(750, 850) #size(735, 876)
+        MainWindow.setFixedSize(750, 850)
         self.thumbnail_path = sys.argv[0][:-10] + "\\dragen\\thumbnails\\"
         MainWindow.setWindowIcon(QIcon(self.thumbnail_path + '\\Drache.ico'))
 
@@ -38,8 +39,13 @@ class Ui_MainWindow(object):
         self.InfoPages.setTabBarAutoHide(False)
         self.InfoPages.setObjectName("InfoPages")
 
+
+
+
+
         ### Tab window
         # Status Tab
+
         self.status_tab = QtWidgets.QWidget()
         self.InfoPages.addTab(self.status_tab, "")
         self.status_tab.setObjectName("status_tab")
@@ -48,6 +54,7 @@ class Ui_MainWindow(object):
         self.textBrowser.setGeometry(QtCore.QRect(0, 0, 791, 336))
         self.textBrowser.setObjectName("textBrowser")
         self.textBrowser.setText(" Please enter the required information")
+
 
         self.verticalScrollBar = QtWidgets.QScrollBar(self.status_tab)
         self.verticalScrollBar.setGeometry(QtCore.QRect(790, 0, 20, 336))
@@ -61,7 +68,7 @@ class Ui_MainWindow(object):
         self.banding_tab.setEnabled(False)
 
         self.gridLayoutWidget_2 = QtWidgets.QWidget(self.banding_tab)
-        self.gridLayoutWidget_2.setGeometry(QtCore.QRect(20, 10, 230, 120))
+        self.gridLayoutWidget_2.setGeometry(QtCore.QRect(20, 10, 500, 180))
         self.gridLayoutWidget_2.setObjectName("gridLayoutWidget_2")
 
         self.gridLayout_3 = QtWidgets.QGridLayout(self.gridLayoutWidget_2)
@@ -126,6 +133,54 @@ class Ui_MainWindow(object):
         self.gridLayout_3.addWidget(self.band_upperSpinBox, 2, 2, 1, 1)
         self.band_upperSpinBox.valueChanged.connect(self.bandwidth_handler)
 
+        self.band_filling_label = QtWidgets.QLabel(self.gridLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.band_filling_label.sizePolicy().hasHeightForWidth())
+        self.band_filling_label.setSizePolicy(sizePolicy)
+        self.band_filling_label.setObjectName("band_filling_label")
+        self.gridLayout_3.addWidget(self.band_filling_label, 3, 0, 1, 2)
+
+        self.band_fillingSpinBox = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.band_fillingSpinBox.sizePolicy().hasHeightForWidth())
+        self.band_fillingSpinBox.setMinimum(0.1)
+        self.band_fillingSpinBox.setMaximum(0.7)
+        self.band_fillingSpinBox.setSizePolicy(sizePolicy)
+        self.band_fillingSpinBox.setObjectName("band_fillingSpinBox")
+        self.gridLayout_3.addWidget(self.band_fillingSpinBox, 3, 2, 1, 1)
+        self.band_fillingSpinBox.valueChanged.connect(self.bandwidth_handler)
+
+        self.band_orientation_label = QtWidgets.QLabel(self.gridLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.band_orientation_label.sizePolicy().hasHeightForWidth())
+
+        self.band_orientation_label.setSizePolicy(sizePolicy)
+        self.band_orientation_label.setObjectName("band_orientation_label")
+        self.gridLayout_3.addWidget(self.band_orientation_label, 4, 0, 1, 1)
+
+        self.BandOrientation_XY = QtWidgets.QRadioButton(self.gridLayoutWidget_2)
+        self.BandOrientation_XY.setObjectName("BandOrientation_XY")
+        self.gridLayout_3.addWidget(self.BandOrientation_XY, 4, 2, 1, 1)
+        self.BandOrientation_XY.setChecked(True)
+        self.BandOrientation_XY.setText('xy')
+
+        self.BandOrientation_XZ = QtWidgets.QRadioButton(self.gridLayoutWidget_2)
+        self.BandOrientation_XZ.setObjectName("BandOrientation_XZ")
+        self.gridLayout_3.addWidget(self.BandOrientation_XZ, 4, 3, 1, 1)
+        self.BandOrientation_XZ.setText('xz')
+
+        self.BandOrientation_YZ = QtWidgets.QRadioButton(self.gridLayoutWidget_2)
+        self.BandOrientation_YZ.setObjectName("BandOrientation_YZ")
+        self.gridLayout_3.addWidget(self.BandOrientation_YZ, 4, 4, 1, 1)
+        self.BandOrientation_YZ.setText('yz')
+
+
         self.band_file_label = QtWidgets.QLabel(self.gridLayoutWidget_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -134,11 +189,11 @@ class Ui_MainWindow(object):
 
         self.band_file_label.setSizePolicy(sizePolicy)
         self.band_file_label.setObjectName("band_file_label")
-        self.gridLayout_3.addWidget(self.band_file_label, 3, 0, 1, 1)
+        self.gridLayout_3.addWidget(self.band_file_label, 5, 0, 1, 1)
 
         self.lineEditBand = QtWidgets.QLineEdit(self.gridLayoutWidget_2)
         self.lineEditBand.setObjectName("lineEditBand")
-        self.gridLayout_3.addWidget(self.lineEditBand, 3, 2, 1, 1)
+        self.gridLayout_3.addWidget(self.lineEditBand, 5, 2, 1, 3)
 
         self.fileBrowserBand = QtWidgets.QPushButton(self.gridLayoutWidget_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
@@ -149,7 +204,7 @@ class Ui_MainWindow(object):
         self.fileBrowserBand.setText("")
         self.fileBrowserBand.setIcon(icon)
         self.fileBrowserBand.setObjectName("fileBrowserBand")
-        self.gridLayout_3.addWidget(self.fileBrowserBand, 3, 3, 1, 1)
+        self.gridLayout_3.addWidget(self.fileBrowserBand, 5, 5, 1, 1)
         self.fileBrowserBand.clicked.connect(self.button_handler)
 
         # Inclusion Feature Tab
@@ -227,6 +282,7 @@ class Ui_MainWindow(object):
         self.grid_mode.addWidget(self.substructure_filemode_radio, 0, 0, 1, 2)
         self.substructure_filemode_radio.toggled.connect(self.widget_handler)
 
+        self.substructure_user_mode_radio = QtWidgets.QRadioButton(self.gridLayoutWidget_4)
         self.substructure_user_mode_radio = QtWidgets.QRadioButton(self.gridLayoutWidget_4)
         self.substructure_user_mode_radio.setChecked(False)
         self.substructure_user_mode_radio.setObjectName("substructure_user_mode_radio")
@@ -992,6 +1048,16 @@ class Ui_MainWindow(object):
         self.comboBox_element_type.addItem("C3D8 (Abaqus Hex)")
         self.gridLayout_2.addWidget(self.comboBox_element_type, 1, 1, 1, 3)
 
+        # Smooth grainboundaries
+        self.smoothing_label = QtWidgets.QLabel(self.gridLayoutWidget)
+        self.smoothing_label.setObjectName("smoothing_label")
+        self.gridLayout_2.addWidget(self.smoothing_label, 1, 4, 1, 1)
+
+        self.smoothing_button = QtWidgets.QCheckBox(self.gridLayoutWidget)
+        self.smoothing_button.setObjectName("smoothing_button")
+        self.gridLayout_2.addWidget(self.smoothing_button, 1, 5, 1, 1)
+        self.smoothing_button.setChecked(True)
+
         # Output directory:
         self.label_store_path = QtWidgets.QLabel(self.gridLayoutWidget)
         self.label_store_path.setObjectName("label_store_path")
@@ -1046,6 +1112,8 @@ class Ui_MainWindow(object):
         self.NoBand_label.setText(_translate("MainWindow", "Number of Bands"))
         self.band_lower_label.setText(_translate("MainWindow", "Band lower thickness boundary"))
         self.band_upper_label.setText(_translate("MainWindow", "Band upper thickness boundary"))
+        self.band_filling_label.setText(_translate("MainWindow", "Band filling parameter"))
+        self.band_orientation_label.setText(_translate("MainWindow", "Orientaion of band in RVE"))
         self.band_file_label.setText(_translate("MainWindow", "Input file for banded grains"))
 
         self.inclusion_file_label.setText(_translate("MainWindow", "Input file for inclusions/pores"))
@@ -1092,6 +1160,7 @@ class Ui_MainWindow(object):
         self.box_size_y_Button.setText(_translate("MainWindow", "y: "))
         self.box_size_z_Button.setText(_translate("MainWindow", "z: "))
         self.element_type_label.setText(_translate("MainWindow", "Element Type"))
+        self.smoothing_label.setText(_translate("MainWindow", "Smooth Grainboundaries"))
         self.damask_button.setText(_translate("MainWindow", "Damask"))
         self.abaqus_button.setText(_translate("MainWindow", "Abaqus"))
         self.moose_button.setText(_translate("MainWindow", "Moose"))
@@ -1309,12 +1378,16 @@ class Ui_MainWindow(object):
             self.submodel_button.hide()
             self.comboBox_element_type.clear()
             self.comboBox_element_type.addItem("HEX8 (Moose)")
+            self.smoothing_button.show()
+            self.smoothing_label.show()
         elif self.damask_button.isChecked():
             self.comboBox_element_type.setEnabled(False)
             self.boundary_label.hide()
             self.PBC_button.hide()
             self.submodel_button.hide()
             self.comboBox_element_type.clear()
+            self.smoothing_button.hide()
+            self.smoothing_label.hide()
         elif self.abaqus_button.isChecked():
             self.comboBox_element_type.setEnabled(True)
             self.boundary_label.show()
@@ -1323,48 +1396,24 @@ class Ui_MainWindow(object):
             self.comboBox_element_type.clear()
             self.comboBox_element_type.addItem("C3D4 (Abaqus Tet)")
             self.comboBox_element_type.addItem("C3D8 (Abaqus Hex)")
+            self.smoothing_button.show()
+            self.smoothing_label.show()
 
-    """def dimension_handler(self, state):
-        # checking if state is checked
-        if state == Qt.Checked:
-
-            # if first check box is selected
-            if self.sender() == self.twoDcheckBox:
-                # making other check box to uncheck
-                self.threeDcheckBox.setChecked(False)
-            elif self.sender() == self.threeDcheckBox:
-                self.twoDcheckBox.setChecked(False)"""
 
     def submit(self):
 
-        ARGS = dict()
-        ARGS['box_size'] = None
-        ARGS['resolution'] = None
-        ARGS['n_rves'] = None
-        ARGS['n_bands'] = None
-        ARGS['subs_flag'] = False
-        ARGS['equiv_d'] = None
-        ARGS['p_sigma'] = 0.1
-        ARGS['t_mu'] = None
-        ARGS['b_sigma'] = 0.1
-        ARGS['decreasing_factor'] = 0.95
-        ARGS['lower'] = None
-        ARGS['upper'] = None
-        ARGS['circularity'] = 1
-        ARGS['save'] = True
-        ARGS['filename'] = 'substruct_data.csv'
-        ARGS['subs_file_flag'] = False
-        ARGS['subs_file'] = None
-        ARGS['subs_flag'] = False
-        ARGS['phases'] = []
-        ARGS['files'] = {}
-        ARGS['phase_ratio'] = {}
-        ARGS['abaqus_flag'] = False
-        ARGS['damask_flag'] = False
-        ARGS['moose_flag'] = False
-        ARGS['element_type'] = None
-        ARGS['submodel_flag'] = False
-        ARGS['pbc_flag'] = False
+        ARGS = {'root': None, 'box_size': None, 'box_size_y': None, 'box_size_z': None, 'resolution': None,
+                'number_of_rves': 0, 'dimension': 3, 'phases': list(), 'abaqus_flag': False, 'damask_flag': False,
+                'moose_flag': False, 'anim_flag': None, 'phase2iso_flag': True, 'pbc_flag': False,
+                'submodel_flag': False, 'element_type': None, 'slope_offset': 0, 'smoothing': True,
+                'number_of_bands': 0, 'lower_band_bound': None, 'upper_band_bound': None, 'band_orientation': None,
+                'band_filling': None, 'inclusion_flag': None, 'inclusion_ratio': None, 'visualization_flag': None,
+                'file_dict': {}, 'phase_ratio': dict(), 'store_path': None, 'subs_flag': False, 'subs_file_flag': False,
+                'subs_file': None, 'orientation_relationship': None, 'subrun': None, 'pak_file': None, 'equiv_d': None,
+                'circularity': 1, 'p_sigma': 0.1, 'block_file': None, 't_mu': None, 'b_sigma': 0.1,
+                'decreasing_factor': 0.95, 'lower': None, 'upper': None, 'plt_name': None, 'save': True, 'plot': None,
+                'filename': 'substruct_data.csv', 'fig_path': None, 'gen_path': None, 'post_path': None,
+                'gui_flag': True, 'files': {1: None, 2: None, 3: None, 5: None, 6: None}}
 
         if self.two_d_button.isChecked():
             ARGS['dimension'] = 2
@@ -1374,17 +1423,10 @@ class Ui_MainWindow(object):
             dimension_flag = True
 
         ARGS['box_size'] = self.box_sizeSpinBox.value()
-
-        ARGS['box_size_z'] = None
         if self.box_size_y_Button.isChecked():
             ARGS['box_size_y'] = self.box_size_y_SpinBox.value()
-        else:
-            ARGS['box_size_y'] = None
-
         if self.box_size_z_Button.isChecked():
             ARGS['box_size_z'] = self.box_size_z_SpinBox.value()
-        else:
-            ARGS['box_size_z'] = None
 
         ARGS['resolution'] = self.resolutionSpinBox.value()
         ARGS['number_of_rves'] = self.NoRVEsSpinBox.value()
@@ -1402,8 +1444,6 @@ class Ui_MainWindow(object):
             msg.exec_()
             return
 
-        ARGS['phases'] = list()
-        ARGS['phase_ratio'] = dict()
         if self.ferrite_button.isChecked():
             file1 = self.lineEditFerrite.text()
             phase1_ratio = self.ferriteSpinBox.value()
@@ -1488,12 +1528,13 @@ class Ui_MainWindow(object):
         if self.Banding_button.isChecked():
             file6 = self.lineEditBand.text()
             if len(file6) > 0:
-                ARGS['n_bands'] = self.NoBandsSpinBox.value()
-                ARGS['band_lower'] = self.band_lowerSpinBox.value()
-                ARGS['band_upper'] = self.band_upperSpinBox.value()
+                ARGS['number_of_bands'] = self.NoBandsSpinBox.value()
+                ARGS['lower_band_bound'] = self.band_lowerSpinBox.value()
+                ARGS['upper_band_bound'] = self.band_upperSpinBox.value()
                 ARGS['phases'].append('Bands')
                 ARGS['phase_ratio'][6] = 0
                 ARGS['files'][6] = file6
+                ARGS['band_filling'] = self.band_fillingSpinBox.value()
             else:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -1501,6 +1542,14 @@ class Ui_MainWindow(object):
                 msg.setWindowTitle("Error")
                 msg.exec_()
                 return
+
+            if self.BandOrientation_XY.isChecked():
+                ARGS['band_orientation'] = 'xy'
+            elif self.BandOrientation_XZ.isChecked():
+                ARGS['band_orientation'] = 'xz'
+            elif self.BandOrientation_YZ.isChecked():
+                ARGS['band_orientation'] = 'yz'
+
 
         sum_ratio = sum(ARGS['phase_ratio'].values())
 
@@ -1579,18 +1628,31 @@ class Ui_MainWindow(object):
                     ARGS['save'] = False
                 ARGS['subs_file'] = None
 
-        #if self.roughness_button.isChecked(): # TODO: Nach release hinzufügen?
+        # if self.roughness_button.isChecked(): # TODO: Nach release hinzufügen?
 
-        #TODO: @Max festlegen in welcher zweiten Phase Substrukturen erlaubt sind? Insgesamt nur 2 Phasen möglich?
-        if ARGS['subs_flag']==True:
-            if file2 is None or len(file2) == 0 or phase2_ratio == 0:
-                msg = QMessageBox()
-                msg.setIcon(QMessageBox.Critical)
-                msg.setText("Please choose Martnesite or set Martensite \n ratio non-zero!")
-                msg.setInformativeText("Check the checkbox stating Martensite \nand set Martensite ratio > 0")
-                msg.setWindowTitle("Error")
-                msg.exec_()
-                return
+        if self.substructure_button.isChecked():
+            ARGS['subs_flag'] = True
+            if self.substructure_filemode_radio.isChecked():
+                ARGS['subs_file_flag'] = True
+                ARGS['subs_file'] = self.substructure_file_lineEdit_file.text()
+                ARGS['p_sigma'] = self.substructure_packet_size_SpinBox_file.value()
+                ARGS['b_sigma'] = self.substructure_block_thickness_SpinBox_file.value()
+                ARGS['decreasing_factor'] = self.substructure_decreasing_fact_SpinBox_file.value()
+                ARGS['lower'] = self.substructure_min_block_thickness_SpinBox_file.value()
+                ARGS['upper'] = self.substructure_max_block_thickness_SpinBox_file.value()
+                ARGS['save'] = self.substructure_save_result_lineEdit_file.text()
+            elif self.substructure_user_mode_radio.isChecked():
+                ARGS['subs_file_flag'] = False
+                ARGS['equiv_d'] = self.substructure_packet_eq_d_SpinBox_user.value()
+                ARGS['p_sigma'] = self.substructure_packet_size_SpinBox_user.value()
+                ARGS['circularity'] = self.substructure_circularity_SpinBox_user.value()
+                ARGS['block_thickness'] = None  # TODO: ???
+
+                ARGS['decreasing_factor'] = self.substructure_decreasing_fact_SpinBox_user.value()
+                ARGS['b_sigma'] = self.substructure_block_thickness_SpinBox_user.value()
+                ARGS['lower'] = self.substructure_min_block_thickness_SpinBox_user.value()
+                ARGS['upper'] = self.substructure_max_block_thickness_SpinBox_user.value()
+                ARGS['save'] = self.substructure_save_result_lineEdit_user.text()
 
         if self.abaqus_button.isChecked():
             ARGS['abaqus_flag'] = True
@@ -1598,12 +1660,14 @@ class Ui_MainWindow(object):
             ARGS['element_type'] = element_type_dict.get(self.comboBox_element_type.currentIndex())
             ARGS['submodel_flag'] = self.submodel_button.isChecked()
             ARGS['pbc_flag'] = self.PBC_button.isChecked()
+            ARGS['smoothing'] = self.smoothing_button.isChecked()
         elif self.damask_button.isChecked():
             ARGS['damask_flag'] = True
-
         else:
+            element_type_dict = {0: 'HEX8'}
             ARGS['moose_flag'] = True
-            ARGS['element_type'] = 'HEX8'
+            ARGS['element_type'] = element_type_dict.get(self.comboBox_element_type.currentIndex())
+            ARGS['smoothing'] = self.smoothing_button.isChecked()
 
         ARGS['store_path'] = self.lineEdit_store_path.text()
         ARGS['root'] = self.lineEdit_store_path.text()
@@ -1634,7 +1698,7 @@ class Ui_MainWindow(object):
             import_flag = False
 
         if dimension_flag and store_path_flag and import_flag:
-            self.textBrowser.setText('Staring the generation of {} RVEs'.format(ARGS['n_rves']))
+            self.textBrowser.setText('Staring the generation of {} RVEs'.format(ARGS['number_of_rves']))
             self.thread = QThread()
             self.worker = Worker(ARGS)
             self.worker.moveToThread(self.thread)

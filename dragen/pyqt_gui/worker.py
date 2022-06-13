@@ -20,27 +20,22 @@ class Worker(QObject):
         self.dimension = ARGS['dimension']
 
         self.slope_offset = ARGS['slope_offset']
-        self.smoothing_flag = ARGS['smoothing']  # TODO
+        self.smoothing_flag = ARGS['smoothing']
 
         self.number_of_bands = ARGS['number_of_bands']
         self.lower_band_bound = ARGS['lower_band_bound']
         self.upper_band_bound = ARGS['upper_band_bound']
+        self.band_orientation = ARGS['band_orientation']
+
+        self.band_filling = ARGS['band_filling']
 
         self.inclusion_flag = ARGS['inclusion_flag']
         self.inclusion_ratio = ARGS['inclusion_ratio']
 
         self.visualization_flag = ARGS['visualization_flag']
-        self.file_dict = ARGS['file_dict']
+        self.file_dict = ARGS['files']
         self.phase_ratio = ARGS['phase_ratio']
         self.store_path = ARGS['store_path']
-        self.band_ratio_rsa = ARGS['band_ratio_rsa']
-        self.band_ratio_final = ARGS['band_ratio_final']
-        self.band_filling = ARGS['band_filling']  # TODO
-        self.band_orientation = ARGS['band_orientation']  # TODO
-        self.gui_flag = ARGS['gui_flag']
-        self.gan_flag = ARGS['gan_flag']
-        self.info_box_obj = ARGS['info_box_obj']
-        self.progress_obj = ARGS['progress_obj']
 
         self.subs_flag = ARGS['subs_flag']
         self.subs_file_flag = ARGS['subs_file_flag']
@@ -77,6 +72,8 @@ class Worker(QObject):
         self.submodel_flag = ARGS['submodel_flag']
         self.element_type = ARGS['element_type']
 
+        self.gui_flag = ARGS['gui_flag']
+
 
     def run(self):
         """Long-running task."""
@@ -86,8 +83,8 @@ class Worker(QObject):
                       moose_flag=self.moose_flag, element_type=self.element_type, pbc_flag=self.pbc_flag,
                       submodel_flag=self.submodel_flag, phase2iso_flag=self.phase2iso_flag,
                       smoothing_flag=self.smoothing_flag, gui_flag=self.gui_flag, anim_flag=self.anim_flag,
-                      visualization_flag=self.visualization_flag, root=self.root, info_box_obj=self.info_box_obj,
-                      progress_obj=self.progress_obj, phase_ratio=self.phase_ratio, file_dict=self.file_dict,
+                      visualization_flag=self.visualization_flag, root=self.root, info_box_obj=self.info_box,
+                      progress_obj=self.progress, phase_ratio=self.phase_ratio, file_dict=self.file_dict,
                       phases=self.phases, number_of_bands=self.number_of_bands, upper_band_bound=self.upper_band_bound,
                       lower_band_bound=self.lower_band_bound, band_orientation=self.band_orientation,
                       band_filling=self.band_filling, inclusion_flag=self.inclusion_flag,
