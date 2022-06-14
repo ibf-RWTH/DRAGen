@@ -654,7 +654,7 @@ class Ui_MainWindow(object):
         self.log_tab = QtWidgets.QWidget()
         self.InfoPages.addTab(self.log_tab, "")
         self.log_tab.setObjectName("log_tab")
-        self.scrollArea.setWidget(self.scrollAreaWidgetContents) # TODO @Max: oder nach .addTab log_tab ???
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
 
         self.LogFile = QtWidgets.QTextBrowser(self.log_tab)
         self.LogFile.setGeometry(QtCore.QRect(0, 0, 401, 336))
@@ -1408,12 +1408,13 @@ class Ui_MainWindow(object):
                 'submodel_flag': False, 'element_type': None, 'slope_offset': 0, 'smoothing': True,
                 'number_of_bands': 0, 'lower_band_bound': None, 'upper_band_bound': None, 'band_orientation': None,
                 'band_filling': None, 'inclusion_flag': None, 'inclusion_ratio': None, 'visualization_flag': None,
-                'file_dict': {}, 'phase_ratio': dict(), 'store_path': None, 'subs_flag': False, 'subs_file_flag': False,
-                'subs_file': None, 'orientation_relationship': None, 'subrun': None, 'pak_file': None, 'equiv_d': None,
+                'file_dict': {}, 'phase_ratio': {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0},
+                'subs_flag': False, 'subs_file_flag': False,
+                'subs_file': None, 'orientation_relationship': None, 'subrun': None, 'pag_file': None, 'equiv_d': None,
                 'circularity': 1, 'p_sigma': 0.1, 'block_file': None, 't_mu': None, 'b_sigma': 0.1,
                 'decreasing_factor': 0.95, 'lower': None, 'upper': None, 'plt_name': None, 'save': True, 'plot': None,
-                'filename': 'substruct_data.csv', 'fig_path': None, 'gen_path': None, 'post_path': None,
-                'gui_flag': True, 'files': {1: None, 2: None, 3: None, 5: None, 6: None}}
+                'filename': 'substruct_data.csv', 'gui_flag': True,
+                'files': {1: None, 2: None, 3: None, 4: None, 5: None, 6: None}}
 
         if self.two_d_button.isChecked():
             ARGS['dimension'] = 2
@@ -1642,11 +1643,11 @@ class Ui_MainWindow(object):
                 ARGS['upper'] = self.substructure_max_block_thickness_SpinBox_file.value()
                 ARGS['save'] = self.substructure_save_result_lineEdit_file.text()
             elif self.substructure_user_mode_radio.isChecked():
-                ARGS['subs_file_flag'] = False
+                ARGS['subs_file_flag'] = False # TODO: @Linghao please check this
                 ARGS['equiv_d'] = self.substructure_packet_eq_d_SpinBox_user.value()
                 ARGS['p_sigma'] = self.substructure_packet_size_SpinBox_user.value()
                 ARGS['circularity'] = self.substructure_circularity_SpinBox_user.value()
-                ARGS['block_thickness'] = None  # TODO: ???
+                ARGS['block_thickness'] = None  # TODO: @Linghao please check this
 
                 ARGS['decreasing_factor'] = self.substructure_decreasing_fact_SpinBox_user.value()
                 ARGS['b_sigma'] = self.substructure_block_thickness_SpinBox_user.value()
@@ -1669,7 +1670,6 @@ class Ui_MainWindow(object):
             ARGS['element_type'] = element_type_dict.get(self.comboBox_element_type.currentIndex())
             ARGS['smoothing'] = self.smoothing_button.isChecked()
 
-        ARGS['store_path'] = self.lineEdit_store_path.text()
         ARGS['root'] = self.lineEdit_store_path.text()
         if len(ARGS['store_path']) == 0:
             msg = QMessageBox()
@@ -1681,7 +1681,6 @@ class Ui_MainWindow(object):
         else:
             store_path_flag = True
 
-# TODO: @Max was sind das für flags? weiterhin benötigt?
         if self.visualization_flag_button.isChecked():
             ARGS['visualization_flag'] = True
         else:

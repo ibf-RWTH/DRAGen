@@ -36,6 +36,10 @@ class AbaqusMesher(MeshingHelper):
             f.write('*Include, input=Corners.inp\n')
             f.write('*Include, input=VerticeSets.inp\n')
         f.write('*End Assembly\n')
+        f.write('** INCLUDE MATERIAL FILE **\n')
+        f.write('*Include, input=Materials.inp\n')
+        f.write('** INCLUDE STEP FILE **\n')
+        f.write('*Include, input=Step.inp\n')
         f.close()
 
     def submodelSet(self, grid_hull_df: pd.DataFrame) -> None:
@@ -699,48 +703,69 @@ class AbaqusMesher(MeshingHelper):
         needs to be adjusted for multiple phases"""
         phase1_idx = 0
         phase2_idx = 0
+        phase3_idx = 0
+        phase4_idx = 0
         numberofgrains = self.n_grains
 
         phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains+1)]
-        f = open(RveInfo.store_path + '/RVE_smooth.inp', 'a')
-
-        f.write('**\n')
+        f = open(RveInfo.store_path + '/Materials.inp', 'w+')  # open in write mode to overwrite old files in case ther are any
         f.write('** MATERIALS\n')
         f.write('**\n')
+        f.close()
+        f = open(RveInfo.store_path + '/Materials.inp', 'a')
+
         for i in range(numberofgrains):
             ngrain = i+1
-            if not RveInfo.phase2iso_flag:
-                if phase[i] == 1:
-                    phase1_idx += 1
-                    f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
-                    f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,3.\n'.format(ngrain))
-                elif phase[i] == 2:
+            if phase[i] == 1:
+                phase1_idx += 1
+                f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
+                f.write('*Depvar\n')
+                f.write('    176,\n')
+                f.write('*User Material, constants=2\n')
+                f.write('{}.,3.\n'.format(phase1_idx))
+            elif phase[i] == 2:
+                if not RveInfo.phase2iso_flag:
                     phase2_idx += 1
                     f.write('*Material, name=Martensite_{}\n'.format(phase2_idx))
                     f.write('*Depvar\n')
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
                     f.write('{}.,4.\n'.format(ngrain))
-            else:
-                if phase[i] == 1:
-                    phase1_idx += 1
-                    f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
+            elif phase[i] == 3:
+                if not RveInfo.phase2iso_flag:
+                    phase3_idx += 1
+                    f.write('*Material, name=Pearlite_{}\n'.format(phase2_idx))
                     f.write('*Depvar\n')
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
-                    f.write('{}.,3.\n'.format(phase1_idx))
+                    f.write('{}.,4.\n'.format(ngrain))
+            elif phase[i] == 4:
+                if not RveInfo.phase2iso_flag:
+                    phase4_idx += 1
+                    f.write('*Material, name=Bainite_{}\n'.format(phase2_idx))
+                    f.write('*Depvar\n')
+                    f.write('    176,\n')
+                    f.write('*User Material, constants=2\n')
+                    f.write('{}.,4.\n'.format(ngrain))
 
-        if RveInfo.phase2iso_flag:
+        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[2] > 0:
             f.write('**\n')
             f.write('*Material, name=Martensite\n')
             f.write('*Elastic\n')
             f.write('0.21, 0.3\n')
-        f.write('**')
-        f.write('** INCLUDE STEP FILE **')
-        f.write('* INCLUDE, INPUT=Step.inp')
+            f.write('**')
+        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[3] > 0:
+            f.write('**\n')
+            f.write('*Material, name=Pearlite\n')
+            f.write('*Elastic\n')
+            f.write('0.21, 0.3\n')
+            f.write('**')
+        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[4] > 0:
+            f.write('**\n')
+            f.write('*Material, name=Bainite\n')
+            f.write('*Elastic\n')
+            f.write('0.21, 0.3\n')
+            f.write('**')
         f.close()
 
     def write_submodel_step_def(self) -> None:
@@ -749,7 +774,7 @@ class AbaqusMesher(MeshingHelper):
         variables should be introduced to give the user an option
         to modify amplidtude, and other parameters"""
 
-        f = open(RveInfo.store_path + '/Step.inp', 'a')
+        f = open(RveInfo.store_path + '/Step.inp', 'w+')
         f.write('**\n')
         f.write('** ----------------------------------------------------------------\n')
         f.write('**\n')
@@ -805,7 +830,7 @@ class AbaqusMesher(MeshingHelper):
         variables should be introduced to give the user an option
         to modify amplidtude, and other parameters"""
 
-        f = open(RveInfo.store_path + '/Step.inp.inp', 'a')
+        f = open(RveInfo.store_path + '/Step.inp', 'w+')
         f.write('**\n')
         f.write('** Step time needs to be in agreement with amplitude')
         f.write('*Amplitude, name=Amp-1\n')
@@ -945,7 +970,8 @@ class AbaqusMesher(MeshingHelper):
         GRID = self.gen_grains(GRID)
         smooth_mesh = self.smoothen_mesh(GRID, n_iter=250)
         pbc_grid = smooth_mesh
-
+        if RveInfo.gui_flag:
+            RveInfo.progress_obj.emit(50)
         if RveInfo.roughness_flag:
             # TODO: roghness einbauen
             #grid = self.apply_roughness(grid)
@@ -989,6 +1015,8 @@ class AbaqusMesher(MeshingHelper):
 
         phase1_idx = 0
         phase2_idx = 0
+        phase3_idx = 0
+        phase4_idx = 0
         for i in range(self.n_grains):
             nGrain = i + 1
             if self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 1:
@@ -1003,6 +1031,22 @@ class AbaqusMesher(MeshingHelper):
                 else:
                     f.write('** Section: Section - {}\n'.format(nGrain))
                     f.write('*Solid Section, elset=Set-{}, material=Martensite\n'.format(nGrain))
+            elif self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 3:
+                if not RveInfo.phase2iso_flag:
+                    phase2_idx += 1
+                    f.write('** Section: Section - {}\n'.format(nGrain))
+                    f.write('*Solid Section, elset=Set-{}, material=Pearlite_{}\n'.format(nGrain, phase3_idx))
+                else:
+                    f.write('** Section: Section - {}\n'.format(nGrain))
+                    f.write('*Solid Section, elset=Set-{}, material=Pearlite\n'.format(nGrain))
+            elif self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 4:
+                if not RveInfo.phase2iso_flag:
+                    phase2_idx += 1
+                    f.write('** Section: Section - {}\n'.format(nGrain))
+                    f.write('*Solid Section, elset=Set-{}, material=Bainite_{}\n'.format(nGrain, phase4_idx))
+                else:
+                    f.write('** Section: Section - {}\n'.format(nGrain))
+                    f.write('*Solid Section, elset=Set-{}, material=Bainite\n'.format(nGrain))
 
         f.close()
         os.remove(RveInfo.store_path + '/rve-part.inp')
@@ -1019,6 +1063,8 @@ class AbaqusMesher(MeshingHelper):
                                         (grid_hull_df['z'] == z_max) | (grid_hull_df['z'] == z_min)]
 
         self.make_assembly()
+        if RveInfo.gui_flag:
+            RveInfo.progress_obj.emit(75)
         if RveInfo.submodel_flag:
             self.submodelSet(grid_hull_df)
         if RveInfo.pbc_flag:
@@ -1026,7 +1072,7 @@ class AbaqusMesher(MeshingHelper):
         self.write_material_def()
         if RveInfo.submodel_flag:
             self.write_submodel_step_def()
-        if RveInfo.pbc_flag:
+        elif RveInfo.pbc_flag:
             self.write_pbc_step_def()
         self.write_grain_data()
 
@@ -1047,3 +1093,5 @@ class AbaqusMesher(MeshingHelper):
                          screenshot=RveInfo.store_path + '/Figs/pyvista_smooth_Mesh_grains.png')
             plotter.close()
 
+        if RveInfo.gui_flag:
+            RveInfo.progress_obj.emit(100)

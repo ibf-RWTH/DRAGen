@@ -46,14 +46,14 @@ class DiscreteRsa3D(HelperFunctions):
         y_0 = unoccupied_area_y[idx]
         z_0 = unoccupied_area_z[idx]
         #self.infobox_obj.add_text('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
-        print('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
+        #print('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
         # print('Iterator', iterator)
         # print(a)
         # print('Länge von a', a.__len__())
         a = a[iterator]
         b = b[iterator]
         c = c[iterator]
-        print(a,b,c)
+        #print(a,b,c)
         alpha = alpha[iterator]
 
         """ellipse = (x_grid - x_0) ** 2 / (a ** 2) + \
@@ -178,7 +178,7 @@ class DiscreteRsa3D(HelperFunctions):
             else:
                 # free points old - free points should equal non zero in periodic grain
                 if free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain):
-                    print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
+                    #print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
                 else:

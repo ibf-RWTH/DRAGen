@@ -81,9 +81,6 @@ class RveInfo:
     gui_flag: bool = None
     """set to False when using the nogui_script"""
 
-    gan_flag: bool = None
-    # TODO: @Nklas is this actually still needed?"""
-
     infobox_obj = None
     """internal object for GUI"""
     progress_obj = None

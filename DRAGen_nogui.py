@@ -1,9 +1,9 @@
 from dragen.run import Run
 dimension = 3
-box_size = 700
+box_size = 600
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = 300  # for sheet rve set z to None and y to different value than x the other way round is buggy
-resolution = 0.07
+resolution = 0.1
 number_of_rves = 1
 smoothing_flag = True
 # Banding Params
@@ -59,16 +59,16 @@ phase2iso_flag = True
 element_type = 'HEX8'
 anim_flag = False
 
-files = {1: file1}  # , 2: file2, 6: file6}
-phase_ratio = {1: 1}  # , 2: 0.2, 6: 0}  # Pass for bands
+files = {1: file1, 2: None, 3: None, 4: None, 5: None, 6: None}  # , 2: file2, 6: file6}
+phase_ratio = {1: 1, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
 phases = ['Ferrite']  # , 'Martensite', 'Bands']
 
 upper = None
 lower = None
 circularity = 1
 decreasing_factor = 0.4
-plt_name = 'no_gui_plt.png'
-save = 'save'
+plt_name = 'substructure_plot.png'
+save = True
 plot = False
 filename = 'substructure_plot.png'
 fig_path = root+filename

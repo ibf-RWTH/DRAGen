@@ -78,7 +78,6 @@ class Run(HelperFunctions):
             save: bool,
             plot: bool,
             filename: str,
-            fig_path: str,
             orientation_relationship: str
     ):
 
@@ -117,7 +116,6 @@ class Run(HelperFunctions):
         RveInfo.save = save
         RveInfo.plot = plot
         RveInfo.filename = filename
-        RveInfo.fig_path = fig_path
         RveInfo.orientation_relationship = orientation_relationship
         RveInfo.subs_flag = subs_flag
         RveInfo.subs_file_flag = subs_file_flag
@@ -137,7 +135,6 @@ class Run(HelperFunctions):
         RveInfo.inclusion_ratio = inclusion_ratio
         RveInfo.inclusion_flag = inclusion_flag
         RveInfo.root = root
-        RveInfo.input_path = './ExampleInput'
 
         RveInfo.n_pts = math.ceil(float(box_size) * resolution)
         if RveInfo.n_pts % 2 != 0:

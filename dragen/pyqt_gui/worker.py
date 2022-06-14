@@ -35,33 +35,31 @@ class Worker(QObject):
         self.visualization_flag = ARGS['visualization_flag']
         self.file_dict = ARGS['files']
         self.phase_ratio = ARGS['phase_ratio']
-        self.store_path = ARGS['store_path']
 
         self.subs_flag = ARGS['subs_flag']
         self.subs_file_flag = ARGS['subs_file_flag']
         self.subs_file = ARGS['subs_file']
-        self.orientation_relationship = ARGS['orientation_relationship']
-        self.sub_run = ARGS['subrun']
+        self.orientation_relationship = ARGS['orientation_relationship']  # Default: 'KS', options:
+        # self.sub_run = ARGS['subrun']
 
-        self.pak_file = ARGS['pak_file']
+        self.pak_file = ARGS['pag_file'] # TODO: @Linghao make dict for several substructures also add radio button in GUI to select the substructured phase
         self.equiv_d = ARGS['equiv_d']
         self.circularity = ARGS['circularity']
         self.p_sigma = ARGS['p_sigma']
 
-        self.block_file = ARGS['block_file']  # TODO: ???
-        self.t_mu = ARGS['t_mu']  # TODO: ???
-        self.b_sigma = ARGS['b_sigma']  # TODO: ???
-        self.decreasing_facotr = ARGS['decreasing_factor']  # TODO: ???
-        self.lower = ARGS['lower']  # TODO: ???
-        self.upper = ARGS['upper']  # TODO: ???
-        self.plt_name = ARGS['plt_name']  # TODO: ???
-        self.save = ARGS['save']  # TODO: ???
-        self.plot = ARGS['plot']  # TODO: ???
-        self.filename = ARGS['filename']  # TODO: ???
-        self.fig_path = ARGS['fig_path']  # TODO: ???
-        self.gen_path = ARGS['gen_path']  # TODO: ???
-        self.post_path = ARGS['post_path']
+        self.block_file = ARGS['block_file']  # TODO: Check what the difference between block_file and subs_file actually is?!
+        self.t_mu = ARGS['t_mu']  # mean blockthickness
+        self.b_sigma = ARGS['b_sigma']  # block_thickness variance
+        self.decreasing_facotr = ARGS['decreasing_factor']  # The tilt thing
+        self.lower = ARGS['lower']  # min value blockthickness (cutoff)
+        self.upper = ARGS['upper']  # max value blockthickness (cutoff)
+        self.plt_name = ARGS['plt_name']  # just set a fixed name substructure fig
+        self.save = ARGS['save']  # path to substruckture fig
+        self.plot = ARGS['plot']  # Set to True always
+        self.filename = ARGS['filename']  # substruct.csv
 
+
+        ###
         self.phases = ARGS['phases']
         self.abaqus_flag = ARGS['abaqus_flag']
         self.damask_flag = ARGS['damask_flag']
@@ -93,7 +91,6 @@ class Worker(QObject):
                       p_sigma=self.p_sigma, t_mu=self.t_mu, b_sigma=self.b_sigma,
                       decreasing_factor=self.decreasing_facotr, lower=self.lower, upper=self.upper,
                       circularity=self.circularity, plt_name=self.plt_name, save=self.save, plot=self.plot,
-                      filename=self.filename, fig_path=self.fig_path,
-                      orientation_relationship=self.orientation_relationship)
+                      filename=self.filename, orientation_relationship=self.orientation_relationship)
         run_obj.run()
         self.finished.emit()

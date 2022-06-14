@@ -115,7 +115,7 @@ class Tesselation3D(HelperFunctions):
             band_idx = []
         else:
             band_idx = [i for i in range(band_idx_start, n_grains+1)]
-            print(band_idx)
+            #print(band_idx)
 
         # define boundaries and empty rve array
         empty_rve = super().gen_array()
