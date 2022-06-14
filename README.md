@@ -13,7 +13,7 @@ DRAGen is an approach for generating Representative Volume Elements (RVEs) based
 
 The results show that the generator can successfully reconstruct realistic microstructures with elongated grains and martensite bands from given input data sets.
 
-![logo](docs/GUI.PNG)
+![logo](docs/GUI_Banding.PNG)
 
 _Note: For developing it is highly recommended to use Python versions 3.6 to 3.8. For Python 3.9 Pyvista is not fully supported._<br>
 **If further questions appear please check the lower section or get in touch with us.**
