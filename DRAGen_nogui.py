@@ -72,7 +72,7 @@ save = True
 plot = False
 filename = 'substructure_plot.png'
 orientation_relationship = 'KS'
-
+"test git"
 '''
 specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
 same order as phases. file1->ferrite, file2->martensite. The substructures will only be generated in martensite.
