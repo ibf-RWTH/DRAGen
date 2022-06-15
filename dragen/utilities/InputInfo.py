@@ -97,7 +97,7 @@ class RveInfo:
     block_file: str = None
     t_mu: float = 1.0
     b_sigma: float = 0.1
-    decreasing_factor: float = 0.99  # check later
+    decreasing_factor: float = 0.95  # check later
     lower: float = 0.5
     upper: float = 1.5
     plt_name: str = None

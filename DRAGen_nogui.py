@@ -1,8 +1,8 @@
 from dragen.run import Run
 dimension = 3
-box_size = 600
+box_size = 100
 box_size_y = None  # if this is None it will be set to the main box_size value
-box_size_z = 300  # for sheet rve set z to None and y to different value than x the other way round is buggy
+box_size_z = 100  # for sheet rve set z to None and y to different value than x the other way round is buggy
 resolution = 0.1
 number_of_rves = 1
 smoothing_flag = True
@@ -13,7 +13,7 @@ band_orientation = 'xy'
 lower_band_bound = 2
 upper_band_bound = 5
 visualization_flag = False
-root = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata'
+root = r'./'
 shrink_factor = 0.4
 # Substructure params
 equiv_d = 5
@@ -28,7 +28,7 @@ slope_offset = 0
 #
 ###NO30
 file1 = r'F:/OCAS/NO30_RVE_data/Data_processed.csv'
-
+file2 = r"D:\2nd mini-thesis\dragen\ExampleInput\example_pag_inp.csv"
 #DP800
 #file1 = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\DP800/TrainedData_Ferrite.pkl'
 #file2 = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\DP800/TrainedData_Martensite.pkl'
@@ -46,8 +46,8 @@ file5 = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\Inclusions
 file6 = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\DP800/TrainedData_Ferrite.pkl'
 
 # test pearlite phase
-subs_flag = False
-subs_file = 'C:/temp/substructdata/bainite_Seite1_Dicke.csv'
+subs_flag = True
+subs_file = './ExampleInput/example_block_inp.csv'
 subs_file_flag = True
 gan_flag = False
 moose_flag = True
@@ -59,19 +59,18 @@ phase2iso_flag = True
 element_type = 'HEX8'
 anim_flag = False
 
-files = {1: file1, 2: None, 3: None, 4: None, 5: None, 6: None}  # , 2: file2, 6: file6}
+files = {1: None, 2: file2, 3: None, 4: None, 5: None, 6: None}  # , 2: file2, 6: file6}
 phase_ratio = {1: 1, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
 phases = ['Ferrite']  # , 'Martensite', 'Bands']
 
 upper = None
 lower = None
 circularity = 1
-decreasing_factor = 0.4
+decreasing_factor = 0.95
 plt_name = 'substructure_plot.png'
 save = True
 plot = False
 filename = 'substructure_plot.png'
-fig_path = root+filename
 orientation_relationship = 'KS'
 
 '''
