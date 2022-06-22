@@ -38,7 +38,7 @@ make sure the DRAGen env is activated it should look somewhat like this:<br>
 ```
 install requirements:<br>
 ```
-(DRAGen)....$ pip install -r requierments.txt
+(DRAGen)....$ pip install -r requirements.txt
 ```
 run first generation with:<br>
 ```
