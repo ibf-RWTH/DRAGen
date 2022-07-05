@@ -734,7 +734,7 @@ class AbaqusMesher(MeshingHelper):
             elif phase[i] == 3:
                 if not RveInfo.phase2iso_flag:
                     phase3_idx += 1
-                    f.write('*Material, name=Pearlite_{}\n'.format(phase2_idx))
+                    f.write('*Material, name=Pearlite_{}\n'.format(phase3_idx))
                     f.write('*Depvar\n')
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
@@ -742,7 +742,7 @@ class AbaqusMesher(MeshingHelper):
             elif phase[i] == 4:
                 if not RveInfo.phase2iso_flag:
                     phase4_idx += 1
-                    f.write('*Material, name=Bainite_{}\n'.format(phase2_idx))
+                    f.write('*Material, name=Bainite_{}\n'.format(phase4_idx))
                     f.write('*Depvar\n')
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
