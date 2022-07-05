@@ -142,6 +142,7 @@ class RveInfo:
 
     submodel_flag: bool = None
     """If set to True a submodel usage will be assumed (if True pbc_flag must be False!!!)"""
+    xfem_flag: bool = None
 
     element_type: str = None
     """available element types: (C3D4, HEX8)"""
