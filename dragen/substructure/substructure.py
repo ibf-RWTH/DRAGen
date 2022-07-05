@@ -79,8 +79,7 @@ class Grain(HelperFunctions):
 
         return transferred_hp_list
 
-    def gen_subs(self, equiv_d=None, sigma=0.1, block_thickness=0.5, b_sigma=0.1, lower_t=None, upper_t=None,
-                 circularity=1, n_pack=None, orientations=None):
+    def gen_subs(self, n_pack=None, orientations=None):
 
         if n_pack is None:
             r = RveInfo.equiv_d / 2
@@ -99,7 +98,7 @@ class Grain(HelperFunctions):
         # average num of packet
         av_points_num = int(len(self.points_data) / av_pn)
         # average num of grid points contained in packets
-        LN = lognorm(s=sigma, scale=av_points_num)
+        LN = lognorm(s=RveInfo.p_sigma, scale=av_points_num)
         num_grid_ps = LN.rvs(av_pn)
         out_lrange_num = num_grid_ps[num_grid_ps <= 40]
         out_hrange_num = num_grid_ps[num_grid_ps >= len(self.points_data)]
@@ -165,8 +164,7 @@ class Grain(HelperFunctions):
             packet.boundary = chosen_norm
             packet.variants = self.trial_variants_select(packet)
             packet.pag_ori = self.orientation
-            packet.gen_blocks(t_mu=RveInfo.t_mu, sigma=RveInfo.b_sigma, lower=RveInfo.lower,
-                              upper=RveInfo.upper)  # complete df
+            packet.gen_blocks()  # complete df
             comp_df = packet.get_bt()
             # comp_df = packet.merge_tiny_blocks(merge_tiny_blocks)
 
@@ -204,8 +202,8 @@ class Grain(HelperFunctions):
 
         if len(list(set(self.points_data["block_id"]))) > 1:
             if RveInfo.lower is None:
-                lower_t = RveInfo.t_mu / 3
-            self.points_data = self.merge_tiny_blocks(lower_t, merge_tiny_blocks)
+                RveInfo.lower = RveInfo.t_mu / 3
+            self.points_data = self.merge_tiny_blocks(merge_tiny_blocks)
 
         return self.points_data
 
@@ -294,9 +292,9 @@ class Grain(HelperFunctions):
 
         return possible_v
 
-    def merge_tiny_blocks(self, lower, func):
+    def merge_tiny_blocks(self, func):
 
-        self.points_data = func(self.points_data, lower)
+        self.points_data = func(self.points_data, RveInfo.lower)
         print('all tiny blocks in grain {} are merged'.format(self.grainID))
         return self.points_data
 
@@ -479,7 +477,7 @@ class Packet():
         else:
             return str(int(idx[0][0] - 1))
 
-    def gen_blocks(self, t_mu, sigma, lower=None, upper=None):
+    def gen_blocks(self):
 
         points_data = self.points_data.copy()
 
@@ -495,20 +493,26 @@ class Packet():
         p_dis = (points_data['pd'].max() - points_data['pd']) / sq
         points_data.insert(7, 'p_dis', value=p_dis)
 
-        n = points_data['p_dis'].max() / t_mu
+        n = points_data['p_dis'].max() / RveInfo.t_mu
         n = math.ceil(n)
 
-        if lower == None:
-            lower = t_mu / 3
+        if RveInfo.lower == None:
+            lower = RveInfo.t_mu / 3
+        else:
+            lower = RveInfo.lower
 
-        if upper == None:
-            upper = 3 * t_mu
+        if RveInfo.upper == None:
+            upper = 3 * RveInfo.t_mu
+        else:
+            upper = RveInfo.upper
 
-        if sigma == 0:
+        if RveInfo.b_sigma == 0:
             sigma = 0.1
+        else:
+            sigma = RveInfo.b_sigma
 
         self.lower_t = lower
-        LN = lognorm(s=sigma, scale=t_mu)
+        LN = lognorm(s=sigma, scale=RveInfo.t_mu)
         bt_list = LN.rvs(n)
         out_lrange = bt_list[bt_list <= lower]
         out_hrange = bt_list[bt_list >= upper]
@@ -520,7 +524,7 @@ class Packet():
             bt_list = bt_list + increasing
 
         else:
-            bt_list = [t_mu]
+            bt_list = [RveInfo.t_mu]
 
         dis_list = [0 for i in range(len(bt_list) + 1)]
         for i in range(len(bt_list)):

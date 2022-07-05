@@ -7,6 +7,7 @@ File:     KDTree
 Describe: Write during the internship at IEHK RWTH"""
 
 #find all adjacent blocks for each block
+from dragen.utilities.InputInfo import RveInfo
 import pandas as pd
 import warnings
 import numpy as np
@@ -293,14 +294,15 @@ def merge_tiny_blocks(rve_df,lower_bt):
 
     return rve_df
 
-def mod_bt(rve_df,t_mu):
+def mod_bt(rve_df):
     grain_nodes, packet_nodes, block_nodes = build_IDtree(rve_df)
     print("modifying block thickness...")
     # compute the needed number of blocks
-    needed_nb = int(round(sum([block.bt for block in block_nodes]) / t_mu))
+    needed_nb = int(round(sum([block.bt for block in block_nodes]) / RveInfo.t_mu))
     while True:
         # get the number of generated blocks
         gen_nb = len(block_nodes)
+        # print(gen_nb)
         # how many blocks are needed to be merged
         n = gen_nb - needed_nb
         if n == 0:

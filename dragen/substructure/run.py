@@ -45,6 +45,7 @@ class Run():
     def get_bt_distribution(block_df):
 
         average_bt = block_df['block_thickness'].mean()
+        RveInfo.t_mu = average_bt
         return average_bt
 
     @staticmethod
@@ -90,8 +91,8 @@ class Run():
         if RveInfo.subs_file_flag:
             assert RveInfo.subs_file is not None, 'no substructure file given'
             block_df = pd.read_csv(RveInfo.subs_file)
-            average_bt = self.get_bt_distribution(block_df)
-            average_bt = RveInfo.decreasing_factor * average_bt
+            self.get_bt_distribution(block_df)
+            RveInfo.t_mu *= RveInfo.decreasing_factor
 
         for i in range(len(grains_df)):
 
@@ -115,10 +116,7 @@ class Run():
                     blocks = block_df[block_df['grain_id'] == old_gid + 1]
                     n_pack = len(list(set(blocks['packet_id'])))
                     orientations = self.get_orientations(block_df, old_gid)
-                    grain.gen_subs(block_thickness=average_bt, b_sigma=RveInfo.b_sigma,
-                                   lower_t=RveInfo.lower, upper_t=RveInfo.upper,
-                                   circularity=RveInfo.circularity,
-                                   n_pack=n_pack, orientations=orientations)
+                    grain.gen_subs(n_pack=n_pack, orientations=orientations)
 
                 else:
                     assert RveInfo.equiv_d is not None, 'no valid definition for equiv_d'
@@ -143,12 +141,12 @@ class Run():
         self.rve_data = _rve_data
 
         self.del_zerobt(_rve_data)  # del blocks with 0 thickness
-        martensite_df = self.rve_data[_rve_data['phaseID'] == 2]
+        # martensite_df = self.rve_data[_rve_data['phaseID'] == 2]
 
-        if RveInfo.subs_file_flag:
-            mod_bt(martensite_df, t_mu=average_bt)
-        else:
-            mod_bt(martensite_df, t_mu=RveInfo.t_mu)
+        # if RveInfo.subs_file_flag:
+        #     mod_bt(martensite_df)
+        # else:
+        #     mod_bt(martensite_df)
         # transfer id to number
         _rve_data.loc[_rve_data['block_id'].isnull(), 'block_id'] = _rve_data[_rve_data['block_id'].isnull()][
                                                                         'packet_id'] + '0'

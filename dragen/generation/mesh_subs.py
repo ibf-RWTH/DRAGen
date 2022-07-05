@@ -4,7 +4,7 @@ Authors:   Linghao Kong, Manuel Henrich
 Version:  V 1.0
 File:     SubMesher
 Describe: Modification of Submesher V 0.1"""
-
+import matplotlib.pyplot as plt
 import pandas as pd
 from dragen.generation.Mesher3D import AbaqusMesher
 from dragen.utilities.InputInfo import RveInfo
@@ -84,11 +84,12 @@ class SubMesher(AbaqusMesher):
         numberofblocks = self.n_blocks
 
         phase = [self.rve.loc[self.rve['block_id'] == i].phaseID.values[0] for i in range(1, numberofblocks + 1)]
-        f = open(RveInfo.store_path + '/RVE_smooth.inp', 'a')
-
-        f.write('**\n')
+        f = open(RveInfo.store_path + '/Materials.inp',
+                 'w+')  # open in write mode to overwrite old files in case ther are any
         f.write('** MATERIALS\n')
         f.write('**\n')
+        f.close()
+        f = open(RveInfo.store_path + '/Materials.inp', 'a')
         for i in range(numberofblocks):
             nblock = i + 1
             if not RveInfo.phase2iso_flag:
@@ -153,7 +154,17 @@ class SubMesher(AbaqusMesher):
                     phi2 = self.phi2[i]
                     f.write('Grain: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, PHI, phi2, self.bt_list[i]))
         f.close()
-        
+
+    def bid_to_pid(self, bid):
+        pid_list = self.rve.loc[self.rve['block_id'] == bid, 'packet_id']
+
+        return int(pid_list.iloc[0])
+
+    def bid_to_gid(self, bid):
+        gid_list = self.rve.loc[self.rve['block_id'] == bid, 'GrainID']
+
+        return int(gid_list.iloc[0])
+
     def smoothen_mesh(self, grid: pv.UnstructuredGrid, element_type: str = 'C3D8') -> pv.UnstructuredGrid:
 
         """information about grainboundary elements of hex-mesh
@@ -167,19 +178,24 @@ class SubMesher(AbaqusMesher):
         z_min = min(grid.points[:, 2])
         numberOfBlocks = self.n_blocks
 
+        bid_list = list()
         gid_list = list()
         pid_list = list()
+        pak_id_list = list()
 
         ######################################
         if RveInfo.element_type != 'C3D8' and RveInfo.element_type != 'HEX8':
             old_grid = grid.copy()
             grid_tet = pv.UnstructuredGrid()
-            for i in range(1, numberOfBlocks + 1):
-                phase = self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0]
+            for i in range(1, numberOfBlocks):
+                phase = self.rve.loc[self.rve['block_id'] == i].phaseID.values[0]
+                print("print here",np.where(np.asarray(old_grid.cell_data.values())[0] == i))
                 grain_grid_tet = old_grid.extract_cells(np.where(np.asarray(old_grid.cell_data.values())[0] == i))
                 grain_surf_tet = grain_grid_tet.extract_surface(pass_pointid=True, pass_cellid=True)
                 grain_surf_tet.triangulate(inplace=True)
-
+                if not grain_surf_tet.is_all_triangles:
+                    grain_surf_tet.plot()
+                    plt.show()
                 tet = tetgen.TetGen(grain_surf_tet)
                 if RveInfo.element_type == 'C3D4':
                     tet.tetrahedralize(order=1, mindihedral=10, minratio=1.5, supsteiner_level=0, steinerleft=0)
@@ -190,8 +206,15 @@ class SubMesher(AbaqusMesher):
 
                 if RveInfo.gui_flag:
                     RveInfo.progress_obj.emit(75+(100*(i+1)/self.n_blocks/4))
-                grainIDList = [i]
+
+                blockIDList = [i]
+                packetIDList = [self.bid_to_pid(i)]
+                grainIDList = [self.bid_to_gid(i)]
+                blockID_array = blockIDList * ncells
+                packetID_array = packetIDList * ncells
                 grainID_array = grainIDList * ncells
+                bid_list.extend(blockID_array)
+                pak_id_list.extend(packetID_array)
                 gid_list.extend(grainID_array)
 
                 phaseIDList = [phase]
@@ -202,7 +225,8 @@ class SubMesher(AbaqusMesher):
                 else:
                     grid_tet = tet_grain_grid.merge(grid_tet, merge_points=True)
 
-
+            grid_tet.cell_data["block_id"] = np.asarray(bid_list)
+            grid_tet.cell_data["packet_id"] = np.asarray(pak_id_list)
             grid_tet.cell_data['GrainID'] = np.asarray(gid_list)
             grid_tet.cell_data['PhaseID'] = np.asarray(pid_list)
             grid = grid_tet.copy()
@@ -231,7 +255,7 @@ class SubMesher(AbaqusMesher):
             grain_surf = grain_grid.extract_surface()
             grain_surf_df = pd.DataFrame(data=grain_surf.points, columns=['x', 'y', 'z'])
             merged_pts_df = grain_surf_df.join(all_points_df_old.set_index(['x', 'y', 'z']), on=['x', 'y', 'z'])
-            grain_surf_smooth = grain_surf.smooth(n_iter=250)
+            grain_surf_smooth = grain_surf.smooth(n_iter=200)
             smooth_pts_df = pd.DataFrame(data=grain_surf_smooth.points, columns=['x', 'y', 'z'])
             all_points_df.loc[merged_pts_df['ori_idx'], ['x', 'y', 'z']] = smooth_pts_df.values
 
@@ -266,7 +290,7 @@ class SubMesher(AbaqusMesher):
             # grid = self.apply_roughness(grid)
             pass
 
-        f = open(RveInfo.store_path + '/RVE_smooth.inp', 'w+')
+        f = open(RveInfo.store_path + '/DRAGen_RVE.inp', 'w+')
         f.write('*Heading\n')
         f.write('** Job name: Job-1 Model name: Job-1\n')
         f.write('** Generated by: DRAGen \n')
@@ -284,7 +308,7 @@ class SubMesher(AbaqusMesher):
         f.close()
         lines = [line.lower() for line in lines]
         startingLine = lines.index('*node\n')
-        f = open(RveInfo.store_path + '/RVE_smooth.inp', 'a')
+        f = open(RveInfo.store_path + '/DRAGen_RVE.inp', 'a')
         f.write('*Part, name=PART-1\n')
         for line in lines[startingLine:]:
             if line.replace(" ", "") == "*element,type=c3d8rh\n":
@@ -309,6 +333,8 @@ class SubMesher(AbaqusMesher):
 
         phase1_idx = 0
         phase2_idx = 0
+        phase3_idx = 0
+        phase4_idx = 0
         for i in range(self.n_blocks):
             nBlock = i + 1
             if self.rve.loc[GRID.cell_data['block_id'] == nBlock].phaseID.values[0] == 1:
@@ -323,6 +349,26 @@ class SubMesher(AbaqusMesher):
                 else:
                     f.write('** Section: Section - {}\n'.format(nBlock))
                     f.write('*Solid Section, elset=Set-Block{}, material=Martensite\n'.format(nBlock))
+            elif self.rve.loc[GRID.cell_data['block_id'] == nBlock].phaseID.values[0] == 3:
+                if not RveInfo.phase2iso_flag:
+                    phase3_idx += 1
+                    f.write('** Section: Section - {}\n'.format(nBlock))
+                    f.write(
+                        '*Solid Section, elset=Set-Block{}, material=Pearlite_{}\n'.format(nBlock, phase2_idx))
+                else:
+                    f.write('** Section: Section - {}\n'.format(nBlock))
+                    f.write('*Solid Section, elset=Set-Block{}, material=Pearlite\n'.format(nBlock))
+
+            elif self.rve.loc[GRID.cell_data['block_id'] == nBlock].phaseID.values[0] == 4:
+                if not RveInfo.phase2iso_flag:
+                    phase4_idx += 1
+                    f.write('** Section: Section - {}\n'.format(nBlock))
+                    f.write(
+                        '*Solid Section, elset=Set-Block{}, material=Bainite_{}\n'.format(nBlock, phase2_idx))
+                else:
+                    f.write('** Section: Section - {}\n'.format(nBlock))
+                    f.write('*Solid Section, elset=Set-Block{}, material=Bainite\n'.format(nBlock))
+
 
         f.close()
         os.remove(RveInfo.store_path + '/rve-part.inp')
@@ -341,6 +387,8 @@ class SubMesher(AbaqusMesher):
         self.make_assembly()  # Don't change the order
         self.pbc(GRID, grid_hull_df)  # of these four
         self.write_material_def()  # functions here
+        if RveInfo.gui_flag:
+            RveInfo.progress_obj.emit(50)
         if RveInfo.pbc_flag:
             self.write_pbc_step_def()  # it will lead to a faulty inputfile
         if RveInfo.submodel_flag:
@@ -348,4 +396,8 @@ class SubMesher(AbaqusMesher):
         else:
             print('pbcs were assumed')
             self.write_pbc_step_def()
+        if RveInfo.gui_flag:
+            RveInfo.progress_obj.emit(75)
         self.write_block_data()
+        if RveInfo.gui_flag:
+            RveInfo.progress_obj.emit(100)

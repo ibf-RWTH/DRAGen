@@ -283,7 +283,6 @@ class Ui_MainWindow(object):
         self.substructure_filemode_radio.toggled.connect(self.widget_handler)
 
         self.substructure_user_mode_radio = QtWidgets.QRadioButton(self.gridLayoutWidget_4)
-        self.substructure_user_mode_radio = QtWidgets.QRadioButton(self.gridLayoutWidget_4)
         self.substructure_user_mode_radio.setChecked(False)
         self.substructure_user_mode_radio.setObjectName("substructure_user_mode_radio")
         self.grid_mode.addWidget(self.substructure_user_mode_radio, 0, 2, 1, 2)
@@ -1404,7 +1403,7 @@ class Ui_MainWindow(object):
 
         ARGS = {'root': None, 'box_size': None, 'box_size_y': None, 'box_size_z': None, 'resolution': None,
                 'number_of_rves': 0, 'dimension': 3, 'phases': list(), 'abaqus_flag': False, 'damask_flag': False,
-                'moose_flag': False, 'anim_flag': None, 'phase2iso_flag': True, 'pbc_flag': False,
+                'moose_flag': False, 'anim_flag': None, 'phase2iso_flag': False, 'pbc_flag': False,
                 'submodel_flag': False, 'element_type': None, 'slope_offset': 0, 'smoothing': True,
                 'number_of_bands': 0, 'lower_band_bound': None, 'upper_band_bound': None, 'band_orientation': None,
                 'band_filling': None, 'inclusion_flag': None, 'inclusion_ratio': None, 'visualization_flag': None,
@@ -1671,7 +1670,7 @@ class Ui_MainWindow(object):
             ARGS['smoothing'] = self.smoothing_button.isChecked()
 
         ARGS['root'] = self.lineEdit_store_path.text()
-        if len(ARGS['store_path']) == 0:
+        if len(ARGS['root']) == 0:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
             msg.setText("Please choose a directory to store the Output data in!")
@@ -1715,7 +1714,6 @@ class Ui_MainWindow(object):
 
 
 if __name__ == "__main__":
-    "test"
     import sys
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
