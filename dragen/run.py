@@ -39,6 +39,7 @@ class Run(HelperFunctions):
             submodel_flag: bool,
             phase2iso_flag: bool,
             smoothing_flag: bool,
+            x_fem_flag: bool,
 
             # generation parameters
             gui_flag: bool,
@@ -129,6 +130,7 @@ class Run(HelperFunctions):
         RveInfo.phase2iso_flag = phase2iso_flag
         RveInfo.pbc_flag = pbc_flag
         RveInfo.submodel_flag = submodel_flag
+        RveInfo.xfem_flag = x_fem_flag
 
         RveInfo.roughness_flag = False
         RveInfo.band_filling = band_filling
