@@ -22,7 +22,7 @@ _Note: For developing it is highly recommended to use Python versions 3.6 to 3.8
 ## Installation
 clone this repository into desired destination:<br>
 ```
-$ git clone https://github.com/DRAGen-IMS/DRAGen.git
+$ git clone https://github.com/IMS-RWTH/DRAGen.git
 $ cd dragen
 ```
 make sure conda is installed correctly on your system [look up here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)<br>
