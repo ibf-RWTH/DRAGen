@@ -40,7 +40,7 @@ class DataTask2D(HelperFunctions):
             sum_bw = RveInfo.bandwidths.sum()
         else:
             sum_bw = 0
-        experimental_data = pd.DataFrame()
+        input_data = pd.DataFrame()
         for phase in RveInfo.phases:
             file_idx = RveInfo.PHASENUM[phase]
 
@@ -63,7 +63,7 @@ class DataTask2D(HelperFunctions):
                 grains_df['phaseID'] = RveInfo.PHASENUM[phase]
                 total_df = pd.concat([total_df, grains_df])
                 phase_input_df['phaseID'] = RveInfo.PHASENUM[phase]
-                experimental_data = pd.concat([experimental_data, phase_input_df])
+                input_data = pd.concat([input_data, phase_input_df])
 
             else:
                 grains_df = phase_input_df.copy()
@@ -80,7 +80,7 @@ class DataTask2D(HelperFunctions):
         RveInfo.LOGGER.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
                             format(total_volume, estimated_boxsize))
 
-        experimental_data.to_csv(RveInfo.gen_path + '/experimental_data.csv', index=False)
+        input_data.to_csv(RveInfo.gen_path + '/input_data.csv', index=False)
 
         print(grains_df)
         return grains_df
@@ -170,12 +170,21 @@ class DataTask2D(HelperFunctions):
             ref_r_out[phase] = current_phase_ref_r_out
 
         if len(RveInfo.phases) > 1:
-            input_ratio = [RveInfo.phase_ratio[key] for key in RveInfo.phase_ratio.keys()]
-            labels = [label for label in RveInfo.phases]
+            input_ratio = list()
+            labels = list()
+            for i, phase in enumerate(RveInfo.phases):
+                if RveInfo.PHASENUM[phase] > 5:  # phase ratio postprocessing for bands not relevant
+                    continue
+                ratio = RveInfo.phase_ratio[RveInfo.PHASENUM[phase]]
+                input_ratio.append(ratio)
+                label = RveInfo.phases[i]
+                labels.append(label)
             PostProcVol().gen_pie_chart_phases(input_ratio, labels, 'input')
             PostProcVol().gen_pie_chart_phases(phase_ratios, labels, 'output')
 
         for phase in RveInfo.phases:
+            if RveInfo.PHASENUM[phase] > 4: # postprocessing for inclusions and bands not yet supported
+                continue
             PostProcVol().gen_plots(ref_r_in[phase], ref_r_out[phase], phase)
             if RveInfo.gui_flag:
                 RveInfo.infobox_obj.emit('checkout the evaluation report of the rve stored at:\n'

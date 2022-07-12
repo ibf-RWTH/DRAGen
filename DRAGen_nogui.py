@@ -1,11 +1,11 @@
 from dragen.run import Run
 dimension = 2
-box_size = 200
+box_size = 100
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
-resolution = 1
+resolution = 2
 number_of_rves = 1
-smoothing_flag = True
+smoothing_flag = False
 # Banding Params
 number_of_bands = 0
 band_filling = 0.6
@@ -30,8 +30,8 @@ slope_offset = 0
 #file1 = r'F:/OCAS/NO30_RVE_data/Data_processed.csv'
 #file2 = r"D:\2nd mini-thesis\dragen\ExampleInput\example_pag_inp.csv"
 #DP800
-file1 = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\DP800/TrainedData_Ferrite.pkl'
-file2 = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\DP800/TrainedData_Martensite.pkl'
+file1 = r'E:\Sciebo\IEHK\Publications\CMAME\DRAGen\matdata\DP800/TrainedData_Ferrite.pkl'
+file2 = r'E:\Sciebo\IEHK\Publications\CMAME\DRAGen\matdata\DP800/TrainedData_Martensite.pkl'
 
 #Bainite
 #PAGs
@@ -52,8 +52,8 @@ subs_file_flag = False
 gan_flag = False
 moose_flag = False
 abaqus_flag = True
-pbc_flag = False
-submodel_flag = True
+pbc_flag = True
+submodel_flag = False
 damask_flag = False
 phase2iso_flag = True
 x_fem_flag = True

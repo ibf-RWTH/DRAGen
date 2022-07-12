@@ -59,10 +59,6 @@ class Run(HelperFunctions):
             upper_band_bound: float, lower_band_bound: float,
             band_orientation: str, band_filling: float,
 
-            # inclusion related  parameters:
-            inclusion_flag: bool,
-            inclusion_ratio: float,
-
             # substructure related parameters:
             subs_flag: bool,
             subs_file_flag: bool,
@@ -134,8 +130,6 @@ class Run(HelperFunctions):
 
         RveInfo.roughness_flag = False
         RveInfo.band_filling = band_filling
-        RveInfo.inclusion_ratio = inclusion_ratio
-        RveInfo.inclusion_flag = inclusion_flag
         RveInfo.root = root
 
         RveInfo.n_pts = math.ceil(float(box_size) * resolution)

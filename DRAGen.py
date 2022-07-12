@@ -1036,6 +1036,11 @@ class Ui_MainWindow(object):
         self.submodel_button.setObjectName("submodel_button")
         self.gridLayout_2.addWidget(self.submodel_button, 0, 6, 1, 1)
 
+        self.xfem_button = QtWidgets.QCheckBox(self.gridLayoutWidget)
+        self.xfem_button.setObjectName("xfem_button")
+        self.xfem_button.setChecked(False)
+        self.gridLayout_2.addWidget(self.xfem_button, 0, 7, 1, 1)
+
         # Element Type:
         self.element_type_label = QtWidgets.QLabel(self.gridLayoutWidget)
         self.element_type_label.setObjectName("element_type_label")
@@ -1167,6 +1172,7 @@ class Ui_MainWindow(object):
         self.boundary_label.setText(_translate("MainWindow", "BC:"))
         self.PBC_button.setText(_translate("MainWindow", "periodic"))
         self.submodel_button.setText(_translate("MainWindow", "submodel"))
+        self.xfem_button.setText(_translate("MainWindow", "xfem"))
         self.label_store_path.setText(_translate("MainWindow", "Output directory"))
         self.lineEdit_store_path.setText(_translate("MainWindow", "C:\\temp"))
         self.Banding_button.setText(_translate("MainWindow", "Banding"))
@@ -1403,10 +1409,10 @@ class Ui_MainWindow(object):
 
         ARGS = {'root': None, 'box_size': None, 'box_size_y': None, 'box_size_z': None, 'resolution': None,
                 'number_of_rves': 0, 'dimension': 3, 'phases': list(), 'abaqus_flag': False, 'damask_flag': False,
-                'moose_flag': False, 'anim_flag': None, 'phase2iso_flag': False, 'pbc_flag': False,
+                'moose_flag': False, 'anim_flag': None, 'phase2iso_flag': False, 'xfem_flag': False, 'pbc_flag': False,
                 'submodel_flag': False, 'element_type': None, 'slope_offset': 0, 'smoothing': True,
                 'number_of_bands': 0, 'lower_band_bound': None, 'upper_band_bound': None, 'band_orientation': None,
-                'band_filling': None, 'inclusion_flag': None, 'inclusion_ratio': None, 'visualization_flag': None,
+                'band_filling': None, 'visualization_flag': None,
                 'file_dict': {}, 'phase_ratio': {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0},
                 'subs_flag': False, 'subs_file_flag': False,
                 'subs_file': None, 'orientation_relationship': None, 'subrun': None, 'pag_file': None, 'equiv_d': None,
@@ -1660,6 +1666,7 @@ class Ui_MainWindow(object):
             ARGS['element_type'] = element_type_dict.get(self.comboBox_element_type.currentIndex())
             ARGS['submodel_flag'] = self.submodel_button.isChecked()
             ARGS['pbc_flag'] = self.PBC_button.isChecked()
+            ARGS['xfem_flag'] = self.xfem_button.isChecked()
             ARGS['smoothing'] = self.smoothing_button.isChecked()
         elif self.damask_button.isChecked():
             ARGS['damask_flag'] = True

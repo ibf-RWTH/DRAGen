@@ -115,7 +115,7 @@ class DataTask3D(HelperFunctions):
         grains_df.reset_index(inplace=True, drop=True)
         grains_df.loc[:, 'GrainID'] = grains_df.index + 1
 
-        if RveInfo.inclusion_flag and RveInfo.inclusion_ratio > 0:
+        if RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] > 0:
             inclusions_df = total_df[total_df['phaseID'] == 5]
             inclusions_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
             inclusions_df.reset_index(inplace=True, drop=True)
@@ -288,14 +288,14 @@ class DataTask3D(HelperFunctions):
         """
         PLACE THE INCLUSIONS!
         """
-        if rve_status and RveInfo.inclusion_flag and RveInfo.inclusion_ratio != 0:
+        if rve_status and RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] != 0:
             discrete_RSA_inc_obj = DiscreteRsa3D(inclusions_df['a'].tolist(),
                                                  inclusions_df['b'].tolist(),
                                                  inclusions_df['c'].tolist(),
                                                  inclusions_df['alpha'].tolist())
 
             rve, rve_status = discrete_RSA_inc_obj.run_rsa_inclusions(rve)
-        elif not rve_status and RveInfo.inclusion_flag:
+        elif not rve_status:
             print('Tesselator Failed!')
 
         """
@@ -316,7 +316,7 @@ class DataTask3D(HelperFunctions):
                 # Denn Grain-ID ist entweder >0 oder -200 oder >-200
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == i+1, 'phaseID'] = grains_df.loc[i, 'phaseID']
 
-            if RveInfo.inclusion_flag and RveInfo.inclusion_ratio > 0:
+            if RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] > 0:
                 # Set the points where < -200 to phase 5 and to grain ID i + j + 3
                 for j in range(inclusions_df.__len__()):
                     periodic_rve_df.loc[periodic_rve_df['GrainID'] == -(200 + j + 1), 'GrainID'] = max_grain_id + j + 1
@@ -327,7 +327,7 @@ class DataTask3D(HelperFunctions):
                 grains_df.reset_index(inplace=True, drop=True)
                 grains_df.loc[grains_df['phaseID'] == 5, 'GrainID'] = grains_df.loc[grains_df['phaseID'] == 5].index + 1
 
-            if RveInfo.number_of_bands > 0 and RveInfo.inclusion_flag and RveInfo.inclusion_ratio > 0:
+            if RveInfo.number_of_bands > 0 and RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] > 0:
                 # Set the points where == -200 to phase 2 and to grain ID i + j + 3
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = max_grain_id + 1
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == (max_grain_id + 3), 'phaseID'] = 2
@@ -360,7 +360,7 @@ class DataTask3D(HelperFunctions):
                     #periodic_rve[np.where(periodic_rve == -200)] = last_grain_id + 1
                     phase_list.append(2)
 
-                elif RveInfo.inclusion_ratio > 0 and (RveInfo.inclusion_flag is True):
+                elif RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] > 0:
                     print('Nur Inclusions')
                     phase_list = grains_df['phaseID'].tolist()
                     for i in range(len(inclusions_df)):

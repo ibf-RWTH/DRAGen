@@ -140,20 +140,15 @@ class RveInfo:
     pbc_flag: bool = None
     """If set to True periodic boundary conditions will be applied ( if True submodel_flag must be False!!)"""
 
-    submodel_flag: bool = None
+    submodel_flag: bool = False
     """If set to True a submodel usage will be assumed (if True pbc_flag must be False!!!)"""
-    xfem_flag: bool = None
+    xfem_flag: bool = False
 
     element_type: str = None
     """available element types: (C3D4, HEX8)"""
 
     roughness_flag: bool = False
     """Flag not yet activated since roughness is not yet implemented"""
-
-    inclusion_ratio: float = 0.01  # Space occupied by inclusions
-    # TODO: @Niklas warum gibt es eine Flag und eine ratio für die inclusions? die Ratio ist doch schon über das dict abgedeckt
-    inclusion_flag: bool = None
-    """ Set to True if inclusion file is available and inclusions or pores are supposed to be modeled"""
 
     root: str = './'
     """root path"""

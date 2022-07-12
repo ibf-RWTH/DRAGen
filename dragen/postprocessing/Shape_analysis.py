@@ -9,7 +9,7 @@ class shape:
         pass
 
     def thresh_callback(self, img, max_id, phaseID):
-        if RveInfo.inclusion_flag or RveInfo.number_of_bands>0:
+        if RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] or RveInfo.number_of_bands>0:
             print('inclusions and bands will be neglected in shape analysis')
         a = list()
         b = list()
