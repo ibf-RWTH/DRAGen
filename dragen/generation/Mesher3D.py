@@ -47,9 +47,13 @@ class AbaqusMesher(MeshingHelper):
         grid_hull_df.sort_values(by=['x', 'y', 'z'], inplace=True)
         grid_hull_df.index.rename('pointNumber', inplace=True)
         grid_hull_df = grid_hull_df.reset_index()
+        OutPutFile.write('*Nset, nset=SET-Hull, instance=PART-1-1\n')
         for i in grid_hull_df.index:
-            OutPutFile.write('*Nset, nset=SET-Hull, instance=PART-1-1\n'.format(i + 1))
-            OutPutFile.write(' {},\n'.format(int(grid_hull_df.loc[i]['pointNumber'] + 1)))
+            OutPutFile.write(' {},'.format(int(grid_hull_df.loc[i]['pointNumber'] + 1)))
+            if (i+1) % 16 == 0:
+                OutPutFile.write('\n')
+        OutPutFile.write('*Submodel, type=NODE, exteriorTolerance=0.05\n')
+        OutPutFile.write('SET-HULL, \n')
         OutPutFile.close()
 
     def pbc(self, rve: pv.UnstructuredGrid, grid_hull_df: pd.DataFrame) -> None:
@@ -968,7 +972,7 @@ class AbaqusMesher(MeshingHelper):
         if RveInfo.gui_flag:
             RveInfo.progress_obj.emit(25)
         GRID = self.gen_grains(GRID)
-        smooth_mesh = self.smoothen_mesh(GRID, n_iter=250)
+        smooth_mesh = self.smoothen_mesh(GRID, n_iter=200)
         pbc_grid = smooth_mesh
         if RveInfo.gui_flag:
             RveInfo.progress_obj.emit(50)
