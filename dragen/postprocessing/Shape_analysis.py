@@ -77,26 +77,12 @@ class shape:
 
     def get_ellipses(self, grid, slice_ID, phaseID):
 
-        start1 = int(grid.shape[0] / 4)
-        stop1 = int(grid.shape[0] / 4 + grid.shape[0] / 4 * 2)
-        start2 = int(grid.shape[1] / 4)
-        stop2 = int(grid.shape[1] / 4 + grid.shape[1] / 4 * 2)
-
-        if RveInfo.dimension == 3:
-            start3 = int(grid.shape[2] / 4)
-            stop3 = int(grid.shape[2] / 4 + grid.shape[2] / 4 * 2)
-            rve = grid[start1:stop1, start2:stop2, start3:stop3]
-        else:
-            rve = grid[start1:stop1, start2:stop2]
-
-        rve = rve - 1  # Grid.vti starts at zero
+        rve = grid - 1  # Grid.vti starts at zero
         max_id = rve.max()
-        print(np.unique(rve))
-        print(max_id)
         rve = rve/rve.max()
 
         if RveInfo.dimension == 3:
-            slice = rve[:, :, slice_ID]
+            slice = rve[:, :, slice_ID-1]
         else:
             slice = rve
 
