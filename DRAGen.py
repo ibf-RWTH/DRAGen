@@ -1409,7 +1409,7 @@ class Ui_MainWindow(object):
 
         ARGS = {'root': None, 'box_size': None, 'box_size_y': None, 'box_size_z': None, 'resolution': None,
                 'number_of_rves': 0, 'dimension': 3, 'phases': list(), 'abaqus_flag': False, 'damask_flag': False,
-                'moose_flag': False, 'anim_flag': None, 'phase2iso_flag': False, 'xfem_flag': False, 'pbc_flag': False,
+                'moose_flag': False, 'anim_flag': None, 'phase2iso_flag': True, 'xfem_flag': False, 'pbc_flag': False,
                 'submodel_flag': False, 'element_type': None, 'slope_offset': 0, 'smoothing': True,
                 'number_of_bands': 0, 'lower_band_bound': None, 'upper_band_bound': None, 'band_orientation': None,
                 'band_filling': None, 'visualization_flag': None,
