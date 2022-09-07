@@ -17,6 +17,7 @@ from dragen.utilities.InputInfo import RveInfo
 from dragen.substructure.run import Run as substrucRun
 from dragen.InputGenerator.C_WGAN_GP import WGANCGP
 
+
 import dragen.generation.spectral as spectral
 
 
@@ -92,6 +93,7 @@ class DataTask3D(HelperFunctions):
 
 
         grains_df = super().process_df(total_df, RveInfo.SHRINK_FACTOR)
+        #grains_df.to_csv('grains_df.csv')
         total_volume = sum(
             grains_df[grains_df['phaseID'] <= 6]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
         estimated_boxsize = np.cbrt(total_volume)
@@ -412,6 +414,9 @@ class DataTask3D(HelperFunctions):
                     mesher_obj.run()
         else:
             print('Tessellation did not succeed')
+
+        #pairs=pairs3d(periodic_rve)
+        #print("pairs complete")
         return periodic_rve
 
     def post_processing(self, rve):

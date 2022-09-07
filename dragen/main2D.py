@@ -14,6 +14,7 @@ from dragen.generation.Mesher2D import Mesher_2D, BuildAbaqus2D
 from dragen.utilities.InputInfo import RveInfo
 from dragen.postprocessing.voldistribution import PostProcVol
 from dragen.postprocessing.Shape_analysis import shape
+from dragen.misorientations.misofunctions import pairs2d
 
 
 # TODO insert new rve utils like array gen and grid gen etc.
@@ -131,7 +132,9 @@ class DataTask2D(HelperFunctions):
             BuildAbaqus2D(mesh, periodic_rve_df, grains_df).run()
 
         RveInfo.LOGGER.info("2D RVE generation process has successfully completed...")
-        return rve
+        pairs = pairs2d(rve)
+        return rve,pairs
+
 
     def post_processing(self, rve):
         slice_ID = 0

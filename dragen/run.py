@@ -12,6 +12,9 @@ from dragen.main3D import DataTask3D
 from dragen.substructure.run import Run as SubRun
 from dragen.utilities.Helpers import HelperFunctions
 from dragen.utilities.InputInfo import RveInfo
+from dragen.misorientations.misofunctions import pairs2d
+from dragen.misorientations.misofunctions import pairs3d
+from dragen.misorientations.misofunctions import misorientation
 
 
 class Run(HelperFunctions):
@@ -203,6 +206,18 @@ class Run(HelperFunctions):
                 self.initializations(i)
                 total_df = obj2D.grain_sampling()
                 rve = obj2D.rve_generation(total_df)
+                pairs=pairs2d(rve)
+                grains = np.array(total_df)
+                misorientations = np.empty((0, 1))
+                for i in range(0, len(pairs)):
+                    #print("index"+str(i))
+                    x = int(pairs[i, 0])
+                    #print("x="+str(x))
+                    y = int(pairs[i, 1])
+                    #print("y="+str(y))
+                    miso = misorientation(x, y, degrees=True,grains=grains)[0]
+                    misorientations = np.append(misorientations,[[miso]], 0)
+                    print((len(misorientations) / len(pairs)) * 100)
                 obj2D.post_processing(rve)
 
         elif RveInfo.dimension == 3:
@@ -212,6 +227,19 @@ class Run(HelperFunctions):
                 self.initializations(i)
                 total_df = obj3D.grain_sampling()
                 rve = obj3D.rve_generation(total_df)
+                pairs=pairs3d(rve)
+                grains=np.array(total_df)
+                misorientations = np.empty((0, 1))
+
+                for i in range(0, len(pairs)):
+                    #print("index"+str(i))
+                    x = int(pairs[i, 0])
+                    #print("x="+str(x))
+                    y = int(pairs[i, 1])
+                    #print("y="+str(y))
+                    miso = misorientation(x, y, degrees=True,grains=grains)[0]
+                    misorientations = np.append(misorientations,[[miso]], 0)
+                    print((len(misorientations) / len(pairs)) * 100)
                 obj3D.post_processing(rve)
 
 
@@ -228,6 +256,6 @@ class Run(HelperFunctions):
             logger.setLevel(level=logging.DEBUG)
             logger.info('dimension must be 2 or 3')
             sys.exit()
-
+            return rve
 
 
