@@ -227,10 +227,10 @@ class Run(HelperFunctions):
             obj3D = DataTask3D()
             for i in range(RveInfo.number_of_rves):
                 self.initializations(i)
-                total_df = obj3D.grain_sampling()[0]
-                input_miso=obj3D.input_misorientation(obj3D.grain_sampling()[1])
+                total_df = obj3D.grain_sampling()
+                #input_miso=obj3D.input_misorientation(obj3D.grain_sampling()[1])
                 rve = obj3D.rve_generation(total_df)
-                obj3D.post_processing(rve,input_miso,total_df)
+                obj3D.post_processing(rve)
 
 
         else:

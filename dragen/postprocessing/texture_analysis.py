@@ -12,7 +12,6 @@ import scipy.stats as st
 import seaborn as sns
 import numpy as np
 from copy import copy
-import plotly.graph_objects as go
 import warnings
 warnings.filterwarnings("ignore")
 import damask
@@ -168,7 +167,7 @@ class Texture:
         plt.close()
         print('saved {} at {}'.format(figname, store_path))
 
-
+'''
 if __name__ == '__main__':
     rve_texture = 'E:/Sciebo/IEHK/Publications/ComputationalSci/DRAGen/matdata/NO30/Texture/EulerAngles.txt'
     rve = 'E:/Sciebo/IEHK/Publications/ComputationalSci/DRAGen/matdata/NO30/Texture/RVE_Numpy.npy'
@@ -185,3 +184,5 @@ if __name__ == '__main__':
         sym_tex = Texture().symmetry_operations(tex_df=tex, family='cubic')
         Texture().calc_odf(sym_tex, phi2_list=phi2, store_path=store_path, figname=names[i])
 
+
+'''
