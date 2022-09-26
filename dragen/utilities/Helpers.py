@@ -141,6 +141,7 @@ class HelperFunctions:
             grain_df = pd.DataFrame(data=grain_dict,
                                     columns=["a", "b", "alpha", "phi1", "PHI", "phi2"])
 
+
             return grain_df
 
     def read_input_gan(self, file_name, dimension, size) -> pd.DataFrame:

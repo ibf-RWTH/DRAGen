@@ -4,6 +4,8 @@ import sys
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import math
+
+import matplotlib.pyplot as plt
 import numpy as np
 from typing import Dict
 
@@ -225,22 +227,10 @@ class Run(HelperFunctions):
             obj3D = DataTask3D()
             for i in range(RveInfo.number_of_rves):
                 self.initializations(i)
-                total_df = obj3D.grain_sampling()
+                total_df = obj3D.grain_sampling()[0]
+                input_miso=obj3D.input_misorientation(obj3D.grain_sampling()[1])
                 rve = obj3D.rve_generation(total_df)
-                pairs=pairs3d(rve)
-                grains=np.array(total_df)
-                misorientations = np.empty((0, 1))
-
-                for i in range(0, len(pairs)):
-                    #print("index"+str(i))
-                    x = int(pairs[i, 0])
-                    #print("x="+str(x))
-                    y = int(pairs[i, 1])
-                    #print("y="+str(y))
-                    miso = misorientation(x, y, degrees=True,grains=grains)[0]
-                    misorientations = np.append(misorientations,[[miso]], 0)
-                    print((len(misorientations) / len(pairs)) * 100)
-                obj3D.post_processing(rve)
+                obj3D.post_processing(rve,input_miso,total_df)
 
 
         else:

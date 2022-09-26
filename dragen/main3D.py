@@ -15,6 +15,10 @@ from dragen.postprocessing.voldistribution import PostProcVol
 from dragen.postprocessing.Shape_analysis import shape
 from dragen.utilities.InputInfo import RveInfo
 from dragen.substructure.run import Run as substrucRun
+from dragen.misorientations.misofunctions import misorientation
+from dragen.misorientations.misofunctions import pairs3d
+import csv
+
 from dragen.InputGenerator.C_WGAN_GP import WGANCGP
 
 
@@ -25,6 +29,7 @@ class DataTask3D(HelperFunctions):
 
     def __init__(self):
         super().__init__()
+
 
     def grain_sampling(self):
         """
@@ -53,6 +58,7 @@ class DataTask3D(HelperFunctions):
             # Check file ending:
             if files[file_idx].endswith('.csv'):
                 phase_input_df = super().read_input(files[file_idx], RveInfo.dimension)
+
             elif files[file_idx].endswith('.pkl'):
                 phase_input_df = super().read_input_gan(files[file_idx], RveInfo.dimension, size=1000)
 
@@ -101,8 +107,31 @@ class DataTask3D(HelperFunctions):
                             format(total_volume, estimated_boxsize))
 
         input_data.to_csv(RveInfo.gen_path + '/input_data.csv', index=False)
+        input=np.array(phase_input_df)
 
-        return grains_df
+        return grains_df,input
+
+    def input_misorientation(self,grains):
+        pairs = []
+        with open('pairID.csv', 'r') as file:
+            reader1 = csv.reader(file, delimiter=',')
+            for row in reader1:
+                pairs.append(row)
+
+        pairs = np.array(pairs, dtype='int')
+
+        misorientations = np.empty((0, 1))
+
+        for i in range(0, len(pairs)):
+            x = int(pairs[i, 0])
+            y = int(pairs[i, 1])
+            miso = misorientation(x, y, degrees=False, grains=grains)[0]
+            misorientations = np.append(misorientations, [[miso]], 0)
+            print((len(misorientations) / len(pairs)) * 100)
+
+        return misorientations
+
+
 
     def rve_generation(self, total_df):
 
@@ -419,10 +448,32 @@ class DataTask3D(HelperFunctions):
         #print("pairs complete")
         return periodic_rve
 
-    def post_processing(self, rve):
+
+    def post_processing(self,rve,data_input,data_output):
+
         slice_ID = 0
         grain_shapes = pd.DataFrame()
         # the rve array still contains the boundarys in order to get every 4th slice we need to devide by 8
+
+        #misorientation angle distribution histogram for the input data
+        plt.hist(data_input, 32)
+        plt.savefig('{}/angle_distribution_input.png'.format(RveInfo.fig_path))
+
+        # misorientation angle distribution for the produced rve
+        pairs = pairs3d(rve)
+        grains = np.array(data_output)
+        misorientations = np.empty((0, 1))
+
+        for i in range(0, len(pairs)):
+            x = int(pairs[i, 0])
+            y = int(pairs[i, 1])
+            miso = misorientation(x, y, degrees=False, grains=grains)[0]
+            misorientations = np.append(misorientations, [[miso]], 0)
+            print((len(misorientations) / len(pairs)) * 100)
+
+        plt.hist(misorientations, 32)
+        plt.savefig('{}/angle_distribution_out.png'.format(RveInfo.fig_path))
+
 
 
         phase_ratios = list()
