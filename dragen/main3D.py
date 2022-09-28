@@ -90,11 +90,11 @@ class DataTask3D(HelperFunctions):
 
         print('Processing now')
 
-
         grains_df = super().process_df(total_df, RveInfo.SHRINK_FACTOR)
         total_volume = sum(
             grains_df[grains_df['phaseID'] <= 6]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
         estimated_boxsize = np.cbrt(total_volume)
+        RveInfo.LOGGER.info(f"The total number of grains is {grains_df.__len__()}")
         RveInfo.LOGGER.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
                             format(total_volume, estimated_boxsize))
 
@@ -363,9 +363,9 @@ class DataTask3D(HelperFunctions):
                 elif RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] > 0:
                     print('Nur Inclusions')
                     phase_list = grains_df['phaseID'].tolist()
-                    for i in range(len(inclusions_df)):
+                    """for i in range(len(inclusions_df)):
                         #periodic_rve[np.where(periodic_rve == -(200 + i + 1))] = last_grain_id + i + 1
-                        phase_list.append(5)
+                        phase_list.append(5)"""
                     print(phase_list.__len__())
 
                 else:
