@@ -161,8 +161,14 @@ class Run(HelperFunctions):
 
     @staticmethod
     def initializations(epoch):
-
-        RveInfo.store_path = RveInfo.root + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
+        counter = "0"
+        if epoch < 10:
+            counter = f"00{epoch}"
+        if epoch > 9 and epoch < 100:
+            counter = f"0{epoch}"
+        if epoch > 99:
+            counter = epoch
+        RveInfo.store_path = RveInfo.root + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + counter
         RveInfo.LOGGER.debug(RveInfo.store_path)
         RveInfo.fig_path = RveInfo.store_path + '/Figs'
         RveInfo.gen_path = RveInfo.store_path + '/Generation_Data'

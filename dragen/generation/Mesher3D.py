@@ -52,6 +52,8 @@ class AbaqusMesher(MeshingHelper):
             OutPutFile.write(' {},'.format(int(grid_hull_df.loc[i]['pointNumber'] + 1)))
             if (i+1) % 16 == 0:
                 OutPutFile.write('\n')
+        OutPutFile.write('\n')
+        OutPutFile.write('**\n')
         OutPutFile.write('*Submodel, type=NODE, exteriorTolerance=0.05\n')
         OutPutFile.write('SET-HULL, \n')
         OutPutFile.close()
@@ -754,21 +756,19 @@ class AbaqusMesher(MeshingHelper):
 
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[2] > 0:
             f.write('**\n')
-            f.write('*Material, name=Martensite\n')
-            f.write('*Elastic\n')
-            f.write('0.21, 0.3\n')
-            f.write('**')
+            f.write('*Include, Input=Martensite.inp\n')
+
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[3] > 0:
             f.write('**\n')
             f.write('*Material, name=Pearlite\n')
             f.write('*Elastic\n')
-            f.write('0.21, 0.3\n')
+            f.write('210000, 0.3\n')
             f.write('**')
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[4] > 0:
             f.write('**\n')
             f.write('*Material, name=Bainite\n')
             f.write('*Elastic\n')
-            f.write('0.21, 0.3\n')
+            f.write('210000, 0.3\n')
             f.write('**')
         f.close()
 
