@@ -786,7 +786,7 @@ class AbaqusMesher(MeshingHelper):
         f.write('**\n')
         f.write('*Step, name=Step-1, nlgeom=YES, inc=10000000, solver=ITERATIVE\n')
         f.write('*Static\n')
-        f.write('** Step time needs to be adjusted to global .odb')
+        f.write('** Step time needs to be adjusted to global .odb\n')
         f.write('0.001, 1., 1.05e-15, 0.25\n')
         f.write('**\n')
         f.write('** CONTROLS\n')
@@ -836,7 +836,7 @@ class AbaqusMesher(MeshingHelper):
 
         f = open(RveInfo.store_path + '/Step.inp', 'w+')
         f.write('**\n')
-        f.write('** Step time needs to be in agreement with amplitude')
+        f.write('** Step time needs to be in agreement with amplitude\n')
         f.write('*Amplitude, name=Amp-1\n')
         f.write('             0.,              0.,           1.,        1.,\n')
         f.write('**\n')
