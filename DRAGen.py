@@ -1695,7 +1695,7 @@ class Ui_MainWindow(object):
         if self.animation_flag_button.isChecked():
             ARGS['animation_flag'] = True
         else:
-            ARGS['visualization_flag'] = False
+            ARGS['animation_flag'] = False
 
         if len(ARGS['files'].values()) > 0:
             import_flag = True
