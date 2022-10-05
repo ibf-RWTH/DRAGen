@@ -16,3 +16,4 @@ torch
 tqdm
 vtk
 meshio
+scikit-image
