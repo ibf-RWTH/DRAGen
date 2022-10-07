@@ -16,7 +16,7 @@ from dragen.postprocessing.Shape_analysis import shape
 from dragen.postprocessing.texture_analysis import Texture
 from dragen.utilities.InputInfo import RveInfo
 from dragen.substructure.run import Run as substrucRun
-from dragen.misorientations.misofunctions import misorientation
+#from dragen.misorientations.misofunctions import misorientation
 from dragen.misorientations.misofunctions import pairs3d
 import csv
 
@@ -109,7 +109,7 @@ class DataTask3D(HelperFunctions):
         input = np.array(phase_input_df)
 
         return grains_df
-
+    '''
     def input_misorientation(self, grains):
         pairs = []
         with open('pairID.csv', 'r') as file:
@@ -129,7 +129,7 @@ class DataTask3D(HelperFunctions):
             print((len(misorientations) / len(pairs)) * 100)
 
         return misorientations
-
+    '''
     def rve_generation(self, total_df):
 
         """

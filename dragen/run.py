@@ -7,6 +7,7 @@ import math
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from typing import Dict
 
 from dragen.main2D import DataTask2D
@@ -16,7 +17,7 @@ from dragen.utilities.Helpers import HelperFunctions
 from dragen.utilities.InputInfo import RveInfo
 from dragen.misorientations.misofunctions import pairs2d
 from dragen.misorientations.misofunctions import pairs3d
-from dragen.misorientations.misofunctions import misorientation
+#from dragen.misorientations.misofunctions import misorientation
 
 
 class Run(HelperFunctions):
@@ -217,9 +218,9 @@ class Run(HelperFunctions):
                     #print("x="+str(x))
                     y = int(pairs[i, 1])
                     #print("y="+str(y))
-                    miso = misorientation(x, y, degrees=True,grains=grains)[0]
-                    misorientations = np.append(misorientations,[[miso]], 0)
-                    print((len(misorientations) / len(pairs)) * 100)
+                    #miso = misorientation(x, y, degrees=True,grains=grains)[0]
+                    #misorientations = np.append(misorientations,[[miso]], 0)
+                    #print((len(misorientations) / len(pairs)) * 100)
                 obj2D.post_processing(rve)
 
         elif RveInfo.dimension == 3:
@@ -230,7 +231,9 @@ class Run(HelperFunctions):
                 total_df = obj3D.grain_sampling()
                 #input_miso=obj3D.input_misorientation(obj3D.grain_sampling()[1])
                 rve = obj3D.rve_generation(total_df)
-                obj3D.post_processing(rve)
+                pairs = pairs3d(rve)
+            obj3D.post_processing(rve)
+            pd.DataFrame(pairs).to_csv(RveInfo.store_path + '/Generation_Data/pairs_output.csv', index=False)
 
 
         else:
