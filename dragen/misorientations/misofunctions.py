@@ -186,8 +186,7 @@ def calc_miso(grains,pairs,degrees):
         a=a_a[1]
         quaternions = np.append(quaternions, [c], 0)
         angle=np.append(angle,[[a]],0)
-        cond=((len(quaternions) / len(pairs)) * 100)
-        print("Completion: "+str(cond))
+        #cond=((len(quaternions) / len(pairs)) * 100)
+        #print("Completion: "+str(cond))
 
-    return quaternions,angle
-
+    return c,quaternions,angle

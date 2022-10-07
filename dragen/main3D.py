@@ -108,28 +108,9 @@ class DataTask3D(HelperFunctions):
         input_data.to_csv(RveInfo.gen_path + '/input_data.csv', index=False)
         input = np.array(phase_input_df)
 
-        return grains_df
-    '''
-    def input_misorientation(self, grains):
-        pairs = []
-        with open('pairID.csv', 'r') as file:
-            reader1 = csv.reader(file, delimiter=',')
-            for row in reader1:
-                pairs.append(row)
+        return grains_df,input
 
-        pairs = np.array(pairs, dtype='int')
 
-        misorientations = np.empty((0, 1))
-
-        for i in range(0, len(pairs)):
-            x = int(pairs[i, 0])
-            y = int(pairs[i, 1])
-            miso = misorientation(x, y, degrees=False, grains=grains)[0]
-            misorientations = np.append(misorientations, [[miso]], 0)
-            print((len(misorientations) / len(pairs)) * 100)
-
-        return misorientations
-    '''
     def rve_generation(self, total_df):
 
         """
