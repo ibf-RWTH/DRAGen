@@ -1,6 +1,6 @@
 import numpy as np
 import random as r
-import misofunctions as f
+from dragen.misorientations import misofunctions as f
 
 def prob(a,lower,upper):
     newarray=np.empty([0,1])

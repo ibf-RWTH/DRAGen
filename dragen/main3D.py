@@ -295,6 +295,12 @@ class DataTask3D(HelperFunctions):
         else:
             RveInfo.LOGGER.info("The RSA did not succeed...")
             sys.exit()
+        """
+        OPTIMIZING THE MISORIENTATION DISTRIBUTION FUNCTION
+        """
+
+
+
 
         """
         PLACE THE INCLUSIONS!
@@ -348,6 +354,7 @@ class DataTask3D(HelperFunctions):
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = max_grain_id + 1
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
                 periodic_rve[np.where(periodic_rve == -200)] = max_grain_id + 1
+
 
             # Start the Mesher
             # grains_df.to_csv('grains_df.csv', index=False)
