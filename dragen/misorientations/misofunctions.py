@@ -60,7 +60,7 @@ def pairs2d(grid):
 
 
 def pairs3d(grid):
-    start_time = time.time()
+    #start_time = time.time()
     print("Creating RVE's neighbour grains array...")
     npairs = np.empty((0, 2))
 
@@ -133,20 +133,29 @@ def pairs3d(grid):
                                 else:
                                     npairs = np.append(npairs, [pair], 0)
                                     npairs = np.unique(npairs, axis=0)
-                                    print(len(npairs))
+                                    #print(len(npairs))
                             else:
                                 pass
 
 
     print("Finished! Total length: "+str(len(npairs)))
-    end_time=time.time() - start_time
-    if end_time>=60:
-        print(str(end_time/60)+" minutes")
+    #end_time=time.time() - start_time
+    #if end_time>=60:
+        #print(str(end_time/60)+" minutes")
     return npairs
 
 def calc_miso(grains,pairs,degrees):
+    '''
+    Function that calculates the mdf for a set of input data
+    :param grains: Array which contains grains' information
+    :param pairs: Array of adjacent grains
+    :param degrees: Input Euler Angles in degrees or not
+    :return: Array of misorientation information per pair
+    '''
+    start_time = time.time()
     quaternions=np.empty((0,4))
     angle=np.empty((0,1))
+    euler_angles=np.empty((0,3))
 
     for i in range(0, len(pairs)):
         x = int(pairs[i, 0])
@@ -164,12 +173,15 @@ def calc_miso(grains,pairs,degrees):
 
         c = a.disorientation(b)
         a_a=damask.Orientation.as_axis_angle(c,degrees=True,pair=True)
+        e_a=damask.Orientation.as_Euler_angles(c,degrees=True)
         a=a_a[1]
         quaternions = np.append(quaternions, [c], 0)
         angle=np.append(angle,[[a]],0)
+        euler_angles=np.append(euler_angles,[e_a],0)
         #cond=((len(quaternions) / len(pairs)) * 100)
         #print("Completion: "+str(cond))
+    print(" %s seconds " % (time.time() - start_time))
 
-    return c,quaternions,angle
+    return quaternions,angle,euler_angles
 
 

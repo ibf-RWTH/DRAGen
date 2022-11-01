@@ -208,18 +208,6 @@ class Run(HelperFunctions):
                 self.initializations(i)
                 total_df = obj2D.grain_sampling()
                 rve = obj2D.rve_generation(total_df)
-                pairs=f.pairs2d(rve)
-                grains = np.array(total_df)
-                misorientations = np.empty((0, 1))
-                for i in range(0, len(pairs)):
-                    #print("index"+str(i))
-                    x = int(pairs[i, 0])
-                    #print("x="+str(x))
-                    y = int(pairs[i, 1])
-                    #print("y="+str(y))
-                    #miso = misorientation(x, y, degrees=True,grains=grains)[0]
-                    #misorientations = np.append(misorientations,[[miso]], 0)
-                    #print((len(misorientations) / len(pairs)) * 100)
                 obj2D.post_processing(rve)
 
         elif RveInfo.dimension == 3:
@@ -228,55 +216,8 @@ class Run(HelperFunctions):
             obj3D = DataTask3D()
             for i in range(RveInfo.number_of_rves):
                 self.initializations(i)
-                grain_sampling = obj3D.grain_sampling()
-                total_df=grain_sampling[0]
-                input_grains=grain_sampling[1]
-                pairs_input=[]
-                with open('pairID.csv', 'r') as file:
-                    reader1 = csv.reader(file, delimiter=',')
-                    for row in reader1:
-                        pairs_input.append(row)
-
-                pairs_input = np.array(pairs_input, dtype='float')
-                print("Calculating input misorientations....")
-                miso_input=f.calc_miso(grains=input_grains,pairs=pairs_input,degrees=True)
-                angle_input=miso_input[2]
-                plt.hist(angle_input,32)
-                plt.savefig('{}/angle_distribution_input.png'.format(RveInfo.fig_path))
-                plt.close()
-
-
-                rve = obj3D.rve_generation(total_df)
-                grains=np.array(total_df)
-                pairs = f.pairs3d(rve)
-                #pairs1=f.pairs3d1(rve)
-                print("Calculating non-optimized RVE's misorientations...")
-                miso_noopt=f.calc_miso(grains=grains,pairs=pairs,degrees=True)
-                angle_noopt=miso_noopt[2]
-                plt.hist(angle_noopt, 32)
-                plt.savefig('{}/angle_distribution_output_noopt.png'.format(RveInfo.fig_path))
-                plt.close()
-
-                bins = o.discretisize()
-                input = o.calc_probs(angle_input, bins)
-                output = o.calc_probs(angle_noopt, bins)
-                error = o.calc_error(input, output, bins)
-                print(error)
-
-                '''
-                grains_opt = o.opt(input=input, grains_noopt=grains, pairs=pairs, bins=bins, error_initial=error)
-                miso_opt=f.calc_miso(grains_opt,pairs,degrees=True)
-                angle_opt=miso_opt[1]
-                plt.hist(angle_opt, 32)
-                plt.savefig('{}/angle_distribution_output_opt.png'.format(RveInfo.fig_path))
-                plt.close()
-
-
-                '''
-                #pd.DataFrame(grains_opt).to_csv(RveInfo.store_path + '/Generation_Data/grains_output_opt.csv', index=False)
-                pd.DataFrame(pairs).to_csv(RveInfo.store_path + '/Generation_Data/pairs_output.csv', index=False)
-
-
+                total_df,input= obj3D.grain_sampling()
+                rve = obj3D.rve_generation(total_df,input)
                 obj3D.post_processing(rve)
 
 

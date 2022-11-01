@@ -16,8 +16,9 @@ from dragen.postprocessing.Shape_analysis import shape
 from dragen.postprocessing.texture_analysis import Texture
 from dragen.utilities.InputInfo import RveInfo
 from dragen.substructure.run import Run as substrucRun
-#from dragen.misorientations.misofunctions import misorientation
 from dragen.misorientations.misofunctions import pairs3d
+from dragen.misorientations.misofunctions import calc_miso
+import dragen.misorientations.optimization as f
 import csv
 
 from dragen.InputGenerator.C_WGAN_GP import WGANCGP
@@ -111,7 +112,7 @@ class DataTask3D(HelperFunctions):
         return grains_df,input
 
 
-    def rve_generation(self, total_df):
+    def rve_generation(self, total_df,input):
 
         """
         Separate the different datas
@@ -119,6 +120,7 @@ class DataTask3D(HelperFunctions):
             inclusions_df = data which is placed directly after the tesselation (not growing)
             bands_df = data used for the formation of bands
         """
+        print("ok")
         grains_df = total_df.loc[total_df['phaseID'] <= 4, :]
         grains_df = grains_df.sort_values(by='final_conti_volume', ascending=False)
         grains_df.reset_index(inplace=True, drop=True)
@@ -287,6 +289,7 @@ class DataTask3D(HelperFunctions):
                 whole_df['z_0'] = z_0_list
                 discrete_tesselation_obj = Tesselation3D(whole_df)
                 rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa)
+                print("ok")
 
             # Change the band_ids to -200
             for i in range(len(grains_df), len(whole_df) + 1):
@@ -295,12 +298,6 @@ class DataTask3D(HelperFunctions):
         else:
             RveInfo.LOGGER.info("The RSA did not succeed...")
             sys.exit()
-        """
-        OPTIMIZING THE MISORIENTATION DISTRIBUTION FUNCTION
-        """
-
-
-
 
         """
         PLACE THE INCLUSIONS!
@@ -314,6 +311,7 @@ class DataTask3D(HelperFunctions):
             rve, rve_status = discrete_RSA_inc_obj.run_rsa_inclusions(rve)
         elif not rve_status:
             print('Tesselator Failed!')
+
 
         """
         GENERATE INPUT DATA FOR SIMULATIONS HERE
@@ -362,6 +360,43 @@ class DataTask3D(HelperFunctions):
             rve_shape = periodic_rve.shape
             # Write out Volumes
             grains_df = super().get_final_disc_vol_3D(grains_df, periodic_rve)
+            grains_df.sort_values(by=['GrainID'])
+            '''
+            MDF OPTIMIZATION
+            '''
+            grains=input
+            grains1=np.array(grains_df)
+            pairs=[]
+            with open('pairID.csv', 'r') as file:
+                reader1 = csv.reader(file, delimiter=',')
+                for row in reader1:
+                    pairs.append(row)
+            pairs=np.array(pairs,dtype=int)
+            pairs1=pairs3d(periodic_rve)
+
+            print("Calculating input misorientations....")
+            miso = calc_miso(grains=grains, pairs=pairs, degrees=True)
+            angle = miso[1]
+
+            print("Calculating initial non-optimized misorientations...")
+            miso1 = calc_miso(grains=grains1, pairs=pairs1, degrees=True)
+            angle1 = miso1[1]
+
+            values = f.values()
+            input_probs, input_mdf = f.mdf_score_samples(angle, values)
+            no_opt_probs, no_opt_mdf = f.mdf_score_samples(angle1, values)
+            error = f.calc_error(input_probs, no_opt_probs, values)
+            print("Initial Error: "+str(error))
+
+            grains_opt, angle_opt = f.mdf_opt(grains1, angle1, pairs1, error, input_probs, values)
+
+            opt_probs, opt_mdf = f.mdf_score_samples(angle_opt, values)
+            f.mdf_plotting(values, input_probs, no_opt_probs, opt_probs, storepath='{}/Figs/'.format(RveInfo.store_path))
+
+            grains_df=pd.DataFrame(grains_opt)
+            grains_df.columns=['a','b','c','alpha','phi1','PHI','phi2','volume','old_grid','phaseID','GrainID','final_discrete_volume','final_conti_volume']
+
+
             print('grain_df keys:')
             grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output.csv', index=False)
             print('########################')
@@ -441,26 +476,6 @@ class DataTask3D(HelperFunctions):
         slice_ID = 0
         grain_shapes = pd.DataFrame()
         # the rve array still contains the boundarys in order to get every 4th slice we need to devide by 8
-        '''
-        #misorientation angle distribution histogram for the input data
-        plt.hist(data_input, 32)
-        plt.savefig('{}/angle_distribution_input.png'.format(RveInfo.fig_path))
-
-        # misorientation angle distribution for the produced rve
-        pairs = pairs3d(rve)
-        grains = np.array(data_output)
-        misorientations = np.empty((0, 1))
-
-        for i in range(0, len(pairs)):
-            x = int(pairs[i, 0])
-            y = int(pairs[i, 1])
-            miso = misorientation(x, y, degrees=False, grains=grains)[0]
-            misorientations = np.append(misorientations, [[miso]], 0)
-            print((len(misorientations) / len(pairs)) * 100)
-
-        plt.hist(misorientations, 32)
-        plt.savefig('{}/angle_distribution_out.png'.format(RveInfo.fig_path))
-        '''
 
         phase_ratios = list()
         ref_r_in = dict()
@@ -539,7 +554,7 @@ class DataTask3D(HelperFunctions):
         tex_df = Texture().read_orientation(file=file, rve=rve)
         symmetry_df = Texture().symmetry_operations(tex_df=tex_df, family='cubic')
         phi2 = [0, 45, 90]
-        storepath='{}/Figs'.format(RveInfo.store_path)
+        storepath='{}/Figs/'.format(RveInfo.store_path)
         Texture().calc_odf(symmetry_df, phi2_list=phi2, store_path=storepath, figname='input_odf')
 
         #texture analysis for rve
@@ -547,7 +562,7 @@ class DataTask3D(HelperFunctions):
         tex_df = Texture().read_orientation(file=file, rve=rve)
         symmetry_df = Texture().symmetry_operations(tex_df=tex_df, family='cubic')
         phi2 = [0, 45, 90]
-        storepath = '{}/Figs'.format(RveInfo.store_path)
+        storepath = '{}/Figs/'.format(RveInfo.store_path)
         Texture().calc_odf(symmetry_df, phi2_list=phi2, store_path=storepath, figname='rve_odf')
 
         if RveInfo.subs_flag:
