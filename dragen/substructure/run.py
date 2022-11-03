@@ -105,8 +105,7 @@ class Run():
 
             points = np.concatenate((x, y, z), axis=1)
 
-            if phaseID == 2:
-
+            if phaseID == 2 or 4:
                 orientation = (grain_data['phi1'], grain_data['PHI'], grain_data['phi2'])
                 grain = Grain(v=grain_data['final_conti_volume'], points=points,
                               phaseID=phaseID, grainID=grain_id, orientation=orientation)
@@ -128,7 +127,6 @@ class Run():
                 _rve_data = pd.concat([_rve_data, grain.points_data])
 
             else:
-
                 grain_data = pd.DataFrame(points, columns=['x', 'y', 'z'])
                 grain_data['GrainID'] = grain_id
                 grain_data['phaseID'] = phaseID

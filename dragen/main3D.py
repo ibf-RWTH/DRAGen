@@ -396,7 +396,12 @@ class DataTask3D(HelperFunctions):
                 if RveInfo.subs_flag:
                     print("substructure generation is turned on...")
                     # returns rve df containing substructures
+                    # print("phase id is ,", grains_df.iloc[0]["phaseID"])
                     subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)
+                    # try:
+                    #     subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)
+                    # except Exception as e:
+                    #     print(e)
                     mesher_obj = SubMesher(rve_shape=rve_shape, rve=subs_rve, subs_df=grains_df)
 
                 elif RveInfo.subs_flag == False:
