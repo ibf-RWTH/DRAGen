@@ -103,6 +103,7 @@ def step(grains1,angle1,pairs1,input_probs,values):
     return grains_opt,angle_opt,error1,opt_mdf
 
 def mdf_opt(grains1, angle1, pairs1,error,input_probs,values):
+    start_time = time.time()
     i = 0
     while error >= 0.0006:
         grains_opt, angle_opt, error2, opt_mdf = step(grains1, angle1, pairs1,input_probs,values)
@@ -115,6 +116,12 @@ def mdf_opt(grains1, angle1, pairs1,error,input_probs,values):
         else:
             grains1, angle1, error, opt_mdf = grains_opt, angle_opt, error2, opt_mdf
             print(error)
+    end_time = time.time() - start_time
+    if end_time >= 60:
+        print(str(end_time / 60) + " minutes")
+    else:
+        print(str(end_time) + " seconds")
+
     return grains_opt, angle_opt
 
 def mdf_plotting(values,in_probs,no_opt_probs,out_probs,storepath):

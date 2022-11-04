@@ -1,6 +1,7 @@
 import numpy as np
 import damask
 import time
+
 def pairs2d(grid):
     npairs = np.empty((0, 2))
     for i in range(0, len(grid)):
@@ -60,8 +61,8 @@ def pairs2d(grid):
 
 
 def pairs3d(grid):
-    #start_time = time.time()
-    print("Creating RVE's neighbour grains array...")
+    start_time = time.time()
+    print("Creating RVE's neighbour grains array...(new, just sort and unique)")
     npairs = np.empty((0, 2))
 
     if grid.ndim == 3:
@@ -118,30 +119,23 @@ def pairs3d(grid):
                         (x[0] + 1 <= len(grid) - 1) and x[2] + 1 <= (len(grid) - 1),
                         (x[0] + 1 <= len(grid) - 1) and x[1] + 1 <= (len(grid) - 1) and x[2] + 1 <= (len(grid) - 1)])
 
+
                     for k in range(0, 17):
                         if arguments[k] == True:
                             p = grid[positions[k, 0], positions[k, 1], positions[k, 2]]
                             # print(p)
                             if y != p:
                                 pair = np.array((y, p))
-                                condition = np.empty((0, 1))
-                                for o in npairs:
-                                    cond = pair[0] == o[1] and pair[1] == o[0]
-                                    condition = np.append(condition, [[cond]], 0)
-                                if 1 in condition:
-                                    pass
-                                else:
-                                    npairs = np.append(npairs, [pair], 0)
-                                    npairs = np.unique(npairs, axis=0)
-                                    #print(len(npairs))
-                            else:
-                                pass
+                                npairs = np.append(npairs, [pair], 0)
 
-
-    print("Finished! Total length: "+str(len(npairs)))
-    #end_time=time.time() - start_time
-    #if end_time>=60:
-        #print(str(end_time/60)+" minutes")
+    npairs = np.sort(npairs)
+    npairs = np.unique(npairs, axis=0)
+    print("Finished! Total length: " + str(len(npairs)))
+    end_time = time.time() - start_time
+    if end_time>=60:
+        print(str(end_time/60)+" minutes")
+    else:
+        print(str(end_time) + " seconds")
     return npairs
 
 def calc_miso(grains,pairs,degrees):

@@ -1,6 +1,7 @@
 import sys
 import math
 import numpy as np
+import pandas
 
 import pandas as pd
 import seaborn as sns
@@ -373,6 +374,7 @@ class DataTask3D(HelperFunctions):
                     pairs.append(row)
             pairs=np.array(pairs,dtype=int)
             pairs1=pairs3d(periodic_rve)
+            pandas.DataFrame(pairs1).to_csv(RveInfo.store_path + '/Generation_Data/pairs_data_output.csv', index=False)
 
             print("Calculating input misorientations....")
             miso = calc_miso(grains=grains, pairs=pairs, degrees=True)
@@ -395,6 +397,7 @@ class DataTask3D(HelperFunctions):
 
             grains_df=pd.DataFrame(grains_opt)
             grains_df.columns=['a','b','c','alpha','phi1','PHI','phi2','volume','old_grid','phaseID','GrainID','final_discrete_volume','final_conti_volume']
+            grains_df = super().get_final_disc_vol_3D(grains_df, periodic_rve)
 
 
             print('grain_df keys:')
