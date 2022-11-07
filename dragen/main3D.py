@@ -205,6 +205,10 @@ class DataTask3D(HelperFunctions):
                         else:
                             intersect = False
 
+                # Get maximum value from previous RSA as starting pint
+                startindex = int(np.amin(rsa) + 1000) * -1
+                print(startindex)
+
                 rsa = super().gen_array()
                 band_rsa = super().gen_boundaries_3D(rsa)
                 band_array_new = super().band_generator(band_array=band_rsa, bandwidth=RveInfo.bandwidths[0], center=band_center)
@@ -214,9 +218,6 @@ class DataTask3D(HelperFunctions):
                                                  new_df['c'].tolist(),
                                                  new_df['alpha'].tolist())
 
-                # Get maximum value from previous RSA as starting pint
-                startindex = int(np.amin(rsa) + 1000) * -1
-                print(startindex)
                 rsa, x_0, y_0, z_0, rsa_status = discrete_RSA_obj.run_rsa_clustered(previous_rsa=rsa,
                                                                                     band_array=band_array_new,
                                                                                     animation=True,
@@ -349,7 +350,7 @@ class DataTask3D(HelperFunctions):
             print('########################')
             print('Meshing starts')
             if RveInfo.damask_flag:
-             # Startpoint: Rearrange the negative ID's
+                # Startpoint: Rearrange the negative ID's
                 last_grain_id = periodic_rve.max()  # BEWARE: For the .vti file, the grid must start at ZERO
                 print('The last grain ID is:', last_grain_id)
                 print('The number of bands is:', RveInfo.number_of_bands)
