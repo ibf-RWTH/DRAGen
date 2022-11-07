@@ -47,9 +47,15 @@ class AbaqusMesher(MeshingHelper):
         grid_hull_df.sort_values(by=['x', 'y', 'z'], inplace=True)
         grid_hull_df.index.rename('pointNumber', inplace=True)
         grid_hull_df = grid_hull_df.reset_index()
+        OutPutFile.write('*Nset, nset=SET-Hull, instance=PART-1-1\n')
         for i in grid_hull_df.index:
-            OutPutFile.write('*Nset, nset=SET-Hull, instance=PART-1-1\n'.format(i + 1))
-            OutPutFile.write(' {},\n'.format(int(grid_hull_df.loc[i]['pointNumber'] + 1)))
+            OutPutFile.write(' {},'.format(int(grid_hull_df.loc[i]['pointNumber'] + 1)))
+            if (i+1) % 16 == 0:
+                OutPutFile.write('\n')
+        OutPutFile.write('\n')
+        OutPutFile.write('**\n')
+        OutPutFile.write('*Submodel, type=NODE, exteriorTolerance=0.05\n')
+        OutPutFile.write('SET-HULL, \n')
         OutPutFile.close()
 
     def pbc(self, rve: pv.UnstructuredGrid, grid_hull_df: pd.DataFrame) -> None:
@@ -750,21 +756,19 @@ class AbaqusMesher(MeshingHelper):
 
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[2] > 0:
             f.write('**\n')
-            f.write('*Material, name=Martensite\n')
-            f.write('*Elastic\n')
-            f.write('0.21, 0.3\n')
-            f.write('**')
+            f.write('*Include, Input=Martensite.inp\n')
+
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[3] > 0:
             f.write('**\n')
             f.write('*Material, name=Pearlite\n')
             f.write('*Elastic\n')
-            f.write('0.21, 0.3\n')
+            f.write('210000, 0.3\n')
             f.write('**')
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[4] > 0:
             f.write('**\n')
             f.write('*Material, name=Bainite\n')
             f.write('*Elastic\n')
-            f.write('0.21, 0.3\n')
+            f.write('210000, 0.3\n')
             f.write('**')
         f.close()
 
@@ -782,7 +786,7 @@ class AbaqusMesher(MeshingHelper):
         f.write('**\n')
         f.write('*Step, name=Step-1, nlgeom=YES, inc=10000000, solver=ITERATIVE\n')
         f.write('*Static\n')
-        f.write('** Step time needs to be adjusted to global .odb')
+        f.write('** Step time needs to be adjusted to global .odb\n')
         f.write('0.001, 1., 1.05e-15, 0.25\n')
         f.write('**\n')
         f.write('** CONTROLS\n')
@@ -832,7 +836,7 @@ class AbaqusMesher(MeshingHelper):
 
         f = open(RveInfo.store_path + '/Step.inp', 'w+')
         f.write('**\n')
-        f.write('** Step time needs to be in agreement with amplitude')
+        f.write('** Step time needs to be in agreement with amplitude\n')
         f.write('*Amplitude, name=Amp-1\n')
         f.write('             0.,              0.,           1.,        1.,\n')
         f.write('**\n')
@@ -968,7 +972,7 @@ class AbaqusMesher(MeshingHelper):
         if RveInfo.gui_flag:
             RveInfo.progress_obj.emit(25)
         GRID = self.gen_grains(GRID)
-        smooth_mesh = self.smoothen_mesh(GRID, n_iter=250)
+        smooth_mesh = self.smoothen_mesh(GRID, n_iter=200)
         pbc_grid = smooth_mesh
         if RveInfo.gui_flag:
             RveInfo.progress_obj.emit(50)

@@ -397,7 +397,12 @@ class DataTask3D(HelperFunctions):
                 if RveInfo.subs_flag:
                     print("substructure generation is turned on...")
                     # returns rve df containing substructures
+                    # print("phase id is ,", grains_df.iloc[0]["phaseID"])
                     subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)
+                    # try:
+                    #     subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)
+                    # except Exception as e:
+                    #     print(e)
                     mesher_obj = SubMesher(rve_shape=rve_shape, rve=subs_rve, subs_df=grains_df)
 
                 elif RveInfo.subs_flag == False:
@@ -416,31 +421,46 @@ class DataTask3D(HelperFunctions):
         return periodic_rve
 
     def post_processing(self, rve):
-        slice_ID = 0
-        grain_shapes = pd.DataFrame()
-        # the rve array still contains the boundarys in order to get every 4th slice we need to devide by 8
 
+
+        start1 = int(rve.shape[0] / 4)
+        stop1 = int(rve.shape[0] / 4 + rve.shape[0] / 4 * 2)
+        start2 = int(rve.shape[1] / 4)
+        stop2 = int(rve.shape[1] / 4 + rve.shape[1] / 4 * 2)
+
+        if RveInfo.dimension == 3:
+            start3 = int(rve.shape[2] / 4)
+            stop3 = int(rve.shape[2] / 4 + rve.shape[2] / 4 * 2)
+            rve = rve[start1:stop1, start2:stop2, start3:stop3]
+        else:
+            rve = rve[start1:stop1, start2:stop2]
 
         phase_ratios = list()
         ref_r_in = dict()
         ref_r_out = dict()
         grain_shapes_in = shape().get_input_ellipses()
         for phase in RveInfo.phases:
-            id = RveInfo.PHASENUM[phase]
-            if id < 5:
+            phase_id = RveInfo.PHASENUM[phase]
+            slice_ID = 0
+            if phase_id < 5:
                 # generate pair plots for shape comparison for each phase
                 grain_shapes = pd.DataFrame()
-                for i in range(math.floor(rve.shape[2] / 8)):
-                    grain_shapes_slice = shape().get_ellipses(rve, slice_ID, id)
+                for i in range(math.floor(rve.shape[2] / 4)):
+                    print('phase_id, i, slice_ID', phase_id, i, slice_ID)
+                    grain_shapes_slice = shape().get_ellipses(rve, slice_ID, phase_id)
+                    slice_ID += 4
+                    if len(grain_shapes_slice) == 0:
+                        RveInfo.RESULT_LOG.info(f'No {phase} found in slice {slice_ID}. Slice was neglected for {phase}')
+                        continue
                     grain_shapes = pd.concat([grain_shapes, grain_shapes_slice])
-                slice_ID += 4
+
                 grain_shapes['inout'] = 'out'
                 grain_shapes = grain_shapes.rename(columns={"AR": "AR (-)", "slope": "slope (°)"})
-                grain_shapes_in_thisPhase = grain_shapes_in.loc[grain_shapes_in['phaseID'] == id, ['AR', 'slope', 'inout']]
+                grain_shapes_in_thisPhase = grain_shapes_in.loc[grain_shapes_in['phaseID'] == phase_id, ['AR', 'slope', 'inout']]
+
                 grain_shapes_in_thisPhase = grain_shapes_in_thisPhase.sample(n=grain_shapes.__len__())
                 grain_shapes_in_thisPhase = grain_shapes_in_thisPhase.rename(columns={"AR": "AR (-)", "slope": "slope (°)"})
-                if id == 2:
-                    print(grain_shapes_in_thisPhase)
+
                 grain_shapes = pd.concat([grain_shapes, grain_shapes_in_thisPhase])
                 grain_shapes = grain_shapes.sort_values(by=['inout'])
                 grain_shapes.reset_index(inplace=True, drop=True)
@@ -458,14 +478,14 @@ class DataTask3D(HelperFunctions):
                 plt.close()
 
                 current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out = \
-                    PostProcVol().gen_in_out_lists(phaseID=id)
+                    PostProcVol().gen_in_out_lists(phaseID=phase_id)
                 phase_ratios.append(current_phase_ratio_out)
                 ref_r_in[phase] = current_phase_ref_r_in
                 ref_r_out[phase] = current_phase_ref_r_out
 
-            if id == 5:
+            if phase_id == 5:
                 current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out = \
-                    PostProcVol().gen_in_out_lists(phaseID=id)
+                    PostProcVol().gen_in_out_lists(phaseID=phase_id)
                 phase_ratios.append(current_phase_ratio_out)
 
         if len(RveInfo.phases) > 1:

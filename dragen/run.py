@@ -4,14 +4,16 @@ import sys
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import math
-import numpy as np
-from typing import Dict
+import matplotlib.pyplot as plt
+
 
 from dragen.main2D import DataTask2D
 from dragen.main3D import DataTask3D
 from dragen.substructure.run import Run as SubRun
 from dragen.utilities.Helpers import HelperFunctions
 from dragen.utilities.InputInfo import RveInfo
+
+plt.ioff()  # needs to be here for background plotting with gui
 
 
 class Run(HelperFunctions):
@@ -161,8 +163,14 @@ class Run(HelperFunctions):
 
     @staticmethod
     def initializations(epoch):
-
-        RveInfo.store_path = RveInfo.root + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
+        counter = "0"
+        if epoch < 10:
+            counter = f"00{epoch}"
+        if epoch > 9 and epoch < 100:
+            counter = f"0{epoch}"
+        if epoch > 99:
+            counter = epoch
+        RveInfo.store_path = RveInfo.root + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + counter
         RveInfo.LOGGER.debug(RveInfo.store_path)
         RveInfo.fig_path = RveInfo.store_path + '/Figs'
         RveInfo.gen_path = RveInfo.store_path + '/Generation_Data'
