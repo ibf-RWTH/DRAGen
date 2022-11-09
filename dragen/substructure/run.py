@@ -148,12 +148,13 @@ class Run():
         # transfer id to number
         _rve_data.loc[_rve_data['block_id'].isnull(), 'block_id'] = _rve_data[_rve_data['block_id'].isnull()][
                                                                         'packet_id'] + '0'
-        packet_id = list(set(_rve_data['packet_id']))
+        packet_id = _rve_data['packet_id'].unique().tolist()
         n_id = np.arange(1, len(packet_id) + 1)
         pid_to_nid = dict(zip(packet_id, n_id))
+        # print(pid_to_nid)
         pid_in_rve = _rve_data['packet_id'].map(lambda pid: pid_to_nid[pid])
 
-        block_id = list(set(_rve_data['block_id']))
+        block_id = _rve_data['block_id'].unique().tolist()
         n2_id = np.arange(1, len(block_id) + 1)
         bid_to_nid = dict(zip(block_id, n2_id))
         bid_in_rve = _rve_data['block_id'].map(lambda bid: bid_to_nid[bid])

@@ -3,7 +3,7 @@ import pandas as pd
 import pyvista as pv
 import datetime
 import os
-from dragen.generation.PvGridGeneration import MeshingHelper
+from dragen.utilities.PvGridGeneration import MeshingHelper
 from dragen.utilities.InputInfo import RveInfo
 
 class AbaqusMesher(MeshingHelper):

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from dragen.utilities.generateExodus import NetCDFWrapper
-from dragen.generation.PvGridGeneration import MeshingHelper
+from dragen.utilities.PvGridGeneration import MeshingHelper
 from dragen.utilities.InputInfo import RveInfo
 
 
