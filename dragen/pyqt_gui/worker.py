@@ -63,6 +63,7 @@ class Worker(QObject):
         self.moose_flag = ARGS['moose_flag']
         self.anim_flag = ARGS['anim_flag']
         self.phase2iso_flag = ARGS['phase2iso_flag']
+        self.xfem_flag = ARGS['xfem_flag']
         self.pbc_flag = ARGS['pbc_flag']
         self.submodel_flag = ARGS['submodel_flag']
         self.element_type = ARGS['element_type']
@@ -76,7 +77,7 @@ class Worker(QObject):
                       box_size_z=self.box_size_z, resolution=self.resolution, number_of_rves=self.number_of_rves,
                       slope_offset=self.slope_offset, abaqus_flag=self.abaqus_flag, damask_flag=self.damask_flag,
                       moose_flag=self.moose_flag, element_type=self.element_type, pbc_flag=self.pbc_flag,
-                      submodel_flag=self.submodel_flag, phase2iso_flag=self.phase2iso_flag,x_fem_flag=False,
+                      submodel_flag=self.submodel_flag, phase2iso_flag=self.phase2iso_flag,xfem_flag=self.xfem_flag,
                       smoothing_flag=self.smoothing_flag, gui_flag=self.gui_flag, anim_flag=self.anim_flag,
                       visualization_flag=self.visualization_flag, root=self.root, info_box_obj=self.info_box,
                       progress_obj=self.progress, phase_ratio=self.phase_ratio, file_dict=self.file_dict,
