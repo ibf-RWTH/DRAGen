@@ -13,9 +13,9 @@ from dragen.generation.Mesher3D import AbaqusMesher
 from dragen.generation.mooseMesher import MooseMesher
 from dragen.postprocessing.voldistribution import PostProcVol
 from dragen.postprocessing.Shape_analysis import shape
+from dragen.postprocessing.texture_analysis import Texture
 from dragen.utilities.InputInfo import RveInfo
 from dragen.substructure.run import Run as substrucRun
-from dragen.InputGenerator.C_WGAN_GP import WGANCGP
 
 import dragen.generation.spectral as spectral
 
@@ -32,6 +32,7 @@ class DataTask3D(HelperFunctions):
         files = RveInfo.file_dict
         RveInfo.LOGGER.info("RVE generation process has started...")
         total_df = pd.DataFrame()
+        all_phases_input_df = pd.DataFrame()
 
         # TODO: Generiere Bandwidths hier!
         if RveInfo.number_of_bands > 0:
@@ -81,26 +82,28 @@ class DataTask3D(HelperFunctions):
                 grains_df['phaseID'] = RveInfo.PHASENUM[phase]
                 total_df = pd.concat([total_df, grains_df])
                 phase_input_df['phaseID'] = RveInfo.PHASENUM[phase]
+                all_phases_input_df = pd.concat([all_phases_input_df,phase_input_df])
                 input_data = pd.concat([input_data, phase_input_df])
 
             else:
                 grains_df = phase_input_df.copy()
                 grains_df['phaseID'] = RveInfo.PHASENUM[phase]
                 total_df = pd.concat([total_df, grains_df])
+                all_phases_input_df = pd.concat([all_phases_input_df,phase_input_df])
 
         print('Processing now')
 
-        grains_df = super().process_df(total_df, RveInfo.SHRINK_FACTOR)
+        total_df = super().process_df(total_df, RveInfo.SHRINK_FACTOR)
         total_volume = sum(
-            grains_df[grains_df['phaseID'] <= 6]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
+            total_df[total_df['phaseID'] <= 6]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
         estimated_boxsize = np.cbrt(total_volume)
-        RveInfo.LOGGER.info(f"The total number of grains is {grains_df.__len__()}")
+        RveInfo.LOGGER.info(f"The total number of grains is {total_df.__len__()}")
         RveInfo.LOGGER.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
                             format(total_volume, estimated_boxsize))
 
         input_data.to_csv(RveInfo.gen_path + '/input_data.csv', index=False)
 
-        return grains_df
+        return total_df, all_phases_input_df
 
     def rve_generation(self, total_df):
 
@@ -305,6 +308,7 @@ class DataTask3D(HelperFunctions):
         if rve_status:
             # TODO: Hier gibt es einen relativ großen Mesh/Grid-Preprocessing Block --> Auslagern
             periodic_rve_df, periodic_rve = super().repair_periodicity_3D(rve)
+            print('line 308:', periodic_rve.shape)
             periodic_rve_df['phaseID'] = 0
             print('len rve edge:', np.cbrt(len(periodic_rve_df)))
             # An den NaN-Werten in dem DF liegt es nicht!
@@ -420,20 +424,7 @@ class DataTask3D(HelperFunctions):
             print('Tessellation did not succeed')
         return periodic_rve
 
-    def post_processing(self, rve):
-
-
-        start1 = int(rve.shape[0] / 4)
-        stop1 = int(rve.shape[0] / 4 + rve.shape[0] / 4 * 2)
-        start2 = int(rve.shape[1] / 4)
-        stop2 = int(rve.shape[1] / 4 + rve.shape[1] / 4 * 2)
-
-        if RveInfo.dimension == 3:
-            start3 = int(rve.shape[2] / 4)
-            stop3 = int(rve.shape[2] / 4 + rve.shape[2] / 4 * 2)
-            rve = rve[start1:stop1, start2:stop2, start3:stop3]
-        else:
-            rve = rve[start1:stop1, start2:stop2]
+    def post_processing(self, rve, total_df, ex_df):
 
         phase_ratios = list()
         ref_r_in = dict()
@@ -483,6 +474,19 @@ class DataTask3D(HelperFunctions):
                 ref_r_in[phase] = current_phase_ref_r_in
                 ref_r_out[phase] = current_phase_ref_r_out
 
+                # Texture Analysis
+                total_df_this_phase = total_df.loc[total_df['phaseID'] == phase_id]
+                ex_df_this_phase = ex_df.loc[ex_df['phaseID'] == phase_id]
+                print(total_df['phaseID'].unique())
+                print(total_df_this_phase[['phaseID', 'phi1']].head())
+                print(ex_df_this_phase[['phaseID', 'phi1']].head())
+                if not ex_df_this_phase['phi1'].isnull().values.any() and len(total_df_this_phase) > 0:
+                    tex_dict = Texture().read_orientation(rve_np=rve, rve_df=total_df_this_phase, experimentalData=ex_df_this_phase)
+                    for key in tex_dict.keys():
+                        sym_tex = Texture().symmetry_operations(tex_df=tex_dict[key], family='cubic')
+                        names = [f"{key}_texture_section_plot_{phase}.png"]
+                        for name in names:
+                            Texture().calc_odf(sym_tex, phi2_list=[0, 45, 90], store_path=f'{RveInfo.store_path}/Postprocessing', figname=name)
             if phase_id == 5:
                 current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out = \
                     PostProcVol().gen_in_out_lists(phaseID=phase_id)
