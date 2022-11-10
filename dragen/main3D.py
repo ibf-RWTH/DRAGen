@@ -477,9 +477,6 @@ class DataTask3D(HelperFunctions):
                 # Texture Analysis
                 total_df_this_phase = total_df.loc[total_df['phaseID'] == phase_id]
                 ex_df_this_phase = ex_df.loc[ex_df['phaseID'] == phase_id]
-                print(total_df['phaseID'].unique())
-                print(total_df_this_phase[['phaseID', 'phi1']].head())
-                print(ex_df_this_phase[['phaseID', 'phi1']].head())
                 if not ex_df_this_phase['phi1'].isnull().values.any() and len(total_df_this_phase) > 0:
                     tex_dict = Texture().read_orientation(rve_np=rve, rve_df=total_df_this_phase, experimentalData=ex_df_this_phase)
                     for key in tex_dict.keys():

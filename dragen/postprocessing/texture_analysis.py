@@ -15,29 +15,22 @@ class Texture:
     def read_orientation(self,  experimentalData=None, rve_np=None, rve_df=None):
 
         tex_dict = dict()
-
-        figname = 'experimental'
         ex_tex_df = experimentalData
         ex_tex_df.dropna(axis=1, inplace=True)
         ex_tex_df['phi2'] = ex_tex_df['phi2'].round(0)
         ex_tex_df["area"] = ex_tex_df["a"]*ex_tex_df["b"]*np.pi
         ex_tex_df["frequency"] = ex_tex_df["area"]/np.sum(ex_tex_df["area"].to_numpy())
         ex_tex_df = ex_tex_df[["phi1", "PHI", "phi2", "frequency"]]
-        tex_dict[figname] = ex_tex_df
+        tex_dict['experimental'] = ex_tex_df
 
         grainID, counts = np.unique(rve_np, return_counts=True)
         rve_tex_df = rve_df
-        print(rve_tex_df['GrainID'].values)
-        print(grainID)
-        print(counts)
-        print(counts[rve_tex_df['GrainID'].values])
+
         rve_tex_df["frequency"] = counts[rve_tex_df['GrainID'].values]/(rve_np.shape[0]*rve_np.shape[1]*rve_np.shape[2])
-        figname = 'rve'
         rve_tex_df.dropna(axis=1, inplace=True)
         rve_tex_df['phi2'] = rve_tex_df['phi2'].round(0)
         rve_tex_df = rve_tex_df[["phi1", "PHI", "phi2", "frequency"]]
-        print('rve_tex_df:',rve_tex_df)
-        tex_dict[figname] = rve_tex_df
+        tex_dict['rve'] = rve_tex_df
         return tex_dict
 
     def symmetry_operations(self, tex_df: pd.DataFrame, family):
