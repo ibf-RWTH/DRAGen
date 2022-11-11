@@ -343,6 +343,7 @@ class DataTask3D(HelperFunctions):
             # grains_df.to_csv('grains_df.csv', index=False)
             # periodic_rve_df.to_csv('periodic_rve_df.csv', index=False)
             rve_shape = periodic_rve.shape
+            print("rve shape is", rve_shape)
             # Write out Volumes
             grains_df = super().get_final_disc_vol_3D(grains_df, periodic_rve)
             print('grain_df keys:')
@@ -398,6 +399,7 @@ class DataTask3D(HelperFunctions):
                     print("substructure generation is turned on...")
                     # returns rve df containing substructures
                     # print("phase id is ,", grains_df.iloc[0]["phaseID"])
+                    grains_df.to_csv(r"X:\DRAGen\DRAGen\dragen\test\results\grains_df.csv")
                     subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)
                     # try:
                     #     subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)

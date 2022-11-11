@@ -1,5 +1,4 @@
 import sys
-
 import pandas as pd
 from sklearn.neighbors import KernelDensity
 from sklearn.model_selection import KFold, GridSearchCV
@@ -35,20 +34,21 @@ def dis_to_id(dis, bt_list):
 def gen_block(packet: pd.DataFrame, bt_distribution: SubsDistribution) -> pd.DataFrame:
     # select a random norm direction for block boundary
     block_boundary_norm, bad_bt_flag = choose_block_boundary_norm(packet=packet)
-
     if not bad_bt_flag:
         # compute d of block boundary
-        pd = -(packet['x'] * block_boundary_norm[..., 0] + packet['y'] * block_boundary_norm[..., 1] + packet['z'] *
-               block_boundary_norm[..., 2])
+        pd = -(packet['x'] * block_boundary_norm[0, 0] + packet['y'] * block_boundary_norm[0, 1] + packet['z'] *
+               block_boundary_norm[0, 2])
         # compute the distance to the block boundary with maximum d
         packet.insert(6, 'pd', value=pd)
         sq = np.sqrt(block_boundary_norm[..., 0] ** 2 +
                      block_boundary_norm[..., 1] ** 2 +
                      block_boundary_norm[..., 2] ** 2)
         p_dis = (packet['pd'].max() - packet['pd']) / sq
-        packet.insert(7, 'p_dis', value=p_dis)
+        print("p_dis are ", p_dis)
+        packet['p_dis'] = p_dis
 
         total_bt = packet['p_dis'].max()
+
         bt_list = bt_sampler(bt_distribution=bt_distribution,
                              total_bt=total_bt,
                              interval=[RveInfo.bt_min, RveInfo.bt_max])
@@ -64,9 +64,15 @@ def gen_block(packet: pd.DataFrame, bt_distribution: SubsDistribution) -> pd.Dat
     return packet
 
 
+def compute_bt(rve: pd.DataFrame) -> None:
+    rve['block_thickness'] = np.nan
+    bg = rve.groupby('block_id')
+    bid_to_bt = bg['p_dis'].apply(max) - bg['p_dis'].apply(min)
+    rve['block_thickness'] = rve.apply(lambda p: bid_to_bt[p['block_id']], axis=1)
+    # rve.drop('p_dis', axis=1, inplace=True)
+
 def block_data_parser() -> SubsDistribution:
     if RveInfo.block_file is not None:
-        print("here")
         block_data = pd.read_csv(RveInfo.block_file)
         kFold = KFold(n_splits=10)  # k-folder cross-validation split data into 10 folds
         bandwidths = 10 ** np.linspace(-1, 1, 100)
@@ -74,13 +80,14 @@ def block_data_parser() -> SubsDistribution:
                             param_grid={"bandwidth": bandwidths},
                             cv=kFold)
         grid.fit(np.array(block_data['block_thickness']).reshape(-1, 1))
+        print("finish fitting")
         return SubsDistribution(grid.best_estimator_)
     else:
         return SubsDistribution(lognorm(s=RveInfo.b_sigma, scale=RveInfo.t_mu))  # check later
 
 
 def test_block_data_parser():
-    RveInfo.block_file = r"F:\DRAGen\ExampleInput\example_block_inp.csv"
+    RveInfo.block_file = r"X:\DRAGen\DRAGen\OutputData\2022-11-11_000\substruct_data.csv"
     kde = block_data_parser()
     x = np.linspace(0, 5, 100).reshape(-1, 1)
     density = kde.pdf(x)
@@ -141,10 +148,9 @@ def choose_block_boundary_norm(packet: pd.DataFrame) -> Tuple[np.ndarray, bool]:
     if 0.0 in packet['z'].values and z_max in packet['z'].values:
         block_boundary_norm[0, 0] = 0.0
 
-    if pd.DataFrame(block_boundary_norm.reshape(-1, 1)).value_counts()[0.0] == 3:  # count number of 0
+    if len(block_boundary_norm[block_boundary_norm == 0]) == 3:
         block_boundary_norm = np.array([[0, 0, 1]])
         bad_bt_flag = True
-
     return block_boundary_norm, bad_bt_flag
 
 
@@ -159,15 +165,41 @@ def test_choose_boundary_norm():
 
 
 if __name__ == "__main__":
-    subs_file = r"F:\DRAGen\OutputData\2022-11-10_000\substruct_data.csv"
+    subs_file = r"X:\DRAGen\DRAGen\dragen\test\substruct_data.csv"
     subs_data = pd.read_csv(subs_file)
-    # test_block_data_parser()
-    RveInfo.block_file = r"F:\DRAGen\OutputData\2022-11-10_000\substruct_data.csv"
+    # RveInfo.block_file = None
+    RveInfo.b_sigma = 0.3
+    RveInfo.t_mu = 1.0
+    RveInfo.bt_min = 0.5
     bt_distribution = block_data_parser()
-    print("get distribution")
-    # packet = subs_data[subs_data['packet_id'] == 2]
-    # gen_block(packet=packet, bt_distribution=bt_distribution)
-    # print(packet)
-    # ax = plt.figure().add_subplot(111, projection = '3d')
+
+    packet_num = subs_data['packet_id'].max()
+    subs_data['block_id'] = 0
+    subs_data['p_dis'] = 0
+    subs_data['packet_id'] = subs_data['packet_id'].astype(str)
+    subs_data['packet_id'] += 'p'
+    for i in range(packet_num):
+        packet = subs_data[subs_data['packet_id'] == str(i + 1) + 'p']
+        packet = gen_block(packet=packet, bt_distribution=bt_distribution)
+        # print(packet['block_id'])
+        subs_data.loc[subs_data['packet_id'] == str(i + 1) + 'p', 'block_id'] = packet['block_id']
+        subs_data.loc[subs_data['packet_id'] == str(i + 1) + 'p', 'p_dis'] = packet['p_dis']
+
+    packet_id = subs_data['packet_id'].unique().tolist()
+    n_id = np.arange(1, len(packet_id) + 1)
+    pid_to_nid = dict(zip(packet_id, n_id))
+    # print(pid_to_nid)
+    pid_in_rve = subs_data['packet_id'].map(lambda pid: pid_to_nid[pid])
+
+    block_id = subs_data['block_id'].unique().tolist()
+    n2_id = np.arange(1, len(block_id) + 1)
+    bid_to_nid = dict(zip(block_id, n2_id))
+    bid_in_rve = subs_data['block_id'].map(lambda bid: bid_to_nid[bid])
+
+    subs_data['packet_id'] = pid_in_rve
+    subs_data['block_id'] = bid_in_rve
+
+    compute_bt(rve=subs_data)
+    subs_data.to_csv(r"X:\DRAGen\DRAGen\dragen\test\results\test.csv")
     # ax.scatter(packet['x'],packet['y'],packet['z'])
     # plt.show()
