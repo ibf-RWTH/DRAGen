@@ -44,7 +44,7 @@ def gen_block(packet: pd.DataFrame, bt_distribution: SubsDistribution) -> pd.Dat
                      block_boundary_norm[..., 1] ** 2 +
                      block_boundary_norm[..., 2] ** 2)
         p_dis = (packet['pd'].max() - packet['pd']) / sq
-        print("p_dis are ", p_dis)
+        # print("p_dis are ", p_dis)
         packet['p_dis'] = p_dis
 
         total_bt = packet['p_dis'].max()
@@ -165,7 +165,7 @@ def test_choose_boundary_norm():
 
 
 if __name__ == "__main__":
-    subs_file = r"X:\DRAGen\DRAGen\dragen\test\substruct_data.csv"
+    subs_file = r"F:\codes\DRAGen\dragen\test\substruct_data.csv"
     subs_data = pd.read_csv(subs_file)
     # RveInfo.block_file = None
     RveInfo.b_sigma = 0.3
@@ -200,6 +200,5 @@ if __name__ == "__main__":
     subs_data['block_id'] = bid_in_rve
 
     compute_bt(rve=subs_data)
-    subs_data.to_csv(r"X:\DRAGen\DRAGen\dragen\test\results\test.csv")
-    # ax.scatter(packet['x'],packet['y'],packet['z'])
-    # plt.show()
+    subs_data.to_csv(r"F:\codes\DRAGen\dragen\test\results\test.csv")
+

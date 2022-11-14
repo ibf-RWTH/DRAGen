@@ -399,7 +399,7 @@ class DataTask3D(HelperFunctions):
                     print("substructure generation is turned on...")
                     # returns rve df containing substructures
                     # print("phase id is ,", grains_df.iloc[0]["phaseID"])
-                    grains_df.to_csv(r"X:\DRAGen\DRAGen\dragen\test\results\grains_df.csv")
+                    # grains_df.to_csv(r"X:\DRAGen\DRAGen\dragen\test\results\grains_df.csv")
                     subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)
                     # try:
                     #     subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)

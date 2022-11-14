@@ -8,7 +8,8 @@ Describe: Write during the internship at IEHK RWTH"""
 import multiprocessing
 from dragen.substructure.substructure import plot_rve_subs
 from dragen.substructure.data import save_data
-from dragen.substructure.substructure import Grain
+# from dragen.substructure.substructure import Grain
+from dragen.test.substructure import Grain
 from scipy.stats import moment
 from scipy.stats import gaussian_kde
 from dragen.stats.preprocessing import *
@@ -110,13 +111,13 @@ class Run():
                     blocks = block_df[block_df['grain_id'] == old_gid + 1]
                     n_pack = len(list(set(blocks['packet_id'])))
                     orientations = self.get_orientations(block_df, old_gid)
-                    grain.gen_subs(n_pack=n_pack, orientations=orientations)
+                    grain.gen_packs(n_pack=n_pack, orientations=orientations)
 
                 else:
                     assert RveInfo.equiv_d is not None, 'no valid definition for equiv_d'
                     assert RveInfo.p_sigma is not None, 'no valid definition for p_sigma'
                     assert RveInfo.t_mu is not None, 'no valid definition for t_mu'
-                    grain.gen_subs(RveInfo.equiv_d, sigma=RveInfo.p_sigma, block_thickness=RveInfo.t_mu,
+                    grain.gen_packs(RveInfo.equiv_d, sigma=RveInfo.p_sigma, block_thickness=RveInfo.t_mu,
                                    b_sigma=RveInfo.b_sigma, lower_t=RveInfo.lower, upper_t=RveInfo.upper,
                                    circularity=RveInfo.circularity)
                 _rve_data = pd.concat([_rve_data, grain.points_data])
@@ -133,29 +134,23 @@ class Run():
         RveInfo.rve_data_substructure = _rve_data
         self.rve_data = _rve_data
 
-        self.del_zerobt(_rve_data)  # del blocks with 0 thickness
-        # martensite_df = self.rve_data[_rve_data['phaseID'] == 2]
+        # self.del_zerobt(_rve_data)  # del blocks with 0 thickness
 
-        # if RveInfo.subs_file_flag:
-        #     mod_bt(martensite_df)
-        # else:
-        #     mod_bt(martensite_df)
-        # transfer id to number
-        _rve_data.loc[_rve_data['block_id'].isnull(), 'block_id'] = _rve_data[_rve_data['block_id'].isnull()][
-                                                                        'packet_id'] + '0'
+        # _rve_data.loc[_rve_data['block_id'].isnull(), 'block_id'] = _rve_data[_rve_data['block_id'].isnull()][
+        #                                                                 'packet_id'] + '0'
         packet_id = _rve_data['packet_id'].unique().tolist()
         n_id = np.arange(1, len(packet_id) + 1)
         pid_to_nid = dict(zip(packet_id, n_id))
         # print(pid_to_nid)
         pid_in_rve = _rve_data['packet_id'].map(lambda pid: pid_to_nid[pid])
 
-        block_id = _rve_data['block_id'].unique().tolist()
-        n2_id = np.arange(1, len(block_id) + 1)
-        bid_to_nid = dict(zip(block_id, n2_id))
-        bid_in_rve = _rve_data['block_id'].map(lambda bid: bid_to_nid[bid])
+        # block_id = _rve_data['block_id'].unique().tolist()
+        # n2_id = np.arange(1, len(block_id) + 1)
+        # bid_to_nid = dict(zip(block_id, n2_id))
+        # bid_in_rve = _rve_data['block_id'].map(lambda bid: bid_to_nid[bid])
 
         _rve_data['packet_id'] = pid_in_rve
-        _rve_data['block_id'] = bid_in_rve
+        # _rve_data['block_id'] = bid_in_rve
         _rve_data.n_pts = RveInfo.n_pts
         _rve_data.box_size = RveInfo.box_size
         _rve_data.box_size_y = RveInfo.box_size_y
