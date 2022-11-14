@@ -110,7 +110,7 @@ class RveInfo:
 
     orientation_relationship: str = None
     subs_file_flag: bool = None
-    subs_file: bool = None
+    # subs_file: bool = None
     subs_flag: bool = None
     sub_run = None
 

@@ -5,7 +5,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import math
 import matplotlib.pyplot as plt
-
+import pandas as pd
 
 from dragen.main2D import DataTask2D
 from dragen.main3D import DataTask3D
@@ -64,7 +64,7 @@ class Run(HelperFunctions):
             # substructure related parameters:
             subs_flag: bool,
             subs_file_flag: bool,
-            subs_file: str,
+            block_file: str,
             equiv_d: float,
             p_sigma: float,
             t_mu: float,
@@ -118,7 +118,14 @@ class Run(HelperFunctions):
         RveInfo.orientation_relationship = orientation_relationship
         RveInfo.subs_flag = subs_flag
         RveInfo.subs_file_flag = subs_file_flag
-        RveInfo.subs_file = subs_file
+        RveInfo.block_file = block_file
+        if RveInfo.block_file is not None:
+            block_data = pd.read_csv(RveInfo.block_file)
+            RveInfo.bt_min = block_data['block_thickness'].min()
+            RveInfo.bt_max = block_data['block_thickness'].max()
+
+        print("min bt is ", RveInfo.bt_min)
+        print("max bt is ", RveInfo.bt_max)
         RveInfo.phases = phases
         RveInfo.abaqus_flag = abaqus_flag
         RveInfo.damask_flag = damask_flag

@@ -6,17 +6,12 @@ Version:  V 0.1
 File:     new_substructure
 Describe: Write during the internship at IEHK RWTH"""
 import sys
-
 from dragen.utilities.Helpers import HelperFunctions
-from dragen.substructure.modification import merge_tiny_blocks
-from dragen.utilities.InputInfo import RveInfo
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from scipy.stats import lognorm
 import math
 import warnings
 from dragen.stats.preprocessing import *
+from dragen.substructure.DataParser import bt_sampler, SubsDistribution
+from typing import Tuple
 
 
 class Grain(HelperFunctions):
@@ -79,7 +74,7 @@ class Grain(HelperFunctions):
 
         return transferred_hp_list
 
-    def gen_subs(self, n_pack=None, orientations=None):
+    def gen_packs(self, n_pack=None, orientations=None):
 
         if n_pack is None:
             r = RveInfo.equiv_d / 2
@@ -112,7 +107,7 @@ class Grain(HelperFunctions):
 
         else:
             num_grid_ps = np.array([
-                                       len(self.points_data)])  # if the points num all smaller than 20, this is a small grain,only 1 packet is generated
+                len(self.points_data)])  # if the points num all smaller than 20, this is a small grain,only 1 packet is generated
 
         factor = len(self.points_data) / sum(num_grid_ps)
         num_grid_ps = num_grid_ps * factor
@@ -164,13 +159,13 @@ class Grain(HelperFunctions):
             packet.boundary = chosen_norm
             packet.variants = self.trial_variants_select(packet)
             packet.pag_ori = self.orientation
-            packet.gen_blocks()  # complete df
-            comp_df = packet.get_bt()
+            # packet.gen_blocks()  # complete df
+            # comp_df = packet.get_bt()
             # comp_df = packet.merge_tiny_blocks(merge_tiny_blocks)
 
-            self.points_data.loc[comp_df.index, 'packet_id'] = packet['id']
-            self.points_data.loc[comp_df.index, 'block_id'] = comp_df['block_id']
-            self.points_data.loc[comp_df.index, 'block_thickness'] = comp_df['block_thickness']
+            self.points_data.loc[packet_df.index, 'packet_id'] = packet['id']
+            # self.points_data.loc[comp_df.index, 'block_id'] = comp_df['block_id']
+            # self.points_data.loc[comp_df.index, 'block_thickness'] = comp_df['block_thickness']
 
             self.packets_list.append(packet)
             self.pid_to_packet[packet['id']] = packet
@@ -178,32 +173,34 @@ class Grain(HelperFunctions):
             i += 1
 
         if orientations is None:
-            for packet in self.packets_list:
-                comp_df = packet.assign_bv()
-                blocks = packet.points_data.groupby('block_id').head(1)
-                bid = blocks.apply(lambda block: block['block_id'], axis=1)
-                angles = blocks.apply(lambda block: packet.comp_angle(self.orientation, block), axis=1)
-                bid_to_angles = dict(zip(bid, angles))
-                phi1 = packet.points_data['block_id'].map(lambda bid: bid_to_angles[bid][0])
-                PHI = packet.points_data['block_id'].map(lambda bid: bid_to_angles[bid][1])
-                phi2 = packet.points_data['block_id'].map(lambda bid: bid_to_angles[bid][2])
-                self.points_data.loc[comp_df.index, 'block_variant'] = comp_df['block_variant']
-                self.points_data.loc[comp_df.index, 'phi1'] = phi1
-                self.points_data.loc[comp_df.index, 'PHI'] = PHI
-                self.points_data.loc[comp_df.index, 'phi2'] = phi2
+            pass
+            # for packet in self.packets_list:
+            #     comp_df = packet.assign_bv()
+            #     blocks = packet.points_data.groupby('block_id').head(1)
+            #     bid = blocks.apply(lambda block: block['block_id'], axis=1)
+            #     angles = blocks.apply(lambda block: packet.comp_angle(self.orientation, block), axis=1)
+            #     bid_to_angles = dict(zip(bid, angles))
+            #     phi1 = packet.points_data['block_id'].map(lambda bid: bid_to_angles[bid][0])
+            #     PHI = packet.points_data['block_id'].map(lambda bid: bid_to_angles[bid][1])
+            #     phi2 = packet.points_data['block_id'].map(lambda bid: bid_to_angles[bid][2])
+            #     self.points_data.loc[comp_df.index, 'block_variant'] = comp_df['block_variant']
+            #     self.points_data.loc[comp_df.index, 'phi1'] = phi1
+            #     self.points_data.loc[comp_df.index, 'PHI'] = PHI
+            #     self.points_data.loc[comp_df.index, 'phi2'] = phi2
 
         else:
             for i in range(len(self.packets_list)):
                 self.packets_list[i].orientations = orientations[i]
-                comp_df = self.packets_list[i].assign_block_ori()
-                self.points_data.loc[comp_df.index, 'phi1'] = comp_df['phi1']
-                self.points_data.loc[comp_df.index, 'PHI'] = comp_df['PHI']
-                self.points_data.loc[comp_df.index, 'phi2'] = comp_df['phi2']
+                # comp_df = self.packets_list[i].assign_block_ori()
+                # self.points_data.loc[comp_df.index, 'phi1'] = comp_df['phi1']
+                # self.points_data.loc[comp_df.index, 'PHI'] = comp_df['PHI']
+                # self.points_data.loc[comp_df.index, 'phi2'] = comp_df['phi2']
+                # check later
 
-        if len(list(set(self.points_data["block_id"]))) > 1:
-            if RveInfo.lower is None:
-                RveInfo.lower = RveInfo.t_mu / 3
-            self.points_data = self.merge_tiny_blocks(merge_tiny_blocks)
+        # if len(list(set(self.points_data["block_id"]))) > 1:
+        #     if RveInfo.lower is None:
+        #         RveInfo.lower = RveInfo.t_mu / 3
+        #     self.points_data = self.merge_tiny_blocks(merge_tiny_blocks)
 
         return self.points_data
 
@@ -231,7 +228,7 @@ class Grain(HelperFunctions):
 
             for i in range(len(self.points_data) - sum(num_grid_ps)):
                 num_grid_ps[i] += 1
-        num_grid_ps = list(filter(lambda num: num != 0,num_grid_ps))
+        num_grid_ps = list(filter(lambda num: num != 0, num_grid_ps))
 
         if RveInfo.debug:
             assert sum(num_grid_ps) == len(self.points_data) and ((np.array(num_grid_ps) != 0).all())
@@ -756,6 +753,83 @@ class Packet():
             phi2B = phi2B + 360
 
         return phi1B, PHIB, phi2B
+
+
+def choose_block_boundary_norm(packet: pd.DataFrame) -> Tuple[np.ndarray, bool]:
+    bad_bt_flag = False  # if the packet are subdivided into more than 4 parts the computation block thickness is wrong
+    block_boundary_norm = np.random.uniform(0, 1, (1, 3))
+    x_max = RveInfo.box_size
+    y_max = RveInfo.box_size_y if RveInfo.box_size_y is not None else RveInfo.box_size
+    z_max = RveInfo.box_size_y if RveInfo.box_size_z is not None else RveInfo.box_size
+    if 0.0 in packet['x'].values and x_max in packet['x'].values:
+        block_boundary_norm[0, 0] = 0.0
+
+    if 0.0 in packet['y'].values and y_max in packet['y'].values:
+        block_boundary_norm[0, 0] = 0.0
+
+    if 0.0 in packet['z'].values and z_max in packet['z'].values:
+        block_boundary_norm[0, 0] = 0.0
+
+    if len(block_boundary_norm[block_boundary_norm == 0]) == 3:
+        block_boundary_norm = np.array([[0, 0, 1]])
+        bad_bt_flag = True
+    return block_boundary_norm, bad_bt_flag
+
+
+def dis_to_id(dis, bt_list):
+    idx = np.where(bt_list > dis)
+    if len(idx[0]) == 0:
+        return str(len(bt_list))
+    else:
+        return str(int(idx[0][0] - 1))
+
+
+def gen_blocks(rve: pd.DataFrame, bt_distribution: SubsDistribution) -> pd.DataFrame:
+    # select a random norm direction for block boundary
+    rve["p_dis"] = 0
+    rve['pd'] = 0
+    rve['block_id'] = str(0)
+    num_packets = rve["packet_id"].max()
+    rve['packet_id'] = rve['packet_id'].astype(str)
+    for i in range(1, num_packets + 1):
+        packet = rve[rve["packet_id"] == str(i)].copy()
+        block_boundary_norm, bad_bt_flag = choose_block_boundary_norm(packet=packet)
+        if not bad_bt_flag:
+            # compute d of block boundary
+            pd = -(packet['x'] * block_boundary_norm[0, 0] + packet['y'] * block_boundary_norm[0, 1] + packet['z'] *
+                   block_boundary_norm[0, 2])
+            # compute the distance to the block boundary with maximum d
+            packet['pd'] = pd
+            sq = np.sqrt(block_boundary_norm[..., 0] ** 2 +
+                         block_boundary_norm[..., 1] ** 2 +
+                         block_boundary_norm[..., 2] ** 2)
+            p_dis = (packet['pd'].max() - packet['pd']) / sq
+
+            packet['p_dis'] = p_dis
+
+            total_bt = packet['p_dis'].max()
+            bt_list = bt_sampler(bt_distribution=bt_distribution,
+                                 total_bt=total_bt,
+                                 interval=[RveInfo.bt_min, RveInfo.bt_max])
+            dis_list = np.cumsum(bt_list)
+            dis_list = np.insert(dis_list, 0, 0)
+            block_id = packet['p_dis'].map(lambda dis: dis_to_id(dis, dis_list))
+            rve.loc[rve["packet_id"] == str(i), 'p_dis'] = p_dis
+            rve.loc[rve["packet_id"] == str(i), 'block_id'] = packet['packet_id'] + 'b' + block_id
+        else:
+            print("bad block thickness computation!")
+            sys.exit()
+
+    return rve
+
+
+def compute_bt(rve: pd.DataFrame) -> None:
+    rve['block_thickness'] = np.nan
+    bg = rve.groupby('block_id')
+    bid_to_bt = bg['p_dis'].apply(max) - bg['p_dis'].apply(min)
+    rve['block_thickness'] = rve.apply(lambda p: bid_to_bt[p['block_id']], axis=1)
+    rve.drop('pd', axis=1, inplace=True)
+    rve.drop('p_dis', axis=1, inplace=True)
 
 
 if __name__ == '__main__':

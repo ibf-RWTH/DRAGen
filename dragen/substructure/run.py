@@ -5,14 +5,14 @@ Author:   Linghao Kong
 Version:  V 0.1
 File:     run
 Describe: Write during the internship at IEHK RWTH"""
-import multiprocessing
+
 from dragen.substructure.substructure import plot_rve_subs
 from dragen.substructure.data import save_data
-from dragen.substructure.substructure import Grain
+from dragen.substructure.substructure import Grain, gen_blocks, compute_bt
 from scipy.stats import moment
 from scipy.stats import gaussian_kde
 from dragen.stats.preprocessing import *
-
+from dragen.substructure.DataParser import block_data_parser
 
 class Run():
 
@@ -84,8 +84,8 @@ class Run():
         RveInfo.LOGGER.info('------------------------------------------------------------------------------')
         _rve_data = pd.DataFrame()
         if RveInfo.subs_file_flag:
-            assert RveInfo.subs_file is not None, 'no substructure file given'
-            block_df = pd.read_csv(RveInfo.subs_file)
+            assert RveInfo.block_file is not None, 'no substructure file given'
+            block_df = pd.read_csv(RveInfo.block_file)
             self.get_bt_distribution(block_df)
             RveInfo.t_mu *= RveInfo.decreasing_factor
 
@@ -110,15 +110,15 @@ class Run():
                     blocks = block_df[block_df['grain_id'] == old_gid + 1]
                     n_pack = len(list(set(blocks['packet_id'])))
                     orientations = self.get_orientations(block_df, old_gid)
-                    grain.gen_subs(n_pack=n_pack, orientations=orientations)
+                    grain.gen_packs(n_pack=n_pack, orientations=orientations)
 
                 else:
                     assert RveInfo.equiv_d is not None, 'no valid definition for equiv_d'
                     assert RveInfo.p_sigma is not None, 'no valid definition for p_sigma'
                     assert RveInfo.t_mu is not None, 'no valid definition for t_mu'
-                    grain.gen_subs(RveInfo.equiv_d, sigma=RveInfo.p_sigma, block_thickness=RveInfo.t_mu,
-                                   b_sigma=RveInfo.b_sigma, lower_t=RveInfo.lower, upper_t=RveInfo.upper,
-                                   circularity=RveInfo.circularity)
+                    # grain.gen_packs(RveInfo.equiv_d, sigma=RveInfo.p_sigma, block_thickness=RveInfo.t_mu,
+                    #                b_sigma=RveInfo.b_sigma, lower_t=RveInfo.lower, upper_t=RveInfo.upper,
+                    #                circularity=RveInfo.circularity) # check later
                 _rve_data = pd.concat([_rve_data, grain.points_data])
 
             else:
@@ -133,29 +133,29 @@ class Run():
         RveInfo.rve_data_substructure = _rve_data
         self.rve_data = _rve_data
 
-        self.del_zerobt(_rve_data)  # del blocks with 0 thickness
-        # martensite_df = self.rve_data[_rve_data['phaseID'] == 2]
+        # self.del_zerobt(_rve_data)  # del blocks with 0 thickness
 
-        # if RveInfo.subs_file_flag:
-        #     mod_bt(martensite_df)
-        # else:
-        #     mod_bt(martensite_df)
-        # transfer id to number
-        _rve_data.loc[_rve_data['block_id'].isnull(), 'block_id'] = _rve_data[_rve_data['block_id'].isnull()][
-                                                                        'packet_id'] + '0'
+        # _rve_data.loc[_rve_data['block_id'].isnull(), 'block_id'] = _rve_data[_rve_data['block_id'].isnull()][
+        #                                                                 'packet_id'] + '0'
+        bt_distribution = block_data_parser()
         packet_id = _rve_data['packet_id'].unique().tolist()
         n_id = np.arange(1, len(packet_id) + 1)
         pid_to_nid = dict(zip(packet_id, n_id))
-        # print(pid_to_nid)
         pid_in_rve = _rve_data['packet_id'].map(lambda pid: pid_to_nid[pid])
+        _rve_data['packet_id'] = pid_in_rve
+        print("start blocks generation")
+        _rve_data = gen_blocks(rve=_rve_data, bt_distribution=bt_distribution)
+        print("finish blocks generation")
 
         block_id = _rve_data['block_id'].unique().tolist()
         n2_id = np.arange(1, len(block_id) + 1)
         bid_to_nid = dict(zip(block_id, n2_id))
         bid_in_rve = _rve_data['block_id'].map(lambda bid: bid_to_nid[bid])
-
-        _rve_data['packet_id'] = pid_in_rve
         _rve_data['block_id'] = bid_in_rve
+
+        compute_bt(rve=_rve_data)
+        self.del_zerobt(_df=_rve_data)
+
         _rve_data.n_pts = RveInfo.n_pts
         _rve_data.box_size = RveInfo.box_size
         _rve_data.box_size_y = RveInfo.box_size_y
@@ -267,72 +267,6 @@ class Run():
         RveInfo.LOGGER.info('substructure postprocessing successful')
 
 
-def get_sampler() -> [InputDataSampler, UserPakVolumeSampler, UserPakVolumeSampler]:
-    """
-    create microstructural parameters sampler(packet volume sampler or block thickness sampler) from user input data or input file
-    """
-    # create packet volume sampler
-    pv_sampler_creater = SamplerFactory("PvSamplerCreater")
-    bt_sampler_creater = SamplerFactory("BtSamplerCreater")
-    if RveInfo.pak_file is None:
-        pv_sampler = pv_sampler_creater.create_sampler(UserPakVolumeSampler, equiv_d=RveInfo.equiv_d,
-                                                       circularity=RveInfo.circularity,
-                                                       sigma=RveInfo.p_sigma)
-    else:
-        pak_df = pd.read_csv(RveInfo.pak_file)
-        equiv_d = pak_df["Volume"]
-        circularity = pak_df["circularity"]
-        data = 4 / 3 * np.pi * equiv_d ** 3 * circularity ** 1.5
-        pv_sampler = pv_sampler_creater.create_sampler(InputDataSampler, data=data)
-    # create block thickness sampler
-    if RveInfo.block_file is None:
-        bt_sampler = bt_sampler_creater.create_sampler(UserBlockThicknessSampler, average_bt=RveInfo.t_mu,
-                                                       sigma=RveInfo.b_sigma)
-    else:
-        block_df = pd.read_csv(RveInfo.block_file)
-        data = block_df["block_thickness"]
-        bt_sampler = bt_sampler_creater.create_sampler(InputDataSampler, data=data)
-    return pv_sampler, bt_sampler
-
-
-def generate_packet(rve_df: pd.DataFrame, grains_df: pd.DataFrame, row_num: int,
-                    pv_sampler: [UserPakVolumeSampler, InputDataSampler]):
-    if RveInfo.debug:
-        assert 0 <= row_num < len(grains_df)
-    grain_data = grains_df.iloc[row_num]
-    phaseID = int(grain_data['phaseID'])
-    grain_id = grain_data['GrainID']
-    x = rve_df[rve_df['GrainID'] == grain_id]['x'].to_numpy().reshape((-1, 1))
-    y = rve_df[rve_df['GrainID'] == grain_id]['y'].to_numpy().reshape((-1, 1))
-    z = rve_df[rve_df['GrainID'] == grain_id]['z'].to_numpy().reshape((-1, 1))
-
-    points = np.concatenate((x, y, z), axis=1)
-    if phaseID == 2:
-        orientation = (grain_data['phi1'], grain_data['PHI'], grain_data['phi2'])
-        grain = Grain(v=grain_data['final_conti_volume'], points=points,
-                      phaseID=phaseID, grainID=grain_id, orientation=orientation)
-        grain.gen_pak(pak_volume_sampler=pv_sampler)
-
-    print("Grain {} generates packets successfully".format(row_num))
-
-
-def better_run(rve_df: pd.DataFrame, grains_df: pd.DataFrame):
-    """
-    workflow of substructures generation
-    """
-    # start multiprocessing pool
-    pool = multiprocessing.Pool(RveInfo.num_cores)
-    # get sampler
-    pv_sampler, bt_sampler = get_sampler()
-    # generate packets in all grains
-    for i in range(len(grains_df)):
-        pool.apply_async(generate_packet, args=(rve_df, grains_df, i, pv_sampler,))
-
-    print("start {} processes to generate packets".format(RveInfo.num_cores))
-    pool.close()
-    pool.join()
-
-
 if __name__ == '__main__':
     # import datetime
     #
@@ -346,10 +280,15 @@ if __name__ == '__main__':
     # # print('running time is',end-start)
     # df = rve_data[rve_data['block_id'] == 1]
     # print(df)
-    RveInfo.num_cores = 8
-    RveInfo.equiv_d = 3
-    pv_sampler, bt_sampler = get_sampler()
-    grains_df = pd.read_csv("F:/pycharm/2nd_mini_thesis/dragen-master/OutputData/2021-07-23_0/Generation_Data/grain_data_output_discrete.csv")
-    rve_df = pd.read_csv(r"F:\pycharm\dragen\dragen\test\rve.csv")
-    rve_df["phaseID"] = 2
-    better_run(rve_df=rve_df,grains_df=grains_df)
+    subs_run = Run()
+    RveInfo.subs_file_flag = True
+    RveInfo.block_file = r"/ExampleInput/example_block_inp.csv"
+    block_data = pd.read_csv(RveInfo.block_file)
+    RveInfo.bt_min = block_data['block_thickness'].min()
+    RveInfo.bt_max = block_data['block_thickness'].max()
+    rve_df = pd.read_csv(r"X:\DRAGen\DRAGen\dragen\test\results\periodic_rve_df.csv")
+    grains_df = pd.read_csv(r"/dragen/test/results/grains_df.csv")
+    rve_data = subs_run.run(rve_df=rve_df, grains_df=grains_df)
+    print(rve_data)
+    rve_data.to_csv(r"X:\DRAGen\DRAGen\dragen\test\results\test_result.csv")
+

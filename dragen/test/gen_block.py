@@ -31,37 +31,41 @@ def dis_to_id(dis, bt_list):
         return str(int(idx[0][0] - 1))
 
 
-def gen_block(packet: pd.DataFrame, bt_distribution: SubsDistribution) -> pd.DataFrame:
+def gen_blocks(rve: pd.DataFrame, bt_distribution: SubsDistribution) -> pd.DataFrame:
     # select a random norm direction for block boundary
-    block_boundary_norm, bad_bt_flag = choose_block_boundary_norm(packet=packet)
-    if not bad_bt_flag:
-        # compute d of block boundary
-        pd = -(packet['x'] * block_boundary_norm[0, 0] + packet['y'] * block_boundary_norm[0, 1] + packet['z'] *
-               block_boundary_norm[0, 2])
-        # compute the distance to the block boundary with maximum d
-        packet.insert(6, 'pd', value=pd)
-        sq = np.sqrt(block_boundary_norm[..., 0] ** 2 +
-                     block_boundary_norm[..., 1] ** 2 +
-                     block_boundary_norm[..., 2] ** 2)
-        p_dis = (packet['pd'].max() - packet['pd']) / sq
-        # print("p_dis are ", p_dis)
-        packet['p_dis'] = p_dis
+    rve["p_dis"] = 0
+    num_packets = rve["packet_id"].max()
+    rve['packet_id'] = rve['packet_id'].astype(str)
+    for i in range(1, num_packets + 1):
+        packet = rve[rve["packet_id"] == i]
+        block_boundary_norm, bad_bt_flag = choose_block_boundary_norm(packet=packet)
+        if not bad_bt_flag:
+            # compute d of block boundary
+            pd = -(packet['x'] * block_boundary_norm[0, 0] + packet['y'] * block_boundary_norm[0, 1] + packet['z'] *
+                   block_boundary_norm[0, 2])
+            # compute the distance to the block boundary with maximum d
+            packet.insert(6, 'pd', value=pd)
+            sq = np.sqrt(block_boundary_norm[..., 0] ** 2 +
+                         block_boundary_norm[..., 1] ** 2 +
+                         block_boundary_norm[..., 2] ** 2)
+            p_dis = (packet['pd'].max() - packet['pd']) / sq
+            # print("p_dis are ", p_dis)
+            packet['p_dis'] = p_dis
 
-        total_bt = packet['p_dis'].max()
+            total_bt = packet['p_dis'].max()
 
-        bt_list = bt_sampler(bt_distribution=bt_distribution,
-                             total_bt=total_bt,
-                             interval=[RveInfo.bt_min, RveInfo.bt_max])
-        dis_list = np.cumsum(bt_list)
-        dis_list = np.insert(dis_list, 0, 0)
-        block_id = packet['p_dis'].map(lambda dis: dis_to_id(dis, dis_list))
-        packet['block_id'] = packet['packet_id'] + block_id
-        packet.drop('pd', axis=1, inplace=True)
-    else:
-        print("bad block thickness computation!")
-        sys.exit()
+            bt_list = bt_sampler(bt_distribution=bt_distribution,
+                                 total_bt=total_bt,
+                                 interval=[RveInfo.bt_min, RveInfo.bt_max])
+            dis_list = np.cumsum(bt_list)
+            dis_list = np.insert(dis_list, 0, 0)
+            block_id = packet['p_dis'].map(lambda dis: dis_to_id(dis, dis_list))
+            packet['block_id'] = packet['packet_id'] + 'b' + block_id
+        else:
+            print("bad block thickness computation!")
+            sys.exit()
 
-    return packet
+    return rve
 
 
 def compute_bt(rve: pd.DataFrame) -> None:
@@ -69,7 +73,8 @@ def compute_bt(rve: pd.DataFrame) -> None:
     bg = rve.groupby('block_id')
     bid_to_bt = bg['p_dis'].apply(max) - bg['p_dis'].apply(min)
     rve['block_thickness'] = rve.apply(lambda p: bid_to_bt[p['block_id']], axis=1)
-    # rve.drop('p_dis', axis=1, inplace=True)
+    rve.drop('pd', axis=1, inplace=True)
+    rve.drop('p_dis', axis=1, inplace=True)
 
 def block_data_parser() -> SubsDistribution:
     if RveInfo.block_file is not None:
@@ -165,40 +170,44 @@ def test_choose_boundary_norm():
 
 
 if __name__ == "__main__":
-    subs_file = r"F:\codes\DRAGen\dragen\test\substruct_data.csv"
-    subs_data = pd.read_csv(subs_file)
-    # RveInfo.block_file = None
-    RveInfo.b_sigma = 0.3
-    RveInfo.t_mu = 1.0
-    RveInfo.bt_min = 0.5
+    block_file = r"X:\DRAGen\DRAGen\ExampleInput\example_block_inp.csv"
+    rve_file = r"X:\DRAGen\DRAGen\OutputData\2022-11-11_000\substruct_data.csv"
+    rve = pd.read_csv(rve_file)
+    RveInfo.block_file = block_file
     bt_distribution = block_data_parser()
-
-    packet_num = subs_data['packet_id'].max()
-    subs_data['block_id'] = 0
-    subs_data['p_dis'] = 0
-    subs_data['packet_id'] = subs_data['packet_id'].astype(str)
-    subs_data['packet_id'] += 'p'
-    for i in range(packet_num):
-        packet = subs_data[subs_data['packet_id'] == str(i + 1) + 'p']
-        packet = gen_block(packet=packet, bt_distribution=bt_distribution)
-        # print(packet['block_id'])
-        subs_data.loc[subs_data['packet_id'] == str(i + 1) + 'p', 'block_id'] = packet['block_id']
-        subs_data.loc[subs_data['packet_id'] == str(i + 1) + 'p', 'p_dis'] = packet['p_dis']
-
-    packet_id = subs_data['packet_id'].unique().tolist()
-    n_id = np.arange(1, len(packet_id) + 1)
-    pid_to_nid = dict(zip(packet_id, n_id))
-    # print(pid_to_nid)
-    pid_in_rve = subs_data['packet_id'].map(lambda pid: pid_to_nid[pid])
-
-    block_id = subs_data['block_id'].unique().tolist()
-    n2_id = np.arange(1, len(block_id) + 1)
-    bid_to_nid = dict(zip(block_id, n2_id))
-    bid_in_rve = subs_data['block_id'].map(lambda bid: bid_to_nid[bid])
-
-    subs_data['packet_id'] = pid_in_rve
-    subs_data['block_id'] = bid_in_rve
-
-    compute_bt(rve=subs_data)
-    subs_data.to_csv(r"F:\codes\DRAGen\dragen\test\results\test.csv")
+    rve = gen_blocks(rve=rve, bt_distribution=bt_distribution)
+    print(rve)
+    # RveInfo.b_sigma = 0.3
+    # RveInfo.t_mu = 1.0
+    # RveInfo.bt_min = 0.5
+    # bt_distribution = block_data_parser()
+    #
+    # packet_num = subs_data['packet_id'].max()
+    # subs_data['block_id'] = 0
+    # subs_data['p_dis'] = 0
+    # subs_data['packet_id'] = subs_data['packet_id'].astype(str)
+    # subs_data['packet_id'] += 'p'
+    # for i in range(packet_num):
+    #     packet = subs_data[subs_data['packet_id'] == str(i + 1) + 'p']
+    #     packet = gen_block(packet=packet, bt_distribution=bt_distribution)
+    #     # print(packet['block_id'])
+    #     subs_data.loc[subs_data['packet_id'] == str(i + 1) + 'p', 'block_id'] = packet['block_id']
+    #     subs_data.loc[subs_data['packet_id'] == str(i + 1) + 'p', 'p_dis'] = packet['p_dis']
+    #
+    # packet_id = subs_data['packet_id'].unique().tolist()
+    # n_id = np.arange(1, len(packet_id) + 1)
+    # pid_to_nid = dict(zip(packet_id, n_id))
+    # # print(pid_to_nid)
+    # pid_in_rve = subs_data['packet_id'].map(lambda pid: pid_to_nid[pid])
+    #
+    # block_id = subs_data['block_id'].unique().tolist()
+    # n2_id = np.arange(1, len(block_id) + 1)
+    # bid_to_nid = dict(zip(block_id, n2_id))
+    # bid_in_rve = subs_data['block_id'].map(lambda bid: bid_to_nid[bid])
+    #
+    # subs_data['packet_id'] = pid_in_rve
+    # subs_data['block_id'] = bid_in_rve
+    #
+    # compute_bt(rve=subs_data)
+    # subs_data.to_csv(r"F:\codes\DRAGen\dragen\test\results\test.csv")
 
