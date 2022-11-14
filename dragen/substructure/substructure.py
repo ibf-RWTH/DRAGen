@@ -833,38 +833,40 @@ def compute_bt(rve: pd.DataFrame) -> None:
 
 
 if __name__ == '__main__':
+    from dragen.test.geometry import dis_in_rve, get_pedal_point
 
-    grains_data = pd.read_csv('F:/pycharm/2nd_mini_thesis/dragen-master/OutputData/2021-07-23_0/substruct_data_abq.csv')
-    info_data = pd.read_csv(
-        'F:/pycharm/2nd_mini_thesis/dragen-master/OutputData/2021-07-23_0/Generation_Data/grain_data_output_discrete.csv')
-    gids = info_data["GrainID"].to_list()
-    pv_sampler = UserPakVolumeSampler(3)
-    rve_df = pd.DataFrame()
-    for gid in gids:
-        info = info_data[info_data["GrainID"] == gid]
-        orientation = (info['phi1'], info['PHI'], info['phi2'])
-        points = grains_data[grains_data["GrainID"] == gid][["x", "y", "z"]].to_numpy()
-        grain = Grain(info['final_conti_volume'], grainID=gid, phaseID=info['phaseID'],
-                      alpha=info['alpha'], orientation=orientation, points=points)
-        grain.gen_pak(pak_volume_sampler=pv_sampler)
-        rve_df = pd.concat([rve_df, grain.points_data])
-        print(gid)
+    rve = pd.read_csv(r"F:\codes\DRAGen\OutputData\2022-11-12_000\substruct_data.csv")
+    packet = rve[rve["packet_id"] == 1].copy()
+    RveInfo.box_size_z = RveInfo.box_size_y = RveInfo.box_size = 25.0
+    x_moved = y_moved = z_moved = False
+    x_max = RveInfo.box_size
+    y_max = RveInfo.box_size_y if RveInfo.box_size_y is not None else RveInfo.box_size
+    z_max = RveInfo.box_size_y if RveInfo.box_size_z is not None else RveInfo.box_size
+    if 0.0 in packet['x'].values and x_max in packet['x'].values:
+        x_moved = True
 
-    pak_ids = list(set(rve_df["packet_id"].to_list()))
-    new_ids = np.arange(len(pak_ids)).tolist()
-    pak_ids_to_new_ids = dict(zip(pak_ids, new_ids))
-    new_pakid = rve_df["packet_id"].apply(lambda pakid: pak_ids_to_new_ids[pakid])
-    rve_df["packet_id"] = new_pakid
-    rve_df.to_csv("F:/pycharm/dragen/dragen/test/rve.csv")
-    #
-    #
+    if 0.0 in packet['y'].values and y_max in packet['y'].values:
+        y_moved = True
 
-    # rve_data = pd.read_csv(
-    #     'F:/pycharm/2nd_mini_thesis/dragen-master/OutputData/2021-09-23_0/substruct_data_abq.csv')  # changes into rve data
-    # grains_df = pd.read_csv('F:/pycharm/2nd_mini_thesis/dragen-master/OutputData/2021-09-23_0/Generation_Data/grain_data_input.csv')#grain_data
-    # test_run.run()
-    # end = datetime.datetime.now()
-    # print('running time is',end-start)
-    # df = rve_data[rve_data['block_id'] == 1]
-    # n = df.index[0]
-    # print(df.loc[n+1,'block_thickness'])
+    if 0.0 in packet['z'].values and z_max in packet['z'].values:
+        z_moved = True
+    block_boundary_norm = np.random.uniform(0, 1, (1, 3))
+    pd = -(packet['x'] * block_boundary_norm[0, 0] +
+           packet['y'] * block_boundary_norm[0, 1] +
+           packet['z'] * block_boundary_norm[0, 2])
+    packet['pd'] = pd
+    # print(packet['pd'])
+    p1 = packet.loc[packet['pd'].idxmax(), ['x', 'y', 'z']]
+
+    pedal_points = get_pedal_point(p1=p1, n=block_boundary_norm, d=packet['pd'])
+    print(p1)
+    print(packet[['x','y','z']])
+    print(pedal_points)
+    p_dis = pedal_points.apply(lambda p2: dis_in_rve(p1=p1,
+                                                     p2=p2,
+                                                     x_moved=x_moved,
+                                                     y_moved=y_moved,
+                                                     z_moved=z_moved),
+                               axis=1)
+    p_dis = sorted(p_dis)
+    print(p_dis)
