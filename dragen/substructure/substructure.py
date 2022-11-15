@@ -12,6 +12,7 @@ import warnings
 from dragen.stats.preprocessing import *
 from dragen.substructure.DataParser import bt_sampler, SubsDistribution
 from typing import Tuple
+from dragen.test.geometry import dis_in_rve, get_pedal_point, issame_side, compute_num_clusters, train_kmeans
 
 
 class Grain(HelperFunctions):
@@ -859,7 +860,6 @@ def compute_bt(rve: pd.DataFrame) -> None:
 
 
 if __name__ == '__main__':
-    from dragen.test.geometry import dis_in_rve, get_pedal_point, issame_side, compute_num_clusters, train_kmeans
 
     rve = pd.read_csv(r"/home/doelz-admin/DRAGen/dragen/test/results/substruct_data.csv")
     packet = rve[rve["packet_id"] == 1].copy()

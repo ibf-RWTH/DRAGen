@@ -177,6 +177,7 @@ class Run():
 
         RveInfo.LOGGER.info('substructure generation successful')
         RveInfo.LOGGER.info('------------------------------------------------------------------------------')
+        _rve_data.to_csv(r"X:\DRAGen\dragen\test\results\rve_data.csv")
         return _rve_data
 
     def post_processing(self, k, sigma=2):

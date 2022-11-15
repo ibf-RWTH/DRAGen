@@ -74,14 +74,17 @@ def dis_in_rve(same_side: bool,
     :param z_moved: if the rve is clipped along z-axis
     :return:
     """
+    x_max = RveInfo.box_size
+    y_max = RveInfo.box_size_y if RveInfo.box_size_y is not None else RveInfo.box_size
+    z_max = RveInfo.box_size_y if RveInfo.box_size_z is not None else RveInfo.box_size
     if same_side:
         x_dis = p1['x'] - p2['x']
         y_dis = p1['y'] - p2['y']
         z_dis = p1['z'] - p2['z']
     else:
-        x_dis = p1['x'] - p2['x'] if not x_moved else RveInfo.box_size - abs(p1['x'] - p2['x'])
-        y_dis = p1['y'] - p2['y'] if not y_moved else RveInfo.box_size_y - abs(p1['y'] - p2['y'])
-        z_dis = p1['z'] - p2['z'] if not z_moved else RveInfo.box_size_z - abs(p1['z'] - p2['z'])
+        x_dis = p1['x'] - p2['x'] if not x_moved else x_max - abs(p1['x'] - p2['x'])
+        y_dis = p1['y'] - p2['y'] if not y_moved else y_max - abs(p1['y'] - p2['y'])
+        z_dis = p1['z'] - p2['z'] if not z_moved else z_max - abs(p1['z'] - p2['z'])
     return np.linalg.norm([x_dis, y_dis, z_dis])
 
 
