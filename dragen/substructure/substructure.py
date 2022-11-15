@@ -793,32 +793,58 @@ def gen_blocks(rve: pd.DataFrame, bt_distribution: SubsDistribution) -> pd.DataF
     rve['packet_id'] = rve['packet_id'].astype(str)
     for i in range(1, num_packets + 1):
         packet = rve[rve["packet_id"] == str(i)].copy()
-        block_boundary_norm, bad_bt_flag = choose_block_boundary_norm(packet=packet)
-        if not bad_bt_flag:
-            # compute d of block boundary
-            pd = -(packet['x'] * block_boundary_norm[0, 0] + packet['y'] * block_boundary_norm[0, 1] + packet['z'] *
-                   block_boundary_norm[0, 2])
-            # compute the distance to the block boundary with maximum d
-            packet['pd'] = pd
-            sq = np.sqrt(block_boundary_norm[..., 0] ** 2 +
-                         block_boundary_norm[..., 1] ** 2 +
-                         block_boundary_norm[..., 2] ** 2)
-            p_dis = (packet['pd'].max() - packet['pd']) / sq
+        block_boundary_norm = np.random.uniform(0, 1, (1, 3))
+        # compute d of block boundary
+        pd = -(packet['x'] * block_boundary_norm[0, 0] +
+               packet['y'] * block_boundary_norm[0, 1] +
+               packet['z'] * block_boundary_norm[0, 2])
+        # compute the distance to the block boundary with maximum d
+        packet['pd'] = pd
+        x_moved = y_moved = z_moved = False
+        x_max = RveInfo.box_size
+        y_max = RveInfo.box_size_y if RveInfo.box_size_y is not None else RveInfo.box_size
+        z_max = RveInfo.box_size_y if RveInfo.box_size_z is not None else RveInfo.box_size
+        if 0.0 in packet['x'].values and x_max in packet['x'].values:
+            x_moved = True
 
-            packet['p_dis'] = p_dis
+        if 0.0 in packet['y'].values and y_max in packet['y'].values:
+            y_moved = True
 
-            total_bt = packet['p_dis'].max()
-            bt_list = bt_sampler(bt_distribution=bt_distribution,
-                                 total_bt=total_bt,
-                                 interval=[RveInfo.bt_min, RveInfo.bt_max])
-            dis_list = np.cumsum(bt_list)
-            dis_list = np.insert(dis_list, 0, 0)
-            block_id = packet['p_dis'].map(lambda dis: dis_to_id(dis, dis_list))
-            rve.loc[rve["packet_id"] == str(i), 'p_dis'] = p_dis
-            rve.loc[rve["packet_id"] == str(i), 'block_id'] = packet['packet_id'] + 'b' + block_id
-        else:
-            print("bad block thickness computation!")
-            sys.exit()
+        if 0.0 in packet['z'].values and z_max in packet['z'].values:
+            z_moved = True
+
+        # print(packet['pd'])
+        p1 = packet.loc[packet['pd'].idxmax(), ['x', 'y', 'z']]
+
+        pedal_points = get_pedal_point(p1=p1, n=block_boundary_norm, d=packet['pd'])
+        num_clusters = compute_num_clusters(packet=packet[['x', 'y', 'z']].to_numpy())
+
+        kmeans = train_kmeans(num_clusters=num_clusters, packet=packet[['x', 'y', 'z']].to_numpy())
+        same_side = pedal_points.apply(lambda p2: issame_side(kmeans=kmeans,
+                                                              p1=p1.to_numpy(),
+                                                              p2=p2.to_numpy()),
+                                       axis=1)
+
+        pedal_points['same_side'] = same_side
+        p_dis = pedal_points.apply(lambda p2: dis_in_rve(same_side=p2['same_side'],
+                                                         p1=p1,
+                                                         p2=p2,
+                                                         x_moved=x_moved,
+                                                         y_moved=y_moved,
+                                                         z_moved=z_moved),
+                                   axis=1)
+
+        packet['p_dis'] = p_dis
+
+        total_bt = packet['p_dis'].max()
+        bt_list = bt_sampler(bt_distribution=bt_distribution,
+                             total_bt=total_bt,
+                             interval=[RveInfo.bt_min, RveInfo.bt_max])
+        dis_list = np.cumsum(bt_list)
+        dis_list = np.insert(dis_list, 0, 0)
+        block_id = packet['p_dis'].map(lambda dis: dis_to_id(dis, dis_list))
+        rve.loc[rve["packet_id"] == str(i), 'p_dis'] = p_dis
+        rve.loc[rve["packet_id"] == str(i), 'block_id'] = packet['packet_id'] + 'b' + block_id
 
     return rve
 
@@ -833,11 +859,11 @@ def compute_bt(rve: pd.DataFrame) -> None:
 
 
 if __name__ == '__main__':
-    from dragen.test.geometry import dis_in_rve, get_pedal_point
+    from dragen.test.geometry import dis_in_rve, get_pedal_point, issame_side, compute_num_clusters, train_kmeans
 
-    rve = pd.read_csv(r"F:\codes\DRAGen\OutputData\2022-11-12_000\substruct_data.csv")
+    rve = pd.read_csv(r"/home/doelz-admin/DRAGen/dragen/test/results/substruct_data.csv")
     packet = rve[rve["packet_id"] == 1].copy()
-    RveInfo.box_size_z = RveInfo.box_size_y = RveInfo.box_size = 25.0
+    RveInfo.box_size_z = RveInfo.box_size_y = RveInfo.box_size = 30.0
     x_moved = y_moved = z_moved = False
     x_max = RveInfo.box_size
     y_max = RveInfo.box_size_y if RveInfo.box_size_y is not None else RveInfo.box_size
@@ -859,14 +885,20 @@ if __name__ == '__main__':
     p1 = packet.loc[packet['pd'].idxmax(), ['x', 'y', 'z']]
 
     pedal_points = get_pedal_point(p1=p1, n=block_boundary_norm, d=packet['pd'])
-    print(p1)
-    print(packet[['x','y','z']])
-    print(pedal_points)
-    p_dis = pedal_points.apply(lambda p2: dis_in_rve(p1=p1,
+    num_clusters = compute_num_clusters(packet=packet[['x','y','z']].to_numpy())
+
+    kmeans = train_kmeans(num_clusters=num_clusters, packet=packet[['x','y','z']].to_numpy())
+    same_side = pedal_points.apply(lambda p2: issame_side(kmeans=kmeans,
+                                                          p1=p1.to_numpy(),
+                                                          p2=p2.to_numpy()),
+                                   axis=1)
+
+    pedal_points['same_side'] = same_side
+    p_dis = pedal_points.apply(lambda p2: dis_in_rve(same_side=p2['same_side'],
+                                                     p1=p1,
                                                      p2=p2,
                                                      x_moved=x_moved,
                                                      y_moved=y_moved,
                                                      z_moved=z_moved),
                                axis=1)
-    p_dis = sorted(p_dis)
-    print(p_dis)
+

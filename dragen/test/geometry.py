@@ -135,37 +135,50 @@ def train_kmeans(num_clusters: int, packet: np.ndarray, random_state: int = 0) -
     return KMeans(n_clusters=num_clusters, random_state=random_state).fit(packet)
 
 
+def issame_side(kmeans: object, p1: np.ndarray, p2: np.ndarray) -> bool:
+    """
+    determine if 2 points on block boundaries are in the same cluster of a packet
+    :param kmeans: kmeans cluster
+    :param p1: point on 1st block boundaries
+    :param p2: point on 2nd block boundaries
+    :return: same cluster True else False
+    """
+    pred1 = kmeans.predict(p1.reshape(1, -1))[0]
+    pred2 = kmeans.predict(p2.reshape(1, -1))[0]
+    return pred1 == pred2
+
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    x = y = z = np.linspace(0, 3, num=30, endpoint=False)
-    grids = xs, ys, zs = np.meshgrid(x, y, z)
+    rve = pd.read_csv(r"/home/doelz-admin/DRAGen/dragen/test/results/substruct_data.csv")
     ax = plt.figure().add_subplot(projection='3d')
-    # ax.scatter(xs, ys, zs)
-    # plt.show()
-    points = np.vstack(map(np.ravel, grids)).T
-    rve = pd.DataFrame(columns=['x', 'y', 'z'], data=points)
-    print(rve)
     p1 = pd.DataFrame(columns=['x', 'y', 'z'], data=np.array([[0, 0, 0]]))
     p2 = pd.DataFrame(columns=['x', 'y', 'z'], data=np.array([[0.5, 0, 0]]))
     p3 = pd.DataFrame(columns=['x', 'y', 'z'], data=np.array([[2.5, 0, 0]]))
-    rve['packet_id'] = 0
-    rve.loc[rve['x'] <= 1.0, 'packet_id'] = 1
-    rve.loc[(rve['x'] <= 2.0) & (rve['x'] > 1), 'packet_id'] = 2
-    rve.loc[(rve['x'] <= 3.0) & (rve['x'] > 2), 'packet_id'] = 1
 
-    packet = rve.loc[rve['packet_id'] == 1, ['x', 'y', 'z']].to_numpy()
-    RveInfo.box_size = RveInfo.box_size_y = RveInfo.box_size_z = 2.9
+    packet = rve.loc[rve['packet_id'] == 4, ['x', 'y', 'z']].to_numpy()
+    # print(packet)
+    ax.scatter(packet[:, 0], packet[:, 1], packet[:, 2])
+    # plt.show()
+    RveInfo.box_size = RveInfo.box_size_y = RveInfo.box_size_z = 30
     n = compute_num_clusters(packet=packet)
+    print(n)
+    block_norm = np.array([1, 0, 0]).reshape(1, 3)
+    d_values = -(packet[:, 0] * block_norm[0, 0] +
+                 packet[:, 1] * block_norm[0, 1] +
+                 packet[:, 2] * block_norm[0, 2])
+    print(d_values)
+    p1 = packet[packet[:, 0] * block_norm[0, 0] +
+                packet[:, 1] * block_norm[0, 1] +
+                packet[:, 2] * block_norm[0, 2] + d_values[0] == 0][0, :]
+    print(p1)
+    p2 = packet[packet[:, 0] * block_norm[0, 0] +
+                packet[:, 1] * block_norm[0, 1] +
+                packet[:, 2] * block_norm[0, 2] + d_values[120] == 0][0, :]
+    print(p2)
     kmeans = train_kmeans(num_clusters=n, packet=packet)
+    issame_side(kmeans=kmeans, p1=p1, p2=p2)
+
     clusters = sorted(kmeans.labels_)
     print(clusters)
-    # cylinder = Cylinder(p1=p1.to_numpy(), p2=p2.to_numpy(), r=1.0)
-    # inside = rve.apply(lambda p: cylinder.is_inside(p.to_numpy()), axis=1)
-    #
-    # cl = rve[inside]
-    # print(len(cl))
-    # packet = rve[rve['packet_id'] == 1]
-    # print(d1, d2)
-    # print(rve['pd'].unique())
-    # ax.scatter(rve['x'], rve['y'], rve['z'])
