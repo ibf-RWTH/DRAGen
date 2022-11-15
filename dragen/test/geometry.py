@@ -1,6 +1,7 @@
 from dragen.utilities.InputInfo import RveInfo
 import pandas as pd
 import numpy as np
+from sklearn.cluster import KMeans
 
 
 class Cylinder:
@@ -29,7 +30,7 @@ class Cylinder:
             return False
 
 
-def one_side(n: np.ndarray, p1: pd.DataFrame, p2: pd.DataFrame, rve: pd.DataFrame, packet_id:[int,float]) -> bool:
+def one_side(n: np.ndarray, p1: pd.DataFrame, p2: pd.DataFrame, rve: pd.DataFrame, packet_id: [int, float]) -> bool:
     """
     determine if the planes with normal n and pass p1, p2 belong to the same side in rve
     :param packet_id: the id of packet which have p1, p2
@@ -104,6 +105,36 @@ def get_pedal_point(p1: pd.DataFrame, n: np.ndarray, d: [pd.DataFrame]) -> pd.Da
     return pedal_points
 
 
+def compute_num_clusters(packet: np.ndarray) -> int:
+    """
+    return the number of clusters of a packet
+    :param packet: packet
+    :return: num of clusters within the packet
+    """
+    x_max = RveInfo.box_size
+    y_max = RveInfo.box_size_y if RveInfo.box_size_y is not None else RveInfo.box_size
+    z_max = RveInfo.box_size_y if RveInfo.box_size_z is not None else RveInfo.box_size
+    i = 0
+    if np.isclose(packet[:, 0], 0, 1e-5).any() and np.isclose(packet[:, 0], x_max, 1e-5).any():
+        i += 1
+    if np.isclose(packet[:, 1], 0, 1e-5).any() and np.isclose(packet[:, 1], y_max, 1e-5).any():
+        i += 1
+    if np.isclose(packet[:, 2], 0, 1e-5).any() and np.isclose(packet[:, 2], z_max, 1e-5).any():
+        i += 1
+    return 2 ** i
+
+
+def train_kmeans(num_clusters: int, packet: np.ndarray, random_state: int = 0) -> object:
+    """
+    train a k_means cluster within a packet
+    :param num_clusters: number of clusters within the packet
+    :param packet: packet
+    :param random_state: default 0
+    :return: KMeans object
+    """
+    return KMeans(n_clusters=num_clusters, random_state=random_state).fit(packet)
+
+
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
@@ -122,27 +153,13 @@ if __name__ == "__main__":
     rve.loc[rve['x'] <= 1.0, 'packet_id'] = 1
     rve.loc[(rve['x'] <= 2.0) & (rve['x'] > 1), 'packet_id'] = 2
     rve.loc[(rve['x'] <= 3.0) & (rve['x'] > 2), 'packet_id'] = 1
-    n = np.array([1, 0, 0]).reshape(1, 3)
-    d1 = -(p1['x'] * n[0, 0] + p1['y'] * n[0, 1] + p1['z'] *
-           n[0, 2])
-    d2 = -(p2['x'] * n[0, 0] + p2['y'] * n[0, 1] + p2['z'] *
-           n[0, 2])
-    section = rve.loc[(rve['x'] * n[0, 0] +
-                       rve['y'] * n[0, 1] +
-                       rve['z'] * n[0, 2] + float(d1)) *
-                      (rve['x'] * n[0, 0] +
-                       rve['y'] * n[0, 1] +
-                       rve['z'] * n[0, 2] + float(d2)) <= 0].copy()
 
-    pds = -(section['x'] * n[0, 0] +
-           section['y'] * n[0, 1] +
-           section['z'] * n[0, 2])
-
-    section['pd'] = pds
-    group = section.groupby('pd').apply(lambda data: len(data[data['packet_id'] == 1]))
-    pid_counts = pd.DataFrame(columns=['pid_num'], data=group)
-    print(len(pid_counts[pid_counts['pid_num'] == 0]))
-
+    packet = rve.loc[rve['packet_id'] == 1, ['x', 'y', 'z']].to_numpy()
+    RveInfo.box_size = RveInfo.box_size_y = RveInfo.box_size_z = 2.9
+    n = compute_num_clusters(packet=packet)
+    kmeans = train_kmeans(num_clusters=n, packet=packet)
+    clusters = sorted(kmeans.labels_)
+    print(clusters)
     # cylinder = Cylinder(p1=p1.to_numpy(), p2=p2.to_numpy(), r=1.0)
     # inside = rve.apply(lambda p: cylinder.is_inside(p.to_numpy()), axis=1)
     #
