@@ -29,9 +29,10 @@ class Cylinder:
             return False
 
 
-def one_side(n: np.ndarray, p1: pd.DataFrame, p2: pd.DataFrame, rve: pd.DataFrame) -> bool:
+def one_side(n: np.ndarray, p1: pd.DataFrame, p2: pd.DataFrame, rve: pd.DataFrame, packet_id:[int,float]) -> bool:
     """
     determine if the planes with normal n and pass p1, p2 belong to the same side in rve
+    :param packet_id: the id of packet which have p1, p2
     :param n: norm of the planes
     :param p1: point on plane 1
     :param p2: point on plane 2
@@ -42,14 +43,20 @@ def one_side(n: np.ndarray, p1: pd.DataFrame, p2: pd.DataFrame, rve: pd.DataFram
            n[0, 2])
     d2 = -(p2['x'] * n[0, 0] + p2['y'] * n[0, 1] + p2['z'] *
            n[0, 2])
-    sections = rve.loc[(rve['x'] * n[0, 0] +
-                        rve['y'] * n[0, 1] +
-                        rve['z'] * n[0, 2] + float(d1)) *
-                       (rve['x'] * n[0, 0] +
-                        rve['y'] * n[0, 1] +
-                        rve['z'] * n[0, 2] + float(d2)) <= 0]
+    section = rve.loc[(rve['x'] * n[0, 0] +
+                       rve['y'] * n[0, 1] +
+                       rve['z'] * n[0, 2] + float(d1)) *
+                      (rve['x'] * n[0, 0] +
+                       rve['y'] * n[0, 1] +
+                       rve['z'] * n[0, 2] + float(d2)) <= 0].copy()
+    pds = -(section['x'] * n[0, 0] +
+            section['y'] * n[0, 1] +
+            section['z'] * n[0, 2])
+    section['pd'] = pds
+    group = section.groupby('pd').apply(lambda data: len(data[data['packet_id'] == packet_id]))
+    pid_counts = pd.DataFrame(columns=['pid_num'], data=group)
 
-    return len(sections['packet_id'].unique()) == 1
+    return len(pid_counts[pid_counts['pid_num'] == 0]) == 0
 
 
 def dis_in_rve(same_side: bool,
@@ -115,12 +122,27 @@ if __name__ == "__main__":
     rve.loc[rve['x'] <= 1.0, 'packet_id'] = 1
     rve.loc[(rve['x'] <= 2.0) & (rve['x'] > 1), 'packet_id'] = 2
     rve.loc[(rve['x'] <= 3.0) & (rve['x'] > 2), 'packet_id'] = 1
+    n = np.array([1, 0, 0]).reshape(1, 3)
+    d1 = -(p1['x'] * n[0, 0] + p1['y'] * n[0, 1] + p1['z'] *
+           n[0, 2])
+    d2 = -(p2['x'] * n[0, 0] + p2['y'] * n[0, 1] + p2['z'] *
+           n[0, 2])
+    section = rve.loc[(rve['x'] * n[0, 0] +
+                       rve['y'] * n[0, 1] +
+                       rve['z'] * n[0, 2] + float(d1)) *
+                      (rve['x'] * n[0, 0] +
+                       rve['y'] * n[0, 1] +
+                       rve['z'] * n[0, 2] + float(d2)) <= 0].copy()
 
-    dis1 = dis_in_rve(same_side=True, p1=p1, p2=p2, x_moved=True, y_moved=False, z_moved=False)
-    print(dis1)
-    RveInfo.box_size = RveInfo.box_size_y = RveInfo.box_size_z = 3
-    dis2 = dis_in_rve(same_side=False, p1=p2, p2=p3, x_moved=True, y_moved=False, z_moved=False)
-    print(dis2)
+    pds = -(section['x'] * n[0, 0] +
+           section['y'] * n[0, 1] +
+           section['z'] * n[0, 2])
+
+    section['pd'] = pds
+    group = section.groupby('pd').apply(lambda data: len(data[data['packet_id'] == 1]))
+    pid_counts = pd.DataFrame(columns=['pid_num'], data=group)
+    print(len(pid_counts[pid_counts['pid_num'] == 0]))
+
     # cylinder = Cylinder(p1=p1.to_numpy(), p2=p2.to_numpy(), r=1.0)
     # inside = rve.apply(lambda p: cylinder.is_inside(p.to_numpy()), axis=1)
     #

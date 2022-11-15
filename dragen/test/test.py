@@ -21,10 +21,14 @@ class SubsTester:
 
     def test_one_side(self):
         n = np.array([1, 0, 0]).reshape(1, 3)
-        assert one_side(n, self.p1, self.p2, self.rve)
-        assert not one_side(n, self.p1, self.p3, self.rve)
+        assert one_side(n, self.p1, self.p2, self.rve, packet_id=1)
+        assert not one_side(n, self.p1, self.p3, self.rve, packet_id=1)
 
     def test_dis_in_rve(self):
         dis1 = dis_in_rve(same_side=False, p1=self.p1, p2=self.p2, x_moved=True, y_moved=False, z_moved=False)
         dis2 = dis_in_rve(same_side=False, p1=self.p2, p2=self.p3, x_moved=True, y_moved=False, z_moved=False)
         assert dis1 == 0.5 and dis2 == 1.0
+
+if __name__ == "__main__":
+    subs_tester = SubsTester()
+    subs_tester.test_one_side()
