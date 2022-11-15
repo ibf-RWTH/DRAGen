@@ -8,16 +8,26 @@ class Cylinder:
     a cylinder, the center point of 2 end sections are p1, p2 radius is r
     """
 
-    def __init__(self, p1: pd.DataFrame, p2: pd.DataFrame, r: float):
+    def __init__(self, p1: np.ndarray, p2: np.ndarray, r: float):
         self.p1 = p1
         self.p2 = p2
         self.r = r
 
-    def is_inside(self, p: pd.DataFrame) -> bool:
+    def is_inside(self, p: np.ndarray) -> bool:
         """
         determine whether a point p is inside the cylinder
         """
-        pass
+        v1 = self.p2 - self.p1
+        v2 = self.p2 - p
+        v3 = p - self.p1
+
+        if np.sum(v1 * v2) * np.sum(v1 * v3) >= 0:
+            v3_project = np.sum(v1 * v3) / np.sum(v1 * v1) * v1
+            dis = np.linalg.norm(v3 - v3_project)
+            return dis <= self.r
+        else:
+            return False
+
 
 def one_side(p1: pd.DataFrame, p2: pd.DataFrame, rve: pd.DataFrame):
     pass
@@ -47,17 +57,22 @@ def get_pedal_point(p1: pd.DataFrame, n: np.ndarray, d: [pd.DataFrame]) -> pd.Da
 
 
 if __name__ == "__main__":
-    points = pd.DataFrame(columns=['x', 'y', 'z'])
-    points['x'] = points['y'] = points['z'] = [1, 2, 3]
-    p1 = points.iloc[0][['x', 'y', 'z']]
-    p2 = points.iloc[1][['x', 'y', 'z']]
-    p3 = points.iloc[2][['x', 'y', 'z']]
-    d = [0.1] * 3
-    points['d'] = d
-    n = np.random.uniform(0, 1, (1, 3))
-    # pedal_points = get_pedal_point(p1, n, points['d'])
-    # print(pedal_points)
-    # print(dis_in_rve(p1, p2, False, False, False))
-    #
-    # RveInfo.box_size = RveInfo.box_size_y = RveInfo.box_size_z = 5
-    # print(dis_in_rve(p2, p3, True, True, True))
+    import matplotlib.pyplot as plt
+
+    x = y = z = np.linspace(0, 3, num=100)
+    grids = xs, ys, zs = np.meshgrid(x, y, z)
+    ax = plt.figure().add_subplot(projection='3d')
+    # ax.scatter(xs, ys, zs)
+    # plt.show()
+    points = np.vstack(map(np.ravel, grids)).reshape(-1, 3)
+    rve = pd.DataFrame(columns=['x', 'y', 'z'], data=points)
+    p1 = pd.DataFrame(columns=['x', 'y', 'z'], data=np.array([[0, 0, 0]]))
+    p2 = pd.DataFrame(columns=['x', 'y', 'z'], data=np.array([[1, 1, 1]]))
+
+    cylinder = Cylinder(p1=p1.to_numpy(), p2=p2.to_numpy(), r=1.0)
+    inside = rve.apply(lambda p: cylinder.is_inside(p.to_numpy()), axis=1)
+
+    cl = rve[inside]
+    print(len(cl))
+    ax.scatter(cl['x'], cl['y'], cl['z'])
+    plt.show()
