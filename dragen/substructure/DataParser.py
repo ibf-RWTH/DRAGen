@@ -4,8 +4,6 @@ from sklearn.model_selection import KFold, GridSearchCV
 import numpy as np
 from dragen.utilities.InputInfo import RveInfo
 from scipy.stats import lognorm, truncnorm, uniform
-import matplotlib.pyplot as plt
-from typing import Tuple
 import time
 
 

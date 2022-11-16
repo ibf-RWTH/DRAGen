@@ -5,15 +5,49 @@ Author:   Linghao Kong
 Version:  V 0.1
 File:     run
 Describe: Write during the internship at IEHK RWTH"""
-import sys
 
 from dragen.substructure.substructure import plot_rve_subs
 from dragen.substructure.data import save_data
-from dragen.substructure.substructure import Grain, gen_blocks, compute_bt, gen_packets
+from dragen.substructure.substructure import gen_blocks, compute_bt, gen_packets
 from scipy.stats import moment
 from scipy.stats import gaussian_kde
 from dragen.stats.preprocessing import *
 from dragen.substructure.DataParser import DataParser
+from dragen.substructure.Crystallograhy import CrystallInfo
+
+
+def record_orientations(grains_df):
+    for i in range(int(grains_df['GrainID'].max())):
+        CrystallInfo.gid2orientation.append(
+            (grains_df.iloc[0]['phi1'], grains_df.iloc[0]['PHI'], grains_df.iloc[0]['phi2']))
+
+
+def assign_packet_variants(_rve_data):
+    print("assign packets with variants")
+    pids = _rve_data['packet_id'].unique()
+    for pid in pids:
+        CrystallInfo.assign_variants(packet_id=str(pid))
+    print("finish assignment of packets variants")
+
+
+def assign_block_variants(_rve_data):
+    print("assign blocks with variants")
+    num_packets = _rve_data['packet_id'].max()
+    for i in range(1, num_packets + 1):
+        packet = _rve_data[_rve_data['packet_id'] == i].copy()
+        CrystallInfo.assign_bv(packet=packet)
+        _rve_data.loc[_rve_data['packet_id'] == i, 'block_variant'] = packet['block_variant']
+    print("finish assignment of block variants")
+
+
+def subsid2num(_rve_data, subs_key):
+    subs_id = _rve_data[subs_key].unique().tolist()
+    # CrystallInfo.old_pid = packet_id
+    n_id = np.arange(1, len(subs_id) + 1)
+    pid_to_nid = dict(zip(subs_id, n_id))
+    pid_in_rve = _rve_data[subs_key].map(lambda pid: pid_to_nid[pid])
+    _rve_data[subs_key] = pid_in_rve
+    return subs_id
 
 
 class Run():
@@ -21,30 +55,7 @@ class Run():
     def __init__(self):
         self.rve_data = None
         self.data_parser = DataParser()
-
-    @staticmethod
-    def get_orientations(block_df, grain_id):
-        blocks = block_df[block_df['grain_id'] == grain_id + 1]  # +1...
-        n_pack = len(list(set(blocks['packet_id'])))
-        groups = blocks.groupby('packet_id')
-
-        ori_dflist = []
-        for name, group in groups:
-            ori_df = group[['phi1', 'PHI', 'phi2']]
-            ori_dflist.append(ori_df)
-
-        n_pack = np.arange(n_pack)
-
-        n_pack_to_ori = dict(zip(n_pack, ori_dflist))
-
-        return n_pack_to_ori
-
-    @staticmethod
-    def get_bt_distribution(block_df):
-
-        average_bt = block_df['block_thickness'].mean()
-        RveInfo.t_mu = average_bt
-        return average_bt
+        self.crystall_info = CrystallInfo()
 
     @staticmethod
     def del_zerobt(_df: pd.DataFrame):
@@ -85,24 +96,40 @@ class Run():
         RveInfo.LOGGER.info('------------------------------------------------------------------------------')
         RveInfo.LOGGER.info('substructure generation begins')
         RveInfo.LOGGER.info('------------------------------------------------------------------------------')
+        grains_df.sort_values(by=['GrainID'], inplace=True)
+        print("record orientation of each grain")
+        record_orientations(grains_df=grains_df)
+        print("finishing recording grains orientation")
+        print("compute global habit planes norm for each grain")
+        grains_df.apply(lambda grain: self.crystall_info.get_global_hp_norm(GrainID=grain['GrainID'],
+                                                                            orientation=(
+                                                                                grain['phi1'], grain['PHI'],
+                                                                                grain['phi2'])),
+                        axis=1)
+        print("finish computing global habit planes")
         print("start fitting distribution")
         pv_distribution = self.data_parser.parse_packet_data()
         bt_distribution = self.data_parser.parse_block_data()
         print("finish fitting distribution")
 
         rve_df['block_id'] = rve_df['packet_id'] = rve_df['GrainID'].astype(str)
-        subs_rve = rve_df[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4)]
+        rve_df['block_variant'] = np.NAN
+        rve_df['phi1'] = rve_df.apply(lambda data: CrystallInfo.gid2orientation[int(data['GrainID'] - 1)][0],
+                                      axis=1)
+        rve_df['PHI'] = rve_df.apply(lambda data: CrystallInfo.gid2orientation[int(data['GrainID'] - 1)][1],
+                                     axis=1)
+        rve_df['phi2'] = rve_df.apply(lambda data: CrystallInfo.gid2orientation[int(data['GrainID'] - 1)][2],
+                                      axis=1)
+
+        subs_rve = rve_df[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4)].copy()
 
         print("start packets generation")
         _rve_data = gen_packets(rve=subs_rve, pv_distribution=pv_distribution,
                                 num_packets_list=self.data_parser.num_packets_list, grains_df=grains_df)
         print("finish packets generation")
 
-        packet_id = _rve_data['packet_id'].unique().tolist()
-        n_id = np.arange(1, len(packet_id) + 1)
-        pid_to_nid = dict(zip(packet_id, n_id))
-        pid_in_rve = _rve_data['packet_id'].map(lambda pid: pid_to_nid[pid])
-        _rve_data['packet_id'] = pid_in_rve
+        assign_packet_variants(_rve_data)
+        CrystallInfo.old_pid = subsid2num(_rve_data=_rve_data, subs_key='packet_id')
 
         print("start blocks generation")
         _rve_data = gen_blocks(rve=_rve_data, bt_distribution=bt_distribution)
@@ -111,14 +138,26 @@ class Run():
         compute_bt(rve=_rve_data)
         self.del_zerobt(_df=_rve_data)
 
-        block_id = _rve_data['block_id'].unique().tolist()
-        n2_id = np.arange(1, len(block_id) + 1)
-        bid_to_nid = dict(zip(block_id, n2_id))
-        bid_in_rve = _rve_data['block_id'].map(lambda bid: bid_to_nid[bid])
-        _rve_data['block_id'] = bid_in_rve
+        subsid2num(_rve_data=_rve_data, subs_key='block_id')
+        assign_block_variants(_rve_data=_rve_data)
+
+        print("compute block orientation")
+        angles = _rve_data.apply(
+            lambda data: CrystallInfo.comp_angle(CrystallInfo.gid2orientation[int(data['GrainID'] - 1)],
+                                                 data['block_variant']), axis=1)
+        _rve_data['angles'] = angles
+        _rve_data['phi1'] = _rve_data.apply(lambda data: data['angles'][0], axis=1)
+        _rve_data['PHI'] = _rve_data.apply(lambda data: data['angles'][1], axis=1)
+        _rve_data['phi2'] = _rve_data.apply(lambda data: data['angles'][2], axis=1)
+        print("finish computing block orientation")
 
         rve_df.loc[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4), 'packet_id'] = _rve_data['packet_id']
         rve_df.loc[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4), 'block_id'] = _rve_data['block_id']
+        rve_df.loc[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4), 'block_thickness'] = _rve_data[
+            'block_thickness']
+        rve_df.loc[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4), 'phi1'] = _rve_data['phi1']
+        rve_df.loc[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4), 'PHI'] = _rve_data['PHI']
+        rve_df.loc[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4), 'phi2'] = _rve_data['phi2']
 
         RveInfo.rve_data_substructure = rve_df
         self.rve_data = rve_df
