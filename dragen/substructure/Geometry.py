@@ -30,36 +30,6 @@ class Cylinder:
             return False
 
 
-def one_side(n: np.ndarray, p1: pd.DataFrame, p2: pd.DataFrame, rve: pd.DataFrame, packet_id: [int, float]) -> bool:
-    """
-    determine if the planes with normal n and pass p1, p2 belong to the same side in rve
-    :param packet_id: the id of packet which have p1, p2
-    :param n: norm of the planes
-    :param p1: point on plane 1
-    :param p2: point on plane 2
-    :param rve: rve 
-    :return: same side True otherwise False
-    """
-    d1 = -(p1['x'] * n[0, 0] + p1['y'] * n[0, 1] + p1['z'] *
-           n[0, 2])
-    d2 = -(p2['x'] * n[0, 0] + p2['y'] * n[0, 1] + p2['z'] *
-           n[0, 2])
-    section = rve.loc[(rve['x'] * n[0, 0] +
-                       rve['y'] * n[0, 1] +
-                       rve['z'] * n[0, 2] + float(d1)) *
-                      (rve['x'] * n[0, 0] +
-                       rve['y'] * n[0, 1] +
-                       rve['z'] * n[0, 2] + float(d2)) <= 0].copy()
-    pds = -(section['x'] * n[0, 0] +
-            section['y'] * n[0, 1] +
-            section['z'] * n[0, 2])
-    section['pd'] = pds
-    group = section.groupby('pd').apply(lambda data: len(data[data['packet_id'] == packet_id]))
-    pid_counts = pd.DataFrame(columns=['pid_num'], data=group)
-
-    return len(pid_counts[pid_counts['pid_num'] == 0]) == 0
-
-
 def dis_in_rve(same_side: bool,
                p1: pd.DataFrame,
                p2: pd.DataFrame,

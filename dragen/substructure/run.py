@@ -11,11 +11,12 @@ from dragen.substructure.data import save_data
 from dragen.substructure.substructure import gen_blocks, compute_bt, gen_packets
 from scipy.stats import moment
 from scipy.stats import gaussian_kde
-from dragen.stats.preprocessing import *
 from dragen.substructure.DataParser import DataParser
 from dragen.substructure.Crystallograhy import CrystallInfo
-
-
+import pandas as pd
+import numpy as np
+from dragen.utilities.InputInfo import RveInfo
+import matplotlib.pyplot as plt
 def record_orientations(grains_df):
     for i in range(int(grains_df['GrainID'].max())):
         CrystallInfo.gid2orientation.append(

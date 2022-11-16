@@ -5,12 +5,14 @@ Author:   Linghao Kong
 Version:  V 0.1
 File:     new_substructure
 Describe: Write during the internship at IEHK RWTH"""
-from dragen.stats.preprocessing import *
 from dragen.substructure.DataParser import subs_sampler, SubsDistribution
 from typing import Tuple
 from dragen.substructure.Geometry import dis_in_rve, get_pedal_point, issame_side, compute_num_clusters, train_kmeans
 from dragen.substructure.Crystallograhy import CrystallInfo
-
+from dragen.utilities.InputInfo import RveInfo
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 
 def plot_rve_subs(rve_data, subs_name, store_path=None):
     if subs_name == 'Grain' or 'phase':
