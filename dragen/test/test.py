@@ -1,7 +1,7 @@
 from dragen.utilities.InputInfo import RveInfo
 import pandas as pd
 import numpy as np
-from dragen.test.geometry import one_side, dis_in_rve
+from dragen.substructure.geometry import one_side, dis_in_rve
 
 
 class SubsTester:

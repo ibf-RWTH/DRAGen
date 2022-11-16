@@ -5,14 +5,13 @@ Author:   Linghao Kong
 Version:  V 0.1
 File:     new_substructure
 Describe: Write during the internship at IEHK RWTH"""
-import sys
 from dragen.utilities.Helpers import HelperFunctions
 import math
 import warnings
 from dragen.stats.preprocessing import *
-from dragen.substructure.DataParser import bt_sampler, SubsDistribution
+from dragen.substructure.DataParser import subs_sampler, SubsDistribution
 from typing import Tuple
-from dragen.test.geometry import dis_in_rve, get_pedal_point, issame_side, compute_num_clusters, train_kmeans
+from dragen.substructure.geometry import dis_in_rve, get_pedal_point, issame_side, compute_num_clusters, train_kmeans
 
 
 class Grain(HelperFunctions):
@@ -838,9 +837,9 @@ def gen_blocks(rve: pd.DataFrame, bt_distribution: SubsDistribution) -> pd.DataF
         packet['p_dis'] = p_dis
 
         total_bt = packet['p_dis'].max()
-        bt_list = bt_sampler(bt_distribution=bt_distribution,
-                             total_bt=total_bt,
-                             interval=[RveInfo.bt_min, RveInfo.bt_max])
+        bt_list = subs_sampler(subs_distribution=bt_distribution,
+                               y=total_bt,
+                               interval=[RveInfo.bt_min, RveInfo.bt_max])
         dis_list = np.cumsum(bt_list)
         dis_list = np.insert(dis_list, 0, 0)
         block_id = packet['p_dis'].map(lambda dis: dis_to_id(dis, dis_list))
@@ -885,9 +884,9 @@ if __name__ == '__main__':
     p1 = packet.loc[packet['pd'].idxmax(), ['x', 'y', 'z']]
 
     pedal_points = get_pedal_point(p1=p1, n=block_boundary_norm, d=packet['pd'])
-    num_clusters = compute_num_clusters(packet=packet[['x','y','z']].to_numpy())
+    num_clusters = compute_num_clusters(packet=packet[['x', 'y', 'z']].to_numpy())
 
-    kmeans = train_kmeans(num_clusters=num_clusters, packet=packet[['x','y','z']].to_numpy())
+    kmeans = train_kmeans(num_clusters=num_clusters, packet=packet[['x', 'y', 'z']].to_numpy())
     same_side = pedal_points.apply(lambda p2: issame_side(kmeans=kmeans,
                                                           p1=p1.to_numpy(),
                                                           p2=p2.to_numpy()),
@@ -901,4 +900,3 @@ if __name__ == '__main__':
                                                      y_moved=y_moved,
                                                      z_moved=z_moved),
                                axis=1)
-

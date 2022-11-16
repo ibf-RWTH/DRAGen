@@ -5,6 +5,7 @@ Author:   Linghao Kong
 Version:  V 0.1
 File:     run
 Describe: Write during the internship at IEHK RWTH"""
+import sys
 
 from dragen.substructure.substructure import plot_rve_subs
 from dragen.substructure.data import save_data
@@ -12,12 +13,13 @@ from dragen.substructure.substructure import Grain, gen_blocks, compute_bt
 from scipy.stats import moment
 from scipy.stats import gaussian_kde
 from dragen.stats.preprocessing import *
-from dragen.substructure.DataParser import block_data_parser
+from dragen.substructure.DataParser import DataParser
 
 class Run():
 
     def __init__(self):
         self.rve_data = None
+        self.data_parser = DataParser()
 
     @staticmethod
     def get_orientations(block_df, grain_id):
@@ -82,6 +84,8 @@ class Run():
         RveInfo.LOGGER.info('------------------------------------------------------------------------------')
         RveInfo.LOGGER.info('substructure generation begins')
         RveInfo.LOGGER.info('------------------------------------------------------------------------------')
+        self.data_parser.parse_packet_data()
+        sys.exit()
         _rve_data = pd.DataFrame()
         if RveInfo.subs_file_flag:
             assert RveInfo.block_file is not None, 'no substructure file given'
@@ -137,7 +141,7 @@ class Run():
 
         # _rve_data.loc[_rve_data['block_id'].isnull(), 'block_id'] = _rve_data[_rve_data['block_id'].isnull()][
         #                                                                 'packet_id'] + '0'
-        bt_distribution = block_data_parser()
+        bt_distribution = self.data_parser.parse_block_data()
         packet_id = _rve_data['packet_id'].unique().tolist()
         n_id = np.arange(1, len(packet_id) + 1)
         pid_to_nid = dict(zip(packet_id, n_id))
@@ -147,14 +151,14 @@ class Run():
         _rve_data = gen_blocks(rve=_rve_data, bt_distribution=bt_distribution)
         print("finish blocks generation")
 
+        compute_bt(rve=_rve_data)
+        self.del_zerobt(_df=_rve_data)
+
         block_id = _rve_data['block_id'].unique().tolist()
         n2_id = np.arange(1, len(block_id) + 1)
         bid_to_nid = dict(zip(block_id, n2_id))
         bid_in_rve = _rve_data['block_id'].map(lambda bid: bid_to_nid[bid])
         _rve_data['block_id'] = bid_in_rve
-
-        compute_bt(rve=_rve_data)
-        self.del_zerobt(_df=_rve_data)
 
         _rve_data.n_pts = RveInfo.n_pts
         _rve_data.box_size = RveInfo.box_size
@@ -177,7 +181,7 @@ class Run():
 
         RveInfo.LOGGER.info('substructure generation successful')
         RveInfo.LOGGER.info('------------------------------------------------------------------------------')
-        _rve_data.to_csv(r"X:\DRAGen\dragen\test\results\rve_data.csv")
+        _rve_data.to_csv(r"F:\codes\DRAGen\dragen\test\results\rve_data.csv")
         return _rve_data
 
     def post_processing(self, k, sigma=2):

@@ -5,7 +5,7 @@ from dragen.utilities.Helpers import RveInfo
 
 if __name__ == "__main__":
 
-    subs_rve = pd.read_csv(r"X:\DRAGen\DRAGen\dragen\test\results\test_result.csv")
+    subs_rve = pd.read_csv(r"F:\codes\DRAGen\OutputData\2022-11-16_000\substruct_data.csv")
     num_blocks = subs_rve['block_id'].max()
     print("num of blocks is, ", num_blocks)
     ax = plt.figure().add_subplot(111, projection='3d')

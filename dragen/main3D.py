@@ -404,6 +404,9 @@ class DataTask3D(HelperFunctions):
                     #     subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)
                     # except Exception as e:
                     #     print(e)
+                    # print("rve shape is",rve_shape)
+                    # subs_rve.to_csv(r"F:\codes\DRAGen\dragen\test\results\subs_rve.csv")
+                    # grains_df.to_csv(r"F:\codes\DRAGen\dragen\test\results\grains_df.csv")
                     mesher_obj = SubMesher(rve_shape=rve_shape, rve=subs_rve, subs_df=grains_df)
 
                 elif RveInfo.subs_flag == False:
@@ -510,6 +513,6 @@ class DataTask3D(HelperFunctions):
                 RveInfo.infobox_obj.emit('checkout the evaluation report of the rve stored at:\n'
                                          '{}/Postprocessing'.format(RveInfo.store_path))
 
-        if RveInfo.subs_flag:
-            substrucRun().post_processing(k=3)
+        # if RveInfo.subs_flag:
+        #     substrucRun().post_processing(k=3)
         RveInfo.LOGGER.info("RVE generation process has successfully completed...")
