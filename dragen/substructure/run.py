@@ -9,11 +9,12 @@ import sys
 
 from dragen.substructure.substructure import plot_rve_subs
 from dragen.substructure.data import save_data
-from dragen.substructure.substructure import Grain, gen_blocks, compute_bt
+from dragen.substructure.substructure import Grain, gen_blocks, compute_bt, gen_packets
 from scipy.stats import moment
 from scipy.stats import gaussian_kde
 from dragen.stats.preprocessing import *
 from dragen.substructure.DataParser import DataParser
+
 
 class Run():
 
@@ -84,69 +85,25 @@ class Run():
         RveInfo.LOGGER.info('------------------------------------------------------------------------------')
         RveInfo.LOGGER.info('substructure generation begins')
         RveInfo.LOGGER.info('------------------------------------------------------------------------------')
-        self.data_parser.parse_packet_data()
-        sys.exit()
-        _rve_data = pd.DataFrame()
-        if RveInfo.subs_file_flag:
-            assert RveInfo.block_file is not None, 'no substructure file given'
-            block_df = pd.read_csv(RveInfo.block_file)
-            self.get_bt_distribution(block_df)
-            RveInfo.t_mu *= RveInfo.decreasing_factor
-
-        for i in range(len(grains_df)):
-
-            grain_data = grains_df.iloc[i]
-            phaseID = int(grain_data['phaseID'])
-            grain_id = grain_data['GrainID']
-            x = rve_df[rve_df['GrainID'] == grain_id]['x'].to_numpy().reshape((-1, 1))
-            y = rve_df[rve_df['GrainID'] == grain_id]['y'].to_numpy().reshape((-1, 1))
-            z = rve_df[rve_df['GrainID'] == grain_id]['z'].to_numpy().reshape((-1, 1))
-
-            points = np.concatenate((x, y, z), axis=1)
-
-            if phaseID == 2 or 4:
-                orientation = (grain_data['phi1'], grain_data['PHI'], grain_data['phi2'])
-                grain = Grain(v=grain_data['final_conti_volume'], points=points,
-                              phaseID=phaseID, grainID=grain_id, orientation=orientation)
-
-                if RveInfo.subs_file_flag:
-                    old_gid = grain_data['old_gid']
-                    blocks = block_df[block_df['grain_id'] == old_gid + 1]
-                    n_pack = len(list(set(blocks['packet_id'])))
-                    orientations = self.get_orientations(block_df, old_gid)
-                    grain.gen_packs(n_pack=n_pack, orientations=orientations)
-
-                else:
-                    assert RveInfo.equiv_d is not None, 'no valid definition for equiv_d'
-                    assert RveInfo.p_sigma is not None, 'no valid definition for p_sigma'
-                    assert RveInfo.t_mu is not None, 'no valid definition for t_mu'
-                    # grain.gen_packs(RveInfo.equiv_d, sigma=RveInfo.p_sigma, block_thickness=RveInfo.t_mu,
-                    #                b_sigma=RveInfo.b_sigma, lower_t=RveInfo.lower, upper_t=RveInfo.upper,
-                    #                circularity=RveInfo.circularity) # check later
-                _rve_data = pd.concat([_rve_data, grain.points_data])
-
-            else:
-                grain_data = pd.DataFrame(points, columns=['x', 'y', 'z'])
-                grain_data['GrainID'] = grain_id
-                grain_data['phaseID'] = phaseID
-                grain_data['packet_id'] = grain_id
-                grain_data['block_id'] = grain_id
-                grain_data['block_orientation'] = np.NaN
-                _rve_data = pd.concat([_rve_data, grain_data])
-
-        RveInfo.rve_data_substructure = _rve_data
-        self.rve_data = _rve_data
-
-        # self.del_zerobt(_rve_data)  # del blocks with 0 thickness
-
-        # _rve_data.loc[_rve_data['block_id'].isnull(), 'block_id'] = _rve_data[_rve_data['block_id'].isnull()][
-        #                                                                 'packet_id'] + '0'
+        print("start fitting distribution")
+        pv_distribution = self.data_parser.parse_packet_data()
         bt_distribution = self.data_parser.parse_block_data()
+        print("finish fitting distribution")
+
+        rve_df['block_id'] = rve_df['packet_id'] = rve_df['GrainID'].astype(str)
+        subs_rve = rve_df[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4)]
+
+        print("start packets generation")
+        _rve_data = gen_packets(rve=subs_rve, pv_distribution=pv_distribution,
+                                num_packets_list=self.data_parser.num_packets_list, grains_df=grains_df)
+        print("finish packets generation")
+
         packet_id = _rve_data['packet_id'].unique().tolist()
         n_id = np.arange(1, len(packet_id) + 1)
         pid_to_nid = dict(zip(packet_id, n_id))
         pid_in_rve = _rve_data['packet_id'].map(lambda pid: pid_to_nid[pid])
         _rve_data['packet_id'] = pid_in_rve
+
         print("start blocks generation")
         _rve_data = gen_blocks(rve=_rve_data, bt_distribution=bt_distribution)
         print("finish blocks generation")
@@ -160,29 +117,35 @@ class Run():
         bid_in_rve = _rve_data['block_id'].map(lambda bid: bid_to_nid[bid])
         _rve_data['block_id'] = bid_in_rve
 
-        _rve_data.n_pts = RveInfo.n_pts
-        _rve_data.box_size = RveInfo.box_size
-        _rve_data.box_size_y = RveInfo.box_size_y
-        _rve_data.box_size_z = RveInfo.box_size_z
+        rve_df.loc[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4), 'packet_id'] = _rve_data['packet_id']
+        rve_df.loc[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4), 'block_id'] = _rve_data['block_id']
+
+        RveInfo.rve_data_substructure = rve_df
+        self.rve_data = rve_df
+
+        rve_df.n_pts = RveInfo.n_pts
+        rve_df.box_size = RveInfo.box_size
+        rve_df.box_size_y = RveInfo.box_size_y
+        rve_df.box_size_z = RveInfo.box_size_z
 
         if RveInfo.save:
 
             if RveInfo.filename:
 
-                save_data(_rve_data, RveInfo.store_path, RveInfo.filename)
+                save_data(rve_df, RveInfo.store_path, RveInfo.filename)
 
             else:
-                save_data(_rve_data, RveInfo.store_path)
+                save_data(rve_df, RveInfo.store_path)
 
         if RveInfo.plot:
 
             for name in RveInfo.plt_name:
-                plot_rve_subs(_rve_data, name, RveInfo.fig_path)
+                plot_rve_subs(rve_df, name, RveInfo.fig_path)
 
         RveInfo.LOGGER.info('substructure generation successful')
         RveInfo.LOGGER.info('------------------------------------------------------------------------------')
-        _rve_data.to_csv(r"F:\codes\DRAGen\dragen\test\results\rve_data.csv")
-        return _rve_data
+        rve_df.to_csv(r"F:\codes\DRAGen\dragen\test\results\rve_data.csv")
+        return rve_df
 
     def post_processing(self, k, sigma=2):
         rve_data = RveInfo.rve_data_substructure
@@ -296,4 +259,3 @@ if __name__ == '__main__':
     rve_data = subs_run.run(rve_df=rve_df, grains_df=grains_df)
     print(rve_data)
     rve_data.to_csv(r"X:\DRAGen\DRAGen\dragen\test\results\test_result.csv")
-

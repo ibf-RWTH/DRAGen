@@ -119,13 +119,7 @@ class Run(HelperFunctions):
         RveInfo.subs_flag = subs_flag
         RveInfo.subs_file_flag = subs_file_flag
         RveInfo.block_file = block_file
-        if RveInfo.block_file is not None:
-            block_data = pd.read_csv(RveInfo.block_file)
-            RveInfo.bt_min = block_data['block_thickness'].min()
-            RveInfo.bt_max = block_data['block_thickness'].max()
 
-        print("min bt is ", RveInfo.bt_min)
-        print("max bt is ", RveInfo.bt_max)
         RveInfo.phases = phases
         RveInfo.abaqus_flag = abaqus_flag
         RveInfo.damask_flag = damask_flag

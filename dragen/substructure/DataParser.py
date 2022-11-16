@@ -22,6 +22,7 @@ class SubsDistribution:
 
         return result.reshape(-1, 1)
 
+
 class DataParser:
     def __init__(self):
         kFold = KFold(n_splits=10)  # k-folder cross-validation split data into 10 folds
@@ -30,10 +31,15 @@ class DataParser:
                             param_grid={"bandwidth": bandwidths},
                             cv=kFold)
         self.grid = grid
+        self.num_packets_list = []
 
     def parse_block_data(self):
         if RveInfo.block_file is not None:
             block_data = pd.read_csv(RveInfo.block_file)
+            RveInfo.bt_min = block_data['block_thickness'].min()
+            RveInfo.bt_max = block_data['block_thickness'].max()
+            print("min bt is ", RveInfo.bt_min)
+            print("max bt is ", RveInfo.bt_max)
             self.grid.fit(block_data['block_thickness'].to_numpy().reshape(-1, 1))
             return SubsDistribution(self.grid.best_estimator_)
         else:
@@ -52,11 +58,16 @@ class DataParser:
             # get mean packet volumes
             # 1 count number of packets in each grain
             subs_data = pd.read_csv(RveInfo.block_file)
-            num_packets_list = [len(subs_data.loc[subs_data['grain_id'] == i, 'packet_id'].unique()) for i in
-                                range(1, len(pag_data) + 1)]
+            self.num_packets_list = [len(subs_data.loc[subs_data['grain_id'] == i, 'packet_id'].unique()) for i in
+                                     range(1, len(pag_data) + 1)]
             # 2 compute mean packet volumes
             pag_data['grain_id'] = [i for i in range(1, len(pag_data) + 1)]
-            mean_pv = pag_data.apply(lambda grain: grain['volume']/num_packets_list[int(grain['grain_id']) - 1], axis=1)
+            mean_pv = pag_data.apply(lambda grain: grain['volume'] / self.num_packets_list[int(grain['grain_id']) - 1],
+                                     axis=1)
+            RveInfo.pv_max = pag_data['volume'].max()
+            RveInfo.pv_min = pag_data['volume'].min() / 2
+            print("min pv is ", RveInfo.pv_min)
+            print("max pv is ", RveInfo.pv_max)
             self.grid.fit(mean_pv.to_numpy().reshape(-1, 1))
             return SubsDistribution(self.grid.best_estimator_)
         else:
