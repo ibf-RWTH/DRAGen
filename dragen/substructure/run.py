@@ -159,7 +159,7 @@ class Run():
         rve_df.loc[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4), 'phi1'] = _rve_data['phi1']
         rve_df.loc[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4), 'PHI'] = _rve_data['PHI']
         rve_df.loc[(rve_df["phaseID"] == 2) | (rve_df["phaseID"] == 4), 'phi2'] = _rve_data['phi2']
-
+        rve_df.drop(columns=['block_variant'], inplace=True)
         RveInfo.rve_data_substructure = rve_df
         self.rve_data = rve_df
 
