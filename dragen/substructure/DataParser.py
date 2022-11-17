@@ -103,7 +103,7 @@ def subs_sampler(subs_distribution: SubsDistribution, y: float, interval: list) 
             else:
                 new_x = xs[n - 1]
         xs.append(new_x)
-    print("get bts successfully!")
+    # print("get bts successfully!")
     return xs
 
 

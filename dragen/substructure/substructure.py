@@ -98,8 +98,6 @@ def gen_packets(rve: pd.DataFrame, grains_df: pd.DataFrame, pv_distribution: Sub
     :return: rve has packets
     """
     num_pags = int(rve['GrainID'].max())
-    pid2gid = dict()
-    pid2hp_norm = dict()
 
     for i in range(1, num_pags + 1):
         grain = rve[rve['GrainID'] == i]

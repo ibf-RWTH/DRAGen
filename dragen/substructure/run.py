@@ -13,6 +13,7 @@ from scipy.stats import moment
 from scipy.stats import gaussian_kde
 from dragen.substructure.DataParser import DataParser
 from dragen.substructure.Crystallograhy import CrystallInfo
+from dragen.substructure.Postprocess import *
 import pandas as pd
 import numpy as np
 from dragen.utilities.InputInfo import RveInfo
@@ -43,7 +44,6 @@ def assign_block_variants(_rve_data):
 
 def subsid2num(_rve_data, subs_key):
     subs_id = _rve_data[subs_key].unique().tolist()
-    # CrystallInfo.old_pid = packet_id
     n_id = np.arange(1, len(subs_id) + 1)
     pid_to_nid = dict(zip(subs_id, n_id))
     pid_in_rve = _rve_data[subs_key].map(lambda pid: pid_to_nid[pid])
@@ -131,6 +131,8 @@ class Run():
 
         assign_packet_variants(_rve_data)
         CrystallInfo.old_pid = subsid2num(_rve_data=_rve_data, subs_key='packet_id')
+        merge_all_tiny_packets(rve=_rve_data, min_num_points=20) # min_num_points needs changing
+        subsid2num(_rve_data=_rve_data, subs_key='packet_id')
 
         print("start blocks generation")
         _rve_data = gen_blocks(rve=_rve_data, bt_distribution=bt_distribution)
@@ -141,6 +143,8 @@ class Run():
 
         subsid2num(_rve_data=_rve_data, subs_key='block_id')
         assign_block_variants(_rve_data=_rve_data)
+        merge_all_tiny_blocks(rve=_rve_data, min_num_points=10) # min_num_points needs changing
+        subsid2num(_rve_data=_rve_data, subs_key='block_id')
 
         print("compute block orientation")
         angles = _rve_data.apply(
