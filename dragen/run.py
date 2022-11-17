@@ -219,9 +219,9 @@ class Run(HelperFunctions):
             obj3D = DataTask3D()
             for i in range(RveInfo.number_of_rves):
                 self.initializations(i)
-                total_df = obj3D.grain_sampling()
+                total_df, ex_df = obj3D.grain_sampling()
                 rve = obj3D.rve_generation(total_df)
-                obj3D.post_processing(rve)
+                obj3D.post_processing(rve, total_df, ex_df)
 
 
         else:

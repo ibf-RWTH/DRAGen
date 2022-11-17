@@ -1,18 +1,9 @@
-import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.ticker as mticker
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from mpl_toolkits import mplot3d
 from sklearn.neighbors import KernelDensity
-from skimage.filters import threshold_minimum
 import pandas as pd
-import scipy.stats as st
-import seaborn as sns
 import numpy as np
-from copy import copy
-import plotly.graph_objects as go
 import warnings
 warnings.filterwarnings("ignore")
 import damask
@@ -21,64 +12,26 @@ class Texture:
     def __init__(self):
         pass
 
+    def read_orientation(self,  experimentalData=None, rve_np=None, rve_df=None):
 
+        tex_dict = dict()
+        ex_tex_df = experimentalData
+        ex_tex_df.dropna(axis=1, inplace=True)
+        ex_tex_df['phi2'] = ex_tex_df['phi2'].round(0)
+        ex_tex_df["area"] = ex_tex_df["a"]*ex_tex_df["b"]*np.pi
+        ex_tex_df["frequency"] = ex_tex_df["area"]/np.sum(ex_tex_df["area"].to_numpy())
+        ex_tex_df = ex_tex_df[["phi1", "PHI", "phi2", "frequency"]]
+        tex_dict['experimental'] = ex_tex_df
 
-    def read_orientation(self, file: str, rve=None):
+        grainID, counts = np.unique(rve_np, return_counts=True)
+        rve_tex_df = rve_df
 
-        if file[-3:] == 'odf':
-            figname = 'xrd_section_plot.png'
-            tex_df = pd.read_csv(file, delimiter='\s+', skiprows=5, header=None)
-            tex_df.dropna(axis=1, inplace=True)
-            # tex_df[2] = tex_df[2].round(0)
-            """tex_df.loc[tex_df[0] > 270, 0] = 360 - tex_df.loc[tex_df[0] > 270, 0]
-            tex_df.loc[tex_df[0] > 180, 0] = tex_df.loc[tex_df[0] > 180, 0] - 180
-            tex_df.loc[tex_df[0] > 90, 0] = 180 - tex_df.loc[tex_df[0] > 90, 0]
-            tex_df.loc[tex_df[1] > 270, 1] = 360 - tex_df.loc[tex_df[1] > 270, 1]
-            tex_df.loc[tex_df[1] > 180, 1] = tex_df.loc[tex_df[1] > 180, 1] - 180
-            tex_df.loc[tex_df[1] > 90, 1] = 180 - tex_df.loc[tex_df[1] > 90, 1]
-            tex_df.loc[tex_df[2] > 270, 2] = 360 - tex_df.loc[tex_df[2] > 270, 2]
-            tex_df.loc[tex_df[2] > 180, 2] = tex_df.loc[tex_df[2] > 180, 2] - 180
-            tex_df.loc[tex_df[2] > 90, 2] = 180 - tex_df.loc[tex_df[2] > 90, 2]"""
-            tex_df = tex_df.rename(columns={0: "phi1", 1: "PHI", 2: "phi2", 3: "frequency"})
-
-        elif file[-3:] == 'txt':
-            figname = 'rve_section_plot.png'
-            assert (rve is not None)
-            rve = np.load(rve)
-            if rve.min() < 0:
-                start1 = int(rve.shape[0] / 4)
-                stop1 = int(rve.shape[0] / 4 + rve.shape[0] / 4 * 2)
-                start2 = int(rve.shape[1] / 4)
-                stop2 = int(rve.shape[1] / 4 + rve.shape[1] / 4 * 2)
-                start3 = int(rve.shape[2] / 4)
-                stop3 = int(rve.shape[2] / 4 + rve.shape[2] / 4 * 2)
-                rve = rve[start1:stop1, start2:stop2, start3:stop3]
-
-            grainID, counts = np.unique(rve, return_counts=True)
-            tex_df = pd.read_csv(file, sep=',', header=None)
-            tex_df["frequency"] = counts/(rve.shape[0]*rve.shape[1]*rve.shape[2])
-
-            """tex_df.loc[tex_df[0] > 270, 0] = 360 - tex_df.loc[tex_df[0] > 270, 0]
-            tex_df.loc[tex_df[0] > 180, 0] = tex_df.loc[tex_df[0] > 180, 0] - 180
-            tex_df.loc[tex_df[0] > 90, 0] = 180 - tex_df.loc[tex_df[0] > 90, 0]
-            tex_df.loc[tex_df[1] > 270, 1] = 360 - tex_df.loc[tex_df[1] > 270, 1]
-            tex_df.loc[tex_df[1] > 180, 1] = tex_df.loc[tex_df[1] > 180, 1] - 180
-            tex_df.loc[tex_df[1] > 90, 1] = 180 - tex_df.loc[tex_df[1] > 90, 1]
-            tex_df.loc[tex_df[2] > 270, 2] = 360 - tex_df.loc[tex_df[2] > 270, 2]
-            tex_df.loc[tex_df[2] > 180, 2] = tex_df.loc[tex_df[2] > 180, 2] - 180
-            tex_df.loc[tex_df[2] > 90, 2] = 180 - tex_df.loc[tex_df[2] > 90, 2]"""
-            tex_df = tex_df.rename(columns={0: "phi1", 1: "PHI", 2: "phi2"})
-
-        else:
-            figname = 'ebsd_section_plot.png'
-            tex_df = pd.read_csv(file, dtype=float)
-            tex_df.dropna(axis=1, inplace=True)
-            tex_df['phi2'] = tex_df['phi2'].round(0)
-            tex_df["area"] = tex_df["a"]*tex_df["b"]*np.pi
-            tex_df["frequency"] = tex_df["area"]/np.sum(tex_df["area"].to_numpy())
-
-        tex_df = tex_df[["phi1", "PHI", "phi2", "frequency"]]
-        return tex_df
+        rve_tex_df["frequency"] = counts[rve_tex_df['GrainID'].values]/(rve_np.shape[0]*rve_np.shape[1]*rve_np.shape[2])
+        rve_tex_df.dropna(axis=1, inplace=True)
+        rve_tex_df['phi2'] = rve_tex_df['phi2'].round(0)
+        rve_tex_df = rve_tex_df[["phi1", "PHI", "phi2", "frequency"]]
+        tex_dict['rve'] = rve_tex_df
+        return tex_dict
 
     def symmetry_operations(self, tex_df: pd.DataFrame, family):
 
@@ -91,7 +44,7 @@ class Texture:
             equivalent.as_Euler_angles(degrees=True)
 
         symmetric_texture_np = symmetric_texture.reshape(-1, 3)
-
+        tex_df = tex_df.reset_index(drop=True)
         sym_tex_df = pd.DataFrame(data=symmetric_texture_np, columns=["phi1", "PHI", "phi2"])
         frequency_np = np.asarray([[tex_df.loc[i, "frequency"]/symmetric_texture.shape[0]]*symmetric_texture.shape[0]
                         for i in range(symmetric_texture.shape[1])])
@@ -164,24 +117,7 @@ class Texture:
         cbar.ax.tick_params(labelsize=16)
         plt.subplots_adjust(left=0.05, right=0.93)
 
-        plt.savefig(store_path+figname)
+        plt.savefig(store_path+'/'+figname)
         plt.close()
-        print('saved {} at {}'.format(figname, store_path))
-
-
-if __name__ == '__main__':
-    rve_texture = 'E:/Sciebo/IEHK/Publications/ComputationalSci/DRAGen/matdata/NO30/Texture/EulerAngles.txt'
-    rve = 'E:/Sciebo/IEHK/Publications/ComputationalSci/DRAGen/matdata/NO30/Texture/RVE_Numpy.npy'
-    ebsd_texture = 'E:/Sciebo/IEHK/Publications/IJPLAS/Matdata/ES_Data_processed.csv'
-    xrd_texture = "E:/Sciebo/IEHK/Publications/IJPLAS/Matdata/Henrich/Henrich/MTEX.vpsc.odf"
-    phi2 = [0, 45, 90]
-    store_path = r"E:/Sciebo/IEHK/Publications/ComputationalSci/DRAGen/matdata/NO30/Texture/"
-
-    files = [xrd_texture, rve_texture, ebsd_texture]
-    names = {0: "xrd_section_plot.png", 1: "rve_section_plot.png", 2: "ebsd_section_plot.png"}
-    for i, file in enumerate(files):
-        print('starting odf of {}...'.format(names[i]))
-        tex = Texture().read_orientation(file=file, rve=rve)
-        sym_tex = Texture().symmetry_operations(tex_df=tex, family='cubic')
-        Texture().calc_odf(sym_tex, phi2_list=phi2, store_path=store_path, figname=names[i])
+        print(f'saved {figname} at {store_path}')
 
