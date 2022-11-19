@@ -4,6 +4,8 @@ Authors:   Linghao Kong, Manuel Henrich
 Version:  V 1.0
 File:     SubMesher
 Describe: Modification of Submesher V 0.1"""
+import sys
+
 import matplotlib.pyplot as plt
 import pandas as pd
 from dragen.generation.Mesher3D import AbaqusMesher
@@ -58,7 +60,14 @@ class SubMesher(AbaqusMesher):
         self.rve.sort_values(by=['z','y','x'], inplace=True)
         grid.cell_data['packet_id'] = self.rve['packet_id'].to_numpy()
         grid.cell_data['block_id'] = self.rve['block_id'].to_numpy()
-
+        print("block id are ")
+        bids = list(set(grid.cell_data['block_id']))
+        bids = sorted(bids)
+        bid_dict = dict()
+        for bid in bids:
+            print(bid)
+            bid_dict[bid] = grid.cell_data
+        #sys.exit()
         if RveInfo.anim_flag:
             plotter = pv.Plotter(off_screen=True)
             plotter.add_mesh(grid, scalars='packet_id',
@@ -78,7 +87,7 @@ class SubMesher(AbaqusMesher):
 
         return grid
 
-    def write_material_def(self) -> None:
+    def write_substruct_material_def(self) -> None:
         phase1_idx = 0
         phase2_idx = 0
         numberofblocks = self.n_blocks
@@ -189,8 +198,10 @@ class SubMesher(AbaqusMesher):
             grid_tet = pv.UnstructuredGrid()
             for i in range(1, numberOfBlocks):
                 phase = self.rve.loc[self.rve['block_id'] == i].phaseID.values[0]
-                print("print here",np.where(np.asarray(old_grid.cell_data.values())[0] == i))
-                grain_grid_tet = old_grid.extract_cells(np.where(np.asarray(old_grid.cell_data.values())[0] == i))
+                print(f"celldata:{old_grid.cell_data['block_id']}")
+
+                print("print here block id {}".format(i),np.where(np.asarray(old_grid.cell_data['block_id'] == i)))
+                grain_grid_tet = old_grid.extract_cells(np.asarray(old_grid.cell_data['block_id'] == i))
                 grain_surf_tet = grain_grid_tet.extract_surface(pass_pointid=True, pass_cellid=True)
                 grain_surf_tet.triangulate(inplace=True)
                 if not grain_surf_tet.is_all_triangles:
@@ -386,7 +397,7 @@ class SubMesher(AbaqusMesher):
 
         self.make_assembly()  # Don't change the order
         self.pbc(GRID, grid_hull_df)  # of these four
-        self.write_material_def()  # functions here
+        self.write_substruct_material_def()  # functions here
         if RveInfo.gui_flag:
             RveInfo.progress_obj.emit(50)
         if RveInfo.pbc_flag:

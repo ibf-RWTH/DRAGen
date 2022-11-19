@@ -197,7 +197,7 @@ class HelperFunctions:
             return data
 
     def sample_input_3D(self, data, bs, constraint=None) -> pd.DataFrame:
-
+        # TODO: add minvalue for grainsize radius not smaller than 1 element
         if constraint is None:
             constraint = 10000
         else:

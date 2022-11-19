@@ -1131,13 +1131,7 @@ class BuildAbaqus2D:
                 f.write('*User Material, constants=2\n')
                 f.write('{}.,3.\n'.format(phase1_idx))
                 if RveInfo.xfem_flag:
-                    f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
-                    f.write('** damage variable, max. element number \n')
-                    f.write('0.01, {} \n'.format(self.mesh.number_of_cells))
-                    f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=1 \n')
-                    f.write('1., \n')
-                    f.write('*Damage Stabilization \n')
-                    f.write('0.012 \n')
+                    f.write('*include, input=Ferrite_dmg.inp\n')
             elif phase[i] == 2:
                 if not RveInfo.phase2iso_flag:
                     phase2_idx += 1
@@ -1147,13 +1141,7 @@ class BuildAbaqus2D:
                     f.write('*User Material, constants=2\n')
                     f.write('{}.,4.\n'.format(ngrain))
                     if RveInfo.xfem_flag:
-                        f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
-                        f.write('** damage variable, max. element number \n')
-                        f.write('0.01, \n')
-                        f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=2 \n')
-                        f.write('1., \n')
-                        f.write('*Damage Stabilization \n')
-                        f.write('0.012 \n')
+                        f.write('*include, input=Martensite_dmg.inp\n')
             elif phase[i] == 3:
                 if not RveInfo.phase2iso_flag:
                     phase3_idx += 1
@@ -1163,13 +1151,7 @@ class BuildAbaqus2D:
                     f.write('*User Material, constants=2\n')
                     f.write('{}.,4.\n'.format(ngrain))
                     if RveInfo.xfem_flag:
-                        f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
-                        f.write('** damage variable, max. element number \n')
-                        f.write('0.01, \n')
-                        f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=2 \n')
-                        f.write('1., \n')
-                        f.write('*Damage Stabilization \n')
-                        f.write('0.012 \n')
+                        f.write('*include, input=Pearlite_dmg.inp\n')
             elif phase[i] == 4:
                 if not RveInfo.phase2iso_flag:
                     phase4_idx += 1
@@ -1179,13 +1161,7 @@ class BuildAbaqus2D:
                     f.write('*User Material, constants=2\n')
                     f.write('{}.,4.\n'.format(ngrain))
                     if RveInfo.xfem_flag:
-                        f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
-                        f.write('** damage variable, max. element number \n')
-                        f.write('0.01, \n')
-                        f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=2 \n')
-                        f.write('1., \n')
-                        f.write('*Damage Stabilization \n')
-                        f.write('0.012 \n')
+                        f.write('*include, input=Bainite_dmg.inp\n')
 
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[2] > 0:
             f.write('**\n')
@@ -1206,6 +1182,49 @@ class BuildAbaqus2D:
             f.write('0.21, 0.3\n')
             f.write('**')
         f.close()
+        if RveInfo.xfem_flag and RveInfo.phase_ratio[1] > 0:
+            f = open(RveInfo.store_path + '/Ferrite_dmg.inp', 'a')
+            f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
+            f.write('** damage variable, max. element number \n')
+            f.write('0.01, {} \n'.format(self.mesh.number_of_cells))
+            f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=1 \n')
+            f.write('1., \n')
+            f.write('*Damage Stabilization \n')
+            f.write('0.012 \n')
+            f.close()
+
+        if RveInfo.xfem_flag and RveInfo.phase_ratio[2] > 0:
+            f = open(RveInfo.store_path + '/martensite_dmg.inp', 'a')
+            f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
+            f.write('** damage variable, max. element number \n')
+            f.write('0.01, {} \n'.format(self.mesh.number_of_cells))
+            f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=1 \n')
+            f.write('1., \n')
+            f.write('*Damage Stabilization \n')
+            f.write('0.012 \n')
+            f.close()
+
+        if RveInfo.xfem_flag and RveInfo.phase_ratio[3] > 0:
+            f = open(RveInfo.store_path + '/Pearlite_dmg.inp', 'a')
+            f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
+            f.write('** damage variable, max. element number \n')
+            f.write('0.01, {} \n'.format(self.mesh.number_of_cells))
+            f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=1 \n')
+            f.write('1., \n')
+            f.write('*Damage Stabilization \n')
+            f.write('0.012 \n')
+            f.close()
+
+        if RveInfo.xfem_flag and RveInfo.phase_ratio[4] > 0:
+            f = open(RveInfo.store_path + '/Bainite_dmg.inp', 'a')
+            f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
+            f.write('** damage variable, max. element number \n')
+            f.write('0.01, {} \n'.format(self.mesh.number_of_cells))
+            f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=1 \n')
+            f.write('1., \n')
+            f.write('*Damage Stabilization \n')
+            f.write('0.012 \n')
+            f.close()
 
     def write_pbc_step_def(self) -> None:
 
@@ -1232,12 +1251,13 @@ class BuildAbaqus2D:
         f.write('**V4, 1\n')
         f.write('**V4, 2\n')
         f.write('**V4, 3\n')
-        f.write('** INTERACTION PROPERTIES\n')
-        f.write('**\n')
-        f.write('*Surface Interaction, name=IntProp-1\n')
-        f.write('1.,\n')
-        f.write('*Surface Behavior, pressure-overclosure=LINEAR\n')
-        f.write('0.01,\n')
+        if RveInfo.xfem_flag:
+            f.write('** INTERACTION PROPERTIES\n')
+            f.write('**\n')
+            f.write('*Surface Interaction, name=IntProp-1\n')
+            f.write('1.,\n')
+            f.write('*Surface Behavior, pressure-overclosure=LINEAR\n')
+            f.write('0.01,\n')
         f.write('** ----------------------------------------------------------------\n')
         f.write('**\n')
         f.write('** STEP: Step-1\n')

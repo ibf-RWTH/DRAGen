@@ -16,6 +16,7 @@ from dragen.postprocessing.voldistribution import PostProcVol
 from dragen.postprocessing.Shape_analysis import shape
 from dragen.misorientations.misofunctions import pairs2d
 
+plt.ioff()
 
 # TODO insert new rve utils like array gen and grid gen etc.
 

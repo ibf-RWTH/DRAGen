@@ -1,7 +1,7 @@
 import sys
 import math
 import numpy as np
-import pandas
+
 
 import pandas as pd
 import seaborn as sns
@@ -39,6 +39,7 @@ class DataTask3D(HelperFunctions):
         files = RveInfo.file_dict
         RveInfo.LOGGER.info("RVE generation process has started...")
         total_df = pd.DataFrame()
+        all_phases_input_df = pd.DataFrame()
 
         # TODO: Generiere Bandwidths hier!
         if RveInfo.number_of_bands > 0:
@@ -89,31 +90,31 @@ class DataTask3D(HelperFunctions):
                 grains_df['phaseID'] = RveInfo.PHASENUM[phase]
                 total_df = pd.concat([total_df, grains_df])
                 phase_input_df['phaseID'] = RveInfo.PHASENUM[phase]
+                all_phases_input_df = pd.concat([all_phases_input_df,phase_input_df])
                 input_data = pd.concat([input_data, phase_input_df])
 
             else:
                 grains_df = phase_input_df.copy()
                 grains_df['phaseID'] = RveInfo.PHASENUM[phase]
                 total_df = pd.concat([total_df, grains_df])
+                all_phases_input_df = pd.concat([all_phases_input_df,phase_input_df])
 
         print('Processing now')
 
-        grains_df = super().process_df(total_df, RveInfo.SHRINK_FACTOR)
-        # grains_df.to_csv('grains_df.csv')
+        total_df = super().process_df(total_df, RveInfo.SHRINK_FACTOR)
         total_volume = sum(
-            grains_df[grains_df['phaseID'] <= 6][
-                'final_conti_volume'].values)  # Inclusions and bands dont influence filling
+            total_df[total_df['phaseID'] <= 6]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
         estimated_boxsize = np.cbrt(total_volume)
+        RveInfo.LOGGER.info(f"The total number of grains is {total_df.__len__()}")
         RveInfo.LOGGER.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
                             format(total_volume, estimated_boxsize))
 
         input_data.to_csv(RveInfo.gen_path + '/input_data.csv', index=False)
         input = np.array(phase_input_df)
 
-        return grains_df,input
+        return total_df, all_phases_input_df,input
 
-
-    def rve_generation(self, total_df,input):
+    def rve_generation(self, total_df):
 
         """
         Separate the different datas
@@ -121,7 +122,6 @@ class DataTask3D(HelperFunctions):
             inclusions_df = data which is placed directly after the tesselation (not growing)
             bands_df = data used for the formation of bands
         """
-        print("ok")
         grains_df = total_df.loc[total_df['phaseID'] <= 4, :]
         grains_df = grains_df.sort_values(by='final_conti_volume', ascending=False)
         grains_df.reset_index(inplace=True, drop=True)
@@ -168,8 +168,7 @@ class DataTask3D(HelperFunctions):
             # initialize empty grid_array for bands called band_array
             rsa = super().gen_array()
             band_rsa = super().gen_boundaries_3D(rsa)
-            rsa_start = super().band_generator(band_array=band_rsa, bandwidth=RveInfo.bandwidths[0],
-                                               center=band_center_0)
+            rsa_start = super().band_generator(band_array=band_rsa, bandwidth=RveInfo.bandwidths[0], center=band_center_0)
 
             # Place first band
             x_0_list = list()
@@ -218,10 +217,13 @@ class DataTask3D(HelperFunctions):
                         else:
                             intersect = False
 
+                # Get maximum value from previous RSA as starting pint
+                startindex = int(np.amin(rsa) + 1000) * -1
+                print(startindex)
+
                 rsa = super().gen_array()
                 band_rsa = super().gen_boundaries_3D(rsa)
-                band_array_new = super().band_generator(band_array=band_rsa, bandwidth=RveInfo.bandwidths[0],
-                                                        center=band_center)
+                band_array_new = super().band_generator(band_array=band_rsa, bandwidth=RveInfo.bandwidths[0], center=band_center)
 
                 discrete_RSA_obj = DiscreteRsa3D(new_df['a'].tolist(),
                                                  new_df['b'].tolist(),
@@ -290,10 +292,9 @@ class DataTask3D(HelperFunctions):
                 whole_df['z_0'] = z_0_list
                 discrete_tesselation_obj = Tesselation3D(whole_df)
                 rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa)
-                print("ok")
 
             # Change the band_ids to -200
-            for i in range(len(grains_df), len(whole_df) + 1):
+            for i in range(len(grains_df), len(whole_df)+1):
                 rve[np.where(rve == i + 1)] = -200
 
         else:
@@ -313,13 +314,13 @@ class DataTask3D(HelperFunctions):
         elif not rve_status:
             print('Tesselator Failed!')
 
-
         """
         GENERATE INPUT DATA FOR SIMULATIONS HERE
         """
         if rve_status:
             # TODO: Hier gibt es einen relativ großen Mesh/Grid-Preprocessing Block --> Auslagern
             periodic_rve_df, periodic_rve = super().repair_periodicity_3D(rve)
+            print('line 308:', periodic_rve.shape)
             periodic_rve_df['phaseID'] = 0
             print('len rve edge:', np.cbrt(len(periodic_rve_df)))
             # An den NaN-Werten in dem DF liegt es nicht!
@@ -330,7 +331,7 @@ class DataTask3D(HelperFunctions):
             for i in range(max_grain_id):
                 # Set grain-ID to number of the grain
                 # Denn Grain-ID ist entweder >0 oder -200 oder >-200
-                periodic_rve_df.loc[periodic_rve_df['GrainID'] == i + 1, 'phaseID'] = grains_df.loc[i, 'phaseID']
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == i+1, 'phaseID'] = grains_df.loc[i, 'phaseID']
 
             if RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] > 0:
                 # Set the points where < -200 to phase 5 and to grain ID i + j + 3
@@ -354,7 +355,6 @@ class DataTask3D(HelperFunctions):
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
                 periodic_rve[np.where(periodic_rve == -200)] = max_grain_id + 1
 
-
             # Start the Mesher
             # grains_df.to_csv('grains_df.csv', index=False)
             # periodic_rve_df.to_csv('periodic_rve_df.csv', index=False)
@@ -374,7 +374,7 @@ class DataTask3D(HelperFunctions):
                     pairs.append(row)
             pairs=np.array(pairs,dtype=int)
             pairs1=pairs3d(periodic_rve)
-            pandas.DataFrame(pairs1).to_csv(RveInfo.store_path + '/Generation_Data/pairs_data_output.csv', index=False)
+            pd.DataFrame(pairs1).to_csv(RveInfo.store_path + '/Generation_Data/pairs_data_output.csv', index=False)
 
             print("Calculating input misorientations....")
             miso = calc_miso(grains=grains, pairs=pairs, degrees=True)
@@ -413,23 +413,22 @@ class DataTask3D(HelperFunctions):
                 if RveInfo.number_of_bands >= 1:
                     print('Nur Bänder')
                     phase_list = grains_df['phaseID'].tolist()
-                    # periodic_rve[np.where(periodic_rve == -200)] = last_grain_id + 1
+                    #periodic_rve[np.where(periodic_rve == -200)] = last_grain_id + 1
                     phase_list.append(2)
 
                 elif RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] > 0:
                     print('Nur Inclusions')
                     phase_list = grains_df['phaseID'].tolist()
-                    for i in range(len(inclusions_df)):
-                        # periodic_rve[np.where(periodic_rve == -(200 + i + 1))] = last_grain_id + i + 1
-                        phase_list.append(5)
+                    """for i in range(len(inclusions_df)):
+                        #periodic_rve[np.where(periodic_rve == -(200 + i + 1))] = last_grain_id + i + 1
+                        phase_list.append(5)"""
                     print(phase_list.__len__())
 
                 else:
                     print('Keine Bänder, nur grains')
                     phase_list = grains_df['phaseID'].tolist()
                 print(grains_df['phi1'])
-                spectral.write_material(store_path=RveInfo.store_path, grains=phase_list,
-                                        angles=grains_df[['phi1', 'PHI', 'phi2']])
+                spectral.write_material(store_path=RveInfo.store_path, grains=phase_list, angles=grains_df[['phi1', 'PHI', 'phi2']])
                 spectral.write_load(RveInfo.store_path)
                 spectral.write_grid(store_path=RveInfo.store_path,
                                     rve=rve,
@@ -443,17 +442,22 @@ class DataTask3D(HelperFunctions):
 
                 MooseMesher(rve_shape=rve_shape, rve=periodic_rve_df, grains_df=grains_df).run()
                 # store phases and texture in seperate txt files to make it work within moose
-                grains_df[['phi1', 'PHI', 'phi2']].to_csv(path_or_buf=RveInfo.store_path + '/EulerAngles.txt',
+                grains_df[['phi1', 'PHI', 'phi2']].to_csv(path_or_buf=RveInfo.store_path+'/EulerAngles.txt',
                                                           header=False, index=False)
                 phases = periodic_rve_df.groupby(['GrainID']).mean()['phaseID']
-                phases.to_csv(path_or_buf=RveInfo.store_path + '/phases.txt', header=False, index=False)
+                phases.to_csv(path_or_buf=RveInfo.store_path+'/phases.txt',  header=False, index=False)
 
             if RveInfo.abaqus_flag:
                 mesher_obj = None
                 if RveInfo.subs_flag:
                     print("substructure generation is turned on...")
                     # returns rve df containing substructures
+                    # print("phase id is ,", grains_df.iloc[0]["phaseID"])
                     subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)
+                    # try:
+                    #     subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)
+                    # except Exception as e:
+                    #     print(e)
                     mesher_obj = SubMesher(rve_shape=rve_shape, rve=subs_rve, subs_df=grains_df)
 
                 elif RveInfo.subs_flag == False:
@@ -469,39 +473,36 @@ class DataTask3D(HelperFunctions):
                     mesher_obj.run()
         else:
             print('Tessellation did not succeed')
-
-        # pairs=pairs3d(periodic_rve)
-        # print("pairs complete")
         return periodic_rve
 
-    def post_processing(self, rve):
-
-        slice_ID = 0
-        grain_shapes = pd.DataFrame()
-        # the rve array still contains the boundarys in order to get every 4th slice we need to devide by 8
+    def post_processing(self, rve, total_df, ex_df):
 
         phase_ratios = list()
         ref_r_in = dict()
         ref_r_out = dict()
         grain_shapes_in = shape().get_input_ellipses()
         for phase in RveInfo.phases:
-            id = RveInfo.PHASENUM[phase]
-            if id < 5:
+            phase_id = RveInfo.PHASENUM[phase]
+            slice_ID = 0
+            if phase_id < 5:
                 # generate pair plots for shape comparison for each phase
                 grain_shapes = pd.DataFrame()
-                for i in range(math.floor(rve.shape[2] / 8)):
-                    grain_shapes_slice = shape().get_ellipses(rve, slice_ID, id)
+                for i in range(math.floor(rve.shape[2] / 4)):
+                    print('phase_id, i, slice_ID', phase_id, i, slice_ID)
+                    grain_shapes_slice = shape().get_ellipses(rve, slice_ID, phase_id)
+                    slice_ID += 4
+                    if len(grain_shapes_slice) == 0:
+                        RveInfo.RESULT_LOG.info(f'No {phase} found in slice {slice_ID}. Slice was neglected for {phase}')
+                        continue
                     grain_shapes = pd.concat([grain_shapes, grain_shapes_slice])
-                slice_ID += 4
+
                 grain_shapes['inout'] = 'out'
                 grain_shapes = grain_shapes.rename(columns={"AR": "AR (-)", "slope": "slope (°)"})
-                grain_shapes_in_thisPhase = grain_shapes_in.loc[
-                    grain_shapes_in['phaseID'] == id, ['AR', 'slope', 'inout']]
+                grain_shapes_in_thisPhase = grain_shapes_in.loc[grain_shapes_in['phaseID'] == phase_id, ['AR', 'slope', 'inout']]
+
                 grain_shapes_in_thisPhase = grain_shapes_in_thisPhase.sample(n=grain_shapes.__len__())
-                grain_shapes_in_thisPhase = grain_shapes_in_thisPhase.rename(
-                    columns={"AR": "AR (-)", "slope": "slope (°)"})
-                if id == 2:
-                    print(grain_shapes_in_thisPhase)
+                grain_shapes_in_thisPhase = grain_shapes_in_thisPhase.rename(columns={"AR": "AR (-)", "slope": "slope (°)"})
+
                 grain_shapes = pd.concat([grain_shapes, grain_shapes_in_thisPhase])
                 grain_shapes = grain_shapes.sort_values(by=['inout'])
                 grain_shapes.reset_index(inplace=True, drop=True)
@@ -509,7 +510,7 @@ class DataTask3D(HelperFunctions):
                 plot_kws = {"s": 2}
 
                 sns.set_palette(sns.color_palette(RveInfo.rwth_colors))
-                sns.set_context(rc={"font.size": 16, "axes.labelsize": 20})
+                sns.set_context(rc={"font.size": 16, "axes.labelsize":20})
                 g = sns.pairplot(data=grain_shapes, hue='inout', plot_kws=plot_kws)
                 grain_shapes.to_csv('{}/Postprocessing/shape_control_{}.csv'.format(RveInfo.store_path, phase))
                 g.fig.subplots_adjust(top=.9)
@@ -519,14 +520,24 @@ class DataTask3D(HelperFunctions):
                 plt.close()
 
                 current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out = \
-                    PostProcVol().gen_in_out_lists(phaseID=id)
+                    PostProcVol().gen_in_out_lists(phaseID=phase_id)
                 phase_ratios.append(current_phase_ratio_out)
                 ref_r_in[phase] = current_phase_ref_r_in
                 ref_r_out[phase] = current_phase_ref_r_out
 
-            if id == 5:
+                # Texture Analysis
+                total_df_this_phase = total_df.loc[total_df['phaseID'] == phase_id]
+                ex_df_this_phase = ex_df.loc[ex_df['phaseID'] == phase_id]
+                if not ex_df_this_phase['phi1'].isnull().values.any() and len(total_df_this_phase) > 0:
+                    tex_dict = Texture().read_orientation(rve_np=rve, rve_df=total_df_this_phase, experimentalData=ex_df_this_phase)
+                    for key in tex_dict.keys():
+                        sym_tex = Texture().symmetry_operations(tex_df=tex_dict[key], family='cubic')
+                        names = [f"{key}_texture_section_plot_{phase}.png"]
+                        for name in names:
+                            Texture().calc_odf(sym_tex, phi2_list=[0, 45, 90], store_path=f'{RveInfo.store_path}/Postprocessing', figname=name)
+            if phase_id == 5:
                 current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out = \
-                    PostProcVol().gen_in_out_lists(phaseID=id)
+                    PostProcVol().gen_in_out_lists(phaseID=phase_id)
                 phase_ratios.append(current_phase_ratio_out)
 
         if len(RveInfo.phases) > 1:
@@ -543,30 +554,12 @@ class DataTask3D(HelperFunctions):
             PostProcVol().gen_pie_chart_phases(phase_ratios, labels, 'output')
 
         for phase in RveInfo.phases:
-            if RveInfo.PHASENUM[phase] > 4:  # postprocessing for inclusions and bands not yet supported
+            if RveInfo.PHASENUM[phase] > 4: # postprocessing for inclusions and bands not yet supported
                 continue
             PostProcVol().gen_plots(ref_r_in[phase], ref_r_out[phase], phase)
             if RveInfo.gui_flag:
                 RveInfo.infobox_obj.emit('checkout the evaluation report of the rve stored at:\n'
                                          '{}/Postprocessing'.format(RveInfo.store_path))
-
-
-
-        # texture analysis for input data
-        file = '{}/Generation_Data/input_data.csv'.format(RveInfo.store_path)
-        tex_df = Texture().read_orientation(file=file, rve=rve)
-        symmetry_df = Texture().symmetry_operations(tex_df=tex_df, family='cubic')
-        phi2 = [0, 45, 90]
-        storepath='{}/Figs/'.format(RveInfo.store_path)
-        Texture().calc_odf(symmetry_df, phi2_list=phi2, store_path=storepath, figname='input_odf')
-
-        #texture analysis for rve
-        file = '{}/Generation_Data/grain_data_output.csv'.format(RveInfo.store_path)
-        tex_df = Texture().read_orientation(file=file, rve=rve)
-        symmetry_df = Texture().symmetry_operations(tex_df=tex_df, family='cubic')
-        phi2 = [0, 45, 90]
-        storepath = '{}/Figs/'.format(RveInfo.store_path)
-        Texture().calc_odf(symmetry_df, phi2_list=phi2, store_path=storepath, figname='rve_odf')
 
         if RveInfo.subs_flag:
             substrucRun().post_processing(k=3)

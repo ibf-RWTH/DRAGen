@@ -4,19 +4,16 @@ import sys
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import math
-import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
-from typing import Dict
+
 
 from dragen.main2D import DataTask2D
 from dragen.main3D import DataTask3D
 from dragen.substructure.run import Run as SubRun
 from dragen.utilities.Helpers import HelperFunctions
 from dragen.utilities.InputInfo import RveInfo
-from dragen.misorientations import misofunctions as f
-from dragen.misorientations import optimization as o
-import csv
+
+plt.ioff()  # needs to be here for background plotting with gui
 
 
 class Run(HelperFunctions):
@@ -44,7 +41,7 @@ class Run(HelperFunctions):
             submodel_flag: bool,
             phase2iso_flag: bool,
             smoothing_flag: bool,
-            x_fem_flag: bool,
+            xfem_flag: bool,
 
             # generation parameters
             gui_flag: bool,
@@ -131,7 +128,7 @@ class Run(HelperFunctions):
         RveInfo.phase2iso_flag = phase2iso_flag
         RveInfo.pbc_flag = pbc_flag
         RveInfo.submodel_flag = submodel_flag
-        RveInfo.xfem_flag = x_fem_flag
+        RveInfo.xfem_flag = xfem_flag
 
         RveInfo.roughness_flag = False
         RveInfo.band_filling = band_filling
@@ -166,8 +163,14 @@ class Run(HelperFunctions):
 
     @staticmethod
     def initializations(epoch):
-
-        RveInfo.store_path = RveInfo.root + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(epoch)
+        counter = "0"
+        if epoch < 10:
+            counter = f"00{epoch}"
+        if epoch > 9 and epoch < 100:
+            counter = f"0{epoch}"
+        if epoch > 99:
+            counter = epoch
+        RveInfo.store_path = RveInfo.root + '/OutputData/' + str(datetime.datetime.now())[:10] + '_' + counter
         RveInfo.LOGGER.debug(RveInfo.store_path)
         RveInfo.fig_path = RveInfo.store_path + '/Figs'
         RveInfo.gen_path = RveInfo.store_path + '/Generation_Data'
@@ -212,13 +215,12 @@ class Run(HelperFunctions):
 
         elif RveInfo.dimension == 3:
             # Kann Gan und nicht GAN
-
             obj3D = DataTask3D()
             for i in range(RveInfo.number_of_rves):
                 self.initializations(i)
-                total_df,input= obj3D.grain_sampling()
+                total_df, ex_df,input = obj3D.grain_sampling()
                 rve = obj3D.rve_generation(total_df,input)
-                obj3D.post_processing(rve)
+                obj3D.post_processing(rve, total_df, ex_df)
 
 
         else:
@@ -234,6 +236,6 @@ class Run(HelperFunctions):
             logger.setLevel(level=logging.DEBUG)
             logger.info('dimension must be 2 or 3')
             sys.exit()
-            return rve
+
 
 
