@@ -74,7 +74,7 @@ class HelperFunctions:
         file_name : String, name of the input file
         """
         data = pd.read_csv(file_name)
-        radius_a, radius_b, radius_c, alpha, tex_phi1, tex_PHI, tex_phi2 = ([] for i in range(7))
+        radius_a, radius_b, radius_c, alpha, tex_phi1, tex_PHI, tex_phi2, GrainID = ([] for i in range(8))
 
         if 'a' in data.head(0) and data['a'].count() != 0:
             for rad in data['a']:
@@ -128,12 +128,24 @@ class HelperFunctions:
                 tex_phi2.append(float(o[:, 2]))
                 i = i + 1
 
+        if 'GrainID' in data.head(0) and data['GrainID'].count() != 0:
+            for rad in data['GrainID']:
+                GrainID.append(rad)
+        else:
+            if not RveInfo.gui_flag:
+                print('No "GrainID" in given .csv-Inputfile! RVE-Generation was canceled!')
+            else:
+                messagebox.showinfo(message='No "GrainID" in given .csv-Inputfile! RVE-Generation was canceled!',
+                                    title='ERROR')
+            RveInfo.LOGGER.info('ERROR: No "GrainID" in given .csv-Inputfile! RVE-Generation was canceled!')
+            sys.exit()
+
         if dimension == 3:
 
             grain_dict = {"a": radius_a, "b": radius_b, "c": radius_c, "alpha": alpha,
-                                             "phi1": tex_phi1, "PHI": tex_PHI, "phi2": tex_phi2}
+                                             "phi1": tex_phi1, "PHI": tex_PHI, "phi2": tex_phi2, "GrainID": GrainID}
             grain_df = pd.DataFrame(data=grain_dict,
-                                    columns=["a", "b", "c", "alpha", "phi1", "PHI", "phi2"])
+                                    columns=["a", "b", "c", "alpha", "phi1", "PHI", "phi2","GrainID"])
             return grain_df
         elif dimension == 2:
             grain_dict = {"a": radius_a, "b": radius_b, "alpha": alpha,

@@ -110,11 +110,11 @@ class DataTask3D(HelperFunctions):
                             format(total_volume, estimated_boxsize))
 
         input_data.to_csv(RveInfo.gen_path + '/input_data.csv', index=False)
-        input = np.array(phase_input_df)
 
-        return total_df, all_phases_input_df,input
 
-    def rve_generation(self, total_df):
+        return total_df, all_phases_input_df
+
+    def rve_generation(self, total_df,input):
 
         """
         Separate the different datas
@@ -365,7 +365,7 @@ class DataTask3D(HelperFunctions):
             '''
             MDF OPTIMIZATION
             '''
-            grains=input
+            grains=np.array(input)
             grains1=np.array(grains_df)
             pairs=[]
             with open('pairID.csv', 'r') as file:
@@ -378,11 +378,11 @@ class DataTask3D(HelperFunctions):
 
             print("Calculating input misorientations....")
             miso = calc_miso(grains=grains, pairs=pairs, degrees=True)
-            angle = miso[1]
+            angle = miso[0]
 
             print("Calculating initial non-optimized misorientations...")
             miso1 = calc_miso(grains=grains1, pairs=pairs1, degrees=True)
-            angle1 = miso1[1]
+            angle1 = miso1[0]
 
             values = f.values()
             input_probs, input_mdf = f.mdf_score_samples(angle, values)

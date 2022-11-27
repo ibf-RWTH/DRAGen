@@ -10,9 +10,7 @@ def values():
     Function which discretisize the possible results
     '''
 
-    values=np.empty((0,1))
-    for i in range(-1,65):
-        values=np.append(values,[[i]],0)
+    values = np.linspace(0, 65, 70)[:, np.newaxis]
     return values
 
 def mdf_score_samples(angle,values):
@@ -38,9 +36,8 @@ def swapping(grains):
         y = r.randint(0, lent)
     else:
         pass
-
-    array = np.array([grains1[x, 4], grains1[x, 5], grains1[x, 6]])
-    array1 = np.array([grains1[y, 4], grains1[y, 5], grains1[y, 6]])
+    array = np.array([grains[x, 4], grains[x, 5], grains[x, 6]])
+    array1 = np.array([grains[y, 4], grains[y, 5], grains[y, 6]])
 
     grains1[x, 4], grains1[x, 5], grains1[x, 6], grains1[y, 4], grains1[y, 5], grains1[y, 6] = array1[0], array1[1],array1[2], array[0], array[1], array[2]
     x+=1
@@ -102,10 +99,9 @@ def step(grains1,angle1,pairs1,input_probs,values):
 
     return grains_opt,angle_opt,error1,opt_mdf
 
-def mdf_opt(grains1, angle1, pairs1,error,input_probs,values):
-    start_time = time.time()
+def mdf_opt(grains1, angle1,pairs1,error,input_probs,values):
     i = 0
-    while error >= 0.0006:
+    while error >= 0.0005:
         grains_opt, angle_opt, error2, opt_mdf = step(grains1, angle1, pairs1,input_probs,values)
         i += 1
         print("Step: " + str(i))
@@ -116,12 +112,6 @@ def mdf_opt(grains1, angle1, pairs1,error,input_probs,values):
         else:
             grains1, angle1, error, opt_mdf = grains_opt, angle_opt, error2, opt_mdf
             print(error)
-    end_time = time.time() - start_time
-    if end_time >= 60:
-        print(str(end_time / 60) + " minutes")
-    else:
-        print(str(end_time) + " seconds")
-
     return grains_opt, angle_opt
 
 def mdf_plotting(values,in_probs,no_opt_probs,out_probs,storepath):

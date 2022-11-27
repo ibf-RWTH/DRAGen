@@ -62,7 +62,7 @@ def pairs2d(grid):
 
 def pairs3d(grid):
     start_time = time.time()
-    print("Creating RVE's neighbour grains array...(new, just sort and unique)")
+    print("Creating RVE's neighbour grains array...")
     npairs = np.empty((0, 2))
 
     if grid.ndim == 3:
@@ -141,41 +141,46 @@ def pairs3d(grid):
 def calc_miso(grains,pairs,degrees):
     '''
     Function that calculates the mdf for a set of input data
-    :param grains: Array which contains grains' information
+    :param data: Array which contains grains' information
     :param pairs: Array of adjacent grains
     :param degrees: Input Euler Angles in degrees or not
     :return: Array of misorientation information per pair
     '''
     start_time = time.time()
-    quaternions=np.empty((0,4))
-    angle=np.empty((0,1))
-    euler_angles=np.empty((0,3))
+    #grainid = np.array([data['GrainID']]).reshape((-1, 1))
+    grainid=grains[:,7]
+
+    angle = np.empty((0, 1))
+    axis = np.empty((0, 3))
 
     for i in range(0, len(pairs)):
         x = int(pairs[i, 0])
         y = int(pairs[i, 1])
-        o1 = np.array([grains[x - 1, 4], grains[x - 1, 5], grains[x - 1, 6]])
-        o2 = np.array([grains[y - 1, 4], grains[y - 1, 5], grains[y - 1, 6]])
+        id1 = int(np.where(grainid == x)[0])
+        id2 = int(np.where(grainid == y)[0])
+        o1 = np.array([grains[id1, 4], grains[id1, 5], grains[id1, 6]])
+        o2 = np.array([grains[id2, 4], grains[id2, 5], grains[id2, 6]])
 
-        if degrees==True:
+        if degrees:
             a = damask.Orientation.from_Euler_angles(phi=o1, degrees=True, family='cubic')
             b = damask.Orientation.from_Euler_angles(phi=o2, degrees=True, family='cubic')
         else:
             a = damask.Orientation.from_Euler_angles(phi=o1, degrees=False, family='cubic')
             b = damask.Orientation.from_Euler_angles(phi=o2, degrees=False, family='cubic')
 
-
         c = a.disorientation(b)
-        a_a=damask.Orientation.as_axis_angle(c,degrees=True,pair=True)
-        e_a=damask.Orientation.as_Euler_angles(c,degrees=True)
-        a=a_a[1]
-        quaternions = np.append(quaternions, [c], 0)
-        angle=np.append(angle,[[a]],0)
-        euler_angles=np.append(euler_angles,[e_a],0)
-        #cond=((len(quaternions) / len(pairs)) * 100)
-        #print("Completion: "+str(cond))
+        a_a = damask.Orientation.as_axis_angle(c, degrees=True, pair=True)
+        # e_a=damask.Orientation.as_Euler_angles(c,degrees=True)
+        a = a_a[1]
+        a1 = a_a[0]
+        # quaternions = np.append(quaternions, [c], 0)
+        angle = np.append(angle, [[a]], 0)
+        axis = np.append(axis, [a1], 0)
+        # euler_angles=np.append(euler_angles,[e_a],0)
+        # cond=((len(quaternions) / len(pairs)) * 100)
+        # print("Completion: "+str(cond))
     print(" %s seconds " % (time.time() - start_time))
 
-    return quaternions,angle,euler_angles
+    return angle,axis
 
 
