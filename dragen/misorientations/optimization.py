@@ -34,8 +34,7 @@ def swapping(grains):
     y = r.randint(0, lent)
     while y == x:
         y = r.randint(0, lent)
-    else:
-        pass
+
     array = np.array([grains[x, 4], grains[x, 5], grains[x, 6]])
     array1 = np.array([grains[y, 4], grains[y, 5], grains[y, 6]])
 
@@ -101,7 +100,7 @@ def step(grains1,angle1,pairs1,input_probs,values):
 
 def mdf_opt(grains1, angle1,pairs1,error,input_probs,values):
     i = 0
-    while error >= 0.0005:
+    while i==3000:
         grains_opt, angle_opt, error2, opt_mdf = step(grains1, angle1, pairs1,input_probs,values)
         i += 1
         print("Step: " + str(i))
