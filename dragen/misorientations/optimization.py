@@ -111,7 +111,7 @@ def mdf_opt(grains1, angle1,pairs1,error,input_probs,values):
         else:
             grains1, angle1, error, opt_mdf = grains_opt, angle_opt, error2, opt_mdf
             print(error)
-    return grains_opt, angle_opt
+    return grains1, angle1
 
 def mdf_plotting(values,in_probs,no_opt_probs,out_probs,storepath):
     plt.plot(values, in_probs)
