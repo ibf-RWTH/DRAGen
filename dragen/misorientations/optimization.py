@@ -1,9 +1,36 @@
 import numpy as np
+import pandas as pd
 import damask
 import random as r
 import time
 from sklearn.neighbors import KernelDensity
 import matplotlib.pyplot as plt
+from dragen.misorientations.misofunctions import calc_miso
+
+def orientations(grains):
+    phi1,PHI,phi2,GrainID=([] for i in range(4))
+
+    if 'phi1' in grains.head(0) and grains['phi1'].count() != 0:
+        for rad in grains['phi1']:
+            phi1.append(rad)
+
+    if 'PHI' in grains.head(0) and grains['PHI'].count() != 0:
+        for rad in grains['PHI']:
+            PHI.append(rad)
+
+    if 'phi2' in grains.head(0) and grains['phi2'].count() != 0:
+        for rad in grains['phi2']:
+            phi2.append(rad)
+
+    if 'GrainID' in grains.head(0) and grains['GrainID'].count() != 0:
+        for rad in grains['GrainID']:
+            GrainID.append(rad)
+
+    orientation_dict = {"phi1": phi1, "PHI": PHI, "phi2": phi2, "GrainID": GrainID}
+    orientation_df = pd.DataFrame(data=orientation_dict, columns=["phi1", "PHI", "phi2","GrainID"])
+    orientations=np.array(orientation_df)
+    return orientations
+
 
 def values():
     '''
@@ -24,7 +51,7 @@ def mdf_score_samples(angle,values):
 
 def swapping(grains):
     '''
-    Orientation swapping beetwen two grains
+    Orientation swapping between two grains
     :param grains: Array with grains' information
     :return: Array with grains' information after swapping
     '''
@@ -35,10 +62,10 @@ def swapping(grains):
     while y == x:
         y = r.randint(0, lent)
 
-    array = np.array([grains[x, 4], grains[x, 5], grains[x, 6]])
-    array1 = np.array([grains[y, 4], grains[y, 5], grains[y, 6]])
+    array = np.array([grains1[x, 0], grains1[x, 1], grains1[x, 2]])
+    array1 = np.array([grains1[y, 0], grains1[y, 1], grains1[y, 2]])
 
-    grains1[x, 4], grains1[x, 5], grains1[x, 6], grains1[y, 4], grains1[y, 5], grains1[y, 6] = array1[0], array1[1],array1[2], array[0], array[1], array[2]
+    grains1[x, 0], grains1[x, 1], grains1[x, 2], grains1[y, 0], grains1[y, 1], grains1[y, 2] = array1[0], array1[1],array1[2], array[0], array[1], array[2]
     x+=1
     y+=1
     #print("ok")
@@ -69,7 +96,8 @@ def step(grains1,angle1,pairs1,input_probs,values):
     :return: Array with grains' information after swapping, Array of misorientation information per pair after swapping, error, MDF of output data
     '''
     #start_time = time.time()
-    grains_opt,x,y=swapping(grains1)
+    grains2=np.copy(grains1)
+    grains_opt,x,y=swapping(grains2)
     angle_opt=np.copy(angle1)
 
     pairsx=np.where(pairs1==x)[0]
@@ -79,8 +107,8 @@ def step(grains1,angle1,pairs1,input_probs,values):
     for i in pairs4opt:
         z = int(pairs1[i, 0])
         k = int(pairs1[i, 1])
-        o1 = np.array([grains_opt[z - 1, 4], grains_opt[z - 1, 5], grains_opt[z - 1, 6]])
-        o2 = np.array([grains_opt[k - 1, 4], grains_opt[k - 1, 5], grains_opt[k - 1, 6]])
+        o1 = np.array([grains_opt[z - 1, 0], grains_opt[z - 1, 1], grains_opt[z - 1, 2]])
+        o2 = np.array([grains_opt[k - 1, 0], grains_opt[k - 1, 1], grains_opt[k - 1, 2]])
         a = damask.Orientation.from_Euler_angles(phi=o1, degrees=True, family='cubic')
         b = damask.Orientation.from_Euler_angles(phi=o2, degrees=True, family='cubic')
 
@@ -96,41 +124,68 @@ def step(grains1,angle1,pairs1,input_probs,values):
     #print(error)
     #print(error1)
 
-    return grains_opt,angle_opt,error1,opt_mdf
+    return grains_opt,angle_opt,error1,opt_mdf,x,y
 
-def mdf_opt(grains1, angle1,pairs1,error,input_probs,values):
+def mdf_opt(grains1, angle1,pairs1,error,input_probs,values,store_path):
     i = 0
-    while i==3000:
-        grains_opt, angle_opt, error2, opt_mdf = step(grains1, angle1, pairs1,input_probs,values)
+    swaps=np.empty((0,2))
+    while i < 3000:
+        grains_opt, angle_opt, error2, opt_mdf,x,y = step(grains1, angle1, pairs1,input_probs,values)
         i += 1
         print("Step: " + str(i))
         while error2 > error:
-            grains_opt, angle_opt, error2, opt_mdf = step(grains1, angle1, pairs1,input_probs,values)
+            grains_opt, angle_opt, error2, opt_mdf,x,y = step(grains1, angle1, pairs1,input_probs,values)
             i += 1
             print("Step: " + str(i))
         else:
-            grains1, angle1, error, opt_mdf = grains_opt, angle_opt, error2, opt_mdf
+            grains1, angle1, error, opt_mdf,x,y = grains_opt, angle_opt, error2, opt_mdf,x,y
+            swap = np.array([x, y])
+            swaps = np.append(swaps, [swap], 0)
             print(error)
+    else:
+        if error2>error:
+            grains1, angle1, error, opt_mdf, x, y = grains_opt, angle_opt, error2, opt_mdf, x, y
+    angle2, axis2 = calc_miso(grains1, pairs1, degrees=True)
+    opt_probs1, opt_mdf1 = mdf_score_samples(angle2, values)
+
+    plt.plot(values, opt_probs1)
+    plt.title("Experimental's & RVE's (optimized) Angle of Misorientation Distributions")
+    plt.xlabel("Misorientation Angle (degrees)")
+    plt.ylabel("Probability")
+    plt.savefig('{}/Figs/test_inside_func.png'.format(store_path))
+    plt.close()
     return grains1, angle1
 
 def mdf_plotting(values,in_probs,no_opt_probs,out_probs,storepath):
     plt.plot(values, in_probs)
-    figname='input_angle_distribution.png'
+    figname='experimental_angle_distribution.png'
+    plt.title("Experimental's Angle of Misorientation Distribution")
+    plt.xlabel("Misorientation Angle (degrees)")
+    plt.ylabel("Probability")
     plt.savefig(storepath+figname)
     plt.close()
 
     plt.plot(values, no_opt_probs)
-    figname = 'no_mdf_optimized_angle_distribution.png'
+    figname = 'RVE_no_mdf_optimized_angle_distribution.png'
+    plt.title("RVE's Angle of Misorientation Distribution (non-optimized)")
+    plt.xlabel("Misorientation Angle (degrees)")
+    plt.ylabel("Probability")
     plt.savefig(storepath + figname)
     plt.close()
 
     plt.plot(values, out_probs)
-    figname = 'mdf_optimized_angle_distribution.png'
+    figname = 'RVE_mdf_optimized_angle_distribution.png'
+    plt.title("RVE's Angle of Misorientation Distribution (optimized)")
+    plt.xlabel("Misorientation Angle (degrees)")
+    plt.ylabel("Probability")
     plt.savefig(storepath + figname)
     plt.close()
 
     plt.plot(values, in_probs)
     plt.plot(values, out_probs)
-    figname = 'mixed_input_mdf-opt_angle_distribution.png'
+    figname = 'mixed_experimental_RVE_mdf-opt_angle_distribution.png'
+    plt.title("Experimental's & RVE's (optimized) Angle of Misorientation Distributions")
+    plt.xlabel("Misorientation Angle (degrees)")
+    plt.ylabel("Probability")
     plt.savefig(storepath + figname)
     plt.close()

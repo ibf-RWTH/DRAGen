@@ -361,47 +361,49 @@ class DataTask3D(HelperFunctions):
             rve_shape = periodic_rve.shape
             # Write out Volumes
             grains_df = super().get_final_disc_vol_3D(grains_df, periodic_rve)
-            grains_df.sort_values(by=['GrainID'])
+            grains_df=grains_df.sort_values('GrainID')
             '''
             MDF OPTIMIZATION
             '''
-            grains=np.array(input)
-            grains1=np.array(grains_df)
-            pairs=[]
-            with open('pairID.csv', 'r') as file:
-                reader1 = csv.reader(file, delimiter=',')
-                for row in reader1:
-                    pairs.append(row)
-            pairs=np.array(pairs,dtype=int)
+
+            pairs = np.array(pd.read_csv('pairID.csv'))
             pairs1=pairs3d(periodic_rve)
             pd.DataFrame(pairs1).to_csv(RveInfo.store_path + '/Generation_Data/pairs_data_output.csv', index=False)
-
+            
+            orientations_exp = f.orientations(input)
+            orientations_RVE = f.orientations(grains_df)
             print("Calculating input misorientations....")
-            miso = calc_miso(grains=grains, pairs=pairs, degrees=True)
-            angle = miso[0]
-
+            angle, axis = calc_miso(orientations_exp, pairs, degrees=True)
             print("Calculating initial non-optimized misorientations...")
-            miso1 = calc_miso(grains=grains1, pairs=pairs1, degrees=True)
-            angle1 = miso1[0]
+            angle1, axis1 = calc_miso(orientations_RVE, pairs1, degrees=True)
 
             values = f.values()
             input_probs, input_mdf = f.mdf_score_samples(angle, values)
             no_opt_probs, no_opt_mdf = f.mdf_score_samples(angle1, values)
             error = f.calc_error(input_probs, no_opt_probs, values)
-            print("Initial Error: "+str(error))
+            print("Initial Error: " + str(error))
 
-            grains_opt, angle_opt = f.mdf_opt(grains1, angle1, pairs1, error, input_probs, values)
+            orientations_opt, angle_opt = f.mdf_opt(orientations_RVE, angle1, pairs1, error, input_probs, values,store_path=RveInfo.store_path)
+
 
             opt_probs, opt_mdf = f.mdf_score_samples(angle_opt, values)
-            f.mdf_plotting(values, input_probs, no_opt_probs, opt_probs, storepath='{}/Figs/'.format(RveInfo.store_path))
+            f.mdf_plotting(values, input_probs, no_opt_probs, opt_probs,
+                           storepath='{}/Figs/'.format(RveInfo.store_path))
+            grains12=np.array(grains_df)
 
-            grains_df=pd.DataFrame(grains_opt)
-            grains_df.columns=['a','b','c','alpha','phi1','PHI','phi2','volume','old_grid','phaseID','GrainID','final_discrete_volume','final_conti_volume']
-            grains_df = super().get_final_disc_vol_3D(grains_df, periodic_rve)
+            grains12[:, 4], grains12[:, 5], grains12[:, 6], grains12[:, 7] = orientations_opt[:, 0], orientations_opt[:,
+                                                                                                     1], orientations_opt[
+                                                                                                         :,
+                                                                                                         2], orientations_opt[
+                                                                                                             :, 3]
+            grains_df = pd.DataFrame(grains12)
 
+            grains_df.columns = ['a', 'b', 'c', 'alpha', 'phi1', 'PHI', 'phi2', 'GrainID', 'volume', 'old_grid',
+                                 'phaseID', 'final_discrete_volume', 'final_conti_volume']
+
+            grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output.csv', index=False)
 
             print('grain_df keys:')
-            grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output.csv', index=False)
             print('########################')
             print('Meshing starts')
             if RveInfo.damask_flag:
