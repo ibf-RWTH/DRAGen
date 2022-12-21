@@ -160,8 +160,6 @@ class DiscreteRsa3D(HelperFunctions):
             if band_points_old > 0:
                 if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)) | \
                         (band_points / band_vol_0 < bandratio):
-                    #print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
-                    #print('ratio:', (band_points / band_vol_0 > bandratio))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
 
@@ -178,7 +176,6 @@ class DiscreteRsa3D(HelperFunctions):
             else:
                 # free points old - free points should equal non zero in periodic grain
                 if free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain):
-                    #print('difference: ', free_points_old - free_points != np.count_nonzero(periodic_grain))
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
                 else:

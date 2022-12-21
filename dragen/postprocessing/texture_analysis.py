@@ -64,8 +64,7 @@ class Texture:
         phi1_max, PHI_max = 90, 90
         # calculate KDE
         xyz = np.vstack([phi1, PHI, phi2])
-        # kde = st.gaussian_kde(xyz, bw_method='scott', weights=values)
-        kde = KernelDensity(kernel='gaussian', bandwidth=4).fit(xyz.transpose())
+        kde = KernelDensity(kernel='gaussian', bandwidth=4).fit(xyz.transpose(), sample_weight=weight)
 
         # Evaluate kde on a grid
         n_pixel = 256
