@@ -1030,7 +1030,7 @@ class AbaqusMesher(MeshingHelper):
                     f.write('*Solid Section, elset=Set-{}, material=Martensite\n'.format(nGrain))
             elif self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 3:
                 if not RveInfo.phase2iso_flag:
-                    phase2_idx += 1
+                    phase3_idx += 1
                     f.write('** Section: Section - {}\n'.format(nGrain))
                     f.write('*Solid Section, elset=Set-{}, material=Pearlite_{}\n'.format(nGrain, phase3_idx))
                 else:
@@ -1038,7 +1038,7 @@ class AbaqusMesher(MeshingHelper):
                     f.write('*Solid Section, elset=Set-{}, material=Pearlite\n'.format(nGrain))
             elif self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 4:
                 if not RveInfo.phase2iso_flag:
-                    phase2_idx += 1
+                    phase4_idx += 1
                     f.write('** Section: Section - {}\n'.format(nGrain))
                     f.write('*Solid Section, elset=Set-{}, material=Bainite_{}\n'.format(nGrain, phase4_idx))
                 else:
