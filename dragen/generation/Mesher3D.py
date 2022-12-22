@@ -757,19 +757,12 @@ class AbaqusMesher(MeshingHelper):
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[2] > 0:
             f.write('**\n')
             f.write('*Include, Input=Martensite.inp\n')
-
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[3] > 0:
             f.write('**\n')
-            f.write('*Material, name=Pearlite\n')
-            f.write('*Elastic\n')
-            f.write('210000, 0.3\n')
-            f.write('**')
+            f.write('*Include, Input=Pearlite.inp\n')
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[4] > 0:
             f.write('**\n')
-            f.write('*Material, name=Bainite\n')
-            f.write('*Elastic\n')
-            f.write('210000, 0.3\n')
-            f.write('**')
+            f.write('*Include, Input=Bainite.inp\n')
         f.close()
 
     def write_submodel_step_def(self) -> None:

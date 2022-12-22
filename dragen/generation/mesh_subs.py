@@ -143,13 +143,13 @@ class SubMesher(AbaqusMesher):
 
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[2] > 0:
             f.write('**\n')
-            f.write(f'*Include, Input={RveInfo.phase_ratio[2].key()}.inp\n')
+            f.write('*Include, Input=Martensite.inp\n')
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[3] > 0:
             f.write('**\n')
-            f.write(f'*Include, Input={RveInfo.phase_ratio[3].key()}.inp\n')
+            f.write('*Include, Input=Pearlite.inp\n')
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[4] > 0:
             f.write('**\n')
-            f.write(f'*Include, Input={RveInfo.phase_ratio[4].key()}.inp\n')
+            f.write('*Include, Input=Bainite.inp\n')
         f.close()
 
     def write_block_data(self) -> None:
