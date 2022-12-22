@@ -28,7 +28,6 @@ class Run(HelperFunctions):
             resolution: float,
             number_of_rves: int,
 
-
             # specimen orientation parameters
             slope_offset: float,
 
