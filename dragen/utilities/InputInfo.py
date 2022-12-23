@@ -98,8 +98,10 @@ class RveInfo:
     t_mu: float = 1.0
     b_sigma: float = 0.1
     decreasing_factor: float = 0.95  # check later
-    lower: float = 0.5
-    upper: float = 1.5
+    bt_min: float = 0.5
+    bt_max: float = 1.5
+    pv_min: float = 1.0
+    pv_max: float = 1000.0
     plt_name: str = None
     save = None
     plot = None
@@ -110,7 +112,7 @@ class RveInfo:
 
     orientation_relationship: str = None
     subs_file_flag: bool = None
-    subs_file: bool = None
+    # subs_file: bool = None
     subs_flag: bool = None
     sub_run = None
 

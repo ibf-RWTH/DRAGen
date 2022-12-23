@@ -84,7 +84,7 @@ class Worker(QObject):
                       phases=self.phases, number_of_bands=self.number_of_bands, upper_band_bound=self.upper_band_bound,
                       lower_band_bound=self.lower_band_bound, band_orientation=self.band_orientation,
                       band_filling=self.band_filling, subs_flag=self.subs_flag,
-                      subs_file_flag=self.subs_file_flag, subs_file=self.subs_file, equiv_d=self.equiv_d,
+                      subs_file_flag=self.subs_file_flag, block_file=self.subs_file, equiv_d=self.equiv_d,
                       p_sigma=self.p_sigma, t_mu=self.t_mu, b_sigma=self.b_sigma,
                       decreasing_factor=self.decreasing_facotr, lower=self.lower, upper=self.upper,
                       circularity=self.circularity, plt_name=self.plt_name, save=self.save, plot=self.plot,
