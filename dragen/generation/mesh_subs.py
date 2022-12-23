@@ -385,7 +385,7 @@ class SubMesher(AbaqusMesher):
                     phase3_idx += 1
                     f.write('** Section: Section - {}\n'.format(nBlock))
                     f.write(
-                        '*Solid Section, elset=Set-Block{}, material=Pearlite_{}\n'.format(nBlock, phase2_idx))
+                        '*Solid Section, elset=Set-Block{}, material=Pearlite_{}\n'.format(nBlock, phase3_idx))
                 else:
                     f.write('** Section: Section - {}\n'.format(nBlock))
                     f.write('*Solid Section, elset=Set-Block{}, material=Pearlite\n'.format(nBlock))
@@ -394,8 +394,7 @@ class SubMesher(AbaqusMesher):
                 if not RveInfo.phase2iso_flag:
                     phase4_idx += 1
                     f.write('** Section: Section - {}\n'.format(nBlock))
-                    f.write(
-                        '*Solid Section, elset=Set-Block{}, material=Bainite_{}\n'.format(nBlock, phase2_idx))
+                    f.write('*Solid Section, elset=Set-Block{}, material=Bainite_{}\n'.format(nBlock, phase4_idx))
                 else:
                     f.write('** Section: Section - {}\n'.format(nBlock))
                     f.write('*Solid Section, elset=Set-Block{}, material=Bainite\n'.format(nBlock))
