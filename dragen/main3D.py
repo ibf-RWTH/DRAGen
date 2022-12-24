@@ -27,6 +27,9 @@ from dragen.InputGenerator.C_WGAN_GP import WGANCGP
 import dragen.generation.spectral as spectral
 
 
+
+
+
 class DataTask3D(HelperFunctions):
 
     def __init__(self):
@@ -362,6 +365,7 @@ class DataTask3D(HelperFunctions):
             # Write out Volumes
             grains_df = super().get_final_disc_vol_3D(grains_df, periodic_rve)
             grains_df=grains_df.sort_values('GrainID')
+            grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_no_opt.csv', index=False)
             '''
             MDF OPTIMIZATION
             '''
@@ -475,6 +479,7 @@ class DataTask3D(HelperFunctions):
                     mesher_obj.run()
         else:
             print('Tessellation did not succeed')
+        np.save('periodic_rve', periodic_rve)
         return periodic_rve
 
     def post_processing(self, rve, total_df, ex_df):
