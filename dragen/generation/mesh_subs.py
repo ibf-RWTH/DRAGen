@@ -415,17 +415,22 @@ class SubMesher(AbaqusMesher):
                                         (grid_hull_df['z'] == z_max) | (grid_hull_df['z'] == z_min)]
 
         self.make_assembly()  # Don't change the order
-        self.pbc(GRID, grid_hull_df)  # of these four
-        self.write_substruct_material_def()  # functions here
+        #self.pbc(GRID, grid_hull_df)  # of these four
+        #self.write_substruct_material_def()  # functions here
         if RveInfo.gui_flag:
             RveInfo.progress_obj.emit(50)
+        if RveInfo.submodel_flag:
+            self.submodelSet(grid_hull_df)
         if RveInfo.pbc_flag:
-            self.write_pbc_step_def()  # it will lead to a faulty inputfile
+            self.pbc(GRID, grid_hull_df)
+        self.write_substruct_material_def()
         if RveInfo.submodel_flag:
             self.write_submodel_step_def()
-        else:
+        elif RveInfo.pbc_flag:
             print('pbcs were assumed')
             self.write_pbc_step_def()
+        #if RveInfo.pbc_flag:
+        #    self.write_pbc_step_def()  # it will lead to a faulty inputfile
         if RveInfo.gui_flag:
             RveInfo.progress_obj.emit(75)
         self.write_block_data()
