@@ -131,7 +131,7 @@ class Run():
 
         assign_packet_variants(_rve_data)
         CrystallInfo.old_pid = subsid2num(_rve_data=_rve_data, subs_key='packet_id')
-        merge_all_tiny_packets(rve=_rve_data, min_num_points=20) # min_num_points needs changing
+        merge_tiny_packets(rve=_rve_data, min_num_points=20) # min_num_points needs changing
         subsid2num(_rve_data=_rve_data, subs_key='packet_id')
 
         print("start blocks generation")
@@ -143,7 +143,7 @@ class Run():
 
         subsid2num(_rve_data=_rve_data, subs_key='block_id')
         assign_block_variants(_rve_data=_rve_data)
-        merge_all_tiny_blocks(rve=_rve_data, min_num_points=10) # min_num_points needs changing
+        merge_tiny_blocks(rve=_rve_data, min_num_points=10) # min_num_points needs changing
         subsid2num(_rve_data=_rve_data, subs_key='block_id')
 
         print("compute block orientation")
