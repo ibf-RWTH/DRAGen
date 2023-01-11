@@ -126,7 +126,7 @@ def step(grains1,angle1,pairs1,input_probs,values):
 
     return grains_opt,angle_opt,error1,opt_mdf,x,y
 
-def mdf_opt(grains1, angle1,pairs1,error,input_probs,values,store_path):
+def mdf_opt(grains1, angle1,pairs1,error,input_probs,values):
     i = 0
     swaps=np.empty((0,2))
     while i < 3000:
@@ -145,15 +145,7 @@ def mdf_opt(grains1, angle1,pairs1,error,input_probs,values,store_path):
     else:
         if error2>error:
             grains1, angle1, error, opt_mdf, x, y = grains_opt, angle_opt, error2, opt_mdf, x, y
-    angle2, axis2 = calc_miso(grains1, pairs1, degrees=True)
-    opt_probs1, opt_mdf1 = mdf_score_samples(angle2, values)
 
-    plt.plot(values, opt_probs1)
-    plt.title("Experimental's & RVE's (optimized) Angle of Misorientation Distributions")
-    plt.xlabel("Misorientation Angle (degrees)")
-    plt.ylabel("Probability")
-    plt.savefig('{}/Figs/test_inside_func.png'.format(store_path))
-    plt.close()
     return grains1, angle1
 
 def mdf_plotting(values,in_probs,no_opt_probs,out_probs,storepath):

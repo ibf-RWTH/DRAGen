@@ -366,6 +366,7 @@ class DataTask3D(HelperFunctions):
             grains_df = super().get_final_disc_vol_3D(grains_df, periodic_rve)
             grains_df=grains_df.sort_values('GrainID')
             grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output_no_opt.csv', index=False)
+
             '''
             MDF OPTIMIZATION
             '''
@@ -387,7 +388,7 @@ class DataTask3D(HelperFunctions):
             error = f.calc_error(input_probs, no_opt_probs, values)
             print("Initial Error: " + str(error))
 
-            orientations_opt, angle_opt = f.mdf_opt(orientations_RVE, angle1, pairs1, error, input_probs, values,store_path=RveInfo.store_path)
+            orientations_opt, angle_opt = f.mdf_opt(orientations_RVE, angle1, pairs1, error, input_probs, values)
 
 
             opt_probs, opt_mdf = f.mdf_score_samples(angle_opt, values)
