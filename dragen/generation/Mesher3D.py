@@ -204,6 +204,8 @@ class AbaqusMesher(MeshingHelper):
         OutPutFile.write('**** X-DIR \n')
         for i in range(len(LeftSet)):
             # print item
+            print("left set is", LeftSet)
+            print("right set is", RightSet)
             OutPutFile.write('*Equation \n')
             OutPutFile.write('4 \n')
             OutPutFile.write('Eqn-Set-' + str(RightSet[i] + 1) + ',1, 1 \n')
