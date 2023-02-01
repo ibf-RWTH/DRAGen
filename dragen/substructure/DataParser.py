@@ -76,6 +76,7 @@ class DataParser:
 
 def subs_sampler(subs_distribution: SubsDistribution, y: float, interval: list) -> list:  # check later
     """
+    Metropolis-Hastings algorithm to implement MCMC(Markov Chain Monte Carlo) Method
     :param subs_distribution: distribution of packet volume or block thickness
     :param y: grain volume or packet thickness to be divided
     :param interval: the minimum and maximum during sampling
