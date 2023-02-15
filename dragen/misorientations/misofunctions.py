@@ -148,7 +148,7 @@ def calc_miso(grains,pairs,degrees):
     '''
     start_time = time.time()
     #grainid = np.array([data['GrainID']]).reshape((-1, 1))
-    grainid=grains[:,3]
+    grainid=grains[:,7]
 
     angle = np.empty((0, 1))
     axis = np.empty((0, 3))
@@ -158,8 +158,8 @@ def calc_miso(grains,pairs,degrees):
         y = int(pairs[i, 1])
         id1 = int(np.where(grainid == x)[0])
         id2 = int(np.where(grainid == y)[0])
-        o1 = np.array([grains[id1, 0], grains[id1, 1], grains[id1, 2]])
-        o2 = np.array([grains[id2, 0], grains[id2, 1], grains[id2, 2]])
+        o1 = np.array([grains[id1, 4], grains[id1, 5], grains[id1, 6]])
+        o2 = np.array([grains[id2, 4], grains[id2, 5], grains[id2, 6]])
 
         if degrees:
             a = damask.Orientation.from_Euler_angles(phi=o1, degrees=True, family='cubic')
