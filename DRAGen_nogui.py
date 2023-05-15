@@ -1,6 +1,6 @@
 from dragen.run import Run
-dimension = 2
-box_size = 100
+dimension = 3
+box_size = 15
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
 resolution = 2
@@ -30,8 +30,8 @@ slope_offset = 0
 #file1 = r'F:/OCAS/NO30_RVE_data/Data_processed.csv'
 #file2 = r"D:\2nd mini-thesis\dragen\ExampleInput\example_pag_inp.csv"
 #DP800
-file1 = r'E:\Sciebo\IEHK\Publications\CMAME\DRAGen\matdata\DP800/TrainedData_Ferrite.pkl'
-file2 = r'E:\Sciebo\IEHK\Publications\CMAME\DRAGen\matdata\DP800/TrainedData_Martensite.pkl'
+file1 = r'./ExampleInput/TrainedData_Ferrite.pkl'
+file2 = r'./ExampleInput/TrainedData_Martensite.pkl'
 
 #Bainite
 #PAGs

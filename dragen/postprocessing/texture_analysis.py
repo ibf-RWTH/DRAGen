@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.ticker as mticker
 from sklearn.neighbors import KernelDensity
+import copy
 import pandas as pd
 import numpy as np
 import warnings
@@ -82,13 +83,13 @@ class Texture:
 
             ax.set_xlim(phi1_min, phi1_max)
             ax.set_ylim(PHI_min, PHI_max)
-
-            cmap = plt.get_cmap("jet").copy()
-            cmap.set_under('white', 0.5)
+            
+            local_cmap = copy.copy(plt.get_cmap("jet"))
+            local_cmap.set_under('white', 0.5)
 
             norm = colors.LogNorm(vmin=1e-7, vmax=10e-6)
             # density plot
-            im = ax.imshow(density.transpose(), cmap=cmap, norm=norm, aspect='auto',
+            im = ax.imshow(density.transpose(), cmap=local_cmap, norm=norm, aspect='auto',
                            extent=[phi1_min, phi1_max, PHI_min, PHI_max]
                            )
 
