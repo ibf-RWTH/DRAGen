@@ -36,9 +36,13 @@ make sure the DRAGen env is activated it should look somewhat like this:<br>
 ```
 (DRAGen)....$ 
 ```
-install requirements:<br>
+install requirements without cuda:<br> 
 ```
-(DRAGen)....$ pip install -r requirements.txt
+(DRAGen)....$ pip install -r requirements.txt 
+```
+install requirements if cuda is available:<br> 
+```
+(DRAGen)....$ pip install -r requirements_cuda.txt 
 ```
 run first generation with:<br>
 ```
