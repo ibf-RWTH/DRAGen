@@ -8,7 +8,8 @@ File for running a sufficient CWGAN-GP Training
 import os
 import datetime
 import pandas as pd
-from dragen.InputGenerator import C_WGAN_GP
+from InputGenerator import C_WGAN_GP
+from InputGenerator.linking import Reconstructor
 
 """
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -18,6 +19,16 @@ Prerequisties:
     Data (from EBSD for example)
     Working computer
 There is no need for a gpu, although it is highly recommended.
+
+Versions used: (as of 19.10.2023)
+- Python/3.10.4
+- torch==2.0.1
+- geomloss==0.2.6
+- matplotlib==3.4.2
+- pip3 install --user geomloss'[full]'  IMPORTANT 
+https://www.kernel-operations.io/geomloss/api/install.html
+https://www.kernel-operations.io/keops/index.html
+
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 """
 
@@ -28,9 +39,9 @@ There is no need for a gpu, although it is highly recommended.
 """
 
 # All files are from the dragen-Example Input
-SOURCE = r'C:\Venvs\dragen\ExampleInput'
+SOURCE = os.getcwd() + r'/All_Inputs'
 
-# Data: - all files schould have same number + sorting of columns
+"""# Data: - all files schould have same number + sorting of columns
 df1 = pd.read_csv(SOURCE + '/Input_TDxBN_AR.csv')
 df2 = pd.read_csv(SOURCE + '/Input_RDxBN_AR.csv')
 df3 = pd.read_csv(SOURCE + '/Input_RDxTD_AR.csv')
@@ -41,18 +52,25 @@ df5 = pd.read_csv(SOURCE + '/Einschlüsse_RDxBN_AR.csv')
 df6 = pd.read_csv(SOURCE + '/Einschlüsse_RDxTD_AR.csv')
 
 # Martensite
-df7 = pd.read_csv(SOURCE + '/Input_Martensit_BNxRD.csv')
+df7 = pd.read_csv(SOURCE + '/Input_Martensite_BNxRD_old.csv')
+df8 = pd.read_csv(SOURCE + '/Input_Martensite_RDxBN_raw.csv')
+df9 = pd.read_csv(SOURCE + '/Input_Martensite_RDxBN_ws.csv')"""
+
+# Data Manuel
+df1 = pd.read_csv(SOURCE + '/1_4310_TDxND_GrainData.csv')
+df2 = pd.read_csv(SOURCE + '/1_4310_RDxND_GrainData.csv')
+df3 = pd.read_csv(SOURCE + '/1_4310_RDxTD_GrainData.csv')
 
 # Set up CWGAN-GP with all data
-store_path = 'C:/Venvs/dragen/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(0)
+store_path = os.getcwd()
 if not os.path.isdir(store_path):
     os.makedirs(store_path)
 
 # Required parameters
-df_list = [df1, df2, df3, df4, df5, df6, df7]
+df_list = [df1, df2, df3]
 store_path = store_path
-num_features = 3
-gen_iters = 100
+num_features = 6
+gen_iters = 300000
 
 # Optional parameters - use only if you know what you are doing
 batch_size = 256                # Batch size
@@ -73,11 +91,11 @@ beta2 = 0.99                    # beta2 for Adam/Nadam/Hyperbolic
 n_eval = 1000                   # evaluation interval (affects evaluation time)
 centered = True                 # whether to compute the centered RMSProp
 normalize = False               # whether to use batchNorm (false, possible bugs here)
-backend = 'tensorized'          # geomloss backend (Other than tensorized will need complete pykeops enviroment)
+backend = 'online'          # geomloss backend (Other than tensorized will need complete pykeops enviroment)
 
-# Initialize the GAN-Object
+# Initialize the GAN-Object - Dont forget to pass the parameters :D
 GAN = C_WGAN_GP.WGANCGP(df_list=df_list, storepath=store_path, num_features=num_features,
-                        gen_iters=gen_iters)
+                        gen_iters=gen_iters, backend=backend)
 
 # Train - will create a folder at "store path" were the results are stored
 GAN.train(plot=False)
@@ -85,7 +103,23 @@ GAN.train(plot=False)
 # evaluate using unbiased sinkhorn distance - will create "TrainedData.pkl"-files for further usage (1 file - 1 label)
 GAN.evaluate()
 
+# Sample Data from best epoch for Reconstruction-Algorithm
+TDxBN = GAN.sample_batch(label=0, size=15000)
+RDxBN = GAN.sample_batch(label=1, size=15000)
+RDxTD = GAN.sample_batch(label=2, size=15000)
 
+# Run the Reconstruction
+Bot = Reconstructor(TDxBN, RDxBN, RDxTD, drop=True)
+Bot.run(n_points=8000)  # Could take a while with 500 points...
 
+# Plot the results as Bivariate KDE-Plots
+Bot.plot_comparison(close=True)
+print(Bot.result_df)
+Bot.result_df.to_csv('Result.csv')
+
+# Generate RVE-Input for given Boxsize
+Bot.get_rve_input(bs=10)
+print(Bot.rve_inp)   # This is the RVE-Input data
+Bot.rve_inp.to_csv('RVE_inp.csv')
 
 
