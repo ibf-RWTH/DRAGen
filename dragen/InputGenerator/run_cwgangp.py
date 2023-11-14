@@ -62,7 +62,7 @@ df2 = pd.read_csv(SOURCE + '/1_4310_RDxND_GrainData.csv')
 df3 = pd.read_csv(SOURCE + '/1_4310_RDxTD_GrainData.csv')
 
 # Set up CWGAN-GP with all data
-store_path = os.getcwd()
+store_path = f'{os.getcwd()}/../OutputData/WGAN/'
 if not os.path.isdir(store_path):
     os.makedirs(store_path)
 
@@ -115,11 +115,11 @@ Bot.run(n_points=8000)  # Could take a while with 500 points...
 # Plot the results as Bivariate KDE-Plots
 Bot.plot_comparison(close=True)
 print(Bot.result_df)
-Bot.result_df.to_csv('Result.csv')
+Bot.result_df.to_csv(store_path+'/Result.csv')
 
 # Generate RVE-Input for given Boxsize
 Bot.get_rve_input(bs=10)
 print(Bot.rve_inp)   # This is the RVE-Input data
-Bot.rve_inp.to_csv('RVE_inp.csv')
+Bot.rve_inp.to_csv(store_path+'/RVE_inp.csv')
 
 
