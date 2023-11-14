@@ -39,7 +39,7 @@ https://www.kernel-operations.io/keops/index.html
 """
 
 # All files are from the dragen-Example Input
-SOURCE = os.getcwd() + r'/All_Inputs'
+SOURCE = os.getcwd() + r'../ExampleInput/All_Inputs'
 
 """# Data: - all files schould have same number + sorting of columns
 df1 = pd.read_csv(SOURCE + '/Input_TDxBN_AR.csv')
@@ -56,7 +56,7 @@ df7 = pd.read_csv(SOURCE + '/Input_Martensite_BNxRD_old.csv')
 df8 = pd.read_csv(SOURCE + '/Input_Martensite_RDxBN_raw.csv')
 df9 = pd.read_csv(SOURCE + '/Input_Martensite_RDxBN_ws.csv')"""
 
-# Data Manuel
+# Data Stainless_Steel
 df1 = pd.read_csv(SOURCE + '/1_4310_TDxND_GrainData.csv')
 df2 = pd.read_csv(SOURCE + '/1_4310_RDxND_GrainData.csv')
 df3 = pd.read_csv(SOURCE + '/1_4310_RDxTD_GrainData.csv')
