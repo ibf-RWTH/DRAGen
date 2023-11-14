@@ -1,0 +1,7 @@
+#Python 3.10.4 is recommended
+torch==2.0.1
+geomloss['full']==0.2.6
+matplotlib==3.4.2
+pandas
+tqdm
+seaborn
