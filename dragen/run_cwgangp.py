@@ -8,8 +8,7 @@ File for running a sufficient CWGAN-GP Training
 import os
 import datetime
 import pandas as pd
-from InputGenerator import C_WGAN_GP
-from InputGenerator.linking import Reconstructor
+from dragen.InputGenerator import C_WGAN_GP
 
 """
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -19,16 +18,6 @@ Prerequisties:
     Data (from EBSD for example)
     Working computer
 There is no need for a gpu, although it is highly recommended.
-
-Versions used: (as of 19.10.2023)
-- Python/3.10.4
-- torch==2.0.1
-- geomloss==0.2.6
-- matplotlib==3.4.2
-- pip3 install --user geomloss'[full]'  IMPORTANT 
-https://www.kernel-operations.io/geomloss/api/install.html
-https://www.kernel-operations.io/keops/index.html
-
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 """
 
@@ -41,7 +30,7 @@ https://www.kernel-operations.io/keops/index.html
 # All files are from the dragen-Example Input
 SOURCE = os.getcwd() + r'../ExampleInput/All_Inputs'
 
-"""# Data: - all files schould have same number + sorting of columns
+# Data: - all files schould have same number + sorting of columns
 df1 = pd.read_csv(SOURCE + '/Input_TDxBN_AR.csv')
 df2 = pd.read_csv(SOURCE + '/Input_RDxBN_AR.csv')
 df3 = pd.read_csv(SOURCE + '/Input_RDxTD_AR.csv')
@@ -63,14 +52,18 @@ df3 = pd.read_csv(SOURCE + '/1_4310_RDxTD_GrainData.csv')
 
 # Set up CWGAN-GP with all data
 store_path = f'{os.getcwd()}/../OutputData/WGAN/'
+df7 = pd.read_csv(SOURCE + '/Input_Martensit_BNxRD.csv')
+
+# Set up CWGAN-GP with all data
+store_path = 'C:/Venvs/dragen/OutputData/' + str(datetime.datetime.now())[:10] + '_' + str(0)
 if not os.path.isdir(store_path):
     os.makedirs(store_path)
 
 # Required parameters
-df_list = [df1, df2, df3]
+df_list = [df1, df2, df3, df4, df5, df6, df7]
 store_path = store_path
-num_features = 6
-gen_iters = 300000
+num_features = 3
+gen_iters = 100
 
 # Optional parameters - use only if you know what you are doing
 batch_size = 256                # Batch size
@@ -91,11 +84,11 @@ beta2 = 0.99                    # beta2 for Adam/Nadam/Hyperbolic
 n_eval = 1000                   # evaluation interval (affects evaluation time)
 centered = True                 # whether to compute the centered RMSProp
 normalize = False               # whether to use batchNorm (false, possible bugs here)
-backend = 'online'          # geomloss backend (Other than tensorized will need complete pykeops enviroment)
+backend = 'tensorized'          # geomloss backend (Other than tensorized will need complete pykeops enviroment)
 
-# Initialize the GAN-Object - Dont forget to pass the parameters :D
+# Initialize the GAN-Object
 GAN = C_WGAN_GP.WGANCGP(df_list=df_list, storepath=store_path, num_features=num_features,
-                        gen_iters=gen_iters, backend=backend)
+                        gen_iters=gen_iters)
 
 # Train - will create a folder at "store path" were the results are stored
 GAN.train(plot=False)

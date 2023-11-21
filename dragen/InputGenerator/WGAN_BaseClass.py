@@ -16,7 +16,7 @@ import pickle
 import datetime
 from geomloss import SamplesLoss
 
-from InputGenerator import gan_utils
+from dragen.InputGenerator import gan_utils
 
 
 class WGAN:

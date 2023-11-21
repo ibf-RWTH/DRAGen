@@ -27,7 +27,7 @@ import datetime
 from qhoptim.pyt import QHAdam
 
 # Own Stuff
-from InputGenerator import WGAN_BaseClass, gan_utils
+from dragen.InputGenerator import WGAN_BaseClass, gan_utils
 
 
 # Inherit from the original WGAN
@@ -54,7 +54,7 @@ class WGANCGP(WGAN_BaseClass.WGAN):
         if self.backend != 'tensorized':
             print('WARNING: You`ve chosen a backend which is based on pykeops. Make sure all needed dependencies are'
                   'installed to avoid errors')
-        self.loss = SamplesLoss(loss='sinkhorn', p=2, blur=0.05, reach=None, scaling=0.5, backend=self.backend, verbose=True)
+        self.loss = SamplesLoss(loss='sinkhorn', p=2, blur=0.05, reach=None, scaling=0.5, backend=self.backend)
         # Reassign some properties
         torch.backends.cudnn.deterministic = True
         random.seed(0)
