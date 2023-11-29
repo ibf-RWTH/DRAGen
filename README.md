@@ -20,34 +20,71 @@ _Note: For developing it is highly recommended to use Python versions 3.6 to 3.8
 
 
 ## Installation
-clone this repository into desired destination:<br>
+
+As the first step, conda needs to be installed.
+To be sure conda is installed correctly on your system [look up here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)<br>
+
+Git must be installed on the system. Check with:
+```
+$ git --version
+```
+If it has not been installed use this:
+```
+$ conda install -c anaconda git
+```
+Open the user path and create the directory where the DRAGen repo will be cloned.
+Should be like this:
+```
+(base) C:\Users> cd \Users\{username}
+(base) C:\Users\username> mkdir GitRepos
+(base) C:\Users\username> cd GitRepos
+```
+To clone this repository into the desired destination, use:<br>
 ```
 $ git clone https://github.com/IMS-RWTH/DRAGen.git
+```
+To be able to use DRAGen, the working directory must be set to the location where the repo was downloaded to in the previous step file which is downloaded at the previous step.
+Use the commands to go to the exact file by following the path.
+```
 $ cd DRAGen
 ```
-make sure conda is installed correctly on your system [look up here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)<br>
+To see the folders on the current point:
+```
+$ dir
+```
 Create a virtual environment as follows:<br>
 ```
 $ conda create --name DRAGen python=3.8
 $ conda activate DRAGen
 ```
 (if an error occurs check your conda installation)<br>
-make sure the DRAGen env is activated it should look somewhat like this:<br>
+To see the list of the environments on conda:
+```
+$ conda info --envs
+```
+Be sure the DRAGen environment is activated it should look somewhat like this:<br>
 ```
 (DRAGen)....$ 
 ```
-install requirements without cuda:<br> 
+Install one of two required module packages depending on cuda availability on the device:
+
+To install requirements without cuda:<br> 
 ```
 (DRAGen)....$ pip install -r requirements.txt 
 ```
-install requirements if cuda is available:<br> 
+To install requirements if cuda is available:<br> 
 ```
 (DRAGen)....$ pip install -r requirements_cuda.txt 
 ```
-run first generation with:<br>
+Check if every step is utilized correctly by running first generation with:<br>
 ```
 (DRAGen)....$ python DRAGen_nogui.py
 ```
+Run DRAGen:<br>
+```
+(DRAGen)....$ python DRAGen.py
+```
+
 
 
 <details>
