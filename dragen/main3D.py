@@ -369,9 +369,9 @@ class DataTask3D(HelperFunctions):
             grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output.csv', index=False)
 
             '''
-            MDF OPTIMIZATION
+            Angle of Misorientation Distribution Optimization
             '''
-            '''
+
             pairs = np.array(pd.read_csv('pairID.csv'))
             pairs1=pairs3d(periodic_rve)
             pd.DataFrame(pairs1).to_csv(RveInfo.store_path + '/Generation_Data/pairs_data_output.csv', index=False)
@@ -411,7 +411,7 @@ class DataTask3D(HelperFunctions):
                                  'phaseID', 'final_discrete_volume', 'final_conti_volume']
 
             grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output.csv', index=False)
-            '''
+
             print('grain_df keys:')
             print('########################')
             print('Meshing starts')
