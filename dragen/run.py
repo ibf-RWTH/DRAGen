@@ -218,7 +218,7 @@ class Run(HelperFunctions):
             for i in range(RveInfo.number_of_rves):
                 self.initializations(i)
                 total_df, ex_df = obj3D.grain_sampling()
-                rve = obj3D.rve_generation(total_df)
+                rve = obj3D.rve_generation(total_df,ex_df)
                 obj3D.post_processing(rve, total_df, ex_df)
 
 

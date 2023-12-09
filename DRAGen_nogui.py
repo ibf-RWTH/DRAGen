@@ -1,9 +1,9 @@
 from dragen.run import Run
 dimension = 3
-box_size = 15
+box_size = 25
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
-resolution = 2
+resolution = 1
 number_of_rves = 1
 smoothing_flag = False
 # Banding Params
@@ -30,8 +30,8 @@ slope_offset = 0
 #file1 = r'F:/OCAS/NO30_RVE_data/Data_processed.csv'
 #file2 = r"D:\2nd mini-thesis\dragen\ExampleInput\example_pag_inp.csv"
 #DP800
-file1 = r'./ExampleInput/TrainedData_Ferrite.pkl'
-file2 = r'./ExampleInput/TrainedData_Martensite.pkl'
+file1 = r'data.csv'
+#file2 = r'./ExampleInput/TrainedData_Martensite.pkl'
 
 #Bainite
 #PAGs
@@ -60,9 +60,9 @@ x_fem_flag = True
 element_type = 'HEX8'
 anim_flag = False
 
-files = {1: file1, 2: file2, 3: None, 4: None, 5: None, 6: None}  # , 2: file2, 6: file6}
-phase_ratio = {1: 0.8, 2: 0.2, 3: 0, 4: 0, 5: 0, 6: 0}
-phases = ['Ferrite', 'Martensite'] #, 'Bands']
+files = {1: file1, 2: None, 3: None, 4: None, 5: None, 6: None}  # , 2: file2, 6: file6}
+phase_ratio = {1: 1, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0}
+phases = ['Ferrite'] #, 'Bands']
 
 upper = None
 lower = None

@@ -19,7 +19,7 @@ from dragen.postprocessing.texture_analysis import Texture
 from dragen.utilities.InputInfo import RveInfo
 from dragen.substructure.run import Run as substrucRun
 from dragen.misorientations.misofunctions import pairs3d
-import dragen.misorientations as f
+import dragen.misorientations.optimization as f
 
 import dragen.generation.spectral as spectral
 
@@ -109,7 +109,7 @@ class DataTask3D(HelperFunctions):
 
         return total_df, all_phases_input_df
 
-    def rve_generation(self, total_df):
+    def rve_generation(self, total_df,ex_df):
 
         """
         Separate the different datas
@@ -307,6 +307,8 @@ class DataTask3D(HelperFunctions):
             print('Tesselator Failed!')
 
 
+            
+
         """
         GENERATE INPUT DATA FOR SIMULATIONS HERE
         """
@@ -361,7 +363,7 @@ class DataTask3D(HelperFunctions):
             pairs = np.array(pd.read_csv('pairID.csv'))
             pairs1 = pairs3d(periodic_rve)
             pd.DataFrame(pairs1).to_csv(RveInfo.store_path + '/Generation_Data/pairs_data_output.csv', index=False)
-            grains = np.array(input)
+            grains = np.array(ex_df)
             grains1 = np.array(grains_df)
             rodvecs = f.calc_miso1(grains, pairs, degrees=True)
             rodvecs1 = f.calc_miso1(grains1, pairs1, degrees=True)
@@ -381,7 +383,7 @@ class DataTask3D(HelperFunctions):
                 grains11 = np.copy(grains1)
                 rodvecs11 = np.copy(rodvecs1)
                 error1 = np.copy(error)
-                while i < 250000:  # no. of steps
+                while i < 16:  # no. of steps
                     grains11, rodvecs11, error1, i = f.multi_step(i, grains11, rodvecs11, pairs1, mdf, error1)
                     for o in range(os.cpu_count()):
                         error_dia = np.append(error_dia, [[error1]], 0)

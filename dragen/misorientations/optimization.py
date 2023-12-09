@@ -6,7 +6,8 @@ import os
 import random as r
 import scipy.stats as stats
 import damask
-import matplotlib.pyplot as plt
+
+
 
 def calc_miso1(grains,pairs,degrees):
     '''
@@ -302,37 +303,3 @@ def multi_step(i, grains, rodvecs, pairs, mdf, error):
     print("New mutistep:  %s seconds " % (time.time() - start_time))
 
     return grains1, rodvecs1, error1, i
-
-def mdf_plotting(values,in_probs,no_opt_probs,out_probs,storepath):
-    plt.plot(values, in_probs)
-    figname='experimental_angle_distribution.png'
-    plt.title("Experimental's Angle of Misorientation Distribution")
-    plt.xlabel("Misorientation Angle (degrees)")
-    plt.ylabel("Probability")
-    plt.savefig(storepath+figname)
-    plt.close()
-
-    plt.plot(values, no_opt_probs)
-    figname = 'RVE_no_mdf_optimized_angle_distribution.png'
-    plt.title("RVE's Angle of Misorientation Distribution (non-optimized)")
-    plt.xlabel("Misorientation Angle (degrees)")
-    plt.ylabel("Probability")
-    plt.savefig(storepath + figname)
-    plt.close()
-
-    plt.plot(values, out_probs)
-    figname = 'RVE_mdf_optimized_angle_distribution.png'
-    plt.title("RVE's Angle of Misorientation Distribution (optimized)")
-    plt.xlabel("Misorientation Angle (degrees)")
-    plt.ylabel("Probability")
-    plt.savefig(storepath + figname)
-    plt.close()
-
-    plt.plot(values, in_probs)
-    plt.plot(values, out_probs)
-    figname = 'mixed_experimental_RVE_mdf-opt_angle_distribution.png'
-    plt.title("Experimental's & RVE's (optimized) Angle of Misorientation Distributions")
-    plt.xlabel("Misorientation Angle (degrees)")
-    plt.ylabel("Probability")
-    plt.savefig(storepath + figname)
-    plt.close()
