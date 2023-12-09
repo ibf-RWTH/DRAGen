@@ -390,6 +390,12 @@ class DataTask3D(HelperFunctions):
                 # np.save(f'error_{p}.npy', error_dia)
                 # np.save(f'rodvecs_{p}.npy', rodvecs11)
 
+                grains_df = pd.DataFrame(grains11)
+                grains_df.columns = ['a', 'b', 'c', 'alpha', 'phi1', 'PHI', 'phi2', 'GrainID', 'volume', 'old_grid',
+                                     'phaseID', 'final_discrete_volume', 'final_conti_volume']
+
+                grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output.csv', index=False)
+
             print(time.time() - start_time)
 
             # Write out Volumes
