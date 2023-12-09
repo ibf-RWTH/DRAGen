@@ -1,6 +1,8 @@
 import sys
 import math
 import numpy as np
+import os
+import time
 
 import pandas as pd
 import seaborn as sns
@@ -16,6 +18,8 @@ from dragen.postprocessing.Shape_analysis import shape
 from dragen.postprocessing.texture_analysis import Texture
 from dragen.utilities.InputInfo import RveInfo
 from dragen.substructure.run import Run as substrucRun
+from dragen.misorientations.misofunctions import pairs3d
+import dragen.misorientations as f
 
 import dragen.generation.spectral as spectral
 
@@ -302,6 +306,7 @@ class DataTask3D(HelperFunctions):
         elif not rve_status:
             print('Tesselator Failed!')
 
+
         """
         GENERATE INPUT DATA FOR SIMULATIONS HERE
         """
@@ -347,6 +352,46 @@ class DataTask3D(HelperFunctions):
             # grains_df.to_csv('grains_df.csv', index=False)
             # periodic_rve_df.to_csv('periodic_rve_df.csv', index=False)
             rve_shape = periodic_rve.shape
+            grains_df = grains_df.sort_values('GrainID')
+            grains_df.to_csv(RveInfo.store_path + '/Generation_Data/grain_data_output.csv', index=False)
+
+            """
+            MISORIENTATION DISTRIBUTION FUNCTION OPTIMIZATION
+            """
+            pairs = np.array(pd.read_csv('pairID.csv'))
+            pairs1 = pairs3d(periodic_rve)
+            pd.DataFrame(pairs1).to_csv(RveInfo.store_path + '/Generation_Data/pairs_data_output.csv', index=False)
+            grains = np.array(input)
+            grains1 = np.array(grains_df)
+            rodvecs = f.calc_miso1(grains, pairs, degrees=True)
+            rodvecs1 = f.calc_miso1(grains1, pairs1, degrees=True)
+            print("rodvecs")
+            mdf = f.calc_mdf(rodvecs)
+            mdf1 = f.calc_mdf(rodvecs1)
+            print("mdf")
+            error = f.calc_error(mdf, mdf1)
+            print('Error: ' + str(error))
+
+            # i=0
+            # grains1, rodvecs1, error1, i = multi_step(i, grains1, rodvecs1, pairs1, mdf, error1)
+            start_time = time.time()
+            for p in range(1):  # running more than one simulations
+                i = 0
+                error_dia = np.empty((0, 1))
+                grains11 = np.copy(grains1)
+                rodvecs11 = np.copy(rodvecs1)
+                error1 = np.copy(error)
+                while i < 250000:  # no. of steps
+                    grains11, rodvecs11, error1, i = f.multi_step(i, grains11, rodvecs11, pairs1, mdf, error1)
+                    for o in range(os.cpu_count()):
+                        error_dia = np.append(error_dia, [[error1]], 0)
+                    # print("ok")
+                # np.save(f'grains_multi_{p}.npy', grains11)
+                # np.save(f'error_{p}.npy', error_dia)
+                # np.save(f'rodvecs_{p}.npy', rodvecs11)
+
+            print(time.time() - start_time)
+
             # Write out Volumes
             grains_df = super().get_final_disc_vol_3D(grains_df, periodic_rve)
             print('grain_df keys:')

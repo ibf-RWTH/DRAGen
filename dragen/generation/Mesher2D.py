@@ -193,7 +193,7 @@ class Mesher_2D(HelperFunctions):
         the grains they are connected to and the face labels
         are stored in a list"""
 
-        sorted_tuples = [(*zip(line_df.p1, line_df.p2))]
+        sorted_tuples = [(zip(line_df.p1, line_df.p2))]
         sorted_tuples = [tuple(sorted(line)) for line in sorted_tuples]
         line_df['sorted_lines'] = sorted_tuples
 
