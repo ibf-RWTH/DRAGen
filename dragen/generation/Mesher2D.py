@@ -119,7 +119,7 @@ class Mesher_2D(HelperFunctions):
 
                 current_lines = lines.loc[lines['line_labels'] == label]
 
-                current_lines = [*zip(current_lines.p1, current_lines.p2)]
+                current_lines = [list(zip(current_lines.p1, current_lines.p2))]
                 current_lines = np.asarray([list(item) for item in current_lines])
 
                 current_point_set = set(current_lines.flatten())
@@ -193,7 +193,7 @@ class Mesher_2D(HelperFunctions):
         the grains they are connected to and the face labels
         are stored in a list"""
 
-        sorted_tuples = [(*zip(line_df.p1, line_df.p2))]
+        sorted_tuples = [list(zip(line_df.p1, line_df.p2))]
         sorted_tuples = [tuple(sorted(line)) for line in sorted_tuples]
         line_df['sorted_lines'] = sorted_tuples
 
