@@ -4,16 +4,38 @@
 <!--## Overview-->
 <!--![logo](docs/GUI.PNG)-->
 
-This repository includes the official implementation of the paper [A Novel Approach to Discrete Representative Volume Element Automation and Generation-DRAGen](https://www.mdpi.com/1996-1944/13/8/1887). 
-DRAGen is an approach for generating Representative Volume Elements (RVEs) based on a Random Sequential Addition (RSA)-Algorithm for discrete volumes and the tessellation using a discrete tessellation function. The input data are gathered from the analysis of electron backscatter diffraction (EBSD) pictures via MATLAB toolbox MTEX and introduced to the model. Subsequently, the generator follows the below mentioned steps:
+ [**Installation**](#Installation)
+| [**Related Projects**](#Related-Projects)
+| [**Tutorial**](Tutorial)
+
+
+This repository presents an enhanced version of the Discrete Representative Volume Element (RVE) Automation and Generation Framework, known as DRAGen. Originally devised as an approach for generating Representative Volume Elements based on a Random Sequential Addition (RSA)-Algorithm and discrete tessellation, DRAGen has undergone significant improvements to broaden its capabilities. DRAGen collects and processes data from analysis of electron backscatter diffraction (EBSD) images via the [MATLAB toolbox MTEX](https://mtex-toolbox.github.io/)  or [OIM](https://www.edax.com/products/ebsd/oim-analysis) and presents it as a model. Subsequently, the generator follows the below mentioned steps:
 
 * Randomly generating ellipsoids in volume (RSA)
 * Filling empty spaces between ellipsoids (Discrete Tessellation)
 * Validation of the newly created digital microstructure with input data
 
-The results show that the generator can successfully reconstruct realistic microstructures with elongated grains and martensite bands from given input data sets.
+The updated framework incorporates a generator for RVEs with several advanced features, drawn from real microstructures. DRAGen now possesses the ability to read input data from trained neural networks and .csv files, offering greater flexibility in microstructure generation. Notably, the generator has been enriched to reconstruct microstructures with intricate features such as;
 
-![logo](docs/GUI_Banding.PNG)
+* Pores
+* Inclusions 
+* Martensite bands 
+* Hierarchical substructures
+* Crystallographic textures.
+
+In addition to these enhancements, DRAGen has been extended to support different solvers. DRAGen is capable of creating models compatible with three widely used multiphysics frameworks: [DAMASK](https://damask.mpie.de/index.html), [Abaqus](https://www.3ds.com/products-services/simulia/products/abaqus/), and [MOOSE](https://mooseframework.inl.gov/).
+
+Its versatility makes it a valuable tool for scientists in the Integrated Computational Materials Engineering (ICME) community. The modular architecture of the project facilitates easy expansion with additional features, ensuring that DRAGen delivers a diverse range of functions and outputs. This diversity offers a comprehensive spectrum of microstructures, thereby contributing to the advancement of microstructure studies and the development of innovative microstructure designs.
+
+For more:
+
+[A Novel Approach to Discrete Representative Volume Element Automation and Generation-DRAGen](https://www.mdpi.com/1996-1944/13/8/1887)
+
+[DRAGen – A deep learning supported RVE generator framework for complex microstructure models](https://www.sciencedirect.com/science/article/pii/S2405844023062114#fg0340)
+
+[Generating Input Data for Microstructure Modelling: A Deep Learning Approach Using Generative Adversarial Networks](https://www.mdpi.com/1996-1944/13/19/4236)
+
+<p align="left"><img src="Images_/DRAGen_readme_paper.jpg" height="400" alt=""> </img></p>
 
 _Note: For developing it is highly recommended to use Python versions 3.6 to 3.8. For Python 3.9 Pyvista is not fully supported._<br>
 **If further questions appear please check the lower section or get in touch with us.**
@@ -84,6 +106,22 @@ Run DRAGen:<br>
 ```
 (DRAGen)....$ python DRAGen.py
 ```
+
+## Related Projects
+
+### MCRpy
+<p align="center"><img src="Images_/MCRpy-logo_png.png" height="200" alt="MCRpy logo"> </img></p>
+
+[MCRpy](https://github.com/NEFM-TUDresden/MCRpy) (Microstructure Characterization and Reconstruction in Python) facilitates the process by employing a range of descriptors and enables the reconstruction of new microstructures. One key advantage of MCRpy is its extensibility, allowing the combination of various descriptors without the need for loss functions. Additionally, it provides flexibility in choosing optimizers to address emerging optimization problems.
+
+
+
+### DAMASK
+<p align="center"><img src="Images_/DAMASK_banner.png" height="100" alt="DAMASK banner"> </img></p>
+
+[DAMASK](https://damask.mpie.de/index.html) (Düsseldorf Advanced Materials Simulation Kit) excels in its ability to handle a variety of simulation programs under different conditions, particularly for advanced high-strength materials. Its capability to address the interconnected nature of deformation, phase transformations, heating effects, and potential damage makes DAMASK an invaluable choice for researchers and practitioners seeking a comprehensive understanding of materials behavior in diverse scenarios.
+
+
 
 
 
