@@ -35,7 +35,7 @@ For more:
 
 [Generating Input Data for Microstructure Modelling: A Deep Learning Approach Using Generative Adversarial Networks](https://www.mdpi.com/1996-1944/13/19/4236)
 
-<p align="left"><img src="Images_/DRAGen_readme_paper.jpg" height="400" alt=""> </img></p>
+<p align="left"><img src="docs/DRAGen_readme_paper.jpg" height="400" alt=""> </img></p>
 
 _Note: For developing it is highly recommended to use Python versions 3.6 to 3.8. For Python 3.9 Pyvista is not fully supported._<br>
 **If further questions appear please check the lower section or get in touch with us.**
@@ -110,14 +110,14 @@ Run DRAGen:<br>
 ## Related Projects
 
 ### MCRpy
-<p align="center"><img src="Images_/MCRpy-logo_png.png" height="200" alt="MCRpy logo"> </img></p>
+<p align="center"><img src="docs/MCRpy-logo_png.png" height="200" alt="MCRpy logo"> </img></p>
 
 [MCRpy](https://github.com/NEFM-TUDresden/MCRpy) (Microstructure Characterization and Reconstruction in Python) facilitates the process by employing a range of descriptors and enables the reconstruction of new microstructures. One key advantage of MCRpy is its extensibility, allowing the combination of various descriptors without the need for loss functions. Additionally, it provides flexibility in choosing optimizers to address emerging optimization problems.
 
 
 
 ### DAMASK
-<p align="center"><img src="Images_/DAMASK_banner.png" height="100" alt="DAMASK banner"> </img></p>
+<p align="center"><img src="docs/DAMASK_banner.png" height="100" alt="DAMASK banner"> </img></p>
 
 [DAMASK](https://damask.mpie.de/index.html) (Düsseldorf Advanced Materials Simulation Kit) excels in its ability to handle a variety of simulation programs under different conditions, particularly for advanced high-strength materials. Its capability to address the interconnected nature of deformation, phase transformations, heating effects, and potential damage makes DAMASK an invaluable choice for researchers and practitioners seeking a comprehensive understanding of materials behavior in diverse scenarios.
 
