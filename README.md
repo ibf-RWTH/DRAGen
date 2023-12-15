@@ -63,7 +63,7 @@ Should be like this:
 ```
 To clone this repository into the desired destination, use:<br>
 ```
-$ git clone https://github.com/IMS-RWTH/DRAGen.git
+$ git clone https://github.com/ibf-RWTH/DRAGen.git
 ```
 To be able to use DRAGen, the working directory must be set to the location where the repo was downloaded to in the previous step file which is downloaded at the previous step.
 Use the commands to go to the exact file by following the path.
