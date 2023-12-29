@@ -6,7 +6,7 @@ Depending on the microstructural properties inherent in the materials intended f
 
 ## General Informations and Suggested Defaults
 
-
+<p align="center"><img src="docs/GUI_Banding.PNG" height="200" alt="MCRpy logo"> </img></p>
 
 ### Input data
 
