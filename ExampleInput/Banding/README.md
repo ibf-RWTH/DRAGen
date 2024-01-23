@@ -1,0 +1,1 @@
+Banding example inputs
