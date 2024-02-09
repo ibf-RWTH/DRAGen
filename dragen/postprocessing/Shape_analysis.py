@@ -91,7 +91,7 @@ class shape:
 
     @staticmethod
     def get_input_ellipses():
-        input_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/input_data.csv')
+        input_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/complete_input_data.csv')
         mask = (input_df['a'] > input_df['b'])
         input_df.loc[mask, 'AR'] = input_df['a'] / input_df['b']
         input_df.loc[~mask, 'AR'] = input_df['b'] / input_df['a']

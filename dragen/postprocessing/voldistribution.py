@@ -16,7 +16,7 @@ class PostProcVol:
 
     def gen_in_out_lists(self, phaseID) -> tuple:
 
-        input_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/input_data.csv')
+        input_df = pd.read_csv(RveInfo.store_path + '/Generation_Data/complete_input_data.csv')
 
         # process total input data
         if RveInfo.dimension == 2:
