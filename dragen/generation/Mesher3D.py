@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import pandas as pd
 import pyvista as pv
@@ -14,7 +16,6 @@ class AbaqusMesher(MeshingHelper):
     def make_assembly(self) -> None:
 
         """simple function to write the assembly definition in the input file"""
-
         f = open(RveInfo.store_path + '/DRAGen_RVE.inp', 'a')
         f.write('*End Part\n')
         f.write('**\n')
@@ -31,10 +32,11 @@ class AbaqusMesher(MeshingHelper):
             f.write('*Include, Input=Nsets.inp\n')
             f.write('*Include, input=LeftToRight.inp\n')
             f.write('*Include, input=BottomToTop.inp\n')
-            f.write('*Include, input=FrontToRear.inp\n')
+            f.write('*Include, input=RearToFront.inp\n')
             f.write('*Include, input=Edges.inp\n')
             f.write('*Include, input=Corners.inp\n')
             f.write('*Include, input=VerticeSets.inp\n')
+            f.write('*Include, Input=BoxSets.inp\n')
         f.write('*End Assembly\n')
         f.write('** INCLUDE MATERIAL FILE **\n')
         f.write('*Include, input=Materials.inp\n')
@@ -59,6 +61,461 @@ class AbaqusMesher(MeshingHelper):
         OutPutFile.close()
 
     def pbc(self, rve: pv.UnstructuredGrid, grid_hull_df: pd.DataFrame) -> None:
+
+        """function to define the periodic boundary conditions
+        if errors appear or equations are wrong check ppt presentation from ICAMS
+        included in the docs folder called PBC_docs"""
+
+        min_x = min(rve.points[:, 0])
+        min_y = min(rve.points[:, 1])
+        min_z = min(rve.points[:, 2])
+        max_x = max(rve.points[:, 0])
+        max_y = max(rve.points[:, 1])
+        max_z = max(rve.points[:, 2])
+
+        numberofgrains = self.n_grains
+        ########## write Equation - sets ##########
+        grid_hull_df.sort_values(by=['x', 'y', 'z'], inplace=True)
+        grid_hull_df.index.rename('pointNumber', inplace=True)
+        grid_hull_df = grid_hull_df.reset_index()
+        grid_hull_df['pointNumber'] += 1
+        # filter for corners
+        corner_df = grid_hull_df.loc[((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
+                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
+                                     ((grid_hull_df['z'] == max_z) | (grid_hull_df['z'] == min_z))]
+
+        # filter for edges without corners
+        edges_df = grid_hull_df.loc[(((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
+                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
+                                     ((grid_hull_df['z'] != max_z) & (grid_hull_df['z'] != min_z))) |
+
+                                    (((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
+                                     ((grid_hull_df['y'] != max_y) & (grid_hull_df['y'] != min_y)) &
+                                     ((grid_hull_df['z'] == max_z) | (grid_hull_df['z'] == min_z))) |
+
+                                    (((grid_hull_df['x'] != max_x) & (grid_hull_df['x'] != min_x)) &
+                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
+                                     ((grid_hull_df['z'] == max_z) | (grid_hull_df['z'] == min_z)))]
+
+        # filter for faces without edges and corners
+        faces_df = grid_hull_df.loc[(((grid_hull_df['x'] == max_x) | (grid_hull_df['x'] == min_x)) &
+                                     ((grid_hull_df['y'] != max_y) & (grid_hull_df['y'] != min_y)) &
+                                     ((grid_hull_df['z'] != max_z) & (grid_hull_df['z'] != min_z))) |
+
+                                    (((grid_hull_df['x'] != max_x) & (grid_hull_df['x'] != min_x)) &
+                                     ((grid_hull_df['y'] != max_y) & (grid_hull_df['y'] != min_y)) &
+                                     ((grid_hull_df['z'] == max_z) | (grid_hull_df['z'] == min_z))) |
+
+                                    (((grid_hull_df['x'] != max_x) & (grid_hull_df['x'] != min_x)) &
+                                     ((grid_hull_df['y'] == max_y) | (grid_hull_df['y'] == min_y)) &
+                                     ((grid_hull_df['z'] != max_z) & (grid_hull_df['z'] != min_z)))]
+
+        ########## Define Corner Sets ###########
+        corner_dict = dict()
+        H1_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == min_y) & (corner_df['z'] == min_z)]
+        corner_dict['H1'] = H1_df['pointNumber'].values[0]
+
+        H2_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == min_y) & (corner_df['z'] == min_z)]
+        corner_dict['H2'] = H2_df['pointNumber'].values[0]
+
+        H3_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == max_y) & (corner_df['z'] == min_z)]
+        corner_dict['H3'] = H3_df['pointNumber'].values[0]
+
+        H4_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == max_y) & (corner_df['z'] == min_z)]
+        corner_dict['H4'] = H4_df['pointNumber'].values[0]
+
+        V1_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == min_y) & (corner_df['z'] == max_z)]
+        corner_dict['V1'] = V1_df['pointNumber'].values[0]
+
+        V2_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == min_y) & (corner_df['z'] == max_z)]
+        corner_dict['V2'] = V2_df['pointNumber'].values[0]
+
+        V3_df = corner_df.loc[(corner_df['x'] == max_x) & (corner_df['y'] == max_y) & (corner_df['z'] == max_z)]
+        corner_dict['V3'] = V3_df['pointNumber'].values[0]
+
+        V4_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == max_y) & (corner_df['z'] == max_z)]
+        corner_dict['V4'] = V4_df['pointNumber'].values[0]
+
+
+
+        ############ Define Edge Sets without corners ###############
+        edges_dict = dict()
+        # bottom back edge
+        edges_dict['E_x_1'] = edges_df.loc[(edges_df['y'] == min_y) & (edges_df['z'] == min_z)]['pointNumber'].to_list()
+        # Top back Edge
+        edges_dict['E_x_2'] = edges_df.loc[(edges_df['y'] == max_y) & (edges_df['z'] == min_z)]['pointNumber'].to_list()
+        # Top front Edge
+        edges_dict['E_x_3'] = edges_df.loc[(edges_df['y'] == max_y) & (edges_df['z'] == max_z)]['pointNumber'].to_list()
+        # bottom front edge
+        edges_dict['E_x_4'] = edges_df.loc[(edges_df['y'] == min_y) & (edges_df['z'] == max_z)]['pointNumber'].to_list()
+
+        # left rear edge
+        edges_dict['E_y_1'] = edges_df.loc[(edges_df['x'] == min_x) & (edges_df['z'] == min_z)]['pointNumber'].to_list()
+        # right rear edge
+        edges_dict['E_y_2'] = edges_df.loc[(edges_df['x'] == max_x) & (edges_df['z'] == min_z)]['pointNumber'].to_list()
+        # right front edge
+        edges_dict['E_y_3'] = edges_df.loc[(edges_df['x'] == max_x) & (edges_df['z'] == max_z)]['pointNumber'].to_list()
+        # left front edge
+        edges_dict['E_y_4'] = edges_df.loc[(edges_df['x'] == min_x) & (edges_df['z'] == max_z)]['pointNumber'].to_list()
+
+        # bottom left edge
+        edges_dict['E_z_1'] = edges_df.loc[(edges_df['x'] == min_x) & (edges_df['y'] == min_y)]['pointNumber'].to_list()
+        # bottom right edge
+        edges_dict['E_z_2'] = edges_df.loc[(edges_df['x'] == max_x) & (edges_df['y'] == min_y)]['pointNumber'].to_list()
+        # Top right Edge
+        edges_dict['E_z_3'] = edges_df.loc[(edges_df['x'] == max_x) & (edges_df['y'] == max_y)]['pointNumber'].to_list()
+        # Top left Edge
+        edges_dict['E_z_4'] = edges_df.loc[(edges_df['x'] == min_x) & (edges_df['y'] == max_y)]['pointNumber'].to_list()
+
+        ######### Define Surface Sets without edges and corners #############
+        faces_dict = dict()
+        faces_dict['LeftSet'] = faces_df.loc[faces_df['x'] == min_x]['pointNumber'].to_list()
+        faces_dict['RightSet'] = faces_df.loc[faces_df['x'] == max_x]['pointNumber'].to_list()
+        faces_dict['BottomSet'] = faces_df.loc[faces_df['y'] == min_y]['pointNumber'].to_list()
+        faces_dict['TopSet'] = faces_df.loc[faces_df['y'] == max_y]['pointNumber'].to_list()
+        faces_dict['RearSet'] = faces_df.loc[faces_df['z'] == min_z]['pointNumber'].to_list()
+        faces_dict['FrontSet'] = faces_df.loc[faces_df['z'] == max_z]['pointNumber'].to_list()
+
+        ######### Define surface sets with edges and corners and edge sets with corners #############
+        Box_Sets_dict = dict()
+        Box_Sets_dict['x_0_Set'] = grid_hull_df.loc[grid_hull_df['x'] == min_x]['pointNumber'].to_list()
+        Box_Sets_dict['x_max_Set'] = grid_hull_df.loc[grid_hull_df['x'] == max_x]['pointNumber'].to_list()
+        Box_Sets_dict['y_0_Set'] = grid_hull_df.loc[grid_hull_df['y'] == min_y]['pointNumber'].to_list()
+        Box_Sets_dict['y_max_Set'] = grid_hull_df.loc[grid_hull_df['y'] == max_y]['pointNumber'].to_list()
+        Box_Sets_dict['z_0_Set'] = grid_hull_df.loc[grid_hull_df['z'] == min_z]['pointNumber'].to_list()
+        Box_Sets_dict['z_max_Set'] = grid_hull_df.loc[grid_hull_df['z'] == max_z]['pointNumber'].to_list()
+
+
+        Box_Sets_dict['x_0_y_0_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == min_x) &
+                                       (grid_hull_df['y'] == min_y)]['pointNumber'].to_list()
+        Box_Sets_dict['x_max_y_0_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == max_x) &
+                                       (grid_hull_df['y'] == min_y)]['pointNumber'].to_list()
+        Box_Sets_dict['x_0_y_max_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == min_x) &
+                                       (grid_hull_df['y'] == max_y)]['pointNumber'].to_list()
+        Box_Sets_dict['x_max_y_max_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == max_x) &
+                                       (grid_hull_df['y'] == max_y)]['pointNumber'].to_list()
+
+        Box_Sets_dict['x_0_z_0_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == min_x) &
+                                       (grid_hull_df['z'] == min_z)]['pointNumber'].to_list()
+        Box_Sets_dict['x_max_z_0_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == max_x) &
+                                         (grid_hull_df['z'] == min_z)]['pointNumber'].to_list()
+        Box_Sets_dict['x_0_z_max_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == min_x) &
+                                         (grid_hull_df['z'] == max_z)]['pointNumber'].to_list()
+        Box_Sets_dict['x_max_z_max_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == max_x) &
+                                           (grid_hull_df['z'] == max_z)]['pointNumber'].to_list()
+
+        Box_Sets_dict['y_0_z_0_Set'] = grid_hull_df.loc[(grid_hull_df['y'] == min_y) &
+                                       (grid_hull_df['z'] == min_z)]['pointNumber'].to_list()
+        Box_Sets_dict['y_max_z_0_Set'] = grid_hull_df.loc[(grid_hull_df['y'] == max_y) &
+                                         (grid_hull_df['z'] == min_z)]['pointNumber'].to_list()
+        Box_Sets_dict['y_0_z_max_Set'] = grid_hull_df.loc[(grid_hull_df['y'] == min_y) &
+                                         (grid_hull_df['z'] == max_z)]['pointNumber'].to_list()
+        Box_Sets_dict['y_max_z_max_Set'] = grid_hull_df.loc[(grid_hull_df['y'] == max_y) &
+                                           (grid_hull_df['z'] == max_z)]['pointNumber'].to_list()
+
+        ######### Write input file for corners Sets #############
+        OutPutFile = open(RveInfo.store_path + '/VerticeSets.inp', 'w')
+        for key, value in corner_dict.items():
+            OutPutFile.write(f'*Nset, nset={key}, instance=PART-1-1\n')
+            OutPutFile.write(f' {value},\n')
+        OutPutFile.close()
+
+        ######### Write input file for all nodesets on Edges and faces without corners #############
+        OutPutFile = open(RveInfo.store_path + '/Nsets.inp', 'w')
+        for key, values in edges_dict.items():
+            i = 1
+            for value in values:
+                OutPutFile.write(f'*Nset, nset={key}_{i}, instance=PART-1-1\n')
+                OutPutFile.write(f' {value},\n')
+                i += 1
+        for key, values in faces_dict.items():
+            i = 1
+            for value in values:
+                OutPutFile.write(f'*Nset, nset={key}_{i}, instance=PART-1-1\n')
+                OutPutFile.write(f' {value},\n')
+                i += 1
+        OutPutFile.close()
+
+        ######### Write input files for equations on faces #############
+        OutPutFile = open(RveInfo.store_path + '/LeftToRight.inp', 'w')
+        for dir in range(1, 4):
+            OutPutFile.write(f'**** {dir}-DIR ****\n')
+            for i in range(1, len(faces_dict['LeftSet'])+1):
+                # print item
+                OutPutFile.write('*Equation \n')
+                OutPutFile.write('4 \n')
+                OutPutFile.write(f'RightSet_{i} ,{dir}, 1 \n')
+                OutPutFile.write(f'LeftSet_{i}, {dir}, -1 \n')
+                OutPutFile.write(f'H2, {dir},-1 \n')
+                OutPutFile.write(f'H1, {dir}, 1 \n')
+        OutPutFile.close()
+
+        OutPutFile = open(RveInfo.store_path + '/BottomToTop.inp', 'w')
+        for dir in range(1, 4):
+            OutPutFile.write(f'**** {dir}-DIR ****\n')
+            for i in range(1, len(faces_dict['BottomSet'])+1):
+                # print item
+                OutPutFile.write('*Equation \n')
+                OutPutFile.write('4 \n')
+                OutPutFile.write(f'TopSet_{i} ,{dir}, 1 \n')
+                OutPutFile.write(f'BottomSet_{i}, {dir}, -1 \n')
+                OutPutFile.write(f'H4, {dir},-1 \n')
+                OutPutFile.write(f'H1, {dir}, 1 \n')
+        OutPutFile.close()
+
+        OutPutFile = open(RveInfo.store_path + '/RearToFront.inp', 'w')
+        for dir in range(1, 4):
+            OutPutFile.write(f'**** {dir}-DIR ****\n')
+            for i in range(1, len(faces_dict['RearSet'])+1):
+                # print item
+                OutPutFile.write('*Equation \n')
+                OutPutFile.write('4 \n')
+                OutPutFile.write(f'FrontSet_{i} ,{dir}, 1 \n')
+                OutPutFile.write(f'RearSet_{i}, {dir}, -1 \n')
+                OutPutFile.write(f'V1, {dir},-1 \n')
+                OutPutFile.write(f'H1, {dir}, 1 \n')
+        OutPutFile.close()
+
+        ######### Write input files for equations on edges #############
+        OutPutFile = open(RveInfo.store_path + '/Edges.inp', 'w')
+        OutPutFile.write('**** 1-DIR ****')
+        for i in range(1, len(edges_dict['E_x_1'])+1):
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_x_2_{i} ,1, 1 \n')
+            OutPutFile.write(f'H4, 1, -1 \n')
+            OutPutFile.write(f'E_x_1_{i}, 1,-1 \n')
+            OutPutFile.write(f'H1, 1, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_x_3_{i} ,1, 1 \n')
+            OutPutFile.write(f'V4, 1, -1 \n')
+            OutPutFile.write(f'E_x_1_{i}, 1,-1 \n')
+            OutPutFile.write(f'H1, 1, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_x_4_{i} ,1, 1 \n')
+            OutPutFile.write(f'V1, 1, -1 \n')
+            OutPutFile.write(f'E_x_1_{i}, 1,-1 \n')
+            OutPutFile.write(f'H1, 1, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_y_2_{i} ,1, 1 \n')
+            OutPutFile.write(f'E_y_1_{i}, 1, -1 \n')
+            OutPutFile.write(f'H2, 1,-1 \n')
+            OutPutFile.write(f'H1, 1, 1 \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_z_3_{i} ,1, 1 \n')
+            OutPutFile.write(f'E_z_4_{i}, 1, -1 \n')
+            OutPutFile.write(f'H2, 1,-1 \n')
+            OutPutFile.write(f'H1, 1, 1 \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_y_3_{i} ,1, 1 \n')
+            OutPutFile.write(f'E_y_4_{i}, 1, -1 \n')
+            OutPutFile.write(f'H2, 1,-1 \n')
+            OutPutFile.write(f'H1, 1, 1 \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_z_2_{i} ,1, 1 \n')
+            OutPutFile.write(f'E_z_1_{i}, 1, -1 \n')
+            OutPutFile.write(f'H2, 1,-1 \n')
+            OutPutFile.write(f'H1, 1, 1 \n')
+
+        OutPutFile.write('**** 2-DIR ****')
+        for i in range(1, len(edges_dict['E_y_1']) + 1):
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_y_2_{i} ,2, 1 \n')
+            OutPutFile.write(f'H2, 2, -1 \n')
+            OutPutFile.write(f'E_y_1_{i}, 2,-1 \n')
+            OutPutFile.write(f'H1, 2, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_y_3_{i} ,2, 1 \n')
+            OutPutFile.write(f'V2, 2, -1 \n')
+            OutPutFile.write(f'E_y_1_{i}, 2,-1 \n')
+            OutPutFile.write(f'H1, 2, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_y_4_{i} ,2, 1 \n')
+            OutPutFile.write(f'V1, 2, -1 \n')
+            OutPutFile.write(f'E_y_1_{i}, 2,-1 \n')
+            OutPutFile.write(f'H1, 2, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_x_2_{i} ,2, 1 \n')
+            OutPutFile.write(f'E_x_1_{i}, 2, -1 \n')
+            OutPutFile.write(f'H4, 2,-1 \n')
+            OutPutFile.write(f'H1, 2, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_z_3_{i} ,2, 1 \n')
+            OutPutFile.write(f'E_z_2_{i}, 2, -1 \n')
+            OutPutFile.write(f'H4, 2,-1 \n')
+            OutPutFile.write(f'H1, 2, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_x_3_{i} ,2, 1 \n')
+            OutPutFile.write(f'E_x_4_{i}, 2, -1 \n')
+            OutPutFile.write(f'H4, 2,-1 \n')
+            OutPutFile.write(f'H1, 2, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_z_4_{i} ,2, 1 \n')
+            OutPutFile.write(f'E_z_1_{i}, 2, -1 \n')
+            OutPutFile.write(f'H4, 2,-1 \n')
+            OutPutFile.write(f'H1, 2, 1 \n')
+
+        OutPutFile.write('**** 3-DIR ****')
+        for i in range(1, len(edges_dict['E_z_1']) + 1):
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_z_2_{i} ,3, 1 \n')
+            OutPutFile.write(f'H2, 3, -1 \n')
+            OutPutFile.write(f'E_z_1_{i}, 3,-1 \n')
+            OutPutFile.write(f'H1, 3, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_z_3_{i} ,3, 1 \n')
+            OutPutFile.write(f'H3, 3, -1 \n')
+            OutPutFile.write(f'E_z_1_{i}, 3,-1 \n')
+            OutPutFile.write(f'H1, 3, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_z_4_{i} ,3, 1 \n')
+            OutPutFile.write(f'H4, 3, -1 \n')
+            OutPutFile.write(f'E_z_1_{i}, 3,-1 \n')
+            OutPutFile.write(f'H1, 3, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_x_4_{i} ,3, 1 \n')
+            OutPutFile.write(f'E_x_1_{i}, 3, -1 \n')
+            OutPutFile.write(f'V1, 3,-1 \n')
+            OutPutFile.write(f'H1, 3, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_y_3_{i} ,3, 1 \n')
+            OutPutFile.write(f'E_y_2_{i}, 3, -1 \n')
+            OutPutFile.write(f'V1, 3,-1 \n')
+            OutPutFile.write(f'H1, 3, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_x_3_{i} ,3, 1 \n')
+            OutPutFile.write(f'E_x_2_{i}, 3, -1 \n')
+            OutPutFile.write(f'V1, 3,-1 \n')
+            OutPutFile.write(f'H1, 3, 1 \n')
+            OutPutFile.write('** \n')
+            OutPutFile.write('*Equation \n')
+            OutPutFile.write('4 \n')
+            OutPutFile.write(f'E_y_4_{i} ,3, 1 \n')
+            OutPutFile.write(f'E_y_1_{i}, 3, -1 \n')
+            OutPutFile.write(f'V1, 3,-1 \n')
+            OutPutFile.write(f'H1, 3, 1 \n')
+        OutPutFile.close()
+
+        ######### Write input file for equations on corners #############
+        OutPutFile = open(RveInfo.store_path + '/Corners.inp', 'w')
+        OutPutFile.write('**** 1-DIR ****' )
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('H3 ,1, 1 \n')
+        OutPutFile.write('H4, 1,-1 \n')
+        OutPutFile.write('H2, 1,-1 \n')
+        OutPutFile.write('H1, 1, 1 \n')
+        OutPutFile.write('** \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('V3 ,1, 1 \n')
+        OutPutFile.write('V4, 1,-1 \n')
+        OutPutFile.write('H2, 1,-1 \n')
+        OutPutFile.write('H1, 1, 1 \n')
+        OutPutFile.write('** \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('V2 ,1, 1 \n')
+        OutPutFile.write('V1, 1,-1 \n')
+        OutPutFile.write('H2, 1,-1 \n')
+        OutPutFile.write('H1, 1, 1 \n')
+        OutPutFile.write('** \n')
+        OutPutFile.write('**** 2-DIR ****')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('H3 ,2, 1 \n')
+        OutPutFile.write('H2, 2,-1 \n')
+        OutPutFile.write('H4, 2,-1 \n')
+        OutPutFile.write('H1, 2, 1 \n')
+        OutPutFile.write('** \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('V3 ,2, 1 \n')
+        OutPutFile.write('V2, 2,-1 \n')
+        OutPutFile.write('H4, 2,-1 \n')
+        OutPutFile.write('H1, 2, 1 \n')
+        OutPutFile.write('** \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('V4 ,2, 1 \n')
+        OutPutFile.write('V1, 2,-1 \n')
+        OutPutFile.write('H4, 2,-1 \n')
+        OutPutFile.write('H1, 2, 1 \n')
+        OutPutFile.write('** \n')
+        OutPutFile.write('**** 3-DIR ****')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('V2 ,3, 1 \n')
+        OutPutFile.write('H2, 3,-1 \n')
+        OutPutFile.write('V1, 3,-1 \n')
+        OutPutFile.write('H1, 3, 1 \n')
+        OutPutFile.write('** \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('V3 ,3, 1 \n')
+        OutPutFile.write('H3, 3,-1 \n')
+        OutPutFile.write('V1, 3,-1 \n')
+        OutPutFile.write('H1, 3, 1 \n')
+        OutPutFile.write('** \n')
+        OutPutFile.write('*Equation \n')
+        OutPutFile.write('4 \n')
+        OutPutFile.write('V4 ,3, 1 \n')
+        OutPutFile.write('H4, 3,-1 \n')
+        OutPutFile.write('V1, 3,-1 \n')
+        OutPutFile.write('H1, 3, 1 \n')
+        OutPutFile.write('** \n')
+        OutPutFile.close()
+
+        ######### Write input file for boxsets defined above #############
+        OutPutFile = open(RveInfo.store_path + '/BoxSets.inp', 'w')
+        for key, values in Box_Sets_dict.items():
+            OutPutFile.write(f'*Nset, nset={key}, instance=PART-1-1\n')
+            for i, value in enumerate(values):
+                if i == len(values) - 1:
+                    OutPutFile.write(f'{value}\n')
+                elif (i+1) % 8 == 0:
+                    OutPutFile.write(f'{value}\n')
+                else:
+                    OutPutFile.write(f' {value}, ')
+
+
+        OutPutFile.close()
+
+
+    def pbc_backup(self, rve: pv.UnstructuredGrid, grid_hull_df: pd.DataFrame) -> None:
 
         """function to define the periodic boundary conditions
         if errors appear or equations are wrong check ppt presentation from ICAMS
@@ -1073,22 +1530,21 @@ class AbaqusMesher(MeshingHelper):
             self.write_pbc_step_def()
         self.write_grain_data()
 
-        if RveInfo.anim_flag:
-            plotter = pv.Plotter(off_screen=True)
-            plotter.add_mesh(smooth_mesh, scalars='phaseID', scalar_bar_args={'title': 'Phase IDs'},
-                             show_edges=True, interpolate_before_map=True)
-            plotter.add_axes()
-            plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
-                         screenshot=RveInfo.store_path+'/Figs/pyvista_smooth_Mesh_phases.png')
-            plotter.close()
+        plotter = pv.Plotter(off_screen=True)
+        plotter.add_mesh(smooth_mesh, scalars='phaseID', scalar_bar_args={'title': 'Phase IDs'},
+                         show_edges=True, interpolate_before_map=True)
+        plotter.add_axes()
+        plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
+                     screenshot=RveInfo.store_path+'/Figs/pyvista_smooth_Mesh_phases.png')
+        plotter.close()
 
-            plotter = pv.Plotter(off_screen=True)
-            plotter.add_mesh(smooth_mesh, scalars='GrainID', scalar_bar_args={'title':'Grain IDs'},
-                             show_edges=True, interpolate_before_map=True)
-            plotter.add_axes()
-            plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
-                         screenshot=RveInfo.store_path + '/Figs/pyvista_smooth_Mesh_grains.png')
-            plotter.close()
+        plotter = pv.Plotter(off_screen=True)
+        plotter.add_mesh(smooth_mesh, scalars='GrainID', scalar_bar_args={'title':'Grain IDs'},
+                         show_edges=True, interpolate_before_map=True)
+        plotter.add_axes()
+        plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
+                     screenshot=RveInfo.store_path + '/Figs/pyvista_smooth_Mesh_grains.png')
+        plotter.close()
 
         if RveInfo.gui_flag:
             RveInfo.progress_obj.emit(100)
