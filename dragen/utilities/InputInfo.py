@@ -17,7 +17,7 @@ class RveInfo:
     .
     WARNING!!! BE VERY CAREFUL WHEN OVERWRITING THESE VALUES OUTSIDE OF THE dragen\run.py!!!!!
     """
-    box_size: any([float, int]) = None#
+    box_size: any([float, int]) = None
     """box_size describes the edge length of the rve in a cubic case, if the rve is not cubic it describes the length
     of the edge in x-direction"""
 
@@ -29,8 +29,17 @@ class RveInfo:
     """If this value is set to any other value than None the rve will take this value in µm and the 
     periodicity will be turned off in z-direction"""
 
+    box_volume = float
+
+
     resolution: any([float, int]) = None
     """ number of elements along rve-edge = box_size*resolution: higher resolution --> finer mesh """
+
+    low_rsa_resolution: bool = False
+    """ flag if rsa should run with low resolution """
+
+    allowed_intersection_ratio: float = 0.05
+    """ accepted intersection ratio during rsa to speed up process Default 5%"""
 
     number_of_rves: int = None
     """choose a number of RVEs to be generated"""
@@ -149,6 +158,9 @@ class RveInfo:
 
     roughness_flag: bool = False
     """Flag not yet activated since roughness is not yet implemented"""
+
+    texture_flag: bool = False
+    """Flag to activate Texture analysis if texture is needed"""
 
     root: str = './'
     """root path"""
