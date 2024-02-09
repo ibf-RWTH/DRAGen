@@ -1,6 +1,9 @@
+import sys
+
 import matplotlib.pyplot as plt
 import numpy as np
 import datetime
+from tqdm import tqdm
 from dragen.utilities.InputInfo import RveInfo
 from dragen.utilities.Helpers import HelperFunctions
 
@@ -24,26 +27,32 @@ class Tesselation3D(HelperFunctions):
         self.b_max = max(self.b)
         self.c_max = max(self.c)
 
-        self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
+        n_x = RveInfo.n_pts
+        n_y = RveInfo.n_pts
+        n_z = RveInfo.n_pts
+        if RveInfo.n_pts_y is not None:
+            n_y = RveInfo.n_pts_y
+        if RveInfo.n_pts_z is not None:
+            n_y = RveInfo.n_pts_z
+        shape = (n_x, n_y, n_z)
 
+        self.x_grid, self.y_grid, self.z_grid = super().gen_grid_new(shape)
+        self.pbar = tqdm(total=100)
 
-    def grow(self, iterator, a, b, c):
+    def grow(self, iterator, a, b, c, shape):
 
-        alpha = self.alpha[iterator-1]
-        x_0 = self.x_0[iterator-1]
-        y_0 = self.y_0[iterator-1]
-        z_0 = self.z_0[iterator-1]
-        a_i = a[iterator - 1]
-        b_i = b[iterator - 1]
-        c_i = c[iterator - 1]
+        alpha = self.alpha[iterator]
+        a_i = a[iterator]
+        b_i = b[iterator]
+        c_i = c[iterator]
         a_i = a_i + a_i / self.a_max * RveInfo.bin_size
         b_i = b_i + b_i / self.b_max * RveInfo.bin_size
         c_i = c_i + c_i / self.c_max * RveInfo.bin_size
-        a[iterator - 1] = a_i
-        b[iterator - 1] = b_i
-        c[iterator - 1] = c_i
+        a[iterator] = a_i
+        b[iterator] = b_i
+        c[iterator] = c_i
 
-        ellipsoid = super().ellipsoid(a_i, b_i, c_i, x_0, y_0, z_0, alpha=alpha)
+        ellipsoid = super().ellipsoid(shape, a_i, b_i, c_i, alpha=alpha)
 
         return ellipsoid, a, b, c
 
@@ -66,17 +75,17 @@ class Tesselation3D(HelperFunctions):
         ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array >= 1) | (array == -200))], s=1, vmin=-20,
                    vmax=n_grains, cmap='seismic')
 
-        rve_x, rve_y, rve_z = np.where((array == 0))
+        #rve_x, rve_y, rve_z = np.where((array == 0))
 
-        free_space_tuples = [*zip(rve_x, rve_y, rve_z)]
+        #free_space_tuples = [*zip(rve_x, rve_y, rve_z)]
 
-        free_space_x = [self.x_grid[free_space_tuples_i[0]][free_space_tuples_i[1]][free_space_tuples_i[2]]
-                    for free_space_tuples_i in free_space_tuples]
-        free_space_y = [self.y_grid[free_space_tuples_i[0]][free_space_tuples_i[1]][free_space_tuples_i[2]]
-                    for free_space_tuples_i in free_space_tuples]
-        free_space_z = [self.z_grid[free_space_tuples_i[0]][free_space_tuples_i[1]][free_space_tuples_i[2]]
-                    for free_space_tuples_i in free_space_tuples]
-        ax.scatter(free_space_x, free_space_y, free_space_z, color='grey', alpha=0.01)
+        #free_space_x = [self.x_grid[free_space_tuples_i[0]][free_space_tuples_i[1]][free_space_tuples_i[2]]
+        #            for free_space_tuples_i in free_space_tuples]
+        #free_space_y = [self.y_grid[free_space_tuples_i[0]][free_space_tuples_i[1]][free_space_tuples_i[2]]
+        #            for free_space_tuples_i in free_space_tuples]
+        #free_space_z = [self.z_grid[free_space_tuples_i[0]][free_space_tuples_i[1]][free_space_tuples_i[2]]
+        #            for free_space_tuples_i in free_space_tuples]
+        #ax.scatter(free_space_x, free_space_y, free_space_z, color='grey', alpha=0.01)
 
         ax.set_xlim(-5, RveInfo.box_size + 5)
         ax.set_ylim(-5, RveInfo.box_size + 5)
@@ -115,40 +124,43 @@ class Tesselation3D(HelperFunctions):
             band_idx = []
         else:
             band_idx = [i for i in range(band_idx_start, n_grains+1)]
-            #print(band_idx)
 
         # define boundaries and empty rve array
-        empty_rve = super().gen_array()
-        empty_rve = super().gen_boundaries_3D(empty_rve)
-        rve_boundaries = empty_rve.copy()  # empty rve grid with defined boundaries
+        empty_rve = np.zeros_like(rsa)
         vol_0 = np.count_nonzero(empty_rve == 0)
 
         freepoints = np.count_nonzero(rve == 0)
-        grain_idx = [i for i in range(1, n_grains + 1)]
+        grain_idx = [i for i in range(n_grains)]
         grain_idx_backup = grain_idx.copy()
+        voxel_volume = RveInfo.box_volume/(rve.shape[0]*rve.shape[1]*rve.shape[2])
         while freepoints > 0:
             freepoints_old = freepoints   # Zum Abgleich
             i = 0
             np.random.shuffle(grain_idx)
+
             while i < len(grain_idx):
                 idx = grain_idx[i]
-                ellipsoid, a, b, c = self.grow(idx, a, b, c)
-                grain = rve_boundaries.copy()
-                grain[(ellipsoid <= 1) & (grain == 0)] = idx
-                periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=idx)
+                grainID = idx+1
+
+                ellipsoid, _, _, _ = self.grow(idx, a, b, c, shape=rsa.shape)
+                grain = np.zeros_like(ellipsoid, dtype='int16')
+                grain[ellipsoid <= 1] = grainID
+
+                periodic_grain = super().make_periodic_3D_new(grain, self.x_0[idx], self.y_0[idx], self.z_0[idx])
                 band_vol = np.count_nonzero(rve == -200)
 
                 if band_vol_0 > 0:
                     band_ratio = band_vol / band_vol_0
                     if band_ratio > RveInfo.band_ratio_final:
-                        rve[((periodic_grain == idx) & (rve == 0)) | ((periodic_grain == idx) & (rve == -200))] = idx
+                        rve[((periodic_grain == grainID) & (rve == 0)) | ((periodic_grain == grainID) & (rve == -200))] = grainID
                     else:
-                        rve[((periodic_grain == idx) & (rve == 0))] = idx
+                        rve[((periodic_grain == grainID) & (rve == 0))] = grainID
                 else:
-                    rve[((periodic_grain == idx) & (rve == 0))] = idx
+                    rve[((periodic_grain == grainID) & (rve == 0))] = grainID
 
                 freepoints = np.count_nonzero(rve == 0)
-                grain_vol = np.count_nonzero(rve == idx) * RveInfo.bin_size ** 3
+
+                grain_vol = np.count_nonzero(rve == grainID) * voxel_volume
                 if freepoints == 0:
                     break
 
@@ -166,14 +178,13 @@ class Tesselation3D(HelperFunctions):
                     #print('Del because of epoch')
                     grain_idx.remove(idx)
                     grain_idx_backup.remove(idx)
-                elif (grain_vol > self.final_volume[idx-1]) and not repeat:
+                elif (grain_vol > self.final_volume[idx]) and not repeat:
                     grain_idx.remove(idx)
                     if idx in band_idx:
                         #print('Del from Backup')
                         grain_idx_backup.remove(idx)
                 elif delta_grow == 0: # and not repeat:    # and not repeat beobachten
                     grain_idx.remove(idx)
-                    #grain_idx_backup.remove(idx)
                 else:
                     i += 1
 
@@ -181,11 +192,17 @@ class Tesselation3D(HelperFunctions):
                 repeat = True
                 if RveInfo.gui_flag:
                     RveInfo.infobox_obj.emit('grain growth had to be reset at {}% of volume filling'.format(packingratio))
+                else:
+                    print(f'grain growth had to be reset at {packingratio}% of volume filling')
                 if packingratio < 90:
                     if RveInfo.gui_flag:
                         RveInfo.infobox_obj.emit('your microstructure data does not contain \n'
                                               'enough data to fill this boxsize\n'
                                               'please decrease the boxsize for reasonable results')
+                    else:
+                        print('your microstructure data does not contain')
+                        print('enough data to fill this boxsize')
+                        print('please decrease the boxsize for reasonable results')
                 grain_idx = grain_idx_backup.copy()
             if RveInfo.anim_flag:
                 self.tesselation_plotter(rve, epoch)
@@ -198,7 +215,8 @@ class Tesselation3D(HelperFunctions):
                 if RveInfo.gui_flag:
                     RveInfo.progress_obj.emit('packingratio: ', packingratio)
                 else:
-                    RveInfo.LOGGER.info('packingratio: {}'.format(packingratio))
+                    inc = packingratio - self.pbar.n
+                    self.pbar.update(n=inc)
 
         if packingratio == 100:
             status = True
@@ -206,7 +224,6 @@ class Tesselation3D(HelperFunctions):
         # Save for further usage
         np.save(RveInfo.store_path + '/' + 'RVE_Numpy.npy', rve)
         return rve, status
-
 
 if __name__ == '__main__':
     a = [10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10]
