@@ -21,6 +21,20 @@ class HelperFunctions:
         self.z_grid = z_grid
 
     @staticmethod
+    # TODO: implement array with real shape and change code to roll method rather than having 27 arrays sourrounding
+    def gen_array_new() -> np.zeros:
+        npts_x = RveInfo.n_pts
+        if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
+            array = np.zeros((npts_x, npts_x, npts_x), order='C', dtype='int16')
+        elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
+            array = np.zeros((npts_x, RveInfo.n_pts_y, npts_x), order='C', dtype='int16')
+        elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
+            array = np.zeros((npts_x, npts_x, RveInfo.n_pts_z), order='C', dtype='int16')
+        else:
+            array = np.zeros((2 * npts_x, 2 * RveInfo.n_pts_y, 2 * RveInfo.n_pts_z), order='C', dtype='int16')
+        return array
+
+    @staticmethod
     def gen_array() -> np.zeros:
         npts_x = RveInfo.n_pts
         if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
@@ -39,6 +53,28 @@ class HelperFunctions:
     def gen_array_2d() -> np.zeros:
         array = np.zeros((2 * RveInfo.n_pts, 2 * RveInfo.n_pts))
         return array
+
+    @staticmethod
+    def gen_grid_new(shape):
+        npts_x = RveInfo.n_pts
+        if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
+            xyz = np.linspace(0, RveInfo.box_size, shape[0], endpoint=True, dtype=np.float32)
+            x_grid, y_grid, z_grid = np.meshgrid(xyz, xyz, xyz, indexing='ij')
+        elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
+            xz = np.linspace(0, RveInfo.box_size, shape[0], endpoint=True, dtype=np.float32)
+            y = np.linspace(0, RveInfo.box_size_y, shape[1], endpoint=True, dtype=np.float32)
+            x_grid, y_grid, z_grid = np.meshgrid(xz, y, xz, indexing='ij')
+
+        elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
+            xy = np.linspace(0, RveInfo.box_size, shape[0], endpoint=True, dtype=np.float32)
+            z = np.linspace(0, RveInfo.box_size_z, shape[2], endpoint=True, dtype=np.float32)
+            x_grid, y_grid, z_grid = np.meshgrid(xy, xy, z, indexing='ij')
+        else:
+            x = np.linspace(0, RveInfo.box_size, shape[0], endpoint=True, dtype=np.float32)
+            y = np.linspace(0, RveInfo.box_size_y, shape[1], endpoint=True, dtype=np.float32)
+            z = np.linspace(0, RveInfo.box_size_z, shape[2], endpoint=True, dtype=np.float32)
+            x_grid, y_grid, z_grid = np.meshgrid(x, y, z, indexing='ij')
+        return x_grid, y_grid, z_grid
 
     @staticmethod
     def gen_grid():
@@ -196,12 +232,13 @@ class HelperFunctions:
             return data
 
     def sample_input_3D(self, data, bs, constraint=None) -> pd.DataFrame:
-        # TODO: add minvalue for grainsize radius not smaller than 1 element
         if constraint is None:
             constraint = 10000
         else:
             constraint = constraint
         max_volume = bs**3
+        min_rad = RveInfo.bin_size
+
         data["volume"] = 4/3*np.pi*data["a"]*data["b"]*data["c"]
         data = data.loc[data["a"] < RveInfo.box_size/2]
 
@@ -219,12 +256,14 @@ class HelperFunctions:
                 old_idx.pop(-1)
 
             elif grain_vol < max_volume:
-                idx = np.random.randint(0, data.__len__())
+                idx = np.random.randint(0, data.__len__(), dtype='int64')
 
                 grain = data.loc[data.index[idx]]
                 grain_df = pd.DataFrame(grain).transpose()
                 data = data.drop(labels=data.index[idx], axis=0)
                 if (grain['a'] > constraint*2) or (grain['b'] > constraint) or (grain['c'] > constraint*2):  # Dickenunterschied für die Bänbder
+                    continue
+                elif np.cbrt(grain["a"]*grain["b"]*grain["c"]) < min_rad:
                     continue
 
                 old_idx.append(idx)
@@ -289,12 +328,15 @@ class HelperFunctions:
         radius_b : Integer, radius along y-axis
         radius_b : Integer, radius along z-axis
         """
-        array = self.gen_array()
-        ellipsoid = self.ellipsoid(radius_a, radius_b, radius_c, 0, 0, 0)
+        #vol = 4/3*np.pi*radius_b*radius_b*radius_c
+        array = self.gen_array_new()
+        ellipsoid = self.ellipsoid(array.shape, radius_a, radius_b, radius_c)
         inside = ellipsoid <= 1
         array[inside] = 1
-        d_vol = np.count_nonzero(array)*RveInfo.bin_size**3
-        #RveInfo.LOGGER.info("Volume for the given radii: {}".format(d_vol))
+        if RveInfo.low_rsa_resolution:
+            d_vol = np.count_nonzero(array)*(2*RveInfo.bin_size)**3
+        else:
+            d_vol = np.count_nonzero(array) * (RveInfo.bin_size) ** 3
         return d_vol
 
     def convert_volume_2D(self, radius_a, radius_b):
@@ -382,6 +424,19 @@ class HelperFunctions:
                 points_array_mod[np.where(points_array_copy == -100 - i)] = iterator
         return points_array_mod
 
+    def make_periodic_3D_new(self, ellipse_array, nbins_x, nbins_y, n_bins_z) -> np.ndarray:
+        if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
+            ellipse_array_periodic = np.roll(ellipse_array, (nbins_x, nbins_y, n_bins_z), axis=(0, 1, 2))
+        elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
+            ellipse_array_periodic = np.roll(ellipse_array, (nbins_x, n_bins_z), axis=(0, 2))
+        elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
+            ellipse_array_periodic = np.roll(ellipse_array, (nbins_x, nbins_y), axis=(0, 1))
+        elif RveInfo.box_size_y is not None and RveInfo.box_size_z is not None:
+            ellipse_array_periodic = ellipse_array
+        return ellipse_array_periodic
+
+
+    # TODO: hier muss ne neue Funktion her mit dem rollen
     def make_periodic_3D(self, points_array, ellipse_points, iterator) -> np.ndarray:
         points_array_mod = np.zeros(points_array.shape)
         points_array_mod[points_array == iterator] = iterator
@@ -498,7 +553,7 @@ class HelperFunctions:
         points_array[(x_grid < box_size) & (y_grid < 0)] = -6
         points_array[(x_grid < 0) & (y_grid < 0)] = -5
         return points_array
-
+    # TODO: wird in neuer Version glaub ich nicht notwendig sein
     def gen_boundaries_3D(self, points_array) -> np.ndarray:
         t_0 = datetime.datetime.now()
         box_size = RveInfo.box_size
@@ -770,6 +825,53 @@ class HelperFunctions:
 
         return rve
 
+    def repair_periodicity_3D_new(self, rve_array: np.ndarray):
+        """this function is used to mirror the three masterfaces on the three slave faces of the rve
+        in order to achieve exact periodicity"""
+        # load some variables
+        box_size = RveInfo.box_size
+
+        if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
+            rve = np.zeros((rve_array.shape[0] + 1, rve_array.shape[1] + 1, rve_array.shape[2] + 1))
+            rve[0:-1, 0:-1, 0:-1] = rve_array
+            rve[-1, :, :] = rve[0, :, :]
+            rve[:, -1, :] = rve[:, 0, :]
+            rve[:, :, -1] = rve[:, :, 0]
+            rve_x = np.linspace(0, RveInfo.box_size, rve_array.shape[0] + 1, endpoint=True)
+            rve_y = np.linspace(0, RveInfo.box_size, rve_array.shape[1] + 1, endpoint=True)
+            rve_z = np.linspace(0, RveInfo.box_size, rve_array.shape[2] + 1, endpoint=True)
+
+        elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
+            rve = np.zeros((rve_array.shape[0] + 1, rve_array.shape[1], rve_array.shape[2] + 1))
+            rve[0:-1, :, 0:-1] = rve_array
+            rve[-1, :, :] = rve[0, :, :]
+            rve[:, :, -1] = rve[:, :, 0]
+            rve_x = np.linspace(0, RveInfo.box_size, rve_array.shape[0] + 1, endpoint=True)
+            rve_y = np.linspace(0, RveInfo.box_size_y, rve_array.shape[1], endpoint=True)
+            rve_z = np.linspace(0, RveInfo.box_size, rve_array.shape[2] + 1, endpoint=True)
+
+        elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
+            rve = np.zeros((rve_array.shape[0] + 1, rve_array.shape[2] + 1, rve_array.shape[2]))
+            rve[0:-1, 0:-1, :] = rve_array
+            rve[-1, :, :] = rve[0, :, :]
+            rve[:, -1, :] = rve[:, 0, :]
+            rve_x = np.linspace(0, RveInfo.box_size, rve_array.shape[0] + 1, endpoint=True)
+            rve_y = np.linspace(0, RveInfo.box_size, rve_array.shape[1] + 1, endpoint=True)
+            rve_z = np.linspace(0, RveInfo.box_size_z, rve_array.shape[2] , endpoint=True)
+
+        else:
+            rve = rve_array
+            rve_x = np.linspace(0, RveInfo.box_size, rve_array.shape[0], endpoint=True)
+            rve_y = np.linspace(0, RveInfo.box_size_y, rve_array.shape[1] , endpoint=True)
+            rve_z = np.linspace(0, RveInfo.box_size_z, rve_array.shape[2] , endpoint=True)
+
+        xx, yy, zz = np.meshgrid(rve_x, rve_y, rve_z, indexing='ij')
+        rve_dict = {'x': xx.flatten(), 'y': yy.flatten(), 'z': zz.flatten(), 'GrainID': rve.flatten()}
+        rve_df = pd.DataFrame(rve_dict)
+        rve_df['box_size'] = box_size
+        rve_df['n_pts'] = RveInfo.n_pts
+
+        return rve_df, rve
     def repair_periodicity_3D(self, rve_array: np.ndarray):
         """this function is used to mirror the three masterfaces on the three slave faces of the rve
         in order to achieve exact periodicity"""
@@ -866,23 +968,18 @@ class HelperFunctions:
 
         return ellipse
 
-    def ellipsoid(self, a, b, c, x_0, y_0, z_0, alpha=0):
+    def ellipsoid(self, shape, a, b, c, alpha=0):
 
-        x_grid, y_grid, z_grid = self.gen_grid()
+        x_grid, y_grid, z_grid = self.gen_grid_new(shape)
 
-        # rotation around x-axis
-        """ellipsoid = 1/a**2 * (self.x_grid - x_0) ** 2 + \
-                    1/b**2 * ((self.y_grid - y_0) * np.cos(np.deg2rad(slope)) -
-                                 (self.z_grid - z_0) * np.sin(np.deg2rad(slope))) ** 2 + \
-                    1/c**2 * ((self.y_grid - y_0) * np.sin(np.deg2rad(slope)) +
-                                 (self.z_grid - z_0) * np.cos(np.deg2rad(slope))) ** 2"""
+        x_0 = int(float(RveInfo.box_size)/2)
+        y_0 = int(float(RveInfo.box_size) / 2)
+        z_0 = int(float(RveInfo.box_size) / 2)
 
-        # rotation around y-axis; with a=c no influence
-        """ellipsoid = 1/a**2 * ((self.x_grid - x_0) * np.cos(np.deg2rad(slope)) +
-                              (self.z_grid - z_0) * np.sin(np.deg2rad(slope))) ** 2 + \
-                    1/b**2 * (self.y_grid - y_0) ** 2 + \
-                    1/c**2 * ((self.x_grid - x_0) * -np.sin(np.deg2rad(slope)) +
-                              (self.z_grid - z_0) * np.cos(np.deg2rad(slope))) ** 2"""
+        if RveInfo.box_size_y is not None:
+            y_0 = int(float(RveInfo.box_size_y) / 2)
+        if RveInfo.box_size_z is not None:
+            z_0 = int(float(RveInfo.box_size_z) / 2)
 
         # rotation around z-axis
         ellipsoid = 1 / a ** 2 * ((x_grid - x_0) * np.cos(np.deg2rad(alpha+RveInfo.slope_offset)) +
@@ -981,3 +1078,19 @@ class HelperFunctions:
         grains_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
         return grains_df
 
+    def upsampling_rsa(self, rsa):
+        repeat_factor = 2
+        # repeat array in each direction
+        resampled_array = np.repeat(rsa, repeat_factor, axis=0)
+        resampled_array = np.repeat(resampled_array, repeat_factor, axis=1)
+        resampled_array = np.repeat(resampled_array, repeat_factor, axis=2)
+        return resampled_array
+
+    def write_setup_file(self):
+        members = [attr for attr in dir(RveInfo()) if
+                   not callable(getattr(RveInfo(), attr)) and not attr.startswith("__")]
+
+        setup_file = open(RveInfo.store_path + '/setup_file.txt', 'w')
+        for member in members:
+            setup_file.write(f'{member}: {str(RveInfo().__getattribute__(member))} \n')
+        setup_file.close()
