@@ -1,3 +1,4 @@
+import sys
 import time
 
 import numpy as np
@@ -5,8 +6,9 @@ import matplotlib.pyplot as plt
 import random
 import datetime
 
-from scipy.ndimage import convolve
 
+from scipy.ndimage import convolve
+from tqdm import tqdm
 from dragen.utilities.Helpers import HelperFunctions
 from dragen.utilities.InputInfo import RveInfo
 
@@ -22,8 +24,18 @@ class DiscreteRsa3D(HelperFunctions):
         self.n_grains = len(a)
 
         super().__init__()
+        n_x = RveInfo.n_pts
+        n_y = RveInfo.n_pts
+        n_z = RveInfo.n_pts
+        if RveInfo.n_pts_y is not None:
+            n_y = RveInfo.n_pts_y
+        if RveInfo.n_pts_z is not None:
+            n_y = RveInfo.n_pts_z
+        shape = (n_x, n_y, n_z)
 
-        self.x_grid, self.y_grid, self.z_grid = super().gen_grid()
+        self.x_grid, self.y_grid, self.z_grid = super().gen_grid_new(shape)
+        if not RveInfo.gui_flag:
+            self.pbar = tqdm(total=self.n_grains)
 
     def gen_ellipsoid(self, array, iterator):
         t_0 = datetime.datetime.now()
@@ -34,34 +46,35 @@ class DiscreteRsa3D(HelperFunctions):
 
         unoccupied_pts_x, unoccupied_pts_y, unoccupied_pts_z = np.where(array == 0)
         unoccupied_tuples = [*zip(unoccupied_pts_x, unoccupied_pts_y, unoccupied_pts_z)]
-        unoccupied_area_x = [self.x_grid[unoccupied_tuples_i[0]][unoccupied_tuples_i[1]][unoccupied_tuples_i[2]]
+
+
+        """unoccupied_area_x = [self.x_grid[unoccupied_tuples_i[0]][unoccupied_tuples_i[1]][unoccupied_tuples_i[2]]
                              for unoccupied_tuples_i in unoccupied_tuples]
         unoccupied_area_y = [self.y_grid[unoccupied_tuples_i[0]][unoccupied_tuples_i[1]][unoccupied_tuples_i[2]]
                              for unoccupied_tuples_i in unoccupied_tuples]
         unoccupied_area_z = [self.z_grid[unoccupied_tuples_i[0]][unoccupied_tuples_i[1]][unoccupied_tuples_i[2]]
                              for unoccupied_tuples_i in unoccupied_tuples]
+        """
+        #print(unoccupied_pts_z)
+        #sys.exit()
+        x_0 = random.choice(unoccupied_pts_x)
+        y_0 = random.choice(unoccupied_pts_y)
+        z_0 = random.choice(unoccupied_pts_z)
 
-        idx = random.choice(range(len(unoccupied_area_x)))
-        x_0 = unoccupied_area_x[idx]
-        y_0 = unoccupied_area_y[idx]
-        z_0 = unoccupied_area_z[idx]
-        #self.infobox_obj.add_text('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
-        #print('x_0_{}: {}, y_0_{}: {}, z_0_{}: {}'.format(iterator, x_0, iterator, y_0, iterator, z_0))
-        # print('Iterator', iterator)
-        # print(a)
-        # print('Länge von a', a.__len__())
+        #x_0 = int(unoccupied_area_x[idx])
+        #y_0 = int(unoccupied_area_y[idx])
+        #z_0 = int(unoccupied_area_z[idx])
+
         a = a[iterator]
         b = b[iterator]
         c = c[iterator]
-        #print(a,b,c)
         alpha = alpha[iterator]
 
-        """ellipse = (x_grid - x_0) ** 2 / (a ** 2) + \
-                  (y_grid - y_0) ** 2 / (b ** 2) + \
-                  (z_grid - z_0) ** 2 / (c ** 2)"""
+        ellipsoid = super().ellipsoid(array.shape, a, b, c, alpha=alpha)
 
-        ellipsoid = super().ellipsoid(a, b, c, x_0, y_0, z_0, alpha=alpha)
-
+        inside = ellipsoid <= 1
+        ellipsoid_array = np.zeros_like(ellipsoid, dtype='int16')
+        ellipsoid_array[inside] = 1
         time_elapse = datetime.datetime.now() - t_0
         if RveInfo.debug:
             RveInfo.LOGGER.info('time spent on ellipsoid{}: {}'.format(iterator, time_elapse.total_seconds()))
@@ -108,7 +121,7 @@ class DiscreteRsa3D(HelperFunctions):
 
         # ax.view_init(270, 90)  # facing in z-direction (clockwise rotation)
         # ax.view_init(90, 270) #facing against z-direction (counterclockwise rotation)
-        # plt.show()
+        #plt.show()
 
         plt.savefig(RveInfo.store_path + '/Figs/3D_Epoch_{}_{}.png'.format(iterator, attempt))
         plt.close(fig)
@@ -123,17 +136,12 @@ class DiscreteRsa3D(HelperFunctions):
         bandratio = band_ratio_rsa
 
         if banded_rsa_array is None:
-            rsa = super().gen_array()
-            print('rsa_shape: ', rsa.shape)
-            rsa = super().gen_boundaries_3D(rsa)
-            print(rsa.shape)
+            rsa = super().gen_array_new()
 
         else:
             rsa = banded_rsa_array
 
         band_vol_0 = np.count_nonzero(rsa == -200)
-        rsa_boundaries = rsa.copy()
-
         x_0_list = list()
         y_0_list = list()
         z_0_list = list()
@@ -142,24 +150,32 @@ class DiscreteRsa3D(HelperFunctions):
         attempt = 0
         free_points = np.count_nonzero(rsa == 0)
         while i < self.n_grains + 1 | attempt < free_points:
+
             t_0 = datetime.datetime.now()
             free_points_old = np.count_nonzero(rsa == 0)
             band_points_old = np.count_nonzero(rsa == -200)
-            grain = rsa_boundaries.copy()
             backup_rsa = rsa.copy()
             ellipsoid, x0, y0, z0 = self.gen_ellipsoid(rsa, iterator=i - 1)
-            grain[(ellipsoid <= 1) & ((grain == 0) | (grain == -200))] = i
-            periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=i)
-            rsa[(periodic_grain == i) & ((rsa == 0) | (rsa == -200))] = i
+            grain = np.zeros_like(ellipsoid, dtype='int16')
+            grain[ellipsoid <= 1] = i
+            # check that at least one element is not 0
+            if np.count_nonzero(grain) == 0:
+                # if there is no element set to the value i give set one element at x_0, y_0, z_0 to i manually
+                grain[x0, y0, z0] = i
 
+            periodic_grain = super().make_periodic_3D_new(grain, x0, y0, z0)
+
+            rsa[(periodic_grain == i) & ((rsa == 0) | (rsa == -200))] = i
             if RveInfo.anim_flag:
                 self.rsa_plotter(rsa, iterator=i, attempt=attempt)
 
             free_points = np.count_nonzero(rsa == 0)
             band_points = np.count_nonzero(rsa == -200)
+
             if band_points_old > 0:
-                if (free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain)) | \
-                        (band_points / band_vol_0 < bandratio):
+                intersecting_pts = np.count_nonzero(periodic_grain) - (free_points_old + band_points_old - free_points - band_points)
+                intersecting_ratio = intersecting_pts/np.count_nonzero(periodic_grain)
+                if intersecting_ratio > RveInfo.allowed_intersection_ratio:
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
 
@@ -175,7 +191,10 @@ class DiscreteRsa3D(HelperFunctions):
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
             else:
                 # free points old - free points should equal non zero in periodic grain
-                if free_points_old + band_points_old - free_points - band_points != np.count_nonzero(periodic_grain):
+                intersecting_pts = np.count_nonzero(periodic_grain) - (free_points_old - free_points)
+                intersecting_ratio = intersecting_pts / np.count_nonzero(periodic_grain)
+
+                if intersecting_ratio > 0.01:
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
                 else:
@@ -191,6 +210,9 @@ class DiscreteRsa3D(HelperFunctions):
             progress = int((float(len(x_0_list))/self.n_grains * 100))
             if RveInfo.gui_flag:
                 RveInfo.progress_obj.emit(progress)
+            else:
+                inc = i - self.pbar.n
+                self.pbar.update(n=inc)
 
         if (len(x_0_list) == self.n_grains) or (i - 1) == self.n_grains:
             status = True
@@ -226,33 +248,13 @@ class DiscreteRsa3D(HelperFunctions):
         else:
             # Use this array for checking, because here is only the band "free"
             rsa = band_array.copy()
-            #print('Normal band array')
-            #print(np.asarray(np.unique(rsa, return_counts=True)).T)
             # Place in this Array
             placement_rsa = previous_rsa.copy()
-            #print('Previous RSA-array')
-            #print(np.asarray(np.unique(placement_rsa, return_counts=True)).T)
 
         # Change values:
         shadow_rsa = rsa.copy()
         rsa[np.where(shadow_rsa == -200)] = 0
         rsa[np.where(shadow_rsa == 0)] = -200
-        #print('Normal Band Array after switching')
-        #print(np.asarray(np.unique(rsa, return_counts=True)).T)
-
-        #shadow_rsa_placement = placement_rsa.copy()
-        #placement_rsa[np.where(shadow_rsa_placement == -200)] = 0
-        #placement_rsa[np.where(shadow_rsa_placement == 0)] = -200
-
-        # --------------------------------------------------
-        #fig = plt.figure(figsize=(30, 30))
-        #ax = fig.gca(projection='3d')
-        #ax.set_aspect('auto')
-        #ax.voxels(rsa == -200, edgecolor="k")
-        #fig.savefig(RveInfo.store_path + '/' + 'Cluster_{}.png'.format(time.time()))
-        #plt.close()
-        # --------------------------------------------------
-
         # Init
         band_vol_0 = np.count_nonzero(rsa == -200)  # Zähle -200 für initiales Gefüge
         print('Initiales, nicht belegbares Volumen:', band_vol_0)
@@ -276,21 +278,16 @@ class DiscreteRsa3D(HelperFunctions):
             grain = rsa_boundaries.copy()
             backup_rsa = rsa.copy()
             ellipsoid, x0, y0, z0 = self.gen_ellipsoid(rsa, iterator=i - 1)
-            grain[(ellipsoid <= 1) & ((grain == 0) | (grain == -200))] = -(1000 + i + startindex)
-            # print(np.unique(grain))
-            periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=-(1000 + i + startindex))
-            # print(np.unique(periodic_grain))
+            grain = np.zeros_like(ellipsoid, dtype='int16')
+            grain[ellipsoid <= 1] = i
+            periodic_grain = super().make_periodic_3D_new(grain, x0, y0, z0)
+
             rsa2 = rsa.copy()
             rsa[(periodic_grain == -(1000 + i + startindex)) & ((rsa == 0) | (rsa == -200))] = -(1000 + i + startindex)
-            """print(np.unique((periodic_grain == -(1000 + i)), return_counts=True))
-            print(np.unique(((rsa2 == 0) | (rsa2 == -200)), return_counts=True))
-            print(np.unique((periodic_grain == -(1000 + i)) & ((rsa2 == 0) | (rsa2 == -200)), return_counts=True))"""
 
             free_points = np.count_nonzero(rsa == 0)
             band_points = np.count_nonzero(rsa == -200)
 
-            #print(free_points_old+band_points_old-free_points-band_points)
-            #print(np.count_nonzero(periodic_grain))
             if band_points_old > 0:
                 # > xy x grain_points heißt, dass mindestens XX% des Korns im freien Raum platziert werden müssen
                 if ((free_points_old + band_points_old - free_points - band_points) != 1.0 * np.count_nonzero(periodic_grain)) | \
@@ -301,18 +298,13 @@ class DiscreteRsa3D(HelperFunctions):
 
                 else:
                     # Place now the grain in the "real" rsa
-                    """print('Place grain in new RSA')
-                    print(np.unique((periodic_grain == -(1000 + i)), return_counts=True))
-                    print(np.unique(((rsa2 == 0) | (rsa2 == -200)), return_counts=True))
-                    print(np.unique((periodic_grain == -(1000 + i)) & ((rsa2 == 0) | (rsa2 == -200)), return_counts=True))"""
                     placement_rsa[(periodic_grain == -(1000 + i + startindex)) & ((rsa2 == 0) | (rsa2 == -200))] = -(1000 + i + startindex)
-                    #print(np.asarray(np.unique(placement_rsa, return_counts=True)).T)
                     x_0_list.append(x0)
                     y_0_list.append(y0)
                     z_0_list.append(z0)
                     i = i + 1
                     sum_attempts = sum_attempts + attempt
-                    if animation:
+                    if RveInfo.anim_flag:
                         self.rsa_plotter(placement_rsa, iterator=-(1000 + i + startindex), attempt=attempt)
                     attempt = 1
 
@@ -362,9 +354,9 @@ class DiscreteRsa3D(HelperFunctions):
                           [[-1, -1, -1], [-1, 26, -1], [-1, -1, -1]],
                           [[-1, -1, -1], [-1, -1, -1], [-1, -1, -1]]])
         coords = np.where(convolve(rve, fil, mode='reflect') > 0)  # Edge kernel for grain boundary detection
-        new_rve = super().gen_array()
+        new_rve = super().gen_array_new()
         new_rve[coords] = 1000  # High value - Has 1000 for edges, and 0 elsewhere
-        new_rve = super().gen_boundaries_3D(new_rve)
+        #new_rve = super().gen_boundaries_3D(new_rve)
         inc_rve = rve.copy()
 
         i = 1
@@ -373,8 +365,10 @@ class DiscreteRsa3D(HelperFunctions):
             grain = new_rve.copy()
             backup = inc_rve.copy()
             ellipsoid, x0, y0, z0 = self.gen_ellipsoid(new_rve, iterator=i - 1)
-            grain[(ellipsoid <= 1) & ((grain == 0) | (grain == -200))] = -(200 + i)
-            periodic_grain = super().make_periodic_3D(grain, ellipsoid, iterator=-(200 + i))
+
+            grain = np.zeros_like(ellipsoid, dtype='int16')
+            grain[ellipsoid <= 1] = i
+            periodic_grain = super().make_periodic_3D_new(grain, x0, y0, z0)
 
             inc_rve[(periodic_grain == -(200 + i)) & ((new_rve == 0) | (new_rve == -200))] = \
                 -(200 + i)  # -for Inclusions
