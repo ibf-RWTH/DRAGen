@@ -87,7 +87,18 @@ class Run(HelperFunctions):
         RveInfo.element_type = element_type
         RveInfo.box_size_y = box_size_y
         RveInfo.box_size_z = box_size_z
-        RveInfo.resolution = resolution
+        RveInfo.box_volume = box_size**3
+        if box_size_y is not None and box_size_z is None:
+            RveInfo.box_volume = box_size ** 2 * box_size_y
+        elif box_size_y is None and box_size_z is not None:
+            RveInfo.box_volume = box_size ** 2 * box_size_z
+        elif box_size_y is not None and box_size_z is not None:
+            RveInfo.box_volume = box_size * box_size_y * box_size_z
+
+        if RveInfo.low_rsa_resolution:
+            RveInfo.resolution = resolution/2
+        else:
+            RveInfo.resolution = resolution
         RveInfo.number_of_rves = number_of_rves
         RveInfo.number_of_bands = number_of_bands
         RveInfo.lower_band_bound = lower_band_bound
@@ -133,17 +144,17 @@ class Run(HelperFunctions):
         RveInfo.band_filling = band_filling
         RveInfo.root = root
 
-        RveInfo.n_pts = math.ceil(float(box_size) * resolution)
+        RveInfo.n_pts = math.ceil(float(box_size) * RveInfo.resolution)
         if RveInfo.n_pts % 2 != 0:
             RveInfo.n_pts += 1
 
         if box_size_y:
-            RveInfo.n_pts_y = math.ceil(float(box_size_y) * resolution)
+            RveInfo.n_pts_y = math.ceil(float(box_size_y) * RveInfo.resolution)
             if RveInfo.n_pts_y % 2 != 0:
                 RveInfo.n_pts_y += 1
 
         if box_size_z:
-            RveInfo.n_pts_z = math.ceil(float(box_size_z) * resolution)
+            RveInfo.n_pts_z = math.ceil(float(box_size_z) * RveInfo.resolution)
             if RveInfo.n_pts_z % 2 != 0:
                 RveInfo.n_pts_z += 1
         RveInfo.bin_size = RveInfo.box_size / RveInfo.n_pts
