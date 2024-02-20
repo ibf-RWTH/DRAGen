@@ -14,7 +14,7 @@ class Ui_MainWindow(object):
         self.MainWindow = MainWindow
         MainWindow.setObjectName("Main Window")
         MainWindow.setWindowTitle("DRAGen - RVE Generator")
-        MainWindow.setFixedSize(750, 850)
+        MainWindow.setFixedSize(930, 850) #change
         self.thumbnail_path = sys.argv[0][:-10] + "\\dragen\\thumbnails\\"
         MainWindow.setWindowIcon(QIcon(self.thumbnail_path + '\\Drache.ico'))
 
@@ -22,16 +22,16 @@ class Ui_MainWindow(object):
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.scrollArea = QtWidgets.QScrollArea(self.centralwidget)
-        self.scrollArea.setGeometry(QtCore.QRect(10, 460, 720, 330))
+        self.scrollArea.setGeometry(QtCore.QRect(10, 460, 910, 330)) #change
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
 
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(10, 460, 720, 330))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(10, 460, 910, 330)) #change
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
         self.InfoPages = QtWidgets.QTabWidget(self.scrollAreaWidgetContents)
         self.InfoPages.setEnabled(True)
-        self.InfoPages.setGeometry(QtCore.QRect(-5, 0, 720, 330))
+        self.InfoPages.setGeometry(QtCore.QRect(-5, 0, 910, 330)) #change
         self.InfoPages.setTabShape(QtWidgets.QTabWidget.Rounded)
         self.InfoPages.setUsesScrollButtons(True)
         self.InfoPages.setTabsClosable(False)
@@ -51,13 +51,13 @@ class Ui_MainWindow(object):
         self.status_tab.setObjectName("status_tab")
 
         self.textBrowser = QtWidgets.QTextBrowser(self.status_tab)
-        self.textBrowser.setGeometry(QtCore.QRect(0, 0, 791, 336))
+        self.textBrowser.setGeometry(QtCore.QRect(0, 0, 981, 336)) #change
         self.textBrowser.setObjectName("textBrowser")
         self.textBrowser.setText(" Please enter the required information")
 
 
         self.verticalScrollBar = QtWidgets.QScrollBar(self.status_tab)
-        self.verticalScrollBar.setGeometry(QtCore.QRect(790, 0, 20, 336))
+        self.verticalScrollBar.setGeometry(QtCore.QRect(980, 0, 20, 336)) #change
         self.verticalScrollBar.setOrientation(QtCore.Qt.Vertical)
         self.verticalScrollBar.setObjectName("verticalScrollBar")
 
@@ -433,7 +433,7 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.user_tab, "")
 
         self.gridLayoutWidget_6 = QtWidgets.QWidget(self.user_tab)
-        self.gridLayoutWidget_6.setGeometry(QtCore.QRect(0, 3, 421, 238))
+        self.gridLayoutWidget_6.setGeometry(QtCore.QRect(0, 3, 901, 238)) #changetry
         self.gridLayoutWidget_6.setObjectName("gridLayoutWidget_6")
 
         self.grid_user = QtWidgets.QGridLayout(self.gridLayoutWidget_6)
@@ -656,21 +656,21 @@ class Ui_MainWindow(object):
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
 
         self.LogFile = QtWidgets.QTextBrowser(self.log_tab)
-        self.LogFile.setGeometry(QtCore.QRect(0, 0, 401, 336))
+        self.LogFile.setGeometry(QtCore.QRect(0, 0, 581, 336)) #change
         self.LogFile.setObjectName("LogFile")
 
         self.Visualization = QtWidgets.QGraphicsView(self.log_tab)
-        self.Visualization.setGeometry(QtCore.QRect(400, 0, 321, 336))
+        self.Visualization.setGeometry(QtCore.QRect(580, 0, 321, 336)) #change
         self.Visualization.setObjectName("Visualization")
 
         ### Main Window
         self.frame_2 = QtWidgets.QFrame(self.centralwidget)
-        self.frame_2.setGeometry(QtCore.QRect(10, 340, 620, 101))
+        self.frame_2.setGeometry(QtCore.QRect(10, 340, 820, 101)) #change
         self.frame_2.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_2.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_2.setObjectName("frame_2")
         self.gridLayoutWidget = QtWidgets.QWidget(self.frame_2)
-        self.gridLayoutWidget.setGeometry(QtCore.QRect(0, 10, 611, 91))
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(0, 12, 811, 91)) #change
         self.gridLayoutWidget.setObjectName("gridLayoutWidget")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.gridLayoutWidget)
         self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
@@ -679,12 +679,12 @@ class Ui_MainWindow(object):
         self.gridLayout_2.setObjectName("gridLayout_2")
 
         self.frame_1 = QtWidgets.QFrame(self.centralwidget)
-        self.frame_1.setGeometry(QtCore.QRect(10, 10, 721, 341))
+        self.frame_1.setGeometry(QtCore.QRect(10, 10, 911, 341)) #change
         self.frame_1.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame_1.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame_1.setObjectName("frame_1")
         self.formLayoutWidget = QtWidgets.QWidget(self.frame_1)
-        self.formLayoutWidget.setGeometry(QtCore.QRect(0, 0, 711, 331))
+        self.formLayoutWidget.setGeometry(QtCore.QRect(0, 0, 901, 331)) #change
         self.formLayoutWidget.setObjectName("formLayoutWidget")
         self.gridLayout = QtWidgets.QGridLayout(self.formLayoutWidget)
         self.gridLayout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
@@ -830,6 +830,14 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.Bainite_button, 4, 8, 1, 1)
         self.Bainite_button.stateChanged.connect(self.phase_handler)
 
+        #Add
+        self.Austenite_button = QtWidgets.QCheckBox(self.formLayoutWidget)
+        self.Austenite_button.setChecked(False)
+        self.Austenite_button.setObjectName("Austenite_button")
+        self.gridLayout.addWidget(self.Austenite_button, 4, 10, 1, 1)
+        self.Austenite_button.stateChanged.connect(self.phase_handler)
+        #Add
+
         # Phase Fraction:
         self.phase_fraction_label = QtWidgets.QLabel(self.formLayoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
@@ -876,6 +884,17 @@ class Ui_MainWindow(object):
         self.bainiteSpinBox.setObjectName("bainiteSpinBox")
         self.gridLayout.addWidget(self.bainiteSpinBox, 5, 8, 1, 1)
 
+#Add
+        self.austeniteSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
+        self.austeniteSpinBox.setDecimals(2)
+        self.austeniteSpinBox.setMaximum(1.0)
+        self.austeniteSpinBox.setMinimum(0.01)
+        self.austeniteSpinBox.setSingleStep(0.01)
+        self.austeniteSpinBox.setEnabled(False)
+        self.austeniteSpinBox.setObjectName("austeniteSpinBox")
+        self.gridLayout.addWidget(self.austeniteSpinBox, 5, 10, 1, 2)
+#Add
+        
         # Inputfile path:
         self.filepath_label = QtWidgets.QLabel(self.formLayoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
@@ -957,6 +976,26 @@ class Ui_MainWindow(object):
         self.fileBrowserBainite.setObjectName("fileBrowserBainite")
         self.gridLayout.addWidget(self.fileBrowserBainite, 6, 9, 1, 1)
         self.fileBrowserBainite.clicked.connect(self.button_handler)
+        
+        #Add
+        self.lineEditAustenite = QtWidgets.QLineEdit(self.formLayoutWidget)
+        self.lineEditAustenite.setEnabled(False)
+        self.lineEditAustenite.setObjectName("lineEditAustenite")
+        self.gridLayout.addWidget(self.lineEditAustenite, 6, 10, 1, 1)
+
+        self.fileBrowserAustenite = QtWidgets.QPushButton(self.formLayoutWidget)
+        self.fileBrowserAustenite.setEnabled(False)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.fileBrowserAustenite.sizePolicy().hasHeightForWidth())
+        self.fileBrowserAustenite.setSizePolicy(sizePolicy)
+        self.fileBrowserAustenite.setText("")
+        self.fileBrowserAustenite.setIcon(icon)
+        self.fileBrowserAustenite.setObjectName("fileBrowserAustenite")
+        self.gridLayout.addWidget(self.fileBrowserAustenite, 6, 11, 1, 1)
+        self.fileBrowserAustenite.clicked.connect(self.button_handler)
+        #Add
 
         # Microstructure Features:
         self.features_label = QtWidgets.QLabel(self.formLayoutWidget)
@@ -1193,6 +1232,7 @@ class Ui_MainWindow(object):
         self.inclusions_button.setText(_translate("MainWindow", "Inclusions/Pores"))
         self.Pearlite_button.setText(_translate("MainWindow", "Pearlite"))
         self.Bainite_button.setText(_translate("MainWindow", "Bainite"))
+        self.Austenite_button.setText(_translate("MainWindow", "Austenite"))  #Add
         self.phase_fraction_label.setText(_translate("MainWindow", "Phase Fraction:"))
         self.actionExit.setText(_translate("MainWindow", "Exit"))
         self.actionFiles.setText(_translate("MainWindow", "Files"))
@@ -1240,7 +1280,17 @@ class Ui_MainWindow(object):
                 self.bainiteSpinBox.setEnabled(False)
                 self.lineEditBainite.setEnabled(False)
                 self.fileBrowserBainite.setEnabled(False)
-
+#Add
+        if self.MainWindow.sender() == self.Austenite_button:
+            if state == Qt.Checked:
+                self.austeniteSpinBox.setEnabled(True)
+                self.lineEditAustenite.setEnabled(True)
+                self.fileBrowserAustenite.setEnabled(True)
+            else:
+                self.austeniteSpinBox.setEnabled(False)
+                self.lineEditAustenite.setEnabled(False)
+                self.fileBrowserAustenite.setEnabled(False)
+#Add
     def bandwidth_handler(self):
         min_thickness = 1/self.resolutionSpinBox.value()
         if self.MainWindow.sender() == self.band_lowerSpinBox:
@@ -1277,6 +1327,13 @@ class Ui_MainWindow(object):
             if dlg.exec_():
                 file_path = dlg.selectedFiles()
                 self.lineEditBainite.setText(file_path[0])
+        elif self.MainWindow.sender() == self.fileBrowserAustenite: #Add
+            dlg = QFileDialog()
+            dlg.setNameFilter("*.csv *.pkl")
+            dlg.setFileMode(QFileDialog.AnyFile)
+            if dlg.exec_():
+                file_path = dlg.selectedFiles()
+                self.lineEditAustenite.setText(file_path[0])
         elif self.MainWindow.sender() == self.fileBrowserBand:
             dlg = QFileDialog()
             dlg.setNameFilter("*.csv *.pkl")
@@ -1413,7 +1470,7 @@ class Ui_MainWindow(object):
                 'submodel_flag': False, 'element_type': None, 'slope_offset': 0, 'smoothing': True,
                 'number_of_bands': 0, 'lower_band_bound': None, 'upper_band_bound': None, 'band_orientation': None,
                 'band_filling': None, 'visualization_flag': None,
-                'file_dict': {}, 'phase_ratio': {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0},
+                'file_dict': {}, 'phase_ratio': {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7:0}, #change
                 'subs_flag': False, 'subs_file_flag': False,
                 'subs_file': None, 'orientation_relationship': None, 'subrun': None, 'pag_file': None, 'equiv_d': None,
                 'circularity': 1, 'p_sigma': 0.1, 'block_file': None, 't_mu': None, 'b_sigma': 0.1,
@@ -1441,11 +1498,12 @@ class Ui_MainWindow(object):
         if not self.ferrite_button.isChecked() \
                 and not self.martensite_button.isChecked() \
                 and not self.Pearlite_button.isChecked() \
-                and not self.Bainite_button.isChecked():
+                and not self.Bainite_button.isChecked() \
+                and not self.Austenite_button.isChecked(): #Add, and previous line changed
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
             msg.setText("Please choose at least one phase!")
-            msg.setInformativeText("Check one of the checkboxes stating\nFerrite, Martensite, Pearlite or Bainite")
+            msg.setInformativeText("Check one of the checkboxes stating\nFerrite, Martensite, Pearlite, Bainite or Austenite") #Change
             msg.setWindowTitle("Error")
             msg.exec_()
             return
@@ -1513,14 +1571,31 @@ class Ui_MainWindow(object):
                 msg.setWindowTitle("Error")
                 msg.exec_()
                 return
+#Add->
+        if self.Austenite_button.isChecked():
+            file5 = self.lineEditAustenite.text()
+            phase5_ratio = self.austeniteSpinBox.value()
 
-        if self.inclusions_button.isChecked():
-            file5 = self.lineEditInclusion.text()
-            phase5_ratio = self.inclusionSpinBox.value()
             if len(file5) > 0:
-                ARGS['phases'].append('Inclusions')
-                ARGS['phase_ratio'][5] = phase5_ratio
+                ARGS['phases'].append('Austenite')
                 ARGS['files'][5] = file5
+                ARGS['phase_ratio'][5] = phase5_ratio
+            else:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("Please select a data input file for Austenite!")
+                msg.setWindowTitle("Error")
+                msg.exec_()
+                return
+#Add<-
+#Change->                  
+        if self.inclusions_button.isChecked():
+            file6 = self.lineEditInclusion.text()
+            phase6_ratio = self.inclusionSpinBox.value()
+            if len(file6) > 0:
+                ARGS['phases'].append('Inclusions')
+                ARGS['phase_ratio'][6] = phase6_ratio
+                ARGS['files'][6] = file6
             else:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
@@ -1528,18 +1603,17 @@ class Ui_MainWindow(object):
                 msg.setWindowTitle("Error")
                 msg.exec_()
                 return
-
             # TODO: hier fehlt noch die void/solid option
 
         if self.Banding_button.isChecked():
-            file6 = self.lineEditBand.text()
-            if len(file6) > 0:
+            file7 = self.lineEditBand.text()
+            if len(file7) > 0:
                 ARGS['number_of_bands'] = self.NoBandsSpinBox.value()
                 ARGS['lower_band_bound'] = self.band_lowerSpinBox.value()
                 ARGS['upper_band_bound'] = self.band_upperSpinBox.value()
                 ARGS['phases'].append('Bands')
-                ARGS['phase_ratio'][6] = 0
-                ARGS['files'][6] = file6
+                ARGS['phase_ratio'][7] = 0
+                ARGS['files'][7] = file7
                 ARGS['band_filling'] = self.band_fillingSpinBox.value()
             else:
                 msg = QMessageBox()
@@ -1555,7 +1629,7 @@ class Ui_MainWindow(object):
                 ARGS['band_orientation'] = 'xz'
             elif self.BandOrientation_YZ.isChecked():
                 ARGS['band_orientation'] = 'yz'
-
+#change<-
 
         sum_ratio = sum(ARGS['phase_ratio'].values())
 
