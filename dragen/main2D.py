@@ -76,7 +76,7 @@ class DataTask2D(HelperFunctions):
 
         grains_df = super().process_df_2D(total_df, RveInfo.SHRINK_FACTOR)
         total_volume = sum(
-            grains_df[grains_df['phaseID'] <= 6]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
+            grains_df[grains_df['phaseID'] <= 7]['final_conti_volume'].values)  # Inclusions and bands dont influence filling  #change
         estimated_boxsize = np.cbrt(total_volume)
         RveInfo.LOGGER.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
                             format(total_volume, estimated_boxsize))
@@ -174,7 +174,7 @@ class DataTask2D(HelperFunctions):
             input_ratio = list()
             labels = list()
             for i, phase in enumerate(RveInfo.phases):
-                if RveInfo.PHASENUM[phase] > 5:  # phase ratio postprocessing for bands not relevant
+                if RveInfo.PHASENUM[phase] > 6:  # phase ratio postprocessing for bands not relevant #change
                     continue
                 ratio = RveInfo.phase_ratio[RveInfo.PHASENUM[phase]]
                 input_ratio.append(ratio)
@@ -184,7 +184,7 @@ class DataTask2D(HelperFunctions):
             PostProcVol().gen_pie_chart_phases(phase_ratios, labels, 'output')
 
         for phase in RveInfo.phases:
-            if RveInfo.PHASENUM[phase] > 4: # postprocessing for inclusions and bands not yet supported
+            if RveInfo.PHASENUM[phase] > 5: # postprocessing for inclusions and bands not yet supported #change
                 continue
             PostProcVol().gen_plots(ref_r_in[phase], ref_r_out[phase], phase)
             if RveInfo.gui_flag:
