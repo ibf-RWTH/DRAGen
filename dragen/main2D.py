@@ -15,7 +15,7 @@ from dragen.utilities.InputInfo import RveInfo
 from dragen.postprocessing.voldistribution import PostProcVol
 from dragen.postprocessing.Shape_analysis import shape
 
-plt.ioff()
+plt.ioff() #test 
 
 # TODO insert new rve utils like array gen and grid gen etc.
 
