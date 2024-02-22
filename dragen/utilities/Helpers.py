@@ -263,7 +263,7 @@ class HelperFunctions:
                 data = data.drop(labels=data.index[idx], axis=0)
                 if (grain['a'] > constraint*2) or (grain['b'] > constraint) or (grain['c'] > constraint*2):  # Dickenunterschied für die Bänbder
                     continue
-                elif np.cbrt(grain["a"]*grain["b"]*grain["c"]) < min_rad:
+                elif grain["a"] < min_rad or grain["b"] < min_rad or grain["c"] < min_rad:
                     continue
 
                 old_idx.append(idx)
