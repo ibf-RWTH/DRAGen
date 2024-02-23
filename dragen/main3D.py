@@ -95,7 +95,7 @@ class DataTask3D(HelperFunctions):
 
         total_df = super().process_df(total_df, RveInfo.SHRINK_FACTOR)
         total_volume = sum(
-            total_df[total_df['phaseID'] <= 6]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
+            total_df[total_df['phaseID'] <= 7]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
         estimated_boxsize = np.cbrt(total_volume)
         RveInfo.LOGGER.info(f"The total number of grains is {total_df.__len__()}")
         RveInfo.LOGGER.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
@@ -114,19 +114,19 @@ class DataTask3D(HelperFunctions):
             inclusions_df = data which is placed directly after the tesselation (not growing)
             bands_df = data used for the formation of bands
         """
-        grains_df = total_df.loc[total_df['phaseID'] <= 4, :]
+        grains_df = total_df.loc[total_df['phaseID'] <= 5, :] 
         grains_df = grains_df.sort_values(by='final_conti_volume', ascending=False)
         grains_df.reset_index(inplace=True, drop=True)
         grains_df.loc[:, 'GrainID'] = grains_df.index + 1
 
         if RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] > 0:
-            inclusions_df = total_df[total_df['phaseID'] == 5]
+            inclusions_df = total_df[total_df['phaseID'] == 6]
             inclusions_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
             inclusions_df.reset_index(inplace=True, drop=True)
             inclusions_df['GrainID'] = inclusions_df.index
 
         if RveInfo.number_of_bands > 0:
-            bands_df = total_df[total_df['phaseID'] == 6]
+            bands_df = total_df[total_df['phaseID'] == 7]
             bands_df = bands_df.sort_values(by='final_conti_volume', ascending=False)
             bands_df.reset_index(inplace=True, drop=True)
             bands_df.loc[:, 'GrainID'] = bands_df.index
@@ -435,7 +435,7 @@ class DataTask3D(HelperFunctions):
         for phase in RveInfo.phases:
             phase_id = RveInfo.PHASENUM[phase]
             slice_ID = 0
-            if phase_id < 5:
+            if phase_id < 6:
                 # generate pair plots for shape comparison for each phase
                 grain_shapes = pd.DataFrame()
                 for i in range(math.floor(rve.shape[2] / 4)):
@@ -487,7 +487,7 @@ class DataTask3D(HelperFunctions):
                             names = [f"{key}_texture_section_plot_{phase}.png"]
                             for name in names:
                                 Texture().calc_odf(sym_tex, phi2_list=[0, 45, 90], store_path=f'{RveInfo.store_path}/Postprocessing', figname=name)
-            if phase_id == 5:
+            if phase_id == 6:
                 current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out = \
                     PostProcVol().gen_in_out_lists(phaseID=phase_id)
                 phase_ratios.append(current_phase_ratio_out)
@@ -496,7 +496,7 @@ class DataTask3D(HelperFunctions):
             input_ratio = list()
             labels = list()
             for i, phase in enumerate(RveInfo.phases):
-                if RveInfo.PHASENUM[phase] > 5:  # phase ratio postprocessing for bands not relevant
+                if RveInfo.PHASENUM[phase] > 6:  # phase ratio postprocessing for bands not relevant
                     continue
                 ratio = RveInfo.phase_ratio[RveInfo.PHASENUM[phase]]
                 input_ratio.append(ratio)
@@ -506,7 +506,7 @@ class DataTask3D(HelperFunctions):
             PostProcVol().gen_pie_chart_phases(phase_ratios, labels, 'output')
 
         for phase in RveInfo.phases:
-            if RveInfo.PHASENUM[phase] > 4: # postprocessing for inclusions and bands not yet supported
+            if RveInfo.PHASENUM[phase] > 5: # postprocessing for inclusions and bands not yet supported
                 continue
             PostProcVol().gen_plots(ref_r_in[phase], ref_r_out[phase], phase)
             if RveInfo.gui_flag:
