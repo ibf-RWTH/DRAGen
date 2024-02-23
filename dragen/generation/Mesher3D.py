@@ -1168,6 +1168,7 @@ class AbaqusMesher(MeshingHelper):
         phase2_idx = 0
         phase3_idx = 0
         phase4_idx = 0
+        phase5_idx = 0
         numberofgrains = self.n_grains
 
         phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains+1)]
@@ -1210,6 +1211,14 @@ class AbaqusMesher(MeshingHelper):
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
                     f.write('{}.,4.\n'.format(ngrain))
+            elif phase[i] == 5:
+                if not RveInfo.phase2iso_flag:
+                    phase4_idx += 1
+                    f.write('*Material, name=Austenite_{}\n'.format(phase5_idx))
+                    f.write('*Depvar\n')
+                    f.write('    176,\n')
+                    f.write('*User Material, constants=2\n')
+                    f.write('{}.,2.\n'.format(ngrain))
 
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[2] > 0:
             f.write('**\n')
@@ -1220,6 +1229,9 @@ class AbaqusMesher(MeshingHelper):
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[4] > 0:
             f.write('**\n')
             f.write('*Include, Input=Bainite.inp\n')
+        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[5] > 0:
+            f.write('**\n')
+            f.write('*Include, Input=Austenite.inp\n')
         f.close()
 
     def write_submodel_step_def(self) -> None:
@@ -1471,36 +1483,90 @@ class AbaqusMesher(MeshingHelper):
         phase2_idx = 0
         phase3_idx = 0
         phase4_idx = 0
+        phase5_idx = 0
         for i in range(self.n_grains):
             nGrain = i + 1
             if self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 1:
                 phase1_idx += 1
                 f.write('** Section: Section - {}\n'.format(nGrain))
-                f.write('*Solid Section, elset=Set-{}, material=Ferrite_{}\n'.format(nGrain, phase1_idx))
+                if not RveInfo.reduced_elements:
+                    f.write(f'*Solid Section, elset=Set-{nGrain}, material=Ferrite_{phase1_idx}\n')
+                else:
+                    f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Ferrite_{phase1_idx}\n')
+                    f.write('*Hourglass Stiffness\n')
+                    f.write('1., , 1., 1.\n')
             elif self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 2:
-                if not RveInfo.phase2iso_flag:
-                    phase2_idx += 1
-                    f.write('** Section: Section - {}\n'.format(nGrain))
-                    f.write('*Solid Section, elset=Set-{}, material=Martensite_{}\n'.format(nGrain, phase2_idx))
+                if not RveInfo.reduced_elements:
+                    if not RveInfo.phase2iso_flag:
+                        phase2_idx += 1
+                        f.write(f'** Section: Section - {nGrain}\n')
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, material=Martensite_{phase2_idx}\n')
+                    else:
+                        f.write(f'** Section: Section - {nGrain}\n')
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, material=Martensite\n')
                 else:
-                    f.write('** Section: Section - {}\n'.format(nGrain))
-                    f.write('*Solid Section, elset=Set-{}, material=Martensite\n'.format(nGrain))
+                    if not RveInfo.phase2iso_flag:
+                        phase2_idx += 1
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Martensite_{phase2_idx}\n')
+                        f.write('*Hourglass Stiffness\n')
+                        f.write('1., , 1., 1.\n')
+                    else:
+                        f.write('** Section: Section - {}\n'.format(nGrain))
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Martensite\n')
             elif self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 3:
-                if not RveInfo.phase2iso_flag:
-                    phase3_idx += 1
-                    f.write('** Section: Section - {}\n'.format(nGrain))
-                    f.write('*Solid Section, elset=Set-{}, material=Pearlite_{}\n'.format(nGrain, phase3_idx))
+                if not RveInfo.reduced_elements:
+                    if not RveInfo.phase2iso_flag:
+                        phase3_idx += 1
+                        f.write('** Section: Section - {}\n'.format(nGrain))
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, material=Pearlite_{phase3_idx}\n')
+                    else:
+                        f.write('** Section: Section - {}\n'.format(nGrain))
+                        f.write('*Solid Section, elset=Set-{}, material=Pearlite\n'.format(nGrain))
                 else:
-                    f.write('** Section: Section - {}\n'.format(nGrain))
-                    f.write('*Solid Section, elset=Set-{}, material=Pearlite\n'.format(nGrain))
+                    if not RveInfo.phase2iso_flag:
+                        phase3_idx += 1
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Pearlite_{phase3_idx}\n')
+                        f.write('*Hourglass Stiffness\n')
+                        f.write('1., , 1., 1.\n')
+                    else:
+                        f.write('** Section: Section - {}\n'.format(nGrain))
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Pearlite\n')
             elif self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 4:
-                if not RveInfo.phase2iso_flag:
-                    phase4_idx += 1
-                    f.write('** Section: Section - {}\n'.format(nGrain))
-                    f.write('*Solid Section, elset=Set-{}, material=Bainite_{}\n'.format(nGrain, phase4_idx))
+                if not RveInfo.reduced_elements:
+                    if not RveInfo.phase2iso_flag:
+                        phase4_idx += 1
+                        f.write(f'** Section: Section - {nGrain}\n')
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, material=Bainite_{phase4_idx}\n')
+                    else:
+                        f.write(f'** Section: Section - {nGrain}\n')
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, material=Bainite\n')
                 else:
-                    f.write('** Section: Section - {}\n'.format(nGrain))
-                    f.write('*Solid Section, elset=Set-{}, material=Bainite\n'.format(nGrain))
+                    if not RveInfo.phase2iso_flag:
+                        phase4_idx += 1
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Bainite_{phase4_idx}\n')
+                        f.write('*Hourglass Stiffness\n')
+                        f.write('1., , 1., 1.\n')
+                    else:
+                        f.write(f'** Section: Section - {nGrain}\n')
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Bainite\n')
+            elif self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 5:
+                if not RveInfo.reduced_elements:
+                    if not RveInfo.phase2iso_flag:
+                        phase5_idx += 1
+                        f.write(f'** Section: Section - {nGrain}\n')
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, material=Austenite_{phase5_idx}\n')
+                    else:
+                        f.write(f'** Section: Section - {nGrain}\n')
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, material=Austenite\n')
+                else:
+                    if not RveInfo.phase2iso_flag:
+                        phase5_idx += 1
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Austenite_{phase5_idx}\n')
+                        f.write('*Hourglass Stiffness\n')
+                        f.write('1., , 1., 1.\n')
+                    else:
+                        f.write(f'** Section: Section - {nGrain}\n')
+                        f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Austenite\n')
 
         f.close()
         os.remove(RveInfo.store_path + '/rve-part.inp')
