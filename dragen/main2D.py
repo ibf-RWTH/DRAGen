@@ -15,7 +15,7 @@ from dragen.utilities.InputInfo import RveInfo
 from dragen.postprocessing.voldistribution import PostProcVol
 from dragen.postprocessing.Shape_analysis import shape
 
-plt.ioff() #test 
+plt.ioff()
 
 # TODO insert new rve utils like array gen and grid gen etc.
 
@@ -76,7 +76,7 @@ class DataTask2D(HelperFunctions):
 
         grains_df = super().process_df_2D(total_df, RveInfo.SHRINK_FACTOR)
         total_volume = sum(
-        grains_df[grains_df['phaseID'] <= 7]['final_conti_volume'].values)  # Inclusions and bands dont influence filling  #change
+            grains_df[grains_df['phaseID'] <= 7]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
         estimated_boxsize = np.cbrt(total_volume)
         RveInfo.LOGGER.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
                             format(total_volume, estimated_boxsize))
