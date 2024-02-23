@@ -132,6 +132,14 @@ class SubMesher(AbaqusMesher):
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
                     f.write('{}.,4.\n'.format(nblock))
+                elif phase[i] == 5:
+                    phase4_idx += 1
+                    f.write('*Material, name=Austenite_{}\n'.format(phase5_idx))
+                    f.write('*Depvar\n')
+                    f.write('    176,\n')
+                    f.write('*User Material, constants=2\n')
+                    f.write('{}.,4.\n'.format(nblock))
+                    
             else:
                 if phase[i] == 1:
                     phase1_idx += 1
@@ -150,6 +158,9 @@ class SubMesher(AbaqusMesher):
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[4] > 0:
             f.write('**\n')
             f.write('*Include, Input=Bainite.inp\n')
+        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[5] > 0:
+            f.write('**\n')
+            f.write('*Include, Input=Austenite.inp\n')
         f.close()
 
     def write_block_data(self) -> None:
@@ -366,6 +377,7 @@ class SubMesher(AbaqusMesher):
         phase2_idx = 0
         phase3_idx = 0
         phase4_idx = 0
+        phase5_idx = 0
         for i in range(self.n_blocks):
             nBlock = i + 1
             if self.rve.loc[GRID.cell_data['block_id'] == nBlock].phaseID.values[0] == 1:
@@ -398,6 +410,14 @@ class SubMesher(AbaqusMesher):
                 else:
                     f.write('** Section: Section - {}\n'.format(nBlock))
                     f.write('*Solid Section, elset=Set-Block{}, material=Bainite\n'.format(nBlock))
+            elif self.rve.loc[GRID.cell_data['block_id'] == nBlock].phaseID.values[0] == 5: 
+                if not RveInfo.phase2iso_flag:
+                    phase5_idx += 1
+                    f.write('** Section: Section - {}\n'.format(nBlock))
+                    f.write('*Solid Section, elset=Set-Block{}, material=Austenite_{}\n'.format(nBlock, phase5_idx))
+                else:
+                    f.write('** Section: Section - {}\n'.format(nBlock))
+                    f.write('*Solid Section, elset=Set-Block{}, material=Austenite\n'.format(nBlock))
 
 
         f.close()
