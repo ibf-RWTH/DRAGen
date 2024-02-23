@@ -58,7 +58,7 @@ def write_material(store_path: str, grains: list, angles: pd.DataFrame) -> None:
 
     matdata['phase']['Ferrite'] = ferrite
     matdata['phase']['Martensite'] = martensite
-    if 5 in grains:
+    if 6 in grains:
         matdata['phase']['ThirdPhase'] = inclusion
 
     # Material
@@ -71,7 +71,7 @@ def write_material(store_path: str, grains: list, angles: pd.DataFrame) -> None:
         elif p == 2:
             matdata = matdata.material_add(phase=['Martensite'], O=damask.Rotation.from_random(1),
                                            homogenization='SX')
-        elif p == 5:
+        elif p == 6:
             matdata = matdata.material_add(phase=['ThirdPhase'], O=damask.Rotation.from_random(1),
                                            homogenization='SX')
         i += 1
