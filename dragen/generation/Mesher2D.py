@@ -373,7 +373,8 @@ class BuildAbaqus2D:
                                          abaq_elem_df.p1[i]+1,
                                          abaq_elem_df.p2[i]+1,
                                          abaq_elem_df.p3[i]+1,
-                                         abaq_elem_df.p4[i]+1)
+                                         abaq_elem_df.p4[i]+1,
+                                         abaq_elem_df.p5[i]+1) #add
             f.write(line)
         f.close()
 
@@ -1112,6 +1113,7 @@ class BuildAbaqus2D:
         phase2_idx = 0
         phase3_idx = 0
         phase4_idx = 0
+        phase5_idx = 0 #add
         numberofgrains = self.n_grains
 
         phase = [self.rve_df.loc[self.rve_df['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains+1)]
@@ -1162,6 +1164,16 @@ class BuildAbaqus2D:
                     f.write('{}.,4.\n'.format(ngrain))
                     if RveInfo.xfem_flag:
                         f.write('*include, input=Bainite_dmg.inp\n')
+            elif phase[i] == 5: #add
+                if not RveInfo.phase2iso_flag:
+                    phase5_idx += 1
+                    f.write('*Material, name=Austenite_{}\n'.format(phase5_idx))
+                    f.write('*Depvar\n')
+                    f.write('    176,\n')
+                    f.write('*User Material, constants=2\n')
+                    f.write('{}.,2.\n'.format(ngrain))
+                    if RveInfo.xfem_flag:
+                        f.write('*include, input=Austenite_dmg.inp\n')
 
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[2] > 0:
             f.write('**\n')
@@ -1178,6 +1190,12 @@ class BuildAbaqus2D:
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[4] > 0:
             f.write('**\n')
             f.write('*Material, name=Bainite\n')
+            f.write('*Elastic\n')
+            f.write('0.21, 0.3\n')
+            f.write('**')
+        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[5] > 0: #add
+            f.write('**\n')
+            f.write('*Material, name=Austenite\n')
             f.write('*Elastic\n')
             f.write('0.21, 0.3\n')
             f.write('**')
@@ -1217,6 +1235,16 @@ class BuildAbaqus2D:
 
         if RveInfo.xfem_flag and RveInfo.phase_ratio[4] > 0:
             f = open(RveInfo.store_path + '/Bainite_dmg.inp', 'a')
+            f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
+            f.write('** damage variable, max. element number \n')
+            f.write('0.01, {} \n'.format(self.mesh.number_of_cells))
+            f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=1 \n')
+            f.write('1., \n')
+            f.write('*Damage Stabilization \n')
+            f.write('0.012 \n')
+            f.close()
+        if RveInfo.xfem_flag and RveInfo.phase_ratio[5] > 0: #add
+            f = open(RveInfo.store_path + '/Austenite_dmg.inp', 'a')
             f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
             f.write('** damage variable, max. element number \n')
             f.write('0.01, {} \n'.format(self.mesh.number_of_cells))
