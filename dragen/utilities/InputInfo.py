@@ -155,6 +155,7 @@ class RveInfo:
 
     element_type: str = None
     """available element types: (C3D4, HEX8)"""
+    reduced_elements: bool = True
 
     roughness_flag: bool = False
     """Flag not yet activated since roughness is not yet implemented"""

@@ -37,7 +37,7 @@ For more:
 
 <p align="left"><img src="docs/DRAGen_readme_paper.jpg" height="400" alt=""> </img></p>
 
-_Note: For developing it is highly recommended to use Python versions 3.6 to 3.8. For Python 3.9 Pyvista is not fully supported._<br>
+_Note: For developing it is highly recommended to use Python versions Python 3.9._<br>
 **If further questions appear please check the lower section or get in touch with us.**
 
 

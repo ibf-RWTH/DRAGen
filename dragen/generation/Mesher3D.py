@@ -38,6 +38,9 @@ class AbaqusMesher(MeshingHelper):
             f.write('*Include, input=VerticeSets.inp\n')
             f.write('*Include, Input=BoxSets.inp\n')
         f.write('*End Assembly\n')
+        if RveInfo.reduced_elements:
+            f.write('*Section Controls, name = EC - 1, hourglass = Enhanced\n')
+            f.write('1., 1., 1.\n')
         f.write('** INCLUDE MATERIAL FILE **\n')
         f.write('*Include, input=Materials.inp\n')
         f.write('** INCLUDE STEP FILE **\n')
@@ -431,7 +434,7 @@ class AbaqusMesher(MeshingHelper):
 
         ######### Write input file for equations on corners #############
         OutPutFile = open(RveInfo.store_path + '/Corners.inp', 'w')
-        OutPutFile.write('**** 1-DIR ****' )
+        OutPutFile.write('**** 1-DIR ****\n' )
         OutPutFile.write('*Equation \n')
         OutPutFile.write('4 \n')
         OutPutFile.write('H3 ,1, 1 \n')
@@ -453,7 +456,7 @@ class AbaqusMesher(MeshingHelper):
         OutPutFile.write('H2, 1,-1 \n')
         OutPutFile.write('H1, 1, 1 \n')
         OutPutFile.write('** \n')
-        OutPutFile.write('**** 2-DIR ****')
+        OutPutFile.write('**** 2-DIR ****\n')
         OutPutFile.write('*Equation \n')
         OutPutFile.write('4 \n')
         OutPutFile.write('H3 ,2, 1 \n')
@@ -475,7 +478,7 @@ class AbaqusMesher(MeshingHelper):
         OutPutFile.write('H4, 2,-1 \n')
         OutPutFile.write('H1, 2, 1 \n')
         OutPutFile.write('** \n')
-        OutPutFile.write('**** 3-DIR ****')
+        OutPutFile.write('**** 3-DIR ****\n')
         OutPutFile.write('*Equation \n')
         OutPutFile.write('4 \n')
         OutPutFile.write('V2 ,3, 1 \n')
@@ -1464,8 +1467,10 @@ class AbaqusMesher(MeshingHelper):
         f = open(RveInfo.store_path + '/DRAGen_RVE.inp', 'a')
         f.write('*Part, name=PART-1\n')
         for line in lines[startingLine:]:
-            if line.replace(" ", "") == "*element,type=c3d8rh\n":
+            if (line.replace(" ", "") == "*element,type=c3d8rh\n") and (not RveInfo.reduced_elements):
                 line = "*element,type=c3d8\n"
+            elif (line.replace(" ", "") == "*element,type=c3d8rh\n") and (RveInfo.reduced_elements):
+                line = "*element,type=c3d8r\n"
             if '*end' in line:
                 line = line.replace('*end', '**\n')
             f.write(line)
