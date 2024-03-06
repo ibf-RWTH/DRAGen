@@ -165,7 +165,7 @@ class RveInfo:
     root: str = './'
     """root path"""
 
-    PHASENUM = {'Ferrite': 1, 'Martensite': 2, 'Pearlite': 3, 'Bainite': 4, 'Inclusions': 5, 'Bands': 6}
+    PHASENUM = {'Ferrite': 1, 'Martensite': 2, 'Pearlite': 3, 'Bainite': 4, 'Austenite': 5, 'Inclusions': 6, 'Bands': 7}
     """Numbers linked to currently defined phases"""
 
     rwth_colors = [(100 / 256, 101 / 256, 103 / 256),  # grey
