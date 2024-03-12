@@ -838,6 +838,39 @@ class Ui_MainWindow(object):
         self.Austenite_button.stateChanged.connect(self.phase_handler)
         #Add
 
+        #isotropy
+        #self.phase2iso_dict = {1: True, 2: True, 3: True, 4: True, 5: True}
+        self.phase2iso_ferrite_button = QtWidgets.QCheckBox(self.gridLayoutWidget)
+        self.phase2iso_ferrite_button.setChecked(True)
+        self.phase2iso_ferrite_button.setObjectName("phase2iso_ferrite_button")
+        self.gridLayout.addWidget(self.phase2iso_ferrite_button, 4, 3, 1, 2)
+        #self.phase2iso_ferrite_button.stateChanged.connect(self.phase2iso_handler)
+
+        self.phase2iso_martensite_button = QtWidgets.QCheckBox(self.gridLayoutWidget)
+        self.phase2iso_martensite_button.setChecked(True)
+        self.phase2iso_martensite_button.setObjectName("phase2iso_martensite_button")
+        self.gridLayout.addWidget(self.phase2iso_martensite_button, 4, 5, 1, 1)
+        #self.phase2iso_martensite_button.stateChanged.connect(self.phase2iso_handler)
+
+        self.phase2iso_Pearlite_button = QtWidgets.QCheckBox(self.gridLayoutWidget)
+        self.phase2iso_Pearlite_button.setChecked(True)
+        self.phase2iso_Pearlite_button.setObjectName("phase2iso_Pearlite_button")
+        self.gridLayout.addWidget(self.phase2iso_Pearlite_button, 4, 7, 1, 1)
+        #self.phase2iso_Pearlite_button.stateChanged.connect(self.phase2iso_handler)
+        
+        self.phase2iso_Bainite_button = QtWidgets.QCheckBox(self.gridLayoutWidget)
+        self.phase2iso_Bainite_button.setChecked(True)
+        self.phase2iso_Bainite_button.setObjectName("phase2iso_Bainite_button")
+        self.gridLayout.addWidget(self.phase2iso_Bainite_button, 4, 9, 1, 1)
+        #self.phase2iso_Bainite_button.stateChanged.connect(self.phase2iso_handler)
+
+        self.phase2iso_Austenite_button = QtWidgets.QCheckBox(self.gridLayoutWidget)
+        self.phase2iso_Austenite_button.setChecked(True)
+        self.phase2iso_Austenite_button.setObjectName("phase2iso_Austenite_button")
+        self.gridLayout.addWidget(self.phase2iso_Austenite_button, 4, 11, 1, 1)
+        #self.phase2iso_Austenite_button.stateChanged.connect(self.phase2iso_handler)
+
+
         # Phase Fraction:
         self.phase_fraction_label = QtWidgets.QLabel(self.formLayoutWidget)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
@@ -1236,6 +1269,11 @@ class Ui_MainWindow(object):
         self.phase_fraction_label.setText(_translate("MainWindow", "Phase Fraction:"))
         self.actionExit.setText(_translate("MainWindow", "Exit"))
         self.actionFiles.setText(_translate("MainWindow", "Files"))
+        self.phase2iso_ferrite_button.setText(_translate("MainWindow", "Iso"))
+        self.phase2iso_martensite_button.setText(_translate("MainWindow", "Iso"))
+        self.phase2iso_Pearlite_button.setText(_translate("MainWindow", "Iso"))
+        self.phase2iso_Bainite_button.setText(_translate("MainWindow", "Iso"))
+        self.phase2iso_Austenite_button.setText(_translate("MainWindow", "Iso"))
 
     def progress_event(self, progress):
         self.progressBar.setValue(progress)
@@ -1291,6 +1329,39 @@ class Ui_MainWindow(object):
                 self.lineEditAustenite.setEnabled(False)
                 self.fileBrowserAustenite.setEnabled(False)
 #Add
+                
+ #   def phase2iso_handler(self,state)
+ #       if self.MainWindow.sender() == self.phase2iso_ferrite_button:
+ #           key = 1
+ #           if state == QtCore.Qt.Checked:
+ #               self.phase2iso_dict[key] = True
+ #           else:
+ #               self.phase2iso_dict[key] = False
+ #       if self.MainWindow.sender() == self.phase2iso_martensite_button:
+ #           key = 2
+ #           if state == QtCore.Qt.Checked:
+ #               self.phase2iso_dict[key] = True
+ #           else:
+ #               self.phase2iso_dict[key] = False
+ #       if self.MainWindow.sender() == self.phase2iso_Pearlite_button:
+ #           key = 1
+ #           if state == QtCore.Qt.Checked:
+ #               self.phase2iso_dict[key] = True
+ #           else:
+ #               self.phase2iso_dict[key] = False
+ #       if self.MainWindow.sender() == self.phase2iso_Bainite_button:
+ #           key = 1
+ #           if state == QtCore.Qt.Checked:
+ #               self.phase2iso_dict[key] = True
+ #           else:
+ #               self.phase2iso_dict[key] = False
+ #      if self.MainWindow.sender() == self.phase2iso_Austenite_button:
+ #           key = 1
+ #           if state == QtCore.Qt.Checked:
+ #               self.phase2iso_dict[key] = True
+ #           else:
+ #               self.phase2iso_dict[key] = False
+
     def bandwidth_handler(self):
         min_thickness = 1/self.resolutionSpinBox.value()
         if self.MainWindow.sender() == self.band_lowerSpinBox:
@@ -1476,7 +1547,7 @@ class Ui_MainWindow(object):
                 'circularity': 1, 'p_sigma': 0.1, 'block_file': None, 't_mu': None, 'b_sigma': 0.1,
                 'decreasing_factor': 0.95, 'lower': None, 'upper': None, 'plt_name': None, 'save': True, 'plot': None,
                 'filename': 'substruct_data.csv', 'gui_flag': True,
-                'files': {1: None, 2: None, 3: None, 4: None, 5: None, 6: None}}
+                'files': {1: None, 2: None, 3: None, 4: None, 5: None, 6: None},  'phase2iso_flag': {1:True, 2:True, 3:True, 4:True, 5:True}}
 
         if self.two_d_button.isChecked():
             ARGS['dimension'] = 2
@@ -1588,7 +1659,7 @@ class Ui_MainWindow(object):
                 msg.exec_()
                 return
 #Add<-
-#Change->                  
+#Change->                
         if self.inclusions_button.isChecked():
             file6 = self.lineEditInclusion.text()
             phase6_ratio = self.inclusionSpinBox.value()
@@ -1630,6 +1701,30 @@ class Ui_MainWindow(object):
             elif self.BandOrientation_YZ.isChecked():
                 ARGS['band_orientation'] = 'yz'
 #change<-
+        if self.phase2iso_ferrite_button.isChecked():
+            self.phase2iso_flag[1] = True
+        else:
+            self.phase2iso_flag[1] = False
+
+        if self.phase2iso_martensite_button.isChecked():
+            self.phase2iso_flag[2] = True
+        else:
+            self.phase2iso_flag[2] = False
+
+        if self.phase2iso_Pearlite_button.isChecked():
+            self.phase2iso_flag[3] = True
+        else:
+            self.phase2iso_flag[3] = False
+
+        if self.phase2iso_Bainite_button.isChecked():
+            self.phase2iso_flag[4] = True
+        else:
+            self.phase2iso_flag[4] = False
+
+        if self.phase2iso_Austenite_button.isChecked():
+            self.phase2iso_flag[5] = True
+        else:
+            self.phase2iso_flag[5] = False
 
         sum_ratio = sum(ARGS['phase_ratio'].values())
 
