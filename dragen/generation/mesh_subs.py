@@ -92,6 +92,7 @@ class SubMesher(AbaqusMesher):
         phase2_idx = 0
         phase3_idx = 0
         phase4_idx = 0
+        phase5_idx = 0
         numberofblocks = self.n_blocks
 
         phase = [self.rve.loc[self.rve['block_id'] == i].phaseID.values[0] for i in range(1, numberofblocks + 1)]
@@ -103,7 +104,7 @@ class SubMesher(AbaqusMesher):
         f = open(RveInfo.store_path + '/Materials.inp', 'a')
         for i in range(numberofblocks):
             nblock = i + 1
-            if not RveInfo.phase2iso_flag:
+            if not RveInfo.phase2iso_flag: #I think we need to ask the isotropy for every phase here(12-03-2024)
                 if phase[i] == 1:
                     phase1_idx += 1
                     f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
@@ -149,16 +150,16 @@ class SubMesher(AbaqusMesher):
                     f.write('*User Material, constants=2\n')
                     f.write('{}.,3.\n'.format(phase1_idx))
 
-        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[2] > 0:
+        if RveInfo.phase2iso_flag[2] and RveInfo.phase_ratio[2] > 0:
             f.write('**\n')
             f.write('*Include, Input=Martensite.inp\n')
-        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[3] > 0:
+        if RveInfo.phase2iso_flag[3] and RveInfo.phase_ratio[3] > 0:
             f.write('**\n')
             f.write('*Include, Input=Pearlite.inp\n')
-        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[4] > 0:
+        if RveInfo.phase2iso_flag[4] and RveInfo.phase_ratio[4] > 0:
             f.write('**\n')
             f.write('*Include, Input=Bainite.inp\n')
-        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[5] > 0:
+        if RveInfo.phase2iso_flag[5] and RveInfo.phase_ratio[5] > 0:
             f.write('**\n')
             f.write('*Include, Input=Austenite.inp\n')
         f.close()
@@ -175,7 +176,7 @@ class SubMesher(AbaqusMesher):
         #phase as its grain size in the future
         for i in range(numberofblocks):
             nblock = i + 1
-            if not RveInfo.phase2iso_flag:
+            if not RveInfo.phase2iso_flag:  #[]?(12-03-2024)
                 """phi1 = int(np.random.rand() * 360)
                 PHI = int(np.random.rand() * 360)
                 phi2 = int(np.random.rand() * 360)"""
@@ -385,7 +386,7 @@ class SubMesher(AbaqusMesher):
                 f.write('** Section: Section - {}\n'.format(nBlock))
                 f.write('*Solid Section, elset=Set-Block{}, material=Ferrite_{}\n'.format(nBlock, phase1_idx))
             elif self.rve.loc[GRID.cell_data['block_id'] == nBlock].phaseID.values[0] == 2:
-                if not RveInfo.phase2iso_flag:
+                if not RveInfo.phase2iso_flag[2]:
                     phase2_idx += 1
                     f.write('** Section: Section - {}\n'.format(nBlock))
                     f.write('*Solid Section, elset=Set-Block{}, material=Martensite_{}\n'.format(nBlock, phase2_idx))
@@ -393,7 +394,7 @@ class SubMesher(AbaqusMesher):
                     f.write('** Section: Section - {}\n'.format(nBlock))
                     f.write('*Solid Section, elset=Set-Block{}, material=Martensite\n'.format(nBlock))
             elif self.rve.loc[GRID.cell_data['block_id'] == nBlock].phaseID.values[0] == 3:
-                if not RveInfo.phase2iso_flag:
+                if not RveInfo.phase2iso_flag[3]:
                     phase3_idx += 1
                     f.write('** Section: Section - {}\n'.format(nBlock))
                     f.write(
@@ -403,7 +404,7 @@ class SubMesher(AbaqusMesher):
                     f.write('*Solid Section, elset=Set-Block{}, material=Pearlite\n'.format(nBlock))
 
             elif self.rve.loc[GRID.cell_data['block_id'] == nBlock].phaseID.values[0] == 4:
-                if not RveInfo.phase2iso_flag:
+                if not RveInfo.phase2iso_flag[4]:
                     phase4_idx += 1
                     f.write('** Section: Section - {}\n'.format(nBlock))
                     f.write('*Solid Section, elset=Set-Block{}, material=Bainite_{}\n'.format(nBlock, phase4_idx))
@@ -411,7 +412,7 @@ class SubMesher(AbaqusMesher):
                     f.write('** Section: Section - {}\n'.format(nBlock))
                     f.write('*Solid Section, elset=Set-Block{}, material=Bainite\n'.format(nBlock))
             elif self.rve.loc[GRID.cell_data['block_id'] == nBlock].phaseID.values[0] == 5: 
-                if not RveInfo.phase2iso_flag:
+                if not RveInfo.phase2iso_flag[5]:
                     phase5_idx += 1
                     f.write('** Section: Section - {}\n'.format(nBlock))
                     f.write('*Solid Section, elset=Set-Block{}, material=Austenite_{}\n'.format(nBlock, phase5_idx))
