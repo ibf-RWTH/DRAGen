@@ -443,7 +443,7 @@ class BuildAbaqus2D:
                 f.write('** Section: Section - {}\n'.format(nGrain))
                 f.write('*Solid Section, elset=Set-{}, material=Ferrite_{}\n'.format(nGrain, phase1_idx))
             elif self.rve_df.loc[self.rve_df['GrainID'] == nGrain].phaseID.values[0] == 2:
-                if not RveInfo.phase2iso_flag:
+                if not RveInfo.phase2iso_flag[2]:
                     phase2_idx += 1
                     f.write('** Section: Section - {}\n'.format(nGrain))
                     f.write('*Solid Section, elset=Set-{}, material=Martensite_{}\n'.format(nGrain, phase2_idx))
@@ -1135,7 +1135,7 @@ class BuildAbaqus2D:
                 if RveInfo.xfem_flag:
                     f.write('*include, input=Ferrite_dmg.inp\n')
             elif phase[i] == 2:
-                if not RveInfo.phase2iso_flag:
+                if not RveInfo.phase2iso_flag[2]:
                     phase2_idx += 1
                     f.write('*Material, name=Martensite_{}\n'.format(phase2_idx))
                     f.write('*Depvar\n')
@@ -1145,7 +1145,7 @@ class BuildAbaqus2D:
                     if RveInfo.xfem_flag:
                         f.write('*include, input=Martensite_dmg.inp\n')
             elif phase[i] == 3:
-                if not RveInfo.phase2iso_flag:
+                if not RveInfo.phase2iso_flag[2]:
                     phase3_idx += 1
                     f.write('*Material, name=Pearlite_{}\n'.format(phase3_idx))
                     f.write('*Depvar\n')
@@ -1155,7 +1155,7 @@ class BuildAbaqus2D:
                     if RveInfo.xfem_flag:
                         f.write('*include, input=Pearlite_dmg.inp\n')
             elif phase[i] == 4:
-                if not RveInfo.phase2iso_flag:
+                if not RveInfo.phase2iso_flag[3]:
                     phase4_idx += 1
                     f.write('*Material, name=Bainite_{}\n'.format(phase4_idx))
                     f.write('*Depvar\n')
@@ -1165,7 +1165,7 @@ class BuildAbaqus2D:
                     if RveInfo.xfem_flag:
                         f.write('*include, input=Bainite_dmg.inp\n')
             elif phase[i] == 5: #add
-                if not RveInfo.phase2iso_flag:
+                if not RveInfo.phase2iso_flag[3]:
                     phase5_idx += 1
                     f.write('*Material, name=Austenite_{}\n'.format(phase5_idx))
                     f.write('*Depvar\n')
@@ -1175,25 +1175,25 @@ class BuildAbaqus2D:
                     if RveInfo.xfem_flag:
                         f.write('*include, input=Austenite_dmg.inp\n')
 
-        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[2] > 0:
+        if RveInfo.phase2iso_flag[2] and RveInfo.phase_ratio[2] > 0:
             f.write('**\n')
             f.write('*Material, name=Martensite\n')
             f.write('*Elastic\n')
             f.write('0.21, 0.3\n')
             f.write('**')
-        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[3] > 0:
+        if RveInfo.phase2iso_flag[3] and RveInfo.phase_ratio[3] > 0:
             f.write('**\n')
             f.write('*Material, name=Pearlite\n')
             f.write('*Elastic\n')
             f.write('0.21, 0.3\n')
             f.write('**')
-        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[4] > 0:
+        if RveInfo.phase2iso_flag[4] and RveInfo.phase_ratio[4] > 0:
             f.write('**\n')
             f.write('*Material, name=Bainite\n')
             f.write('*Elastic\n')
             f.write('0.21, 0.3\n')
             f.write('**')
-        if RveInfo.phase2iso_flag and RveInfo.phase_ratio[5] > 0: #add
+        if RveInfo.phase2iso_flag[5] and RveInfo.phase_ratio[5] > 0: #add
             f.write('**\n')
             f.write('*Material, name=Austenite\n')
             f.write('*Elastic\n')
@@ -1406,7 +1406,7 @@ class BuildAbaqus2D:
 
         for i in range(numberofgrains):
             ngrain = i+1
-            if not RveInfo.phase2iso_flag:
+            if not RveInfo.phase2iso_flag: # does it take the flag info from dictionary if i leave it like this?(12-03-2024)
                 phi1 = self.tex_phi1[i]
                 PHI = self.tex_PHI[i]
                 phi2 = self.tex_phi2[i]
