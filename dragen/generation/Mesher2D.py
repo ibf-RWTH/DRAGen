@@ -1406,18 +1406,11 @@ class BuildAbaqus2D:
 
         for i in range(numberofgrains):
             ngrain = i+1
-            if not RveInfo.phase2iso_flag: # does it take the flag info from dictionary if i leave it like this?(12-03-2024)
+            if not RveInfo.phase2iso_flag[phase[i]]:
                 phi1 = self.tex_phi1[i]
                 PHI = self.tex_PHI[i]
                 phi2 = self.tex_phi2[i]
                 f.write('Grain: {}: {}: {}: {}: {}\n'.format(ngrain, phi1, PHI, phi2, grainsize[i]))
-            else:
-                if phase[i] == 1:
-                    phase1_idx += 1
-                    phi1 = self.tex_phi1[i]
-                    PHI = self.tex_PHI[i]
-                    phi2 = self.tex_phi2[i]
-                    f.write('Grain: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, PHI, phi2, grainsize[i]))
         f.close()
 
     def run(self):
