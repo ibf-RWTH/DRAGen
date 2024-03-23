@@ -7,6 +7,7 @@ import datetime
 import os
 from dragen.utilities.PvGridGeneration import MeshingHelper
 from dragen.utilities.InputInfo import RveInfo
+from dragen.utilities.Helpers import HelperFunctions
 
 class AbaqusMesher(MeshingHelper):
 
@@ -1172,70 +1173,18 @@ class AbaqusMesher(MeshingHelper):
         phase3_idx = 0
         phase4_idx = 0
         phase5_idx = 0
-        numberofgrains = self.n_grains
+        numberof_id = self.n_grains
 
-        phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains+1)]
+        phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberof_id+1)]
         f = open(RveInfo.store_path + '/Materials.inp', 'w+')  # open in write mode to overwrite old files in case ther are any
         f.write('** MATERIALS\n')
         f.write('**\n')
         f.close()
         f = open(RveInfo.store_path + '/Materials.inp', 'a')
 
-        for i in range(numberofgrains):
-            ngrain = i+1
-            if phase[i] == 1:
-                phase1_idx += 1
-                f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
-                f.write('*Depvar\n')
-                f.write('    176,\n')
-                f.write('*User Material, constants=2\n')
-                f.write('{}.,3.\n'.format(phase1_idx))
-            elif phase[i] == 2:
-                if not RveInfo.phase2iso_flag[2]:
-                    phase2_idx += 1
-                    f.write('*Material, name=Martensite_{}\n'.format(phase2_idx))
-                    f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,4.\n'.format(ngrain))
-            elif phase[i] == 3:
-                if not RveInfo.phase2iso_flag[3]:
-                    phase3_idx += 1
-                    f.write('*Material, name=Pearlite_{}\n'.format(phase3_idx))
-                    f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,4.\n'.format(ngrain))
-            elif phase[i] == 4:
-                if not RveInfo.phase2iso_flag[4]:
-                    phase4_idx += 1
-                    f.write('*Material, name=Bainite_{}\n'.format(phase4_idx))
-                    f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,4.\n'.format(ngrain))
-            elif phase[i] == 5:
-                if not RveInfo.phase2iso_flag[5]:
-                    phase4_idx += 1
-                    f.write('*Material, name=Austenite_{}\n'.format(phase5_idx))
-                    f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,2.\n'.format(ngrain))
-
-        if RveInfo.phase2iso_flag[2] and RveInfo.phase_ratio[2] > 0:
-            f.write('**\n')
-            f.write('*Include, Input=Martensite.inp\n')
-        if RveInfo.phase2iso_flag[3] and RveInfo.phase_ratio[3] > 0:
-            f.write('**\n')
-            f.write('*Include, Input=Pearlite.inp\n')
-        if RveInfo.phase2iso_flag[4] and RveInfo.phase_ratio[4] > 0:
-            f.write('**\n')
-            f.write('*Include, Input=Bainite.inp\n')
-        if RveInfo.phase2iso_flag[5] and RveInfo.phase_ratio[5] > 0:
-            f.write('**\n')
-            f.write('*Include, Input=Austenite.inp\n')
-        f.close()
+        #for i in range(numberofgrains):
+            #num_id = i+1
+        HelperFunctions.write_material_def(numberof_id, phase, f)
 
     def write_submodel_step_def(self) -> None:
 
@@ -1382,7 +1331,7 @@ class AbaqusMesher(MeshingHelper):
 
         for i in range(numberofgrains):
             ngrain = i+1
-            if not RveInfo.phase2iso_flag: # does it take the flag info from dictionary if i leave it like this?(12-03-2024)
+            if not RveInfo.phase2iso_flag[phase[i]]:
                 """phi1 = int(np.random.rand() * 360)
                 PHI = int(np.random.rand() * 360)
                 phi2 = int(np.random.rand() * 360)"""
@@ -1390,16 +1339,6 @@ class AbaqusMesher(MeshingHelper):
                 PHI = self.grains_df['PHI'].tolist()[i]
                 phi2 = self.grains_df['phi2'].tolist()[i]
                 f.write('Grain: {}: {}: {}: {}: {}\n'.format(ngrain, phi1, PHI, phi2, grainsize[i]))
-            else:
-                if phase[i] == 1:
-                    phase1_idx += 1
-                    """phi1 = int(np.random.rand() * 360)
-                    PHI = int(np.random.rand() * 360)
-                    phi2 = int(np.random.rand() * 360)"""
-                    phi1 = self.grains_df['phi1'].tolist()[i]
-                    PHI = self.grains_df['PHI'].tolist()[i]
-                    phi2 = self.grains_df['phi2'].tolist()[i]
-                    f.write('Grain: {}: {}: {}: {}: {}\n'.format(phase1_idx, phi1, PHI, phi2, grainsize[i]))
         f.close()
 
     def plot_bot(self, rve_smooth_grid: pv.UnstructuredGrid, min_val: float, max_val: float, direction: int = 1,
