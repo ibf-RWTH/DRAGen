@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from dragen.generation.Mesher3D import AbaqusMesher
 from dragen.utilities.InputInfo import RveInfo
+from dragen.utilities.Helpers import HelperFunctions
 import pyvista as pv
 import numpy as np
 import datetime
@@ -93,7 +94,7 @@ class SubMesher(AbaqusMesher):
         phase3_idx = 0
         phase4_idx = 0
         phase5_idx = 0
-        numberofblocks = self.n_blocks
+        numberof_id = self.n_blocks
 
         phase = [self.rve.loc[self.rve['block_id'] == i].phaseID.values[0] for i in range(1, numberofblocks + 1)]
         f = open(RveInfo.store_path + '/Materials.inp',
@@ -102,53 +103,8 @@ class SubMesher(AbaqusMesher):
         f.write('**\n')
         f.close()
         f = open(RveInfo.store_path + '/Materials.inp', 'a')
-        for i in range(numberofblocks):
-            nblock = i + 1
-            if not RveInfo.phase2iso_flag: #I think we need to ask the isotropy for every phase here(12-03-2024)
-                if phase[i] == 1:
-                    phase1_idx += 1
-                    f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
-                    f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,3.\n'.format(nblock))
-                elif phase[i] == 2:
-                    phase2_idx += 1
-                    f.write('*Material, name=Martensite_{}\n'.format(phase2_idx))
-                    f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,4.\n'.format(nblock))
-                elif phase[i] == 3:
-                    phase3_idx += 1
-                    f.write('*Material, name=Pearlite_{}\n'.format(phase3_idx))
-                    f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,4.\n'.format(nblock))
-                elif phase[i] == 4:
-                    phase4_idx += 1
-                    f.write('*Material, name=Bainite_{}\n'.format(phase4_idx))
-                    f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,4.\n'.format(nblock))
-                elif phase[i] == 5:
-                    phase4_idx += 1
-                    f.write('*Material, name=Austenite_{}\n'.format(phase5_idx))
-                    f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,4.\n'.format(nblock))
-                    
-            else:
-                if phase[i] == 1:
-                    phase1_idx += 1
-                    f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
-                    f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,3.\n'.format(phase1_idx))
+        #for i in range(numberof_id):
+        HelperFunctions.write_material_def(numberof_id, phase, f)
 
         if RveInfo.phase2iso_flag[2] and RveInfo.phase_ratio[2] > 0:
             f.write('**\n')
