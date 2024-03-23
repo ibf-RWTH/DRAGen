@@ -839,36 +839,39 @@ class Ui_MainWindow(object):
         #Add
 
         #isotropy
-        #self.phase2iso_dict = {1: True, 2: True, 3: True, 4: True, 5: True}
-        self.phase2iso_ferrite_button = QtWidgets.QCheckBox(self.gridLayoutWidget)
-        self.phase2iso_ferrite_button.setChecked(True)
-        self.phase2iso_ferrite_button.setObjectName("phase2iso_ferrite_button")
-        self.gridLayout.addWidget(self.phase2iso_ferrite_button, 4, 3, 1, 2)
-        #self.phase2iso_ferrite_button.stateChanged.connect(self.phase2iso_handler)
-
-        self.phase2iso_martensite_button = QtWidgets.QCheckBox(self.gridLayoutWidget)
-        self.phase2iso_martensite_button.setChecked(True)
-        self.phase2iso_martensite_button.setObjectName("phase2iso_martensite_button")
-        self.gridLayout.addWidget(self.phase2iso_martensite_button, 4, 5, 1, 1)
-        #self.phase2iso_martensite_button.stateChanged.connect(self.phase2iso_handler)
-
-        self.phase2iso_Pearlite_button = QtWidgets.QCheckBox(self.gridLayoutWidget)
-        self.phase2iso_Pearlite_button.setChecked(True)
-        self.phase2iso_Pearlite_button.setObjectName("phase2iso_Pearlite_button")
-        self.gridLayout.addWidget(self.phase2iso_Pearlite_button, 4, 7, 1, 1)
-        #self.phase2iso_Pearlite_button.stateChanged.connect(self.phase2iso_handler)
+        self.phase2iso_label = QtWidgets.QLabel(self.formLayoutWidget)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.phase2iso_label.sizePolicy().hasHeightForWidth())
+        self.phase2iso_label.setSizePolicy(sizePolicy)
+        self.phase2iso_label.setObjectName("phase2iso_label")
+        self.gridLayout.addWidget(self.phase2iso_label, 5, 0, 1, 1)
         
-        self.phase2iso_Bainite_button = QtWidgets.QCheckBox(self.gridLayoutWidget)
-        self.phase2iso_Bainite_button.setChecked(True)
-        self.phase2iso_Bainite_button.setObjectName("phase2iso_Bainite_button")
-        self.gridLayout.addWidget(self.phase2iso_Bainite_button, 4, 9, 1, 1)
-        #self.phase2iso_Bainite_button.stateChanged.connect(self.phase2iso_handler)
+        self.phase2iso_ferrite_checkbox = QtWidgets.QCheckBox(self.gridLayoutWidget)
+        self.phase2iso_ferrite_checkbox.setChecked(True)
+        self.phase2iso_ferrite_checkbox.setObjectName("phase2iso_ferrite_checkbox")
+        self.gridLayout.addWidget(self.phase2iso_ferrite_checkbox, 5, 1, 1, 2)
 
-        self.phase2iso_Austenite_button = QtWidgets.QCheckBox(self.gridLayoutWidget)
-        self.phase2iso_Austenite_button.setChecked(True)
-        self.phase2iso_Austenite_button.setObjectName("phase2iso_Austenite_button")
-        self.gridLayout.addWidget(self.phase2iso_Austenite_button, 4, 11, 1, 1)
-        #self.phase2iso_Austenite_button.stateChanged.connect(self.phase2iso_handler)
+        self.phase2iso_martensite_checkbox = QtWidgets.QCheckBox(self.gridLayoutWidget)
+        self.phase2iso_martensite_checkbox.setChecked(True)
+        self.phase2iso_martensite_checkbox.setObjectName("phase2iso_martensite_checkbox")
+        self.gridLayout.addWidget(self.phase2iso_martensite_checkbox, 5, 4, 1, 1)
+
+        self.phase2iso_Pearlite_checkbox = QtWidgets.QCheckBox(self.gridLayoutWidget)
+        self.phase2iso_Pearlite_checkbox.setChecked(True)
+        self.phase2iso_Pearlite_checkbox.setObjectName("phase2iso_Pearlite_checkbox")
+        self.gridLayout.addWidget(self.phase2iso_Pearlite_checkbox, 5, 6, 1, 1)
+        
+        self.phase2iso_Bainite_checkbox = QtWidgets.QCheckBox(self.gridLayoutWidget)
+        self.phase2iso_Bainite_checkbox.setChecked(True)
+        self.phase2iso_Bainite_checkbox.setObjectName("phase2iso_Bainite_checkbox")
+        self.gridLayout.addWidget(self.phase2iso_Bainite_checkbox, 5, 8, 1, 1)
+
+        self.phase2iso_Austenite_checkbox = QtWidgets.QCheckBox(self.gridLayoutWidget)
+        self.phase2iso_Austenite_checkbox.setChecked(True)
+        self.phase2iso_Austenite_checkbox.setObjectName("phase2iso_Austenite_checkbox")
+        self.gridLayout.addWidget(self.phase2iso_Austenite_checkbox, 5, 10, 1, 1)
 
 
         # Phase Fraction:
@@ -879,7 +882,7 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.phase_fraction_label.sizePolicy().hasHeightForWidth())
         self.phase_fraction_label.setSizePolicy(sizePolicy)
         self.phase_fraction_label.setObjectName("phase_fraction_label")
-        self.gridLayout.addWidget(self.phase_fraction_label, 5, 0, 1, 1)
+        self.gridLayout.addWidget(self.phase_fraction_label, 6, 0, 1, 1)
 
         self.ferriteSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
         self.ferriteSpinBox.setDecimals(2)
@@ -888,7 +891,7 @@ class Ui_MainWindow(object):
         self.ferriteSpinBox.setSingleStep(0.01)
         self.ferriteSpinBox.setEnabled(False)
         self.ferriteSpinBox.setObjectName("ferriteSpinBox")
-        self.gridLayout.addWidget(self.ferriteSpinBox, 5, 1, 1, 2)
+        self.gridLayout.addWidget(self.ferriteSpinBox, 6, 1, 1, 2)
 
         self.martensiteSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
         self.martensiteSpinBox.setDecimals(2)
@@ -897,7 +900,7 @@ class Ui_MainWindow(object):
         self.martensiteSpinBox.setSingleStep(0.01)
         self.martensiteSpinBox.setEnabled(False)
         self.martensiteSpinBox.setObjectName("martensiteSpinBox")
-        self.gridLayout.addWidget(self.martensiteSpinBox, 5, 4, 1, 1)
+        self.gridLayout.addWidget(self.martensiteSpinBox, 6, 4, 1, 1)
 
         self.pearliteSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
         self.pearliteSpinBox.setDecimals(2)
@@ -906,7 +909,7 @@ class Ui_MainWindow(object):
         self.pearliteSpinBox.setSingleStep(0.01)
         self.pearliteSpinBox.setEnabled(False)
         self.pearliteSpinBox.setObjectName("pearliteSpinBox")
-        self.gridLayout.addWidget(self.pearliteSpinBox, 5, 6, 1, 1)
+        self.gridLayout.addWidget(self.pearliteSpinBox, 6, 6, 1, 1)
 
         self.bainiteSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
         self.bainiteSpinBox.setDecimals(2)
@@ -915,7 +918,7 @@ class Ui_MainWindow(object):
         self.bainiteSpinBox.setSingleStep(0.01)
         self.bainiteSpinBox.setEnabled(False)
         self.bainiteSpinBox.setObjectName("bainiteSpinBox")
-        self.gridLayout.addWidget(self.bainiteSpinBox, 5, 8, 1, 1)
+        self.gridLayout.addWidget(self.bainiteSpinBox, 6, 8, 1, 1)
 
 #Add
         self.austeniteSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
@@ -925,7 +928,7 @@ class Ui_MainWindow(object):
         self.austeniteSpinBox.setSingleStep(0.01)
         self.austeniteSpinBox.setEnabled(False)
         self.austeniteSpinBox.setObjectName("austeniteSpinBox")
-        self.gridLayout.addWidget(self.austeniteSpinBox, 5, 10, 1, 2)
+        self.gridLayout.addWidget(self.austeniteSpinBox, 6, 10, 1, 2)
 #Add
         
         # Inputfile path:
@@ -936,12 +939,12 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.filepath_label.sizePolicy().hasHeightForWidth())
         self.filepath_label.setSizePolicy(sizePolicy)
         self.filepath_label.setObjectName("filepath_label")
-        self.gridLayout.addWidget(self.filepath_label, 6, 0, 1, 1)
+        self.gridLayout.addWidget(self.filepath_label, 7, 0, 1, 1)
 
         self.lineEditFerrite = QtWidgets.QLineEdit(self.formLayoutWidget)
         self.lineEditFerrite.setEnabled(False)
         self.lineEditFerrite.setObjectName("lineEditFerrite")
-        self.gridLayout.addWidget(self.lineEditFerrite, 6, 1, 1, 2)
+        self.gridLayout.addWidget(self.lineEditFerrite, 7, 1, 1, 2)
 
         self.fileBrowserFerrite = QtWidgets.QPushButton(self.formLayoutWidget)
         self.fileBrowserFerrite.setEnabled(False)
@@ -953,13 +956,13 @@ class Ui_MainWindow(object):
         self.fileBrowserFerrite.setText("")
         self.fileBrowserFerrite.setIcon(icon)
         self.fileBrowserFerrite.setObjectName("fileBrowserFerrite")
-        self.gridLayout.addWidget(self.fileBrowserFerrite, 6, 3, 1, 1)
+        self.gridLayout.addWidget(self.fileBrowserFerrite, 7, 3, 1, 1)
         self.fileBrowserFerrite.clicked.connect(self.button_handler)
 
         self.lineEditMartensite = QtWidgets.QLineEdit(self.formLayoutWidget)
         self.lineEditMartensite.setEnabled(False)
         self.lineEditMartensite.setObjectName("lineEditMartensite")
-        self.gridLayout.addWidget(self.lineEditMartensite, 6, 4, 1, 1)
+        self.gridLayout.addWidget(self.lineEditMartensite, 7, 4, 1, 1)
 
         self.fileBrowserMartensite = QtWidgets.QPushButton(self.formLayoutWidget)
         self.fileBrowserMartensite.setEnabled(False)
@@ -971,13 +974,13 @@ class Ui_MainWindow(object):
         self.fileBrowserMartensite.setText("")
         self.fileBrowserMartensite.setIcon(icon)
         self.fileBrowserMartensite.setObjectName("fileBrowserMartensite")
-        self.gridLayout.addWidget(self.fileBrowserMartensite, 6, 5, 1, 1)
+        self.gridLayout.addWidget(self.fileBrowserMartensite, 7, 5, 1, 1)
         self.fileBrowserMartensite.clicked.connect(self.button_handler)
 
         self.lineEditPearlite = QtWidgets.QLineEdit(self.formLayoutWidget)
         self.lineEditPearlite.setEnabled(False)
         self.lineEditPearlite.setObjectName("lineEditPearlite")
-        self.gridLayout.addWidget(self.lineEditPearlite, 6, 6, 1, 1)
+        self.gridLayout.addWidget(self.lineEditPearlite, 7, 6, 1, 1)
 
         self.fileBrowser_Pearlite = QtWidgets.QPushButton(self.formLayoutWidget)
         self.fileBrowser_Pearlite.setEnabled(False)
@@ -989,13 +992,13 @@ class Ui_MainWindow(object):
         self.fileBrowser_Pearlite.setText("")
         self.fileBrowser_Pearlite.setIcon(icon)
         self.fileBrowser_Pearlite.setObjectName("fileBrowser_Pearlite")
-        self.gridLayout.addWidget(self.fileBrowser_Pearlite, 6, 7, 1, 1)
+        self.gridLayout.addWidget(self.fileBrowser_Pearlite, 7, 7, 1, 1)
         self.fileBrowser_Pearlite.clicked.connect(self.button_handler)
 
         self.lineEditBainite = QtWidgets.QLineEdit(self.formLayoutWidget)
         self.lineEditBainite.setEnabled(False)
         self.lineEditBainite.setObjectName("lineEditBainite")
-        self.gridLayout.addWidget(self.lineEditBainite, 6, 8, 1, 1)
+        self.gridLayout.addWidget(self.lineEditBainite, 7, 8, 1, 1)
 
         self.fileBrowserBainite = QtWidgets.QPushButton(self.formLayoutWidget)
         self.fileBrowserBainite.setEnabled(False)
@@ -1007,14 +1010,14 @@ class Ui_MainWindow(object):
         self.fileBrowserBainite.setText("")
         self.fileBrowserBainite.setIcon(icon)
         self.fileBrowserBainite.setObjectName("fileBrowserBainite")
-        self.gridLayout.addWidget(self.fileBrowserBainite, 6, 9, 1, 1)
+        self.gridLayout.addWidget(self.fileBrowserBainite, 7, 9, 1, 1)
         self.fileBrowserBainite.clicked.connect(self.button_handler)
         
         #Add
         self.lineEditAustenite = QtWidgets.QLineEdit(self.formLayoutWidget)
         self.lineEditAustenite.setEnabled(False)
         self.lineEditAustenite.setObjectName("lineEditAustenite")
-        self.gridLayout.addWidget(self.lineEditAustenite, 6, 10, 1, 1)
+        self.gridLayout.addWidget(self.lineEditAustenite, 7, 10, 1, 1)
 
         self.fileBrowserAustenite = QtWidgets.QPushButton(self.formLayoutWidget)
         self.fileBrowserAustenite.setEnabled(False)
@@ -1026,7 +1029,7 @@ class Ui_MainWindow(object):
         self.fileBrowserAustenite.setText("")
         self.fileBrowserAustenite.setIcon(icon)
         self.fileBrowserAustenite.setObjectName("fileBrowserAustenite")
-        self.gridLayout.addWidget(self.fileBrowserAustenite, 6, 11, 1, 1)
+        self.gridLayout.addWidget(self.fileBrowserAustenite, 7, 11, 1, 1)
         self.fileBrowserAustenite.clicked.connect(self.button_handler)
         #Add
 
@@ -1038,27 +1041,27 @@ class Ui_MainWindow(object):
         sizePolicy.setHeightForWidth(self.features_label.sizePolicy().hasHeightForWidth())
         self.features_label.setSizePolicy(sizePolicy)
         self.features_label.setObjectName("features_label")
-        self.gridLayout.addWidget(self.features_label, 7, 0, 1, 1)
+        self.gridLayout.addWidget(self.features_label, 8, 0, 1, 1)
 
         self.Banding_button = QtWidgets.QCheckBox(self.formLayoutWidget)
         self.Banding_button.setObjectName("Banding_button")
-        self.gridLayout.addWidget(self.Banding_button, 7, 1, 1, 2)
+        self.gridLayout.addWidget(self.Banding_button, 8, 1, 1, 2)
         self.Banding_button.stateChanged.connect(self.features_handler)
 
         self.inclusions_button = QtWidgets.QCheckBox(self.formLayoutWidget)
         self.inclusions_button.setObjectName("inclusions_button")
-        self.gridLayout.addWidget(self.inclusions_button, 7, 4, 1, 1)
+        self.gridLayout.addWidget(self.inclusions_button, 8, 4, 1, 1)
         self.inclusions_button.stateChanged.connect(self.features_handler)
 
         self.substructure_button = QtWidgets.QCheckBox(self.formLayoutWidget)
         self.substructure_button.setObjectName("substructure_button")
-        self.gridLayout.addWidget(self.substructure_button, 7, 6, 1, 1)
+        self.gridLayout.addWidget(self.substructure_button, 8, 6, 1, 1)
         self.substructure_button.stateChanged.connect(self.features_handler)
 
         self.roughness_button = QtWidgets.QCheckBox(self.formLayoutWidget)
         self.roughness_button.setEnabled(False)
         self.roughness_button.setObjectName("roughness_button")
-        self.gridLayout.addWidget(self.roughness_button, 7, 8, 1, 1)
+        self.gridLayout.addWidget(self.roughness_button, 8, 8, 1, 1)
 
         # Framework:
         self.framework_label = QtWidgets.QLabel(self.gridLayoutWidget)
@@ -1265,15 +1268,11 @@ class Ui_MainWindow(object):
         self.inclusions_button.setText(_translate("MainWindow", "Inclusions/Pores"))
         self.Pearlite_button.setText(_translate("MainWindow", "Pearlite"))
         self.Bainite_button.setText(_translate("MainWindow", "Bainite"))
-        self.Austenite_button.setText(_translate("MainWindow", "Austenite"))  #Add
+        self.Austenite_button.setText(_translate("MainWindow", "Austenite"))
         self.phase_fraction_label.setText(_translate("MainWindow", "Phase Fraction:"))
         self.actionExit.setText(_translate("MainWindow", "Exit"))
         self.actionFiles.setText(_translate("MainWindow", "Files"))
-        self.phase2iso_ferrite_button.setText(_translate("MainWindow", "Iso"))
-        self.phase2iso_martensite_button.setText(_translate("MainWindow", "Iso"))
-        self.phase2iso_Pearlite_button.setText(_translate("MainWindow", "Iso"))
-        self.phase2iso_Bainite_button.setText(_translate("MainWindow", "Iso"))
-        self.phase2iso_Austenite_button.setText(_translate("MainWindow", "Iso"))
+        self.phase2iso_label.setText(_translate("MainWindow", "Isotropy:"))
 
     def progress_event(self, progress):
         self.progressBar.setValue(progress)
@@ -1318,7 +1317,6 @@ class Ui_MainWindow(object):
                 self.bainiteSpinBox.setEnabled(False)
                 self.lineEditBainite.setEnabled(False)
                 self.fileBrowserBainite.setEnabled(False)
-#Add
         if self.MainWindow.sender() == self.Austenite_button:
             if state == Qt.Checked:
                 self.austeniteSpinBox.setEnabled(True)
@@ -1328,39 +1326,6 @@ class Ui_MainWindow(object):
                 self.austeniteSpinBox.setEnabled(False)
                 self.lineEditAustenite.setEnabled(False)
                 self.fileBrowserAustenite.setEnabled(False)
-#Add
-                
- #   def phase2iso_handler(self,state)
- #       if self.MainWindow.sender() == self.phase2iso_ferrite_button:
- #           key = 1
- #           if state == QtCore.Qt.Checked:
- #               self.phase2iso_dict[key] = True
- #           else:
- #               self.phase2iso_dict[key] = False
- #       if self.MainWindow.sender() == self.phase2iso_martensite_button:
- #           key = 2
- #           if state == QtCore.Qt.Checked:
- #               self.phase2iso_dict[key] = True
- #           else:
- #               self.phase2iso_dict[key] = False
- #       if self.MainWindow.sender() == self.phase2iso_Pearlite_button:
- #           key = 1
- #           if state == QtCore.Qt.Checked:
- #               self.phase2iso_dict[key] = True
- #           else:
- #               self.phase2iso_dict[key] = False
- #       if self.MainWindow.sender() == self.phase2iso_Bainite_button:
- #           key = 1
- #           if state == QtCore.Qt.Checked:
- #               self.phase2iso_dict[key] = True
- #           else:
- #               self.phase2iso_dict[key] = False
- #      if self.MainWindow.sender() == self.phase2iso_Austenite_button:
- #           key = 1
- #           if state == QtCore.Qt.Checked:
- #               self.phase2iso_dict[key] = True
- #           else:
- #               self.phase2iso_dict[key] = False
 
     def bandwidth_handler(self):
         min_thickness = 1/self.resolutionSpinBox.value()
@@ -1537,17 +1502,19 @@ class Ui_MainWindow(object):
 
         ARGS = {'root': None, 'box_size': None, 'box_size_y': None, 'box_size_z': None, 'resolution': None,
                 'number_of_rves': 0, 'dimension': 3, 'phases': list(), 'abaqus_flag': False, 'damask_flag': False,
-                'moose_flag': False, 'anim_flag': None, 'phase2iso_flag': True, 'xfem_flag': False, 'pbc_flag': False,
+                'moose_flag': False, 'anim_flag': None, 'xfem_flag': False, 'pbc_flag': False,
                 'submodel_flag': False, 'element_type': None, 'slope_offset': 0, 'smoothing': True,
                 'number_of_bands': 0, 'lower_band_bound': None, 'upper_band_bound': None, 'band_orientation': None,
                 'band_filling': None, 'visualization_flag': None,
-                'file_dict': {}, 'phase_ratio': {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7:0}, #change
+                'file_dict': {}, 'phase_ratio': {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7:0},
                 'subs_flag': False, 'subs_file_flag': False,
                 'subs_file': None, 'orientation_relationship': None, 'subrun': None, 'pag_file': None, 'equiv_d': None,
                 'circularity': 1, 'p_sigma': 0.1, 'block_file': None, 't_mu': None, 'b_sigma': 0.1,
                 'decreasing_factor': 0.95, 'lower': None, 'upper': None, 'plt_name': None, 'save': True, 'plot': None,
                 'filename': 'substruct_data.csv', 'gui_flag': True,
-                'files': {1: None, 2: None, 3: None, 4: None, 5: None, 6: None},  'phase2iso_flag': {1:True, 2:True, 3:True, 4:True, 5:True}}
+                'files': {1: None, 2: None, 3: None, 4: None, 5: None, 6: None},  
+                'phase2iso_flag': {1:self.phase2iso_ferrite_checkbox.isChecked(), 2:self.phase2iso_martensite_checkbox.isChecked(), 3:self.phase2iso_Pearlite_checkbox.isChecked(), 
+                                   4:self.phase2iso_Bainite_checkbox.isChecked(), 5:self.phase2iso_Austenite_checkbox.isChecked()}}
 
         if self.two_d_button.isChecked():
             ARGS['dimension'] = 2
@@ -1642,7 +1609,7 @@ class Ui_MainWindow(object):
                 msg.setWindowTitle("Error")
                 msg.exec_()
                 return
-#Add->
+
         if self.Austenite_button.isChecked():
             file5 = self.lineEditAustenite.text()
             phase5_ratio = self.austeniteSpinBox.value()
@@ -1658,8 +1625,7 @@ class Ui_MainWindow(object):
                 msg.setWindowTitle("Error")
                 msg.exec_()
                 return
-#Add<-
-#Change->                
+               
         if self.inclusions_button.isChecked():
             file6 = self.lineEditInclusion.text()
             phase6_ratio = self.inclusionSpinBox.value()
@@ -1700,31 +1666,6 @@ class Ui_MainWindow(object):
                 ARGS['band_orientation'] = 'xz'
             elif self.BandOrientation_YZ.isChecked():
                 ARGS['band_orientation'] = 'yz'
-#change<-
-        if self.phase2iso_ferrite_button.isChecked():
-            self.phase2iso_flag[1] = True
-        else:
-            self.phase2iso_flag[1] = False
-
-        if self.phase2iso_martensite_button.isChecked():
-            self.phase2iso_flag[2] = True
-        else:
-            self.phase2iso_flag[2] = False
-
-        if self.phase2iso_Pearlite_button.isChecked():
-            self.phase2iso_flag[3] = True
-        else:
-            self.phase2iso_flag[3] = False
-
-        if self.phase2iso_Bainite_button.isChecked():
-            self.phase2iso_flag[4] = True
-        else:
-            self.phase2iso_flag[4] = False
-
-        if self.phase2iso_Austenite_button.isChecked():
-            self.phase2iso_flag[5] = True
-        else:
-            self.phase2iso_flag[5] = False
 
         sum_ratio = sum(ARGS['phase_ratio'].values())
 
