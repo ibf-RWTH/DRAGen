@@ -1095,14 +1095,15 @@ class HelperFunctions:
             setup_file.write(f'{member}: {str(RveInfo().__getattribute__(member))} \n')
         setup_file.close()
 
-    def write_material_def(numberof_id, phase, f) -> None:
+    def write_material_def(i, phase) -> None:
+        f = open(RveInfo.store_path + '/Materials.inp', 'a')
         phase1_idx = 0
         phase2_idx = 0
         phase3_idx = 0
         phase4_idx = 0
         phase5_idx = 0
-        for i in range(numberof_id):
-            num_id = i+1
+        #for i in range(numberof_id):
+            #num_id = i+1
         if phase[i] == 1:
             if not RveInfo.phase2iso_flag[1]:
                 phase1_idx += 1
@@ -1110,7 +1111,7 @@ class HelperFunctions:
                 f.write('*Depvar\n')
                 f.write('    176,\n')
                 f.write('*User Material, constants=2\n')
-                f.write('{}.,3.\n'.format(num_id))
+                f.write('{}.,3.\n'.format(i+1))
         elif phase[i] == 2:
             if not RveInfo.phase2iso_flag[2]:
                 phase2_idx += 1
@@ -1118,7 +1119,7 @@ class HelperFunctions:
                 f.write('*Depvar\n')
                 f.write('    176,\n')
                 f.write('*User Material, constants=2\n')
-                f.write('{}.,4.\n'.format(num_id))
+                f.write('{}.,4.\n'.format(i+1))
         elif phase[i] == 3:
             if not RveInfo.phase2iso_flag[3]:
                 phase3_idx += 1
@@ -1126,7 +1127,7 @@ class HelperFunctions:
                 f.write('*Depvar\n')
                 f.write('    176,\n')
                 f.write('*User Material, constants=2\n')
-                f.write('{}.,4.\n'.format(num_id))
+                f.write('{}.,4.\n'.format(i+1))
         elif phase[i] == 4:
             if not RveInfo.phase2iso_flag[4]:
                 phase4_idx += 1
@@ -1134,7 +1135,7 @@ class HelperFunctions:
                 f.write('*Depvar\n')
                 f.write('    176,\n')
                 f.write('*User Material, constants=2\n')
-                f.write('{}.,4.\n'.format(num_id))
+                f.write('{}.,4.\n'.format(i+1))
         elif phase[i] == 5:
             if not RveInfo.phase2iso_flag[5]:
                 phase4_idx += 1
@@ -1142,7 +1143,7 @@ class HelperFunctions:
                 f.write('*Depvar\n')
                 f.write('    176,\n')
                 f.write('*User Material, constants=2\n')
-                f.write('{}.,2.\n'.format(num_id))
+                f.write('{}.,2.\n'.format(i+1))
         if RveInfo.phase2iso_flag[1] and RveInfo.phase_ratio[1] > 0:
             f.write('**\n')
             f.write('*Include, Input=Ferrite.inp\n')
