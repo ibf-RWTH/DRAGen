@@ -1114,6 +1114,7 @@ class Ui_MainWindow(object):
         self.xfem_button = QtWidgets.QCheckBox(self.gridLayoutWidget)
         self.xfem_button.setObjectName("xfem_button")
         self.xfem_button.setChecked(False)
+        self.xfem_button.setEnabled(False)
         self.gridLayout_2.addWidget(self.xfem_button, 0, 7, 1, 1)
 
         # Element Type:
