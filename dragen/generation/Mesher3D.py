@@ -1173,18 +1173,16 @@ class AbaqusMesher(MeshingHelper):
         phase3_idx = 0
         phase4_idx = 0
         phase5_idx = 0
-        numberof_id = self.n_grains
+        numberofgrains = self.n_grains
 
-        phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberof_id+1)]
+        phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains+1)]
         f = open(RveInfo.store_path + '/Materials.inp', 'w+')  # open in write mode to overwrite old files in case ther are any
         f.write('** MATERIALS\n')
         f.write('**\n')
         f.close()
-        f = open(RveInfo.store_path + '/Materials.inp', 'a')
-
-        #for i in range(numberofgrains):
-            #num_id = i+1
-        HelperFunctions.write_material_def(numberof_id, phase, f)
+        
+        for i in range(numberofgrains):
+            HelperFunctions.write_material_def(i, phase)
 
     def write_submodel_step_def(self) -> None:
 
