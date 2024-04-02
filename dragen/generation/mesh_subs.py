@@ -94,7 +94,7 @@ class SubMesher(AbaqusMesher):
         phase3_idx = 0
         phase4_idx = 0
         phase5_idx = 0
-        numberof_id = self.n_blocks
+        numberofblocks = self.n_blocks
 
         phase = [self.rve.loc[self.rve['block_id'] == i].phaseID.values[0] for i in range(1, numberofblocks + 1)]
         f = open(RveInfo.store_path + '/Materials.inp',
@@ -102,23 +102,9 @@ class SubMesher(AbaqusMesher):
         f.write('** MATERIALS\n')
         f.write('**\n')
         f.close()
-        f = open(RveInfo.store_path + '/Materials.inp', 'a')
-        #for i in range(numberof_id):
-        HelperFunctions.write_material_def(numberof_id, phase, f)
-
-        if RveInfo.phase2iso_flag[2] and RveInfo.phase_ratio[2] > 0:
-            f.write('**\n')
-            f.write('*Include, Input=Martensite.inp\n')
-        if RveInfo.phase2iso_flag[3] and RveInfo.phase_ratio[3] > 0:
-            f.write('**\n')
-            f.write('*Include, Input=Pearlite.inp\n')
-        if RveInfo.phase2iso_flag[4] and RveInfo.phase_ratio[4] > 0:
-            f.write('**\n')
-            f.write('*Include, Input=Bainite.inp\n')
-        if RveInfo.phase2iso_flag[5] and RveInfo.phase_ratio[5] > 0:
-            f.write('**\n')
-            f.write('*Include, Input=Austenite.inp\n')
-        f.close()
+        
+        for i in range(numberofblocks):
+            HelperFunctions.write_material_def(i, phase)
 
     def write_block_data(self) -> None:
         f = open(RveInfo.store_path + '/graindata.inp', 'w+')
