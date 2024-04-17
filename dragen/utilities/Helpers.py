@@ -1107,11 +1107,11 @@ class HelperFunctions:
         if phase[i] == 1:
             if not RveInfo.phase2iso_flag[1]:
                 phase1_idx += 1
-                f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
+                f.write(f'*Material, name=Ferrite_{phase1_idx}\n')
                 f.write('*Depvar\n')
                 f.write('    176,\n')
                 f.write('*User Material, constants=2\n')
-                f.write('{}.,3.\n'.format(i+1))
+                f.write(f'{i+1}.,3.\n')
         elif phase[i] == 2:
             if not RveInfo.phase2iso_flag[2]:
                 phase2_idx += 1
@@ -1119,44 +1119,44 @@ class HelperFunctions:
                 f.write('*Depvar\n')
                 f.write('    176,\n')
                 f.write('*User Material, constants=2\n')
-                f.write('{}.,4.\n'.format(i+1))
+                f.write(f'{i+1}.,4.\n')
         elif phase[i] == 3:
             if not RveInfo.phase2iso_flag[3]:
                 phase3_idx += 1
-                f.write('*Material, name=Pearlite_{}\n'.format(phase3_idx))
+                f.write(f'*Material, name=Pearlite_{phase3_idx}\n')
                 f.write('*Depvar\n')
                 f.write('    176,\n')
                 f.write('*User Material, constants=2\n')
-                f.write('{}.,4.\n'.format(i+1))
+                f.write(f'{i+1}.,4.\n')
         elif phase[i] == 4:
             if not RveInfo.phase2iso_flag[4]:
                 phase4_idx += 1
-                f.write('*Material, name=Bainite_{}\n'.format(phase4_idx))
+                f.write(f'*Material, name=Bainite_{phase4_idx}\n')
                 f.write('*Depvar\n')
                 f.write('    176,\n')
                 f.write('*User Material, constants=2\n')
-                f.write('{}.,4.\n'.format(i+1))
+                f.write(f'{i+1}.,4.\n')
         elif phase[i] == 5:
             if not RveInfo.phase2iso_flag[5]:
-                phase4_idx += 1
-                f.write('*Material, name=Austenite_{}\n'.format(phase5_idx))
+                phase5_idx += 1
+                f.write(f'*Material, name=Austenite_{i+1}\n')
                 f.write('*Depvar\n')
                 f.write('    176,\n')
                 f.write('*User Material, constants=2\n')
-                f.write('{}.,2.\n'.format(i+1))
-        if RveInfo.phase2iso_flag[1] and RveInfo.phase_ratio[1] > 0:
-            f.write('**\n')
-            f.write('*Include, Input=Ferrite.inp\n')
-        if RveInfo.phase2iso_flag[2] and RveInfo.phase_ratio[2] > 0:
-            f.write('**\n')
-            f.write('*Include, Input=Martensite.inp\n')
-        if RveInfo.phase2iso_flag[3] and RveInfo.phase_ratio[3] > 0:
-            f.write('**\n')
-            f.write('*Include, Input=Pearlite.inp\n')
-        if RveInfo.phase2iso_flag[4] and RveInfo.phase_ratio[4] > 0:
-            f.write('**\n')
-            f.write('*Include, Input=Bainite.inp\n')
-        if RveInfo.phase2iso_flag[5] and RveInfo.phase_ratio[5] > 0:
-            f.write('**\n')
-            f.write('*Include, Input=Austenite.inp\n')
+                f.write(f'{i+1}.,2.\n')
+        #if RveInfo.phase2iso_flag[1] and RveInfo.phase_ratio[1] > 0:
+            #f.write('**\n')
+            #f.write('*Include, Input=Ferrite.inp\n')
+        #if RveInfo.phase2iso_flag[2] and RveInfo.phase_ratio[2] > 0:
+            #f.write('**\n')
+            #f.write('*Include, Input=Martensite.inp\n')
+        #if RveInfo.phase2iso_flag[3] and RveInfo.phase_ratio[3] > 0:
+            #f.write('**\n')
+            #f.write('*Include, Input=Pearlite.inp\n')
+        #if RveInfo.phase2iso_flag[4] and RveInfo.phase_ratio[4] > 0:
+            #f.write('**\n')
+            #f.write('*Include, Input=Bainite.inp\n')
+        #if RveInfo.phase2iso_flag[5] and RveInfo.phase_ratio[5] > 0:
+            #f.write('**\n')
+            #f.write('*Include, Input=Austenite.inp\n')
         f.close()
