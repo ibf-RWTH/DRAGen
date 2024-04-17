@@ -1113,7 +1113,7 @@ class BuildAbaqus2D:
         phase2_idx = 0
         phase3_idx = 0
         phase4_idx = 0
-        phase5_idx = 0 #add
+        phase5_idx = 0 
         numberofgrains = self.n_grains
 
         phase = [self.rve_df.loc[self.rve_df['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains+1)]
@@ -1127,17 +1127,17 @@ class BuildAbaqus2D:
             ngrain = i+1
             if phase[i] == 1:
                 phase1_idx += 1
-                f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
+                f.write(f'*Material, name=Ferrite_{phase1_idx}\n')
                 f.write('*Depvar\n')
                 f.write('    176,\n')
                 f.write('*User Material, constants=2\n')
-                f.write('{}.,3.\n'.format(phase1_idx))
+                f.write('{}.,3.\n'.format(ngrain))
                 if RveInfo.xfem_flag:
                     f.write('*include, input=Ferrite_dmg.inp\n')
             elif phase[i] == 2:
                 if not RveInfo.phase2iso_flag[2]:
                     phase2_idx += 1
-                    f.write('*Material, name=Martensite_{}\n'.format(phase2_idx))
+                    f.write(f'*Material, name=Martensite_{phase2_idx}\n')
                     f.write('*Depvar\n')
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
@@ -1147,7 +1147,7 @@ class BuildAbaqus2D:
             elif phase[i] == 3:
                 if not RveInfo.phase2iso_flag[2]:
                     phase3_idx += 1
-                    f.write('*Material, name=Pearlite_{}\n'.format(phase3_idx))
+                    f.write(f'*Material, name=Pearlite_{phase3_idx}\n')
                     f.write('*Depvar\n')
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
@@ -1157,7 +1157,7 @@ class BuildAbaqus2D:
             elif phase[i] == 4:
                 if not RveInfo.phase2iso_flag[3]:
                     phase4_idx += 1
-                    f.write('*Material, name=Bainite_{}\n'.format(phase4_idx))
+                    f.write(f'*Material, name=Bainite_{phase4_idx}\n')
                     f.write('*Depvar\n')
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
@@ -1167,7 +1167,7 @@ class BuildAbaqus2D:
             elif phase[i] == 5: #add
                 if not RveInfo.phase2iso_flag[3]:
                     phase5_idx += 1
-                    f.write('*Material, name=Austenite_{}\n'.format(phase5_idx))
+                    f.write(f'*Material, name=Austenite_{phase5_idx}\n')
                     f.write('*Depvar\n')
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
