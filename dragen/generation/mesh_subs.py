@@ -101,6 +101,21 @@ class SubMesher(AbaqusMesher):
                  'w+')  # open in write mode to overwrite old files in case ther are any
         f.write('** MATERIALS\n')
         f.write('**\n')
+        if RveInfo.phase2iso_flag[1] and RveInfo.phase_ratio[1] > 0:
+            f.write('**\n')
+            f.write('*Include, Input=Ferrite.inp\n')
+        if RveInfo.phase2iso_flag[2] and RveInfo.phase_ratio[2] > 0:
+            f.write('**\n')
+            f.write('*Include, Input=Martensite.inp\n')
+        if RveInfo.phase2iso_flag[3] and RveInfo.phase_ratio[3] > 0:
+            f.write('**\n')
+            f.write('*Include, Input=Pearlite.inp\n')
+        if RveInfo.phase2iso_flag[4] and RveInfo.phase_ratio[4] > 0:
+            f.write('**\n')
+            f.write('*Include, Input=Bainite.inp\n')
+        if RveInfo.phase2iso_flag[5] and RveInfo.phase_ratio[5] > 0:
+            f.write('**\n')
+            f.write('*Include, Input=Austenite.inp\n')
         f.close()
         
         for i in range(numberofblocks):
