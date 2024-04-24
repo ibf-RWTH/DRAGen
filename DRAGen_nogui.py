@@ -30,8 +30,8 @@ slope_offset = 0
 #file1 = r'F:/OCAS/NO30_RVE_data/Data_processed.csv'
 #file2 = r"D:\2nd mini-thesis\dragen\ExampleInput\example_pag_inp.csv"
 #DP800
-file1 = r'./ExampleInput/TrainedData_Ferrite.pkl'
-file2 = r'./ExampleInput/TrainedData_Martensite.pkl'
+file1 = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
+file2 = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
 
 #Bainite
 #PAGs
@@ -56,12 +56,12 @@ pbc_flag = True
 submodel_flag = False
 damask_flag = False
 phase2iso_flag = {1:True, 2:True, 3:True, 4:True, 5:True}
-x_fem_flag = True
+x_fem_flag = False
 element_type = 'HEX8'
 anim_flag = False
 
-files = {1: file1, 2: file2, 3: None, 4: None, 5: None, 6: None}  # , 2: file2, 6: file6}
-phase_ratio = {1: 0.8, 2: 0.2, 3: 0, 4: 0, 5: 0, 6: 0}
+files = {1: file1, 2: file2, 3: None, 4: None, 5: None, 6: None, 7:None}  # , 2: file2, 6: file6}
+phase_ratio = {1: 0.8, 2: 0.2, 3: 0, 4: 0, 5: 0, 6: 0, 7:0}
 phases = ['Ferrite', 'Martensite'] #, 'Bands']
 
 upper = None
