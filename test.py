@@ -1,10 +1,10 @@
 from dragen.run import Run
 #Model details
 dimension = 3
-box_size = 15
+box_size = 25
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
-resolution = 2
+resolution = 1
 number_of_rves = 1
 smoothing_flag = False
 
@@ -27,28 +27,25 @@ slope_offset = 0
 
 
 #Files:
-Ferrite = r'C:/Users/yunus/Documents/GitHub/DRAGen/ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
-Martensite = r'C:/Users/yunus/Documents/GitHub/DRAGen/ExampleInput/Martensite/TrainedData_Martensite.pkl'
-#Pearlite = r'./ExampleInput/TrainedData_Pearlite.pkl'   
-#Bainite = r'./ExampleInput/TrainedData_Bainite.pkl' 
-#Austenite = r'./ExampleInput/TrainedData_Austenite.pkl'
+Ferrite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
+Martensite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
+#Pearlite = r'./ExampleInput/Pearlite/TrainedData_Pearlite.pkl'   
+#Bainite = r'./ExampleInput/Bainite/TrainedData_Bainite.pkl' 
+#Austenite = r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
 
 #PAGs
 
 #Blocks
 
 #Inclusions
-#Inclusion = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\Inclusions/Inclusions_DRAGen_Input.csv'
+#Inclusion = r'./ExampleInput/Inclusions/TrainedData_Inclusion.pkl'
 
 
 #Bands Files File 6
 
-#Band_Ferrite = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\DP800/TrainedData_Ferrite.pkl'
-#Band_Marteniste = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\DP800/TrainedData_Martensite.pkl'
-#Band_Pearlite = r''
-#Band_Bainite = r''
+#Bands = r'./ExampleInput/Banding/TrainedData_Band.pkl'
 
-#file6 = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\DP800/TrainedData_Ferrite.pkl'
+
 
 # test pearlite phase
 # Substructure params
@@ -58,7 +55,7 @@ p_sigma = 0.1
 t_mu = 1.0
 b_sigma = 0.1
 subs_file_flag = False
-subs_file = './ExampleInput/example_block_inp.csv'
+subs_file = './ExampleInput/Substructure/example_block_inp.csv'
 
 #Texture Type
 moose_flag = False
