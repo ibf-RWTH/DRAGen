@@ -1,7 +1,7 @@
 from dragen.run import Run
 #Model details
 dimension = 3
-box_size = 20
+box_size = 15
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
 resolution = 2
@@ -27,8 +27,8 @@ slope_offset = 0
 
 
 #Files:
-Ferrite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
-#Martensite = r'./ExampleInput/TrainedData_Martensite.pkl'
+Ferrite = r'C:/Users/yunus/Documents/GitHub/DRAGen/ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
+Martensite = r'C:/Users/yunus/Documents/GitHub/DRAGen/ExampleInput/Martensite/TrainedData_Martensite.pkl'
 #Pearlite = r'./ExampleInput/TrainedData_Pearlite.pkl'   
 #Bainite = r'./ExampleInput/TrainedData_Bainite.pkl' 
 #Austenite = r'./ExampleInput/TrainedData_Austenite.pkl'
@@ -73,10 +73,10 @@ element_type = 'HEX8'
 anim_flag = False
 
 #Choosing active files
-files = {1: Ferrite, 2: None, 3: None, 4: None, 5:None, 6: None, 7: None}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
+files = {1: Ferrite, 2: Martensite, 3: None, 4: None, 5:None, 6: None, 7: None}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
 # Change the file name to 'None' if its empty
-phase_ratio = {1: 1, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7:0}
-phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusion', 'Banding']
+phase_ratio = {1: 0.5, 2: 0.5, 3: 0, 4: 0, 5: 0, 6: 0, 7:0}
+phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusions', 'Bands']
 
 #Band thickness
 upper = None

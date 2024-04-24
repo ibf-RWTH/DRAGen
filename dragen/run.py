@@ -230,7 +230,7 @@ class Run(HelperFunctions):
                 self.initializations(i)
                 total_df, ex_df = obj3D.grain_sampling()
                 rve = obj3D.rve_generation(total_df)
-                obj3D.post_processing(rve, total_df, ex_df)
+                
 
 
         else:
