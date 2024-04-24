@@ -58,13 +58,13 @@ subs_file_flag = False
 subs_file = './ExampleInput/Substructure/example_block_inp.csv'
 
 #Texture Type
-moose_flag = False
-abaqus_flag = True
+moose_flag = True
+abaqus_flag = False
 damask_flag = False
 #Texture Setting
 pbc_flag = True
 submodel_flag = False
-phase2iso_flag = {1:True, 2:True, 3:True, 4:True, 5:True}
+phase2iso_flag = {1:False, 2:True, 3:True, 4:True, 5:True}
 x_fem_flag = False
 element_type = 'HEX8'
 anim_flag = False

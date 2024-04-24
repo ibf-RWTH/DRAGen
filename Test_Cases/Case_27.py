@@ -1,10 +1,10 @@
 from dragen.run import Run
 #Model details
 dimension = 3
-box_size = 20
+box_size = 25
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
-resolution = 2
+resolution = 1
 number_of_rves = 1
 smoothing_flag = False
 
@@ -27,28 +27,25 @@ slope_offset = 0
 
 
 #Files:
-Ferrite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
+#Ferrite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
 Martensite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
-Pearlite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
-Bainite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
-Austenite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
-
+#Pearlite = r'./ExampleInput/Pearlite/TrainedData_Pearlite.pkl'   
+#Bainite = r'./ExampleInput/Bainite/TrainedData_Bainite.pkl' 
+#Austenite = r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
+Pearlite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
 #PAGs
 
 #Blocks
 
 #Inclusions
-Inclusion = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
-
+#Inclusion = r'./ExampleInput/Inclusions/TrainedData_Inclusion.pkl'
+Inclusion = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
 
 #Bands Files File 6
 
-Band_Ferrite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
-#Band_Marteniste = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\DP800/TrainedData_Martensite.pkl'
-#Band_Pearlite = r''
-#Band_Bainite = r''
+#Bands = r'./ExampleInput/Banding/TrainedData_Band.pkl'
 
-#file6 = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\DP800/TrainedData_Ferrite.pkl'
+
 
 # test pearlite phase
 # Substructure params
@@ -58,25 +55,25 @@ p_sigma = 0.1
 t_mu = 1.0
 b_sigma = 0.1
 subs_file_flag = False
-subs_file = './ExampleInput/example_block_inp.csv'
+subs_file = './ExampleInput/Substructure/example_block_inp.csv'
 
 #Texture Type
 moose_flag = False
-abaqus_flag = True
-damask_flag = False
+abaqus_flag = False
+damask_flag = True
 #Texture Setting
 pbc_flag = True
 submodel_flag = False
-phase2iso_flag = {1:True, 2:True, 3:True, 4:True, 5:True}
+phase2iso_flag = {1:True, 2:False, 3:True, 4:True, 5:True}
 x_fem_flag = False
 element_type = 'HEX8'
 anim_flag = False
 
 #Choosing active files
-files = {1: Ferrite, 2: Martensite, 3: Pearlite, 4: Bainite, 5:Austenite, 6: Inclusion, 7: Band_Ferrite}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
+files = {1: None, 2: Martensite, 3: Pearlite, 4: None, 5:None, 6: Inclusion, 7: None}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
 # Change the file name to 'None' if its empty
-phase_ratio = {1: 0.3, 2: 0.3, 3: 0.2, 4: 0.2, 5: 0, 6: 0, 7: 0}
-phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusion', 'Banding']
+phase_ratio = {1: 0, 2: 0.5, 3: 0.45, 4: 0, 5: 0, 6: 0.05, 7:0}
+phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusions', 'Bands']
 
 #Band thickness
 upper = None

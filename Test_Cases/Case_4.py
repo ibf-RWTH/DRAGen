@@ -27,9 +27,10 @@ slope_offset = 0
 
 
 #Files:
-Ferrite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
+#Ferrite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
 #Martensite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
 #Pearlite = r'./ExampleInput/Pearlite/TrainedData_Pearlite.pkl'   
+Bainite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
 #Bainite = r'./ExampleInput/Bainite/TrainedData_Bainite.pkl' 
 #Austenite = r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
 
@@ -70,9 +71,9 @@ element_type = 'HEX8'
 anim_flag = False
 
 #Choosing active files
-files = {1: Ferrite, 2: None, 3: None, 4: None, 5:None, 6: None, 7: None}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
+files = {1: None, 2: None, 3: None, 4: Bainite, 5:None, 6: None, 7: None}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
 # Change the file name to 'None' if its empty
-phase_ratio = {1: 1, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7:0}
+phase_ratio = {1: 0, 2: 0, 3: 0, 4: 1, 5: 0, 6: 0, 7:0}
 phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusions', 'Bands']
 
 #Band thickness
