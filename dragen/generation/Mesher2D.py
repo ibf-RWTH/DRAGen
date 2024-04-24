@@ -1109,11 +1109,6 @@ class BuildAbaqus2D:
         needs to be adjusted for multiple phases"""
         """simple function to write material definition in Input file
         needs to be adjusted for multiple phases"""
-        phase1_idx = 0
-        phase2_idx = 0
-        phase3_idx = 0
-        phase4_idx = 0
-        phase5_idx = 0 
         numberofgrains = self.n_grains
 
         phase = [self.rve_df.loc[self.rve_df['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains+1)]
@@ -1126,52 +1121,47 @@ class BuildAbaqus2D:
         for i in range(numberofgrains):
             ngrain = i+1
             if phase[i] == 1:
-                phase1_idx += 1
-                f.write(f'*Material, name=Ferrite_{phase1_idx}\n')
+                f.write(f'*Material, name=Ferrite_{ngrain}\n')
                 f.write('*Depvar\n')
                 f.write('    176,\n')
                 f.write('*User Material, constants=2\n')
-                f.write('{}.,3.\n'.format(ngrain))
+                f.write(f'{ngrain}.,3.\n')
                 if RveInfo.xfem_flag:
                     f.write('*include, input=Ferrite_dmg.inp\n')
             elif phase[i] == 2:
                 if not RveInfo.phase2iso_flag[2]:
-                    phase2_idx += 1
-                    f.write(f'*Material, name=Martensite_{phase2_idx}\n')
+                    f.write(f'*Material, name=Martensite_{ngrain}\n')
                     f.write('*Depvar\n')
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
-                    f.write('{}.,4.\n'.format(ngrain))
+                    f.write(f'{ngrain}.,4.\n')
                     if RveInfo.xfem_flag:
                         f.write('*include, input=Martensite_dmg.inp\n')
             elif phase[i] == 3:
                 if not RveInfo.phase2iso_flag[2]:
-                    phase3_idx += 1
-                    f.write(f'*Material, name=Pearlite_{phase3_idx}\n')
+                    f.write(f'*Material, name=Pearlite_{ngrain}\n')
                     f.write('*Depvar\n')
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
-                    f.write('{}.,4.\n'.format(ngrain))
+                    f.write(f'{ngrain}.,4.\n')
                     if RveInfo.xfem_flag:
                         f.write('*include, input=Pearlite_dmg.inp\n')
             elif phase[i] == 4:
                 if not RveInfo.phase2iso_flag[3]:
-                    phase4_idx += 1
-                    f.write(f'*Material, name=Bainite_{phase4_idx}\n')
+                    f.write(f'*Material, name=Bainite_{ngrain}\n')
                     f.write('*Depvar\n')
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
-                    f.write('{}.,4.\n'.format(ngrain))
+                    f.write(f'{ngrain}.,4.\n')
                     if RveInfo.xfem_flag:
                         f.write('*include, input=Bainite_dmg.inp\n')
             elif phase[i] == 5: #add
                 if not RveInfo.phase2iso_flag[3]:
-                    phase5_idx += 1
-                    f.write(f'*Material, name=Austenite_{phase5_idx}\n')
+                    f.write(f'*Material, name=Austenite_{ngrain}\n')
                     f.write('*Depvar\n')
                     f.write('    176,\n')
                     f.write('*User Material, constants=2\n')
-                    f.write('{}.,2.\n'.format(ngrain))
+                    f.write(f'{ngrain}.,2.\n')
                     if RveInfo.xfem_flag:
                         f.write('*include, input=Austenite_dmg.inp\n')
 
@@ -1193,7 +1183,7 @@ class BuildAbaqus2D:
             f.write('*Elastic\n')
             f.write('0.21, 0.3\n')
             f.write('**')
-        if RveInfo.phase2iso_flag[5] and RveInfo.phase_ratio[5] > 0: #add
+        if RveInfo.phase2iso_flag[5] and RveInfo.phase_ratio[5] > 0:
             f.write('**\n')
             f.write('*Material, name=Austenite\n')
             f.write('*Elastic\n')
@@ -1204,7 +1194,7 @@ class BuildAbaqus2D:
             f = open(RveInfo.store_path + '/Ferrite_dmg.inp', 'a')
             f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
             f.write('** damage variable, max. element number \n')
-            f.write('0.01, {} \n'.format(self.mesh.number_of_cells))
+            f.write(f'0.01, {self.mesh.number_of_cells} \n')
             f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=1 \n')
             f.write('1., \n')
             f.write('*Damage Stabilization \n')
@@ -1215,7 +1205,7 @@ class BuildAbaqus2D:
             f = open(RveInfo.store_path + '/martensite_dmg.inp', 'a')
             f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
             f.write('** damage variable, max. element number \n')
-            f.write('0.01, {} \n'.format(self.mesh.number_of_cells))
+            f.write(f'0.01, {self.mesh.number_of_cells} \n')
             f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=1 \n')
             f.write('1., \n')
             f.write('*Damage Stabilization \n')
@@ -1226,7 +1216,7 @@ class BuildAbaqus2D:
             f = open(RveInfo.store_path + '/Pearlite_dmg.inp', 'a')
             f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
             f.write('** damage variable, max. element number \n')
-            f.write('0.01, {} \n'.format(self.mesh.number_of_cells))
+            f.write(f'0.01, {self.mesh.number_of_cells} \n')
             f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=1 \n')
             f.write('1., \n')
             f.write('*Damage Stabilization \n')
@@ -1237,7 +1227,7 @@ class BuildAbaqus2D:
             f = open(RveInfo.store_path + '/Bainite_dmg.inp', 'a')
             f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
             f.write('** damage variable, max. element number \n')
-            f.write('0.01, {} \n'.format(self.mesh.number_of_cells))
+            f.write(f'0.01, {self.mesh.number_of_cells} \n')
             f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=1 \n')
             f.write('1., \n')
             f.write('*Damage Stabilization \n')
@@ -1247,7 +1237,7 @@ class BuildAbaqus2D:
             f = open(RveInfo.store_path + '/Austenite_dmg.inp', 'a')
             f.write('*Damage Initiation, Criterion=User, Failure Mechanisms=1, Properties=2 \n')
             f.write('** damage variable, max. element number \n')
-            f.write('0.01, {} \n'.format(self.mesh.number_of_cells))
+            f.write(f'0.01, {self.mesh.number_of_cells} \n')
             f.write('*Damage Evolution, type=DISPLACEMENT, FAILURE INDEX=1 \n')
             f.write('1., \n')
             f.write('*Damage Stabilization \n')
