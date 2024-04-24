@@ -45,7 +45,10 @@ class DataTask3D(HelperFunctions):
             sum_bw = 0
         input_data = pd.DataFrame()
         for phase in RveInfo.phases:
+            
             file_idx = RveInfo.PHASENUM[phase]
+            if RveInfo.phase_ratio[file_idx] == 0:
+                continue
 
             print('current phase is', phase, ';phase input file is', files[file_idx])
             print('current phase is', phase, ';phase ratio file is', RveInfo.phase_ratio[file_idx])
@@ -55,6 +58,8 @@ class DataTask3D(HelperFunctions):
                 phase_input_df = super().read_input(files[file_idx], RveInfo.dimension)
             elif files[file_idx].endswith('.pkl'):
                 phase_input_df = super().read_input_gan(files[file_idx], RveInfo.dimension, size=1000)
+            else:
+                print(files, file_idx)
 
             if phase != 'Bands':
                 if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
@@ -507,6 +512,9 @@ class DataTask3D(HelperFunctions):
 
         for phase in RveInfo.phases:
             if RveInfo.PHASENUM[phase] > 5: # postprocessing for inclusions and bands not yet supported
+                continue
+            file_idx = RveInfo.PHASENUM[phase]
+            if RveInfo.phase_ratio[file_idx] == 0:
                 continue
             PostProcVol().gen_plots(ref_r_in[phase], ref_r_out[phase], phase)
             if RveInfo.gui_flag:
