@@ -89,11 +89,6 @@ class SubMesher(AbaqusMesher):
         return grid
 
     def write_substruct_material_def(self) -> None:
-        phase1_idx = 0
-        phase2_idx = 0
-        phase3_idx = 0
-        phase4_idx = 0
-        phase5_idx = 0
         numberofblocks = self.n_blocks
 
         phase = [self.rve.loc[self.rve['block_id'] == i].phaseID.values[0] for i in range(1, numberofblocks + 1)]
