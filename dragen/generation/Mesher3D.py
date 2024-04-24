@@ -1168,11 +1168,6 @@ class AbaqusMesher(MeshingHelper):
 
         """simple function to write material definition in Input file
         needs to be adjusted for multiple phases"""
-        phase1_idx = 0
-        phase2_idx = 0
-        phase3_idx = 0
-        phase4_idx = 0
-        phase5_idx = 0
         numberofgrains = self.n_grains
 
         phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains+1)]
