@@ -15,6 +15,7 @@ def run_test_cases(test_folder):
                 
                 if hasattr(test_module, "run"):
                     print("Running test case:", module_name)
+                    print('the cwd is: ', os.getcwd())
                     test_module.run()
                     print("Test case", module_name, "successful.")
                 else:
