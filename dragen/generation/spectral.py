@@ -97,6 +97,8 @@ def write_load(store_path: str) -> None:
 
 
 def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
+    if rve.dtype != np.int64:
+        rve = rve.astype('int64')
     print(rve.shape)
     step = 4
     start1 = int(rve.shape[0] / step)
