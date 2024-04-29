@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from PIL import Image, ImageOps
+import time
 from dragen.generation.DiscreteRsa3D import DiscreteRsa3D
 from dragen.generation.DiscreteTesselation3D import Tesselation3D
 from dragen.utilities.Helpers import HelperFunctions
@@ -92,7 +94,7 @@ class DataTask3D(HelperFunctions):
                 all_phases_input_df = pd.concat([all_phases_input_df,phase_input_df])
 
         print('Processing now')
-
+        #total_df.to_csv(RveInfo.gen_path + '/complete_input_data.csv', index=False)
         total_df = super().process_df(total_df, RveInfo.SHRINK_FACTOR)
         total_volume = sum(
             total_df[total_df['phaseID'] <= 6]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
@@ -250,7 +252,9 @@ class DataTask3D(HelperFunctions):
 
             else:
                 rsa, x_0_list, y_0_list, z_0_list, rsa_status = discrete_RSA_obj.run_rsa()
-
+        else:
+            print('RSA Failed!')
+            sys.exit()
         """
         TESSELATOR HERE
         """
@@ -439,6 +443,33 @@ class DataTask3D(HelperFunctions):
                 # generate pair plots for shape comparison for each phase
                 grain_shapes = pd.DataFrame()
                 for i in range(math.floor(rve.shape[2] / 4)):
+
+                    img = rve[:, :, slice_ID]
+                    img = Image.fromarray(img)
+
+                    img = img.convert('RGB')
+                    img = img.convert('L')
+                    img = Image.merge('RGB', [img]*3)
+                    max_id = img.getextrema()[0][1]
+                    colors = list()
+                    for i in range(max_id+1):
+                        np.random.random_integers(0, 255, 1)
+                        entry1 = np.random.random_integers(0, 255)
+                        entry2 = np.random.random_integers(0, 255)
+                        entry3 = np.random.random_integers(0, 255)
+                        colors.append((entry1, entry2, entry3))
+                    color_img = list()
+                    for item in img.getdata():
+                        color_img.append(colors[item[0]])
+                    img.putdata(color_img)
+                    # update image data
+                    img_size = img.size
+                    factor_0 = int(1024 / img_size[0])
+                    factor_1 = int(1024 / img_size[1])
+                    img = img.resize((img_size[0] * factor_0, img_size[1] * factor_1), resample=Image.BOX)
+
+                    path = str(f'{RveInfo.fig_path}/test_{time.time()}.jpg')
+                    img.save(path)
                     print('phase_id, i, slice_ID', phase_id, i, slice_ID)
                     grain_shapes_slice = shape().get_ellipses(rve, slice_ID, phase_id)
                     slice_ID += 4
@@ -486,7 +517,7 @@ class DataTask3D(HelperFunctions):
                             sym_tex = Texture().symmetry_operations(tex_df=tex_dict[key], family='cubic')
                             names = [f"{key}_texture_section_plot_{phase}.png"]
                             for name in names:
-                                Texture().calc_odf(sym_tex, phi2_list=[0, 45, 90], store_path=f'{RveInfo.store_path}/Postprocessing', figname=name)
+                                Texture().calc_odf(sym_tex, phi2_list=[0, 45, 85], store_path=f'{RveInfo.store_path}/Postprocessing', figname=name)
             if phase_id == 5:
                 current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out = \
                     PostProcVol().gen_in_out_lists(phaseID=phase_id)
@@ -508,6 +539,8 @@ class DataTask3D(HelperFunctions):
         for phase in RveInfo.phases:
             if RveInfo.PHASENUM[phase] > 4: # postprocessing for inclusions and bands not yet supported
                 continue
+            print(f'ref_r_in[{phase}]')
+            print(ref_r_in[phase])
             PostProcVol().gen_plots(ref_r_in[phase], ref_r_out[phase], phase)
             if RveInfo.gui_flag:
                 RveInfo.infobox_obj.emit('checkout the evaluation report of the rve stored at:\n'
