@@ -30,5 +30,6 @@ jobs:
     - name: Navigate to directory
       run: cd ./ibf-RWTH/DRAGen
     - name: Test with test cases
+      working-directory: ./DRAGen
       run: |
-        ./DRAGen_testcases
+        DRAGen_testcases
