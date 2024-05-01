@@ -30,4 +30,4 @@ jobs:
 
     - name: Test with test cases
       run: |
-        DRAGen_testcases
+        ./DRAGen_testcases
