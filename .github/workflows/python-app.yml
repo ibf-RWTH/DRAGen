@@ -27,8 +27,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Navigate to directory
-      run: cd ./ibf-RWTH/DRAGen
     - name: Test with test cases
       working-directory: ./DRAGen
       run: |
