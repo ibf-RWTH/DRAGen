@@ -1,5 +1,5 @@
 import os
-#import sys
+import sys
 
 def run_test_cases(test_folder):
     files = os.listdir(test_folder)
@@ -12,9 +12,8 @@ def run_test_cases(test_folder):
                     module_name = file[:-3]
                     test_module = __import__(f"Test_Cases.{module_name}", fromlist=[module_name])
 
-
-                    print("Test case", module_name, "successful.")
-                    #sys.stdout = open('output.txt','w')
+                    #print("Test case", module_name, "successful.")
+                    sys.stdout = open('output.txt','a')
                     #with open('output.txt', 'a') as output_file:
                     #    with open('output.txt','a') as stdout_file:
                     #        original_stdout = sys.stdout
