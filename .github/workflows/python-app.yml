@@ -28,6 +28,5 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     - name: Test with test cases
-      working-directory: ./DRAGen
       run: |
         python DRAGen_testcases.py
