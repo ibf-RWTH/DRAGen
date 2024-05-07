@@ -30,4 +30,4 @@ jobs:
     - name: Test with test cases
       working-directory: ./DRAGen
       run: |
-        DRAGen_testcases
+        python DRAGen_testcases.py
