@@ -10,7 +10,7 @@ smoothing_flag = False
 
 # Banding Parameters:
 # If you want to add banding, change the number_of_bands to 1 or higher has to be integer 
-number_of_bands = 2
+number_of_bands = 0
 band_filling = 1
 band_orientation = 'xy'
 lower_band_bound = 2
@@ -32,7 +32,8 @@ Ferrite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
 #Pearlite = r'./ExampleInput/Pearlite/TrainedData_Pearlite.pkl'   
 #Bainite = r'./ExampleInput/Bainite/TrainedData_Bainite.pkl' 
 #Austenite = r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
-
+Bainite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
+Austenite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
 #PAGs
 
 #Blocks
@@ -49,30 +50,30 @@ Ferrite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
 
 # test pearlite phase
 # Substructure params
-subs_flag = False
+subs_flag = True
 equiv_d = 5
 p_sigma = 0.1
 t_mu = 1.0
 b_sigma = 0.1
-subs_file_flag = False
+subs_file_flag = True
+#subs_file = './ExampleInput/Substructure/example_block_inp.csv'
 subs_file = r'./ExampleInput/Substructure/example_block_inp.csv'
-
 #Texture Type
 moose_flag = False
-abaqus_flag = False
-damask_flag = True
+abaqus_flag = True
+damask_flag = False
 #Texture Setting
 pbc_flag = True
 submodel_flag = False
-phase2iso_flag = {1:True, 2:True, 3:True, 4:True, 5:True}
+phase2iso_flag = {1:False, 2:True, 3:True, 4:True, 5:False}
 x_fem_flag = False
 element_type = 'HEX8'
 anim_flag = False
 
 #Choosing active files
-files = {1: Ferrite, 2: None, 3: None, 4: None, 5:None, 6: None, 7: None}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
+files = {1: Ferrite, 2: None, 3: None, 4: Bainite, 5:Austenite, 6: None, 7: None}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
 # Change the file name to 'None' if its empty
-phase_ratio = {1: 1, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7:0}
+phase_ratio = {1: 0.4, 2: 0, 3: 0, 4: 0.3, 5: 0.3, 6: 0, 7:0}
 phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusions', 'Bands']
 
 #Band thickness
