@@ -1189,6 +1189,10 @@ class AbaqusMesher(MeshingHelper):
         if RveInfo.phase2iso_flag[5] and RveInfo.phase_ratio[5] > 0:
             f.write('**\n')
             f.write('*Include, Input=Austenite.inp\n')
+        if RveInfo.phase_ratio[6] > 0:
+            f.write('**\n')
+            f.write('*Include, Input=Inclusions.inp\n')
+            # add inclusion
         f.close()
         for i in range(numberofgrains):
             HelperFunctions.write_material_def(i, phase)
@@ -1330,7 +1334,6 @@ class AbaqusMesher(MeshingHelper):
     def write_grain_data(self) -> None:
         f = open(RveInfo.store_path + '/graindata.inp', 'w+')
         f.write('!MMM Crystal Plasticity Input File\n')
-        phase1_idx = 0
         numberofgrains = self.n_grains
         phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains + 1)]
         grainsize = [np.cbrt(self.rve.loc[self.rve['GrainID'] == i].shape[0] *
@@ -1338,16 +1341,19 @@ class AbaqusMesher(MeshingHelper):
 
         for i in range(numberofgrains):
             ngrain = i+1
-            if not RveInfo.phase2iso_flag[phase[i]]:
-                """phi1 = int(np.random.rand() * 360)
-                PHI = int(np.random.rand() * 360)
-                phi2 = int(np.random.rand() * 360)"""
-                phi1 = self.grains_df['phi1'].tolist()[i]
-                PHI = self.grains_df['PHI'].tolist()[i]
-                phi2 = self.grains_df['phi2'].tolist()[i]
-                f.write('Grain: {}: {}: {}: {}: {}\n'.format(ngrain, phi1, PHI, phi2, grainsize[i]))
+            if phase[i] <= 5 :
+                if not RveInfo.phase2iso_flag[phase[i]]:
+                    """phi1 = int(np.random.rand() * 360)
+                    PHI = int(np.random.rand() * 360)
+                    phi2 = int(np.random.rand() * 360)"""
+                    phi1 = self.grains_df['phi1'].tolist()[i]
+                    PHI = self.grains_df['PHI'].tolist()[i]
+                    phi2 = self.grains_df['phi2'].tolist()[i]
+                    f.write('Grain: {}: {}: {}: {}: {}\n'.format(ngrain, phi1, PHI, phi2, grainsize[i]))
+            elif phase[i] == 6 :
+                continue
         f.close()
-
+    
     def plot_bot(self, rve_smooth_grid: pv.UnstructuredGrid, min_val: float, max_val: float, direction: int = 1,
                  storename: str = 'default', display=True) -> None:
 
@@ -1518,6 +1524,14 @@ class AbaqusMesher(MeshingHelper):
                     else:
                         f.write(f'** Section: Section - {nGrain}\n')
                         f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Austenite\n')
+            elif self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 6:
+                if not RveInfo.reduced_elements:
+                    f.write(f'** Section: Section - {nGrain}\n')
+                    f.write(f'*Solid Section, elset=Set-{nGrain}, material=Inclusions\n')
+                else:
+                    f.write(f'** Section: Section - {nGrain}\n')
+                    f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Inclusions\n')
+                # add inclusions as isotropic
 
         f.close()
         os.remove(RveInfo.store_path + '/rve-part.inp')

@@ -119,7 +119,7 @@ class DataTask3D(HelperFunctions):
             inclusions_df = data which is placed directly after the tesselation (not growing)
             bands_df = data used for the formation of bands
         """
-        grains_df = total_df.loc[total_df['phaseID'] <= 5, :] 
+        grains_df = total_df.loc[total_df['phaseID'] <= 6, :] 
         grains_df = grains_df.sort_values(by='final_conti_volume', ascending=False)
         grains_df.reset_index(inplace=True, drop=True)
         grains_df.loc[:, 'GrainID'] = grains_df.index + 1
@@ -328,15 +328,15 @@ class DataTask3D(HelperFunctions):
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == i+1, 'phaseID'] = grains_df.loc[i, 'phaseID']
 
             if RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] > 0:
-                # Set the points where < -200 to phase 5 and to grain ID i + j + 3
+                # Set the points where < -200 to phase 6 and to grain ID i + j + 3
                 for j in range(inclusions_df.__len__()):
                     periodic_rve_df.loc[periodic_rve_df['GrainID'] == -(200 + j + 1), 'GrainID'] = max_grain_id + j + 1
-                    periodic_rve_df.loc[periodic_rve_df['GrainID'] == (max_grain_id + j + 1), 'phaseID'] = 5
+                    periodic_rve_df.loc[periodic_rve_df['GrainID'] == (max_grain_id + j + 1), 'phaseID'] = 6
                     periodic_rve[np.where(periodic_rve == -(200 + j + 1))] = max_grain_id + j + 1
                 max_grain_id = periodic_rve.max()
                 grains_df = pd.concat([grains_df, inclusions_df])
                 grains_df.reset_index(inplace=True, drop=True)
-                grains_df.loc[grains_df['phaseID'] == 5, 'GrainID'] = grains_df.loc[grains_df['phaseID'] == 5].index + 1
+                grains_df.loc[grains_df['phaseID'] == 6, 'GrainID'] = grains_df.loc[grains_df['phaseID'] == 6].index + 1
 
             if RveInfo.number_of_bands > 0 and RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] > 0:
                 # Set the points where == -200 to phase 2 and to grain ID i + j + 3
@@ -418,6 +418,9 @@ class DataTask3D(HelperFunctions):
                 elif RveInfo.subs_flag == False:
                     print('######subsflag false######')
                     print("substructure generation is turned off...")
+                    print('###INclusion DF###')
+                    print(grains_df.loc[grains_df['GrainID']<-200])
+                    print('######')
                     mesher_obj = AbaqusMesher(rve_shape=rve_shape, rve=periodic_rve_df, grains_df=grains_df)
                 if mesher_obj:
                     mesher_obj.run()
@@ -492,7 +495,7 @@ class DataTask3D(HelperFunctions):
                             names = [f"{key}_texture_section_plot_{phase}.png"]
                             for name in names:
                                 Texture().calc_odf(sym_tex, phi2_list=[0, 45, 90], store_path=f'{RveInfo.store_path}/Postprocessing', figname=name)
-            if phase_id == 6:
+            if phase_id == 7:
                 current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out = \
                     PostProcVol().gen_in_out_lists(phaseID=phase_id)
                 phase_ratios.append(current_phase_ratio_out)
