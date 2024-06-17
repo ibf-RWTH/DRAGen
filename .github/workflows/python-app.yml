@@ -37,5 +37,4 @@ jobs:
         free -h
     - name: Test with test cases
       run: |
-        cd Test_Cases
-        pytest -v run_all_test_cases.py
+        pytest -v Test_Cases/run_all_test_cases.py
