@@ -30,7 +30,8 @@ jobs:
         pip install pytest
     - name: Test with test cases
       run: |
-        pytest Test_Cases/run_all_test_cases.py
+        cd Test_Cases
+        pytest -v run_all_test_cases.py
     - name: Check memory usage
       run: |
         free -h
