@@ -1,4 +1,11 @@
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from dragen.run import Run
+
+
 #Model details
 dimension = 3
 box_size = 25
@@ -28,7 +35,7 @@ slope_offset = 0
 
 #Files:
 #Ferrite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
-Martensite = r'./ExampleInput/Substructure/example_pag_inp.pkl'
+Martensite = r'./ExampleInput/Substructure/example_pag_inp.csv'
 #Pearlite = r'./ExampleInput/Pearlite/TrainedData_Pearlite.pkl'   
 #Bainite = r'./ExampleInput/Bainite/TrainedData_Bainite.pkl' 
 #Austenite = r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
