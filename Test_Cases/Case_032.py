@@ -10,7 +10,7 @@ smoothing_flag = False
 
 # Banding Parameters:
 # If you want to add banding, change the number_of_bands to 1 or higher has to be integer 
-number_of_bands = 2
+number_of_bands = 1
 band_filling = 1
 band_orientation = 'xy'
 lower_band_bound = 2
@@ -44,7 +44,7 @@ Ferrite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
 #Bands Files File 6
 
 #Bands = r'./ExampleInput/Banding/TrainedData_Band.pkl'
-
+Bands = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
 
 
 # test pearlite phase
@@ -70,9 +70,9 @@ element_type = 'HEX8'
 anim_flag = False
 
 #Choosing active files
-files = {1: Ferrite, 2: None, 3: None, 4: None, 5:None, 6: None, 7: None}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
+files = {1: Ferrite, 2: None, 3: None, 4: None, 5:None, 6: None, 7: Bands}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
 # Change the file name to 'None' if its empty
-phase_ratio = {1: 1, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7:0}
+phase_ratio = {1: 0.85, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0.15}
 phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusions', 'Bands']
 
 #Band thickness
