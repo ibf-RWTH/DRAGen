@@ -60,8 +60,8 @@ subs_file = './ExampleInput/Substructure/example_block_inp.csv'
 
 #Texture Type
 moose_flag = False
-abaqus_flag = True
-damask_flag = False
+abaqus_flag = False
+damask_flag = True
 #Texture Setting
 pbc_flag = True
 submodel_flag = False

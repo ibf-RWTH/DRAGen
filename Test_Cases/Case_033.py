@@ -2,15 +2,15 @@ from dragen.run import Run
 #Model details
 dimension = 3
 box_size = 25
-box_size_y = None  # if this is None it will be set to the main box_size value
-box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
+box_size_y = 25  # if this is None it will be set to the main box_size value
+box_size_z = 25  # for sheet rve set z to None and y to different value than x the other way round is buggy
 resolution = 1
 number_of_rves = 1
 smoothing_flag = False
 
 # Banding Parameters:
 # If you want to add banding, change the number_of_bands to 1 or higher has to be integer 
-number_of_bands = 1
+number_of_bands = 2
 band_filling = 1
 band_orientation = 'xy'
 lower_band_bound = 2
