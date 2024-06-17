@@ -28,6 +28,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pytest
+    - name: Load pretrained data
+      run: python ExampleInput/load_pretrained_data.py
     - name: Print working directory
       run: pwd
     - name: Print current directory contents
@@ -38,7 +40,4 @@ jobs:
     - name: Test with test cases
       run: |
         cd Test_Cases
-        pytest -v Case_001.py
-        pytest -v Case_010.py
-        pytest -v Case_030.py
-        pytest -v Case_040.py
+        pytest -v run_all_test_cases.py
