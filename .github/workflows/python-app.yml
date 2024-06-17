@@ -28,6 +28,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pytest
+    - name: Check data files
+      run: |
+        ls -l path/to/data/files
+    - name: Print working directory
+      run: pwd
+    - name: Print current directory contents
+      run: ls -al
+      
     - name: Test with test cases
       run: |
-        pytest Test_Cases/run_all_test_cases.py
+        cd Test_Cases
+        pytest -v run_all_test_cases.py
+    - name: Check memory usage
+      run: |
+        free -h
