@@ -37,7 +37,7 @@ For more:
 
 <p align="left"><img src="docs/DRAGen_readme_paper.jpg" height="400" alt=""> </img></p>
 
-_Note: For developing it is highly recommended to use Python versions 3.6 to 3.8. For Python 3.9 Pyvista is not fully supported._<br>
+_Note: For developing it is highly recommended to use Python versions Python 3.10._<br>
 **If further questions appear please check the lower section or get in touch with us.**
 
 
@@ -76,7 +76,7 @@ $ dir
 ```
 Create a virtual environment as follows:<br>
 ```
-$ conda create --name DRAGen python=3.8
+$ conda create --name DRAGen python=3.10
 $ conda activate DRAGen
 ```
 (if an error occurs check your conda installation)<br>
