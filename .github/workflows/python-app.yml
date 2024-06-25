@@ -37,6 +37,14 @@ jobs:
     - name: Check memory usage
       run: |
         free -h
+    - name: Configure core dump file location
+      run: |
+        sudo sysctl -w kernel.core_pattern=/tmp/core.%e.%p.%h.%t
+        ulimit -c unlimited
+    - name: Check core dump settings
+      run: |
+        ulimit -a
+        
     - name: Test with test cases
       run: |
         pytest -vv Test_Cases/run_all_test_cases.py
@@ -46,4 +54,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: core-dump
-        path: core.*
+        path: /tmp/core.*
