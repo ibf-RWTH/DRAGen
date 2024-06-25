@@ -38,4 +38,5 @@ jobs:
         free -h
     - name: Test with test cases
       run: |
-        pytest -v Test_Cases/run_all_test_cases.py
+        #pytest -v Test_Cases/run_all_test_cases.py
+        python DRAGen_testcases.py
