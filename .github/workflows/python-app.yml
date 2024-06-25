@@ -37,18 +37,22 @@ jobs:
     - name: Check memory usage
       run: |
         free -h
-    - name: Configure core dump file location
+    - name: Enable core dumps
       run: |
         sudo sysctl -w kernel.core_pattern=/tmp/core.%e.%p.%h.%t
+        echo "/tmp/core.%e.%p.%h.%t" | sudo tee /proc/sys/kernel/core_pattern
         ulimit -c unlimited
     - name: Check core dump settings
-      run: |
-        ulimit -a
-        
+      run: ulimit -a
+      
     - name: Test with test cases
       run: |
         pytest -vv Test_Cases/run_all_test_cases.py
         #python DRAGen_testcases.py
+
+    - name: List files in /tmp to check for core dumps
+      if: failure()
+      run: ls -l /tmp     
     - name: Upload core dump if tests fail
       if: failure()
       uses: actions/upload-artifact@v2
