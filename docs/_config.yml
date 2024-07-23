@@ -21,7 +21,7 @@ repository: ibf-RWTH/DRAGen # for github-metadata
 
 # Build settings
 markdown: kramdown
-theme: minima # Use a theme for your site. You can change this to other supported themes.
+theme: modernist # Use a theme for your site. You can change this to other supported themes.
 
 # Exclusions
 exclude:
