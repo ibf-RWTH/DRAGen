@@ -1,7 +1,7 @@
 # Site settings
 title: DRAGen - Discrete RVE Automation and Generation
 description: A brief description of your site
-url: https://ibf-RWTH.github.io/DRAGen
+url: https://ibf-rwth.github.io/DRAGen/
 baseurl: "" # The base URL of your site. Leave it empty if you are publishing to the root.
 
 # Build settings
