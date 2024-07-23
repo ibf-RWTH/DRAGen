@@ -1,0 +1,27 @@
+# Site settings
+title: DRAGen - Discrete RVE Automation and Generation
+description: A brief description of your site
+url: https://ibf-rwth.github.io/DRAGen/
+baseurl: "" # The base URL of your site. Leave it empty if you are publishing to the root.
+
+# Build settings
+markdown: kramdown
+theme: minima # Use a theme for your site. You can change this to other supported themes.
+
+# Exclusions
+exclude:
+  - README.md # Exclude files or directories from the build
+
+# Plugins
+plugins:
+  - jekyll-seo-tag
+  - jekyll-feed
+
+# Social links
+social:
+  twitter: 
+  github: https://github.com/ibf-RWTH
+  linkedin: https://www.linkedin.com/company/ibf-der-rwth-aachen-university/mycompany/
+
+# Other settings
+paginate: 10 # Number of posts per page if using pagination
