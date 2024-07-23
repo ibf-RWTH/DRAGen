@@ -13,6 +13,7 @@
 # you will see them accessed via {{ site.title }}, {{ site.github_repo }}, and so on.
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
+
 title: DRAGen
 description: Discrete RVE Automation and Generation
 baseurl: "" # the subpath of your site, e.g. /blog
@@ -21,7 +22,7 @@ repository: ibf-RWTH/DRAGen # for github-metadata
 
 # Build settings
 markdown: kramdown
-theme: modernist # Use a theme for your site. You can change this to other supported themes.
+remote_theme: pages-themes/modernist@v0.2.0 # Use a theme for your site. You can change this to other supported themes.
 
 # Exclusions
 exclude:
@@ -31,6 +32,7 @@ exclude:
 plugins:
   - jekyll-seo-tag
   - jekyll-feed
+  - jekyll-remote-theme
 
 # Other settings
 paginate: 10 # Number of posts per page if using pagination
