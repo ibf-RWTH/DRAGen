@@ -5,6 +5,7 @@ import damask
 import numpy as np
 import pandas as pd
 from dragen.utilities.InputInfo import RveInfo
+import pyvista as pv
 
 
 def write_material(store_path: str, grains: list, angles: pd.DataFrame) -> None:
@@ -99,27 +100,11 @@ def write_load(store_path: str) -> None:
 def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
     if rve.dtype != np.int64:
         rve = rve.astype('int64')
-    print(rve.shape)
-    step = 4
-    start1 = int(rve.shape[0] / step)
-    print(start1)
-    stop1 = int(rve.shape[0] / step + rve.shape[0] / step*2)
-    print(stop1)
-    start2 = int(rve.shape[1] / step)
-    print(start2)
-    stop2 = int(rve.shape[1] / step + rve.shape[1] / step*2)
-    print(stop2)
-    start3 = int(rve.shape[2] / step)
-    print(start3)
-    stop3 = int(rve.shape[2] / step + rve.shape[2] / step*2)
-    print(stop3)
-    real_rve = rve[start1:stop1, start2:stop2, start3:stop3]
-    real_rve = real_rve - 1  # Grid.vti starts at zero
-    print(real_rve.shape)
-    print(np.asarray(np.unique(real_rve, return_counts=True)).T)
+    grid = damask.Grid(material=rve, size=[spacing, spacing, spacing])
 
-    grid = damask.Grid(material=real_rve, size=[spacing, spacing, spacing])
     print('Anzahl Materialien im Grid', grid.N_materials)
-    print(grid)
+
     grid.save(fname=store_path + '/grid.vti', compress=True)
+    vtk_grid = pv.read(store_path + '/grid.vti')
+    vtk_grid.save(store_path + '/grid.vtk')
 
