@@ -107,4 +107,3 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
     grid.save(fname=store_path + '/grid.vti', compress=True)
     vtk_grid = pv.read(store_path + '/grid.vti')
     vtk_grid.save(store_path + '/grid.vtk')
-
