@@ -35,6 +35,7 @@ class Run(HelperFunctions):
             abaqus_flag: bool,
             damask_flag: bool,
             moose_flag: bool,
+            calibration_rve_flag: bool,
             element_type: str,
             pbc_flag: bool,
             submodel_flag: bool,
@@ -133,6 +134,7 @@ class Run(HelperFunctions):
         RveInfo.abaqus_flag = abaqus_flag
         RveInfo.damask_flag = damask_flag
         RveInfo.moose_flag = moose_flag
+        RveInfo.calibration_rve_flag = calibration_rve_flag
         RveInfo.anim_flag = anim_flag
 
         RveInfo.phase2iso_flag = phase2iso_flag
@@ -228,9 +230,13 @@ class Run(HelperFunctions):
             obj3D = DataTask3D()
             for i in range(RveInfo.number_of_rves):
                 self.initializations(i)
-                total_df, ex_df = obj3D.grain_sampling()
-                rve = obj3D.rve_generation(total_df)
-                obj3D.post_processing(rve, total_df, ex_df)
+                if RveInfo.calibration_rve_flag:
+                    print('I will generate only a calibration RVE')
+                    rve = obj3D.calibration_rve()
+                else:
+                    total_df, ex_df = obj3D.grain_sampling()
+                    rve = obj3D.rve_generation(total_df)
+                    obj3D.post_processing(rve, total_df, ex_df)
 
 
         else:
