@@ -1,7 +1,9 @@
+import random
 import sys
 import math
 import numpy as np
 
+import damask
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -550,3 +552,73 @@ class DataTask3D(HelperFunctions):
             substrucRun().post_processing(k=3)
         super().write_setup_file()
         RveInfo.LOGGER.info("RVE generation process has successfully completed...")
+
+    def calibration_rve(self):
+        RveInfo.smoothing_flag = False
+        n_elements = 1000
+        grain_ids = set(np.linspace(0, n_elements-1, n_elements, dtype=int))
+        grain_id_list = [id+1 for id in grain_ids]
+        grains = np.asarray(grain_id_list).reshape((10, 10, 10))
+        phases = np.zeros((1000))
+
+        #np.random.shuffle(grain_ids)
+        #rve = np.asarray(grain_ids)
+        for id, ratio in RveInfo.phase_ratio.items():
+            n_grains_this_Phase = int(n_elements*ratio)
+            grains_this_phase = random.sample(grain_ids, n_grains_this_Phase)
+            phases[grains_this_phase] = id
+            grain_ids = grain_ids - set(grains_this_phase)
+
+        phase_list = phases.copy()
+        phases = phases.reshape((10, 10, 10))
+
+        o = damask.Rotation.from_random(1000).as_Euler_angles(degrees=True)
+        print(o)
+        grains_df = pd.DataFrame(data=o, columns=['phi1', 'PHI', 'phi2'])
+        grains_df['GrainID'] = grain_id_list
+        grains_df['phaseID'] = phase_list
+        print(grains_df)
+        rve_x = np.linspace(0, RveInfo.box_size, grains.shape[0], endpoint=True)
+        rve_y = np.linspace(0, RveInfo.box_size, grains.shape[1], endpoint=True)
+        rve_z = np.linspace(0, RveInfo.box_size, grains.shape[2], endpoint=True)
+
+        xx, yy, zz = np.meshgrid(rve_x, rve_y, rve_z, indexing='ij')
+        rve_dict = {'x': xx.flatten(), 'y': yy.flatten(), 'z': zz.flatten(), 'GrainID': grain_id_list, 'phaseID': phase_list }
+        rve_df = pd.DataFrame(rve_dict)
+        rve_df['box_size'] = RveInfo.box_size
+        rve_df['n_pts'] = RveInfo.n_pts
+        if RveInfo.damask_flag:
+            # Startpoint: Rearrange the negative ID's
+            last_grain_id = max(grain_id_list)  # BEWARE: For the .vti file, the grid must start at ZERO
+            phase_list = phases.flatten().tolist()
+            print(phase_list)
+
+            spectral.write_material(store_path=RveInfo.store_path, grains=phase_list,
+                                    angles=grains_df[['phi1', 'PHI', 'phi2']])
+            spectral.write_load(RveInfo.store_path)
+            spectral.write_grid(store_path=RveInfo.store_path,
+                                rve=grains,
+                                spacing=RveInfo.box_size / 1000)
+
+        if RveInfo.moose_flag:
+            print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+            print(np.unique(grains_df['phaseID'].values))
+            print(np.unique(rve_df['phaseID'].values))
+            print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+
+            MooseMesher(rve_shape=grains.shape(), rve=rve_df, grains_df=grains_df).run()
+            # store phases and texture in seperate txt files to make it work within moose
+            grains_df[['phi1', 'PHI', 'phi2']].to_csv(path_or_buf=RveInfo.store_path + '/EulerAngles.txt',
+                                                      header=False, index=False)
+            phases = rve_df.groupby(['GrainID']).mean()['phaseID']
+            phases.to_csv(path_or_buf=RveInfo.store_path + '/phases.txt', header=False, index=False)
+
+        if RveInfo.abaqus_flag:
+            print(rve_df)
+            print(grains_df)
+            rve_shape = phases.shape
+            mesher_obj = AbaqusMesher(rve_shape=rve_shape, rve=rve_df, grains_df=grains_df)
+            if mesher_obj:
+                mesher_obj.run()
+
+
