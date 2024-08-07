@@ -135,6 +135,13 @@ class RveInfo:
     moose_flag: bool = None
     """Set to True for MOOSE input file"""
 
+    calibration_rve_flag: bool = None
+    """An RVE with 1000 elements is generated each element is considered one grain
+       the Orientation is chosen randomly and the phase ratio is taken from the input
+       the regular generation process with rsa and tessellation is ignored for this type
+       of RVE
+    """
+
     debug: bool = True
     """In debug mode, the validity of passed parameters and returned results will be checked to ensure properly-set 
         parameters. But this can slow down the running. So after debugging, it can be turned off to speed running up.
@@ -160,7 +167,7 @@ class RveInfo:
     roughness_flag: bool = False
     """Flag not yet activated since roughness is not yet implemented"""
 
-    texture_flag: bool = False
+    texture_flag: bool = True
     """Flag to activate Texture analysis if texture is needed"""
 
     root: str = './'
@@ -200,5 +207,5 @@ class RveInfo:
 
     ######### Fixed Constants can only be changed here #########
 
-    SHRINK_FACTOR: float = np.cbrt(0.4)
+    SHRINK_FACTOR: float = np.cbrt(0.3)
     """factor by which all ellipsoids are shrinked before beeing placed in the volume"""
