@@ -1447,6 +1447,7 @@ class AbaqusMesher(MeshingHelper):
         f.close()
 
         pv.save_meshio(RveInfo.store_path + '/rve-part.inp', smooth_mesh)
+        pv.save_meshio(RveInfo.store_path + '/rve-part.vtk', smooth_mesh)
         f = open(RveInfo.store_path + '/rve-part.inp', 'r')
         lines = f.readlines()
         f.close()
@@ -1543,7 +1544,7 @@ class AbaqusMesher(MeshingHelper):
                         f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Bainite\n')
 
         f.close()
-        os.remove(RveInfo.store_path + '/rve-part.inp')
+        # os.remove(RveInfo.store_path + '/rve-part.inp')
         x_max = max(GRID.points[:, 0])
         x_min = min(GRID.points[:, 0])
         y_max = max(GRID.points[:, 1])

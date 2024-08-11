@@ -209,3 +209,5 @@ class RveInfo:
 
     SHRINK_FACTOR: float = np.cbrt(0.3)
     """factor by which all ellipsoids are shrinked before beeing placed in the volume"""
+
+    # phase field damage parameters
