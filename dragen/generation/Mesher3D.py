@@ -1188,33 +1188,69 @@ class AbaqusMesher(MeshingHelper):
                 phase1_idx += 1
                 f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
                 f.write('*Depvar\n')
-                f.write('    176,\n')
-                f.write('*User Material, constants=2\n')
-                f.write('{}.,3.\n'.format(phase1_idx))
+                if RveInfo.phase_field_damage:
+                    f.write('    179,\n')
+                    f.write("*Heat Generation\n")
+                    f.write("*Conductivity\n")
+                    f.write("1.,\n")
+                    f.write('*User Material, constants=5\n')
+                    f.write(f'{phase1_idx}.,3., {RveInfo.fracture_toughness},{RveInfo.len_scale},'
+                            f'{RveInfo.eta},\n')
+                else:
+                    f.write('    176,\n')
+                    f.write('*User Material, constants=2\n')
+                    f.write('{}.,3.\n'.format(phase1_idx))
             elif phase[i] == 2:
                 if not RveInfo.phase2iso_flag:
                     phase2_idx += 1
                     f.write('*Material, name=Martensite_{}\n'.format(phase2_idx))
                     f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,4.\n'.format(ngrain))
+                    if RveInfo.phase_field_damage:
+                        f.write('    179,\n')
+                        f.write("*Heat Generation\n")
+                        f.write("*Conductivity\n")
+                        f.write("1.,\n")
+                        f.write('*User Material, constants=5\n')
+                        f.write(f'{phase1_idx}.,4., {RveInfo.fracture_toughness},{RveInfo.len_scale},'
+                                f'{RveInfo.eta},\n')
+                    else:
+                        f.write('    176,\n')
+                        f.write('*User Material, constants=2\n')
+                        f.write('{}.,4.\n'.format(phase1_idx))
             elif phase[i] == 3:
                 if not RveInfo.phase2iso_flag:
                     phase3_idx += 1
                     f.write('*Material, name=Pearlite_{}\n'.format(phase3_idx))
                     f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,4.\n'.format(ngrain))
+                    if RveInfo.phase_field_damage:
+                        f.write('    179,\n')
+                        f.write("*Heat Generation\n")
+                        f.write("*Conductivity\n")
+                        f.write("1.,\n")
+                        f.write('*User Material, constants=5\n')
+                        f.write(f'{phase1_idx}.,4., {RveInfo.fracture_toughness},{RveInfo.len_scale},'
+                                f'{RveInfo.eta},\n')
+                    else:
+                        f.write('    176,\n')
+                        f.write('*User Material, constants=2\n')
+                        f.write('{}.,4.\n'.format(phase1_idx))
             elif phase[i] == 4:
                 if not RveInfo.phase2iso_flag:
                     phase4_idx += 1
                     f.write('*Material, name=Bainite_{}\n'.format(phase4_idx))
                     f.write('*Depvar\n')
-                    f.write('    176,\n')
-                    f.write('*User Material, constants=2\n')
-                    f.write('{}.,4.\n'.format(ngrain))
+                    if RveInfo.phase_field_damage:
+                        f.write('    179,\n')
+                        f.write("*Heat Generation\n")
+                        f.write("*Conductivity\n")
+                        f.write("1.,\n")
+                        f.write('*User Material, constants=5\n')
+                        f.write(f'{phase1_idx}.,4., {RveInfo.fracture_toughness},{RveInfo.len_scale},'
+                                f'{RveInfo.eta},\n')
+                    else:
+                        f.write('    176,\n')
+                        f.write('*User Material, constants=2\n')
+                        f.write('{}.,4.\n'.format(phase1_idx))
 
         if RveInfo.phase2iso_flag and RveInfo.phase_ratio[2] > 0:
             f.write('**\n')
@@ -1237,23 +1273,35 @@ class AbaqusMesher(MeshingHelper):
         if RveInfo.set_init_damage:
             f.write('** Name: Predefined Field - 1 Type: Temperature\n')
             f.write('*Initial Conditions, type = TEMPERATURE\n')
-            f.write('DamageNodes, 0.\n')
+            f.write('DamageNodes, 1.\n')
+            f.write('** Name: Predefined Field - 2 Type: Temperature\n')
+            f.write('*Initial Conditions, type = TEMPERATURE\n')
+            f.write('UndamageNodes, 0.\n')
 
         f.write('**\n')
         f.write('** ----------------------------------------------------------------\n')
         f.write('**\n')
         f.write('** STEP: Step-1\n')
         f.write('**\n')
-        f.write('*Step, name=Step-1, nlgeom=YES, inc=10000000, solver=ITERATIVE\n')
-        f.write('*Static\n')
+        if RveInfo.phase_field_damage:
+            f.write('*Step, name=Step-1, nlgeom=YES, inc=10000000, unsymm=NO\n')
+            f.write("*Coupled Temperature-displacement, creep=none, steady state\n")
+        else:
+            f.write('*Step, name=Step-1, nlgeom=YES, inc=10000000, solver=ITERATIVE\n')
+            f.write('*Static\n')
         f.write('** Step time needs to be adjusted to global .odb\n')
         f.write('0.001, 1., 1.05e-15, 0.25\n')
+        if RveInfo.phase_field_damage:
+            f.write("*Solution Technique, type=SEPARATED\n")
         f.write('**\n')
         f.write('** CONTROLS\n')
         f.write('**\n')
         f.write('*Controls, reset\n')
         f.write('*CONTROLS, PARAMETER=TIME INCREMENTATION\n')
-        f.write('35, 50, 9, 50, 28, 5, 12, 45\n')
+        if RveInfo.phase_field_damage:
+            f.write("5000, 5000, 5000, 5000, 5000, 5000, , 45, , ,\n")
+        else:
+            f.write('35, 50, 9, 50, 28, 5, 12, 45\n')
         f.write('**\n')
         f.write('*CONTROLS, PARAMETERS=LINE SEARCH\n')
         f.write('10\n')
@@ -1325,21 +1373,33 @@ class AbaqusMesher(MeshingHelper):
         if RveInfo.set_init_damage:
             f.write('** Name: Predefined Field - 1 Type: Temperature\n')
             f.write('*Initial Conditions, type = TEMPERATURE\n')
-            f.write('DamageNodes, 0.\n')
+            f.write('DamageNodes, 1.\n')
+            f.write('** Name: Predefined Field - 2 Type: Temperature\n')
+            f.write('*Initial Conditions, type = TEMPERATURE\n')
+            f.write('UndamageNodes, 0.\n')
 
         f.write('** ----------------------------------------------------------------\n')
         f.write('**\n')
         f.write('** STEP: Step-1\n')
         f.write('**\n')
-        f.write('*Step, name=Step-1, nlgeom=YES, inc=10000000, solver=ITERATIVE\n')
-        f.write('*Static\n')
+        if RveInfo.phase_field_damage:
+            f.write('*Step, name=Step-1, nlgeom=YES, inc=10000000, unsymm=NO\n')
+            f.write("*Coupled Temperature-displacement, creep=none, steady state\n")
+        else:
+            f.write('*Step, name=Step-1, nlgeom=YES, inc=10000000, solver=ITERATIVE\n')
+            f.write('*Static\n')
         f.write('0.001, 1., 1.05e-15, 0.25\n')
+        if RveInfo.phase_field_damage:
+            f.write("*Solution Technique, type=SEPARATED\n")
         f.write('**\n')
         f.write('** CONTROLS\n')
         f.write('**\n')
         f.write('*Controls, reset\n')
         f.write('*CONTROLS, PARAMETER=TIME INCREMENTATION\n')
-        f.write('35, 50, 9, 50, 28, 5, 12, 45\n')
+        if RveInfo.phase_field_damage:
+            f.write("5000, 5000, 5000, 5000, 5000, 5000, , 45, , ,\n")
+        else:
+            f.write('35, 50, 9, 50, 28, 5, 12, 45\n')
         f.write('**\n')
         f.write('*CONTROLS, PARAMETERS=LINE SEARCH\n')
         f.write('10\n')
@@ -1476,6 +1536,10 @@ class AbaqusMesher(MeshingHelper):
                 line = "*element,type=c3d8\n"
             elif (line.replace(" ", "") == "*element,type=c3d8rh\n") and (RveInfo.reduced_elements):
                 line = "*element,type=c3d8r\n"
+            if(line.replace(" ", "") == "*element,type=c3d8rh\n") and (RveInfo.phase_field_damage):
+                line = "*element,type=c3d8t\n"
+            if (line.replace(" ", "") == "*element,type=c3d8r\n") and (RveInfo.phase_field_damage):
+                line = "*element,type=c3d8t\n"
             if '*end' in line:
                 line = line.replace('*end', '**\n')
             f.write(line)
@@ -1561,7 +1625,7 @@ class AbaqusMesher(MeshingHelper):
                         f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Bainite\n')
 
         f.close()
-        # os.remove(RveInfo.store_path + '/rve-part.inp')
+        os.remove(RveInfo.store_path + '/rve-part.inp')
         x_max = max(GRID.points[:, 0])
         x_min = min(GRID.points[:, 0])
         y_max = max(GRID.points[:, 1])

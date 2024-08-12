@@ -176,8 +176,8 @@ def set_init_damage_field(mesh: pv.UnstructuredGrid) -> None:
 
     rve = mesh
     points = np.asarray(rve.points)
-    points = points * 1000
-    print("points are:", points)
+    points = points * 1000 # convert in um
+    # print("points are:", points)
     for i in range(len(center_points)):
         # compute 3 corners of cracks
         center = np.asarray(center_points[i])
@@ -212,6 +212,17 @@ def set_init_damage_field(mesh: pv.UnstructuredGrid) -> None:
             f.write(f"{node},")
             if (idx + 1) % 10 == 0:
                 f.write("\n")
+        f.write("\n")
+
+        f.write('*Nset, nset=UndamageNodes, instance=PART-1-1\n')
+        counter = 0
+        for idx in range(1, len(points) + 1):
+            if idx not in damage_node_sets:
+                f.write(f"{idx},")
+                if (counter + 1) % 10 == 0:
+                    f.write("\n")
+                counter += 1
+
 
     print("finish writing damage nodes inp!")
 

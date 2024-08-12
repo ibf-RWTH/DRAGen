@@ -216,4 +216,7 @@ class RveInfo:
     norm_tol: float
     mean_crack_len: float = 0.005
     crack_len_sigma: float = 0.5
+    fracture_toughness: float
+    len_scale: float
+    eta: float
 

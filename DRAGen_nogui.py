@@ -56,8 +56,8 @@ gan_flag = False
 moose_flag = False
 abaqus_flag = True
 calibration_rve_flag = False
-pbc_flag = False
-submodel_flag = True
+pbc_flag = True
+submodel_flag = False
 damask_flag = False
 phase2iso_flag = True
 x_fem_flag = False
@@ -90,6 +90,9 @@ crack_density = 1e-3
 norm_tol = 0.1
 mean_crack_len = 3
 crack_len_sigma = 0.5
+fracture_toughness = 2.7
+len_scale = 0.024
+eta = 1e-6
 
 Run(dimension=dimension, box_size=box_size, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution,
     number_of_rves=number_of_rves, slope_offset=slope_offset, abaqus_flag=abaqus_flag, damask_flag=damask_flag,
@@ -105,5 +108,6 @@ Run(dimension=dimension, box_size=box_size, box_size_y=box_size_y, box_size_z=bo
     decreasing_factor=decreasing_factor, lower=lower, upper=upper,
     phase_field_damage=phase_field_damage, set_init_damage=set_init_damage, crack_density=crack_density,
     norm_tol=norm_tol, mean_crack_len=mean_crack_len, crack_len_sigma=crack_len_sigma,
+    fracture_toughness=fracture_toughness, len_scale=len_scale, eta=eta,
     circularity=circularity, plt_name=plt_name,
     save=save, plot=plot, filename=filename, orientation_relationship=orientation_relationship).run()

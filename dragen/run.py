@@ -84,7 +84,10 @@ class Run(HelperFunctions):
             crack_density: float,
             norm_tol: float,
             mean_crack_len: float,
-            crack_len_sigma: float
+            crack_len_sigma: float,
+            fracture_toughness: float,
+            len_scale: float,
+            eta: float
     ):
 
         super().__init__()
@@ -175,6 +178,9 @@ class Run(HelperFunctions):
         RveInfo.norm_tol = norm_tol
         RveInfo.mean_crack_len = mean_crack_len
         RveInfo.crack_len_sigma = crack_len_sigma
+        RveInfo.fracture_toughness = fracture_toughness
+        RveInfo.len_scale = len_scale
+        RveInfo.eta = eta
 
     @staticmethod
     def setup_logging():
