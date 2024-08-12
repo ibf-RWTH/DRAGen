@@ -31,7 +31,6 @@ class RveInfo:
 
     box_volume = float
 
-
     resolution: any([float, int]) = None
     """ number of elements along rve-edge = box_size*resolution: higher resolution --> finer mesh """
 
@@ -211,3 +210,10 @@ class RveInfo:
     """factor by which all ellipsoids are shrinked before beeing placed in the volume"""
 
     # phase field damage parameters
+    phase_field_damage: bool
+    set_init_damage: bool
+    crack_density: float #1/mum^3
+    norm_tol: float
+    mean_crack_len: float = 0.005
+    crack_len_sigma: float = 0.5
+

@@ -77,7 +77,14 @@ class Run(HelperFunctions):
             save: bool,
             plot: bool,
             filename: str,
-            orientation_relationship: str
+            orientation_relationship: str,
+            # phase field damage parameters
+            phase_field_damage: bool,
+            set_init_damage: bool,
+            crack_density: float,
+            norm_tol: float,
+            mean_crack_len: float,
+            crack_len_sigma: float
     ):
 
         super().__init__()
@@ -161,6 +168,13 @@ class Run(HelperFunctions):
                 RveInfo.n_pts_z += 1
         RveInfo.bin_size = RveInfo.box_size / RveInfo.n_pts
         RveInfo.step_half = RveInfo.bin_size / 2
+
+        RveInfo.phase_field_damage = phase_field_damage
+        RveInfo.set_init_damage = set_init_damage
+        RveInfo.crack_density = crack_density
+        RveInfo.norm_tol = norm_tol
+        RveInfo.mean_crack_len = mean_crack_len
+        RveInfo.crack_len_sigma = crack_len_sigma
 
     @staticmethod
     def setup_logging():

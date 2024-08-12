@@ -7,6 +7,8 @@ import datetime
 import os
 from dragen.utilities.PvGridGeneration import MeshingHelper
 from dragen.utilities.InputInfo import RveInfo
+from dragen.damage.InitDamageField import *
+
 
 class AbaqusMesher(MeshingHelper):
 
@@ -37,6 +39,10 @@ class AbaqusMesher(MeshingHelper):
             f.write('*Include, input=Corners.inp\n')
             f.write('*Include, input=VerticeSets.inp\n')
             f.write('*Include, Input=BoxSets.inp\n')
+
+        if RveInfo.set_init_damage:
+            f.write('*Include, Input=DamageNodesSet.inp\n')
+
         f.write('*End Assembly\n')
         if RveInfo.reduced_elements:
             f.write('*Section Controls, name = EC - 1, hourglass = Enhanced\n')
@@ -55,7 +61,7 @@ class AbaqusMesher(MeshingHelper):
         OutPutFile.write('*Nset, nset=SET-Hull, instance=PART-1-1\n')
         for i in grid_hull_df.index:
             OutPutFile.write(' {},'.format(int(grid_hull_df.loc[i]['pointNumber'] + 1)))
-            if (i+1) % 16 == 0:
+            if (i + 1) % 16 == 0:
                 OutPutFile.write('\n')
         OutPutFile.write('\n')
         OutPutFile.write('**\n')
@@ -139,8 +145,6 @@ class AbaqusMesher(MeshingHelper):
         V4_df = corner_df.loc[(corner_df['x'] == min_x) & (corner_df['y'] == max_y) & (corner_df['z'] == max_z)]
         corner_dict['V4'] = V4_df['pointNumber'].values[0]
 
-
-
         ############ Define Edge Sets without corners ###############
         edges_dict = dict()
         # bottom back edge
@@ -188,33 +192,32 @@ class AbaqusMesher(MeshingHelper):
         Box_Sets_dict['z_0_Set'] = grid_hull_df.loc[grid_hull_df['z'] == min_z]['pointNumber'].to_list()
         Box_Sets_dict['z_max_Set'] = grid_hull_df.loc[grid_hull_df['z'] == max_z]['pointNumber'].to_list()
 
-
         Box_Sets_dict['x_0_y_0_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == min_x) &
-                                       (grid_hull_df['y'] == min_y)]['pointNumber'].to_list()
+                                                        (grid_hull_df['y'] == min_y)]['pointNumber'].to_list()
         Box_Sets_dict['x_max_y_0_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == max_x) &
-                                       (grid_hull_df['y'] == min_y)]['pointNumber'].to_list()
+                                                          (grid_hull_df['y'] == min_y)]['pointNumber'].to_list()
         Box_Sets_dict['x_0_y_max_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == min_x) &
-                                       (grid_hull_df['y'] == max_y)]['pointNumber'].to_list()
+                                                          (grid_hull_df['y'] == max_y)]['pointNumber'].to_list()
         Box_Sets_dict['x_max_y_max_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == max_x) &
-                                       (grid_hull_df['y'] == max_y)]['pointNumber'].to_list()
+                                                            (grid_hull_df['y'] == max_y)]['pointNumber'].to_list()
 
         Box_Sets_dict['x_0_z_0_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == min_x) &
-                                       (grid_hull_df['z'] == min_z)]['pointNumber'].to_list()
+                                                        (grid_hull_df['z'] == min_z)]['pointNumber'].to_list()
         Box_Sets_dict['x_max_z_0_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == max_x) &
-                                         (grid_hull_df['z'] == min_z)]['pointNumber'].to_list()
+                                                          (grid_hull_df['z'] == min_z)]['pointNumber'].to_list()
         Box_Sets_dict['x_0_z_max_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == min_x) &
-                                         (grid_hull_df['z'] == max_z)]['pointNumber'].to_list()
+                                                          (grid_hull_df['z'] == max_z)]['pointNumber'].to_list()
         Box_Sets_dict['x_max_z_max_Set'] = grid_hull_df.loc[(grid_hull_df['x'] == max_x) &
-                                           (grid_hull_df['z'] == max_z)]['pointNumber'].to_list()
+                                                            (grid_hull_df['z'] == max_z)]['pointNumber'].to_list()
 
         Box_Sets_dict['y_0_z_0_Set'] = grid_hull_df.loc[(grid_hull_df['y'] == min_y) &
-                                       (grid_hull_df['z'] == min_z)]['pointNumber'].to_list()
+                                                        (grid_hull_df['z'] == min_z)]['pointNumber'].to_list()
         Box_Sets_dict['y_max_z_0_Set'] = grid_hull_df.loc[(grid_hull_df['y'] == max_y) &
-                                         (grid_hull_df['z'] == min_z)]['pointNumber'].to_list()
+                                                          (grid_hull_df['z'] == min_z)]['pointNumber'].to_list()
         Box_Sets_dict['y_0_z_max_Set'] = grid_hull_df.loc[(grid_hull_df['y'] == min_y) &
-                                         (grid_hull_df['z'] == max_z)]['pointNumber'].to_list()
+                                                          (grid_hull_df['z'] == max_z)]['pointNumber'].to_list()
         Box_Sets_dict['y_max_z_max_Set'] = grid_hull_df.loc[(grid_hull_df['y'] == max_y) &
-                                           (grid_hull_df['z'] == max_z)]['pointNumber'].to_list()
+                                                            (grid_hull_df['z'] == max_z)]['pointNumber'].to_list()
 
         ######### Write input file for corners Sets #############
         OutPutFile = open(RveInfo.store_path + '/VerticeSets.inp', 'w')
@@ -243,7 +246,7 @@ class AbaqusMesher(MeshingHelper):
         OutPutFile = open(RveInfo.store_path + '/LeftToRight.inp', 'w')
         for dir in range(1, 4):
             OutPutFile.write(f'**** {dir}-DIR ****\n')
-            for i in range(1, len(faces_dict['LeftSet'])+1):
+            for i in range(1, len(faces_dict['LeftSet']) + 1):
                 # print item
                 OutPutFile.write('*Equation \n')
                 OutPutFile.write('4 \n')
@@ -256,7 +259,7 @@ class AbaqusMesher(MeshingHelper):
         OutPutFile = open(RveInfo.store_path + '/BottomToTop.inp', 'w')
         for dir in range(1, 4):
             OutPutFile.write(f'**** {dir}-DIR ****\n')
-            for i in range(1, len(faces_dict['BottomSet'])+1):
+            for i in range(1, len(faces_dict['BottomSet']) + 1):
                 # print item
                 OutPutFile.write('*Equation \n')
                 OutPutFile.write('4 \n')
@@ -269,7 +272,7 @@ class AbaqusMesher(MeshingHelper):
         OutPutFile = open(RveInfo.store_path + '/RearToFront.inp', 'w')
         for dir in range(1, 4):
             OutPutFile.write(f'**** {dir}-DIR ****\n')
-            for i in range(1, len(faces_dict['RearSet'])+1):
+            for i in range(1, len(faces_dict['RearSet']) + 1):
                 # print item
                 OutPutFile.write('*Equation \n')
                 OutPutFile.write('4 \n')
@@ -282,7 +285,7 @@ class AbaqusMesher(MeshingHelper):
         ######### Write input files for equations on edges #############
         OutPutFile = open(RveInfo.store_path + '/Edges.inp', 'w')
         OutPutFile.write('**** 1-DIR ****')
-        for i in range(1, len(edges_dict['E_x_1'])+1):
+        for i in range(1, len(edges_dict['E_x_1']) + 1):
             OutPutFile.write('*Equation \n')
             OutPutFile.write('4 \n')
             OutPutFile.write(f'E_x_2_{i} ,1, 1 \n')
@@ -434,7 +437,7 @@ class AbaqusMesher(MeshingHelper):
 
         ######### Write input file for equations on corners #############
         OutPutFile = open(RveInfo.store_path + '/Corners.inp', 'w')
-        OutPutFile.write('**** 1-DIR ****\n' )
+        OutPutFile.write('**** 1-DIR ****\n')
         OutPutFile.write('*Equation \n')
         OutPutFile.write('4 \n')
         OutPutFile.write('H3 ,1, 1 \n')
@@ -509,14 +512,12 @@ class AbaqusMesher(MeshingHelper):
             for i, value in enumerate(values):
                 if i == len(values) - 1:
                     OutPutFile.write(f'{value}\n')
-                elif (i+1) % 8 == 0:
+                elif (i + 1) % 8 == 0:
                     OutPutFile.write(f'{value}\n')
                 else:
                     OutPutFile.write(f' {value}, ')
 
-
         OutPutFile.close()
-
 
     def pbc_backup(self, rve: pv.UnstructuredGrid, grid_hull_df: pd.DataFrame) -> None:
 
@@ -1173,15 +1174,16 @@ class AbaqusMesher(MeshingHelper):
         phase4_idx = 0
         numberofgrains = self.n_grains
 
-        phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains+1)]
-        f = open(RveInfo.store_path + '/Materials.inp', 'w+')  # open in write mode to overwrite old files in case ther are any
+        phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains + 1)]
+        f = open(RveInfo.store_path + '/Materials.inp',
+                 'w+')  # open in write mode to overwrite old files in case ther are any
         f.write('** MATERIALS\n')
         f.write('**\n')
         f.close()
         f = open(RveInfo.store_path + '/Materials.inp', 'a')
 
         for i in range(numberofgrains):
-            ngrain = i+1
+            ngrain = i + 1
             if phase[i] == 1:
                 phase1_idx += 1
                 f.write('*Material, name=Ferrite_{}\n'.format(phase1_idx))
@@ -1232,6 +1234,11 @@ class AbaqusMesher(MeshingHelper):
         to modify amplidtude, and other parameters"""
 
         f = open(RveInfo.store_path + '/Step.inp', 'w+')
+        if RveInfo.set_init_damage:
+            f.write('** Name: Predefined Field - 1 Type: Temperature\n')
+            f.write('*Initial Conditions, type = TEMPERATURE\n')
+            f.write('DamageNodes, 0.\n')
+
         f.write('**\n')
         f.write('** ----------------------------------------------------------------\n')
         f.write('**\n')
@@ -1314,6 +1321,12 @@ class AbaqusMesher(MeshingHelper):
         f.write('**V4, 1\n')
         f.write('**V4, 2\n')
         f.write('**V4, 3\n')
+
+        if RveInfo.set_init_damage:
+            f.write('** Name: Predefined Field - 1 Type: Temperature\n')
+            f.write('*Initial Conditions, type = TEMPERATURE\n')
+            f.write('DamageNodes, 0.\n')
+
         f.write('** ----------------------------------------------------------------\n')
         f.write('**\n')
         f.write('** STEP: Step-1\n')
@@ -1366,10 +1379,10 @@ class AbaqusMesher(MeshingHelper):
         numberofgrains = self.n_grains
         phase = [self.rve.loc[self.rve['GrainID'] == i].phaseID.values[0] for i in range(1, numberofgrains + 1)]
         grainsize = [np.cbrt(self.rve.loc[self.rve['GrainID'] == i].shape[0] *
-                             RveInfo.bin_size**3*3/4/np.pi) for i in range(1, numberofgrains + 1)]
+                             RveInfo.bin_size ** 3 * 3 / 4 / np.pi) for i in range(1, numberofgrains + 1)]
 
         for i in range(numberofgrains):
-            ngrain = i+1
+            ngrain = i + 1
             if not RveInfo.phase2iso_flag:
                 """phi1 = int(np.random.rand() * 360)
                 PHI = int(np.random.rand() * 360)
@@ -1418,6 +1431,7 @@ class AbaqusMesher(MeshingHelper):
             plotter.show(screenshot=RveInfo.store_path + '/' + storename + '.png', auto_close=True)
 
     def run(self) -> None:
+        print("bin_size is: ", RveInfo.bin_size)
         if RveInfo.gui_flag:
             RveInfo.progress_obj.emit(0)
             RveInfo.infobox_obj.emit('starting mesher')
@@ -1431,7 +1445,7 @@ class AbaqusMesher(MeshingHelper):
             RveInfo.progress_obj.emit(50)
         if RveInfo.roughness_flag:
             # TODO: roghness einbauen
-            #grid = self.apply_roughness(grid)
+            # grid = self.apply_roughness(grid)
             pass
 
         f = open(RveInfo.store_path + '/DRAGen_RVE.inp', 'w+')
@@ -1447,7 +1461,9 @@ class AbaqusMesher(MeshingHelper):
         f.close()
 
         pv.save_meshio(RveInfo.store_path + '/rve-part.inp', smooth_mesh)
-        pv.save_meshio(RveInfo.store_path + '/rve-part.vtk', smooth_mesh)
+        # pv.save_meshio(RveInfo.store_path + '/rve-part.vtk', smooth_mesh)
+        if RveInfo.set_init_damage:
+            set_init_damage_field(mesh=smooth_mesh)
         f = open(RveInfo.store_path + '/rve-part.inp', 'r')
         lines = f.readlines()
         f.close()
@@ -1500,7 +1516,8 @@ class AbaqusMesher(MeshingHelper):
                 else:
                     if not RveInfo.phase2iso_flag:
                         phase2_idx += 1
-                        f.write(f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Martensite_{phase2_idx}\n')
+                        f.write(
+                            f'*Solid Section, elset=Set-{nGrain}, controls=EC-1, material=Martensite_{phase2_idx}\n')
                         f.write('*Hourglass Stiffness\n')
                         f.write('1., , 1., 1.\n')
                     else:
@@ -1576,11 +1593,11 @@ class AbaqusMesher(MeshingHelper):
                          show_edges=False, interpolate_before_map=True)
         plotter.add_axes()
         plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
-                     screenshot=RveInfo.store_path+'/Figs/pyvista_smooth_Mesh_phases.png')
+                     screenshot=RveInfo.store_path + '/Figs/pyvista_smooth_Mesh_phases.png')
         plotter.close()
 
         plotter = pv.Plotter(off_screen=True)
-        plotter.add_mesh(smooth_mesh, scalars='GrainID', scalar_bar_args={'title':'Grain IDs'},
+        plotter.add_mesh(smooth_mesh, scalars='GrainID', scalar_bar_args={'title': 'Grain IDs'},
                          show_edges=False, interpolate_before_map=True)
         plotter.add_axes()
         plotter.show(interactive=True, auto_close=True, window_size=[800, 600],

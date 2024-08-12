@@ -123,18 +123,20 @@ def find_points_within_rectangle(corner, v1, v2, len_v1, len_v2, norm, points, t
 
     # Initialize an empty list to hold points within the rectangle
     points_within = []
-
     # Loop through each point
     for idx, point in enumerate(points):
         # Check if the point lies on the plane of the rectangle
+        print("dot is: ", np.abs(np.dot(point - corner, norm)))
         if np.abs(np.dot(point - corner, norm)) < tol:
+            print("here")
             # Project the point onto the rectangle's local coordinates
             projection = point - corner
             d1 = np.dot(projection, v1) / len_v1 ** 2
+            print("d1 is: ",d1)
             d2 = np.dot(projection, v2) / len_v2 ** 2
 
             # Check if the projected point lies within the rectangle bounds
-            if 0 <= d1 <= 1 and 0 <= d2 <= 1:
+            if -tol <= d1 <= 1+tol and -tol <= d2 <= 1+tol:
                 points_within.append(idx)
 
     return points_within
@@ -143,10 +145,13 @@ def find_points_within_rectangle(corner, v1, v2, len_v1, len_v2, norm, points, t
 def set_init_damage_field(mesh: pv.UnstructuredGrid) -> None:
     norm_tol = RveInfo.norm_tol
     num_cracks = int(RveInfo.box_volume * RveInfo.crack_density) + 1
-    print("crack number is: ", num_cracks)
-    width, height, depth = RveInfo.box_size, RveInfo.box_size_y, RveInfo.box_size_z
+    print("number of cracks is: ", num_cracks)
+    width = RveInfo.box_size
+    print("box size is", RveInfo.box_size)
+    height = RveInfo.box_size if RveInfo.box_size_y is None else RveInfo.box_size_y
+    depth = RveInfo.box_size if RveInfo.box_size_z is None else RveInfo.box_size_z
     radius = np.power(RveInfo.box_volume / num_cracks, 1 / 3)
-    # print("average distance between cracks is:", radius)
+    print("average distance between cracks is:", radius)
     center_points = generate_poisson_points(width, height, depth, radius)
     damage_node_sets = []
     # generate cracks as tiny rectangles
@@ -157,7 +162,7 @@ def set_init_damage_field(mesh: pv.UnstructuredGrid) -> None:
     # Calculate mu based on the desired mean
     mu = np.log(mean_crack_len) - (sigma ** 2) / 2
     crack_size_list = np.random.lognormal(mean=mu, sigma=sigma, size=(num_cracks, 2))
-    # print(crack_size_list)
+    print("crack size list is", crack_size_list)
     rve = mesh
     points = np.asarray(rve.points)
     for i in range(len(center_points)):
@@ -177,9 +182,12 @@ def set_init_damage_field(mesh: pv.UnstructuredGrid) -> None:
             # find nodes within cracks
             in_points = find_points_within_rectangle(corner, v1, v2, 2 * half_length, 2 * half_width, norm, points,
                                                      tol=norm_tol)
+            break
             if len(in_points) > 0:
                 damage_node_sets.extend(in_points)
                 break
+
+        print(f"damaged nodes on{i+1}th cracks found!")
 
     print("damage node sets generation done!")
     with open(RveInfo.store_path + '/DamageNodesSet.inp', 'w') as f:
@@ -196,14 +204,14 @@ if __name__ == "__main__":
     # rve_data = pd.read_csv(r'F:\temp\OutputData\2024-08-11_000\periodic_rve_df.csv')
     # print("x range: ",rve_data['x'].min(), rve_data['x'].max())
     # Parameters
-    RveInfo.box_size = 0.030
-    RveInfo.box_size_y = 0.030
-    RveInfo.box_size_z = 0.030
+    RveInfo.box_size = 30
+    RveInfo.box_size_y = 30
+    RveInfo.box_size_z = 30
     RveInfo.bin_size = 0.001
-    RveInfo.box_volume = RveInfo.box_size * RveInfo.box_size_y * RveInfo.box_size_z
-    RveInfo.crack_density = 1e6
-    RveInfo.norm_tol = 1e-5
-    RveInfo.mean_crack_len = 0.005
+    RveInfo.box_volume = 27000
+    RveInfo.crack_density = 1e-3
+    RveInfo.norm_tol = 1e-3
+    RveInfo.mean_crack_len = 5
     RveInfo.store_path = r'F:\temp\OutputData\2024-08-11_000'
     RveInfo.crack_len_sigma = 0.5
     rve = pv.read(r'F:\temp\OutputData\2024-08-11_000\rve-part.vtk')
