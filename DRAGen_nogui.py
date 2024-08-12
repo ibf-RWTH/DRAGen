@@ -1,11 +1,11 @@
 from dragen.run import Run
 
 dimension = 3
-box_size = 20
+box_size = 30
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
 
-resolution = 2.0
+resolution = 1.0
 number_of_rves = 1
 smoothing_flag = False
 # Banding Params
@@ -15,7 +15,7 @@ band_orientation = 'xy'
 lower_band_bound = 2
 upper_band_bound = 5
 visualization_flag = False
-root = r'F:\temp'
+root = r'C:\temp'
 # Substructure params
 equiv_d = 5
 p_sigma = 0.1
@@ -58,7 +58,7 @@ abaqus_flag = True
 calibration_rve_flag = False
 pbc_flag = False
 submodel_flag = True
-damask_flag = True
+damask_flag = False
 phase2iso_flag = True
 x_fem_flag = False
 element_type = 'HEX8'
@@ -87,8 +87,8 @@ Number 5 specifies the inclusions and number 6 the Band phase. Either .csv or .p
 phase_field_damage = True
 set_init_damage = True
 crack_density = 1e-3
-norm_tol = 1e-2
-mean_crack_len = 4
+norm_tol = 0.1
+mean_crack_len = 3
 crack_len_sigma = 0.5
 
 Run(dimension=dimension, box_size=box_size, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution,

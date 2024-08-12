@@ -3,6 +3,7 @@ import random
 import math
 from dragen.utilities.InputInfo import RveInfo
 import pyvista as pv
+import matplotlib.pyplot as plt
 
 
 def distance(p1, p2):
@@ -104,10 +105,9 @@ def compute_rotation_matrix(alpha, beta, gamma):
     R = np.dot(R_z, np.dot(R_y, R_x))
     return R
 
-
-def find_points_within_rectangle(corner, v1, v2, len_v1, len_v2, norm, points, tol=1e-6):
+def find_closest_points_in_rectangle(corner, v1, v2, norm, points, tol=1e-6):
     """
-    Find points within a rectangle in 3D space.
+    Find points within the rectangle in 3D space by computing the closest z values using vectorized operations.
 
     Parameters:
         corner (numpy array): Coordinates of one corner of the rectangle.
@@ -115,35 +115,46 @@ def find_points_within_rectangle(corner, v1, v2, len_v1, len_v2, norm, points, t
         v2 (numpy array): Vector along the adjacent edge of the rectangle.
         norm (numpy array): Unit normal vector to the rectangle plane.
         points (numpy array): Array of points to check, shape (n_points, 3).
-        tol (float): Tolerance for numerical precision.
+        tol (float): Tolerance for numerical precision when comparing z-values.
 
     Returns:
-        list: Points that lie within the rectangle.
+        numpy array: Points that are closest to the computed z values within the rectangle.
     """
 
-    # Initialize an empty list to hold points within the rectangle
-    points_within = []
-    # Loop through each point
-    for idx, point in enumerate(points):
-        # Check if the point lies on the plane of the rectangle
-        print("dot is: ", np.abs(np.dot(point - corner, norm)))
-        if np.abs(np.dot(point - corner, norm)) < tol:
-            print("here")
-            # Project the point onto the rectangle's local coordinates
-            projection = point - corner
-            d1 = np.dot(projection, v1) / len_v1 ** 2
-            print("d1 is: ",d1)
-            d2 = np.dot(projection, v2) / len_v2 ** 2
+    # Calculate the plane's d constant using the dot product
+    d = np.dot(norm, corner)
 
-            # Check if the projected point lies within the rectangle bounds
-            if -tol <= d1 <= 1+tol and -tol <= d2 <= 1+tol:
-                points_within.append(idx)
+    # Calculate the other corners of the rectangle
+    corner1 = corner + v1
+    corner2 = corner + v2
+    corner3 = corner + v1 + v2
 
-    return points_within
+    # Find the min and max x, y coordinates for the bounding box
+    min_x = min(corner[0], corner1[0], corner2[0], corner3[0])
+    max_x = max(corner[0], corner1[0], corner2[0], corner3[0])
+    min_y = min(corner[1], corner1[1], corner2[1], corner3[1])
+    max_y = max(corner[1], corner1[1], corner2[1], corner3[1])
 
+    # Filter points whose x and y coordinates are within the bounding box
+    mask = (points[:, 0] >= min_x) & (points[:, 0] <= max_x) & (points[:, 1] >= min_y) & (points[:, 1] <= max_y)
+    points_within_xy = points[mask]
+    indices_within_xy = np.where(mask)[0]
+
+    # Calculate the correct z value on the rectangle's plane for these (x, y) points
+    a, b, c = norm
+    computed_z_values = (d - a * points_within_xy[:, 0] - b * points_within_xy[:, 1]) / c
+
+    # Compute the distance in z between the points and the rectangle's plane
+    z_distances = np.abs(points_within_xy[:, 2] - computed_z_values)
+
+    # Select the points where the z distance is within the tolerance
+    closest_points = indices_within_xy[z_distances < tol]
+
+    return closest_points
 
 def set_init_damage_field(mesh: pv.UnstructuredGrid) -> None:
     norm_tol = RveInfo.norm_tol
+    print("tol is", norm_tol)
     num_cracks = int(RveInfo.box_volume * RveInfo.crack_density) + 1
     print("number of cracks is: ", num_cracks)
     width = RveInfo.box_size
@@ -162,9 +173,11 @@ def set_init_damage_field(mesh: pv.UnstructuredGrid) -> None:
     # Calculate mu based on the desired mean
     mu = np.log(mean_crack_len) - (sigma ** 2) / 2
     crack_size_list = np.random.lognormal(mean=mu, sigma=sigma, size=(num_cracks, 2))
-    print("crack size list is", crack_size_list)
+
     rve = mesh
     points = np.asarray(rve.points)
+    points = points * 1000
+    print("points are:", points)
     for i in range(len(center_points)):
         # compute 3 corners of cracks
         center = np.asarray(center_points[i])
@@ -179,15 +192,18 @@ def set_init_damage_field(mesh: pv.UnstructuredGrid) -> None:
             corner = center - half_length * tangent - half_width * bitangent  # left bottom
             v1 = 2 * half_length * tangent
             v2 = 2 * half_width * bitangent  # 2 vectors along crack edge
-            # find nodes within cracks
-            in_points = find_points_within_rectangle(corner, v1, v2, 2 * half_length, 2 * half_width, norm, points,
-                                                     tol=norm_tol)
-            break
-            if len(in_points) > 0:
-                damage_node_sets.extend(in_points)
+            # print("corner and vecs are", corner, v1, v2)
+            # plot_damage(points=points, corner=corner, v1=v1, v2=v2)
+
+            closet_points = find_closest_points_in_rectangle(corner=corner, v1=v1, v2=v2, norm=norm,
+                                                             points=points, tol=norm_tol)
+            # print("closet points are:", closet_points)
+            if len(closet_points) > 0:
+                damage_node_sets.extend(closet_points)
                 break
 
-        print(f"damaged nodes on{i+1}th cracks found!")
+
+        print(f"damaged nodes on crack {i + 1} found!")
 
     print("damage node sets generation done!")
     with open(RveInfo.store_path + '/DamageNodesSet.inp', 'w') as f:
@@ -200,6 +216,43 @@ def set_init_damage_field(mesh: pv.UnstructuredGrid) -> None:
     print("finish writing damage nodes inp!")
 
 
+def plot_damage(points, corner, v1, v2):
+    corner1 = corner + v1
+    corner2 = corner + v2
+    corner3 = corner + v1 + v2
+
+    # Collect all corners
+    corners = np.array([corner, corner1, corner2, corner3])
+
+    # Plotting the rectangle and the points
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    # Plot the rectangle by connecting the corners
+    rectangle_edges = [[corner, corner1], [corner1, corner3], [corner3, corner2], [corner2, corner]]
+    for edge in rectangle_edges:
+        ax.plot([edge[0][0], edge[1][0]], [edge[0][1], edge[1][1]], [edge[0][2], edge[1][2]], 'r-', linewidth=10)
+
+    # Plot the corners of the rectangle
+    ax.scatter(corners[:, 0], corners[:, 1], corners[:, 2], color='red', label='Rectangle Corners',s=50)
+
+    # Plot the points
+    ax.scatter(points[:, 0], points[:, 1], points[:, 2], color='green', label='Points', marker='x', s=5)
+
+    # Setting labels and legend
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_xlim([0,30])
+    ax.set_ylim([0,30])
+    ax.set_zlim([0,30])
+    ax.set_title('Rectangle and Points in 2D')
+    ax.legend()
+
+    plt.grid(True)
+    plt.show()
+
+
 if __name__ == "__main__":
     # rve_data = pd.read_csv(r'F:\temp\OutputData\2024-08-11_000\periodic_rve_df.csv')
     # print("x range: ",rve_data['x'].min(), rve_data['x'].max())
@@ -210,55 +263,9 @@ if __name__ == "__main__":
     RveInfo.bin_size = 0.001
     RveInfo.box_volume = 27000
     RveInfo.crack_density = 1e-3
-    RveInfo.norm_tol = 1e-3
+    RveInfo.norm_tol = 0.1
     RveInfo.mean_crack_len = 5
-    RveInfo.store_path = r'F:\temp\OutputData\2024-08-11_000'
+    RveInfo.store_path = r'C:\temp\OutputData\2024-08-12_000'
     RveInfo.crack_len_sigma = 0.5
-    rve = pv.read(r'F:\temp\OutputData\2024-08-11_000\rve-part.vtk')
+    rve = pv.read(r'C:\temp\OutputData\2024-08-12_000\rve-part.vtk')
     set_init_damage_field(mesh=rve)
-    # num_cracks = int(RveInfo.box_volume * RveInfo.crack_density) + 1
-    # print("crack number is: ", num_cracks)
-    # width, height, depth = RveInfo.box_size, RveInfo.box_size_y, RveInfo.box_size_z
-    # radius = np.power(RveInfo.box_volume / num_cracks, 1 / 3)
-    # # print("average distance between cracks is:", radius)
-    # center_points = generate_poisson_points(width, height, depth, radius)
-    # damage_node_sets = []
-    # # generate cracks as tiny rectangles
-    # mean_crack_len = 5 * RveInfo.bin_size
-    # # Set standard deviation of the logarithm of the variable
-    # sigma = 0.5  # Adjust this value as needed for different spreads
-    #
-    # # Calculate mu based on the desired mean
-    # mu = np.log(mean_crack_len) - (sigma ** 2) / 2
-    # crack_size_list = np.random.lognormal(mean=mu, sigma=sigma, size=(num_cracks, 2))
-    # # print(crack_size_list)
-    # rve = pv.read(r'F:\temp\OutputData\2024-08-11_000\rve-part.vtk')
-    # points = np.asarray(rve.points)
-    # for i in range(len(center_points)):
-    #     # compute 3 corners of cracks
-    #     center = np.asarray(center_points[i])
-    #     half_length, half_width = crack_size_list[i, :] / 2
-    #
-    #     while True:
-    #         # Generate random Euler angles
-    #         alpha, beta, gamma = generate_random_euler_angles()
-    #         # Compute the corresponding rotation matrix
-    #         rotation_matrix = compute_rotation_matrix(alpha, beta, gamma)
-    #         norm, tangent, bitangent = rotation_matrix[:, 0], rotation_matrix[:, 1], rotation_matrix[:, 2]
-    #         corner = center - half_length * tangent - half_width * bitangent  # left bottom
-    #         v1 = 2 * half_length * tangent
-    #         v2 = 2 * half_width * bitangent  # 2 vectors along crack edge
-    #         # find nodes within cracks
-    #         in_points = find_points_within_rectangle(corner, v1, v2, 2 * half_length, 2 * half_width, norm, points,
-    #                                                  tol=norm_tol)
-    #         if len(in_points) > 0:
-    #             damage_node_sets.extend(in_points)
-    #             break
-    #
-    # print(damage_node_sets)
-    # with open('DamageNodesSet.inp','w') as f:
-    #     f.write('*Nset, nset=DamageNodes, instance=PART-1-1\n')
-    #     for idx, node in enumerate(damage_node_sets):
-    #         f.write(f"{node},")
-    #         if (idx + 1) % 10 == 0:
-    #             f.write("\n")
