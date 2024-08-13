@@ -3,7 +3,6 @@ import pytest
 import sys
 import os
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 scenarios = [
     'Case_001',
@@ -59,6 +58,7 @@ scenarios = [
     'Case_051',
     'Case_052',
 ]
+
 
 @pytest.fixture(params=scenarios)
 def scenario(request):

@@ -73,7 +73,7 @@ anim_flag = False
 #Choosing active files
 files = {1: None, 2: None, 3: None, 4: Bainite, 5:Austenite, 6: Inclusions, 7: None}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
 # Change the file name to 'None' if its empty
-phase_ratio = {1: 0.5, 2: 0, 3: 0, 4: 0.45, 5: 0.5, 6: 0.05, 7:0}
+phase_ratio = {1: 0, 2: 0, 3: 0, 4: 0.45, 5: 0.5, 6: 0.05, 7:0}
 phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusions', 'Bands']
 
 #Band thickness

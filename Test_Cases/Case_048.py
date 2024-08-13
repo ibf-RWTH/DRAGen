@@ -32,7 +32,7 @@ slope_offset = 0
 #Pearlite = r'./ExampleInput/Pearlite/TrainedData_Pearlite.pkl'   
 #Bainite = r'./ExampleInput/Bainite/TrainedData_Bainite.pkl' 
 #Austenite = r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
-Bainite = r'./ExampleInput/Substructure/example_pag_inp.pkl'
+Bainite = r'./ExampleInput/Substructure/example_pag_inp.csv'
 #PAGs
 
 #Blocks

@@ -65,7 +65,7 @@ damask_flag = False
 #Texture Setting
 pbc_flag = True
 submodel_flag = False
-phase2iso_flag = {1:True, 2:False, 3:False, 4:False, 5:True}
+phase2iso_flag = {1:True, 2:False, 3:False, 4:True, 5:True}
 x_fem_flag = False
 element_type = 'HEX8'
 anim_flag = False

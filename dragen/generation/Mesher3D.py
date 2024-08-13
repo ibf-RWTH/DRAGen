@@ -1339,7 +1339,8 @@ class AbaqusMesher(MeshingHelper):
         grainsize = [np.cbrt(self.rve.loc[self.rve['GrainID'] == i].shape[0] *
                              RveInfo.bin_size**3*3/4/np.pi) for i in range(1, numberofgrains + 1)]
 
-        for i in range(numberofgrains):
+
+        for i in range(numberofgrains - 1):
             ngrain = i+1
             if phase[i] <= 5 :
                 if not RveInfo.phase2iso_flag[phase[i]]:

@@ -36,7 +36,7 @@ class Tesselation3D(HelperFunctions):
             n_y = RveInfo.n_pts_z
         shape = (n_x, n_y, n_z)
 
-        self.x_grid, self.y_grid, self.z_grid = super().gen_grid_new(shape)
+        self.x_grid, self.y_grid, self.z_grid = super().gen_grid_new()
         self.pbar = tqdm(total=100)
 
     def grow(self, iterator, a, b, c, shape):
@@ -52,7 +52,7 @@ class Tesselation3D(HelperFunctions):
         b[iterator] = b_i
         c[iterator] = c_i
 
-        ellipsoid = super().ellipsoid(shape, a_i, b_i, c_i, alpha=alpha)
+        ellipsoid = super().ellipsoid(a_i, b_i, c_i, alpha=alpha)
 
         return ellipsoid, a, b, c
 

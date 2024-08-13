@@ -100,7 +100,7 @@ class DataTask3D(HelperFunctions):
 
         total_df = super().process_df(total_df, RveInfo.SHRINK_FACTOR)
         total_volume = sum(
-            total_df[total_df['phaseID'] <= 7]['final_conti_volume'].values)  # Inclusions and bands dont influence filling
+            total_df[total_df['phaseID'] <= 7]['final_conti_volume'].values)  # Inclusions and bands dont influence filling #7>5
         estimated_boxsize = np.cbrt(total_volume)
         RveInfo.LOGGER.info(f"The total number of grains is {total_df.__len__()}")
         RveInfo.LOGGER.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
@@ -217,7 +217,7 @@ class DataTask3D(HelperFunctions):
                 startindex = int(np.amin(rsa) + 1000) * -1
                #print(startindex)
 
-                rsa = super().gen_array()
+                rsa = super().gen_array_new()
                 band_rsa = super().gen_boundaries_3D(rsa)
                 band_array_new = super().band_generator(band_array=band_rsa, bandwidth=RveInfo.bandwidths[0], center=band_center)
 

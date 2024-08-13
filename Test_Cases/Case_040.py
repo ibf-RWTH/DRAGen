@@ -27,7 +27,7 @@ slope_offset = 0
 
 
 #Files:
-Ferrite = r'./ExampleInput/Substructure/example_pag_inp.pkl'
+Ferrite = r'./ExampleInput/Substructure/example_pag_inp.csv'
 #Martensite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
 #Pearlite = r'./ExampleInput/Pearlite/TrainedData_Pearlite.pkl'   
 #Bainite = r'./ExampleInput/Bainite/TrainedData_Bainite.pkl' 

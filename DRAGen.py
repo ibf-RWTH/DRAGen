@@ -207,6 +207,26 @@ class Ui_MainWindow(object):
         self.gridLayout_3.addWidget(self.fileBrowserBand, 5, 5, 1, 1)
         self.fileBrowserBand.clicked.connect(self.button_handler)
 
+        self.band_phase_ratio_label = QtWidgets.QLabel(self.gridLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.band_phase_ratio_label.sizePolicy().hasHeightForWidth())
+        self.band_phase_ratio_label.setSizePolicy(sizePolicy)
+        self.band_phase_ratio_label.setObjectName("band_phase_ratio_label")
+        self.gridLayout_3.addWidget(self.band_phase_ratio_label, 6, 0, 1, 2)
+
+        self.band_phase_ratioSpinBox = QtWidgets.QDoubleSpinBox(self.gridLayoutWidget_2)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.band_phase_ratioSpinBox.sizePolicy().hasHeightForWidth())
+        self.band_phase_ratioSpinBox.setSizePolicy(sizePolicy)
+        self.band_phase_ratioSpinBox.setEnabled(True)
+        self.band_phase_ratioSpinBox.setObjectName("band_phase_ratioSpinBox")
+        self.gridLayout_3.addWidget(self.band_phase_ratioSpinBox, 6, 2, 1, 1)
+
+
         # Inclusion Feature Tab
         self.inclusion_tab = QtWidgets.QWidget()
         self.inclusion_tab.setObjectName("inclusion_tab")
@@ -920,7 +940,6 @@ class Ui_MainWindow(object):
         self.bainiteSpinBox.setObjectName("bainiteSpinBox")
         self.gridLayout.addWidget(self.bainiteSpinBox, 6, 8, 1, 1)
 
-#Add
         self.austeniteSpinBox = QtWidgets.QDoubleSpinBox(self.formLayoutWidget)
         self.austeniteSpinBox.setDecimals(2)
         self.austeniteSpinBox.setMaximum(1.0)
@@ -929,7 +948,6 @@ class Ui_MainWindow(object):
         self.austeniteSpinBox.setEnabled(False)
         self.austeniteSpinBox.setObjectName("austeniteSpinBox")
         self.gridLayout.addWidget(self.austeniteSpinBox, 6, 10, 1, 2)
-#Add
         
         # Inputfile path:
         self.filepath_label = QtWidgets.QLabel(self.formLayoutWidget)
@@ -1195,6 +1213,7 @@ class Ui_MainWindow(object):
         self.band_filling_label.setText(_translate("MainWindow", "Band filling parameter"))
         self.band_orientation_label.setText(_translate("MainWindow", "Orientaion of band in RVE"))
         self.band_file_label.setText(_translate("MainWindow", "Input file for banded grains"))
+        self.band_phase_ratio_label.setText(_translate("MainWindow", "Band phase ratio"))
 
         self.inclusion_file_label.setText(_translate("MainWindow", "Input file for inclusions/pores"))
         self.inclusion_ratio_label.setText(_translate("MainWindow", "phase ratio for inclusions/pores"))
@@ -1318,6 +1337,7 @@ class Ui_MainWindow(object):
                 self.bainiteSpinBox.setEnabled(False)
                 self.lineEditBainite.setEnabled(False)
                 self.fileBrowserBainite.setEnabled(False)
+        
         if self.MainWindow.sender() == self.Austenite_button:
             if state == Qt.Checked:
                 self.austeniteSpinBox.setEnabled(True)
@@ -1364,7 +1384,7 @@ class Ui_MainWindow(object):
             if dlg.exec_():
                 file_path = dlg.selectedFiles()
                 self.lineEditBainite.setText(file_path[0])
-        elif self.MainWindow.sender() == self.fileBrowserAustenite: #Add
+        elif self.MainWindow.sender() == self.fileBrowserAustenite:
             dlg = QFileDialog()
             dlg.setNameFilter("*.csv *.pkl")
             dlg.setFileMode(QFileDialog.AnyFile)
@@ -1645,12 +1665,13 @@ class Ui_MainWindow(object):
 
         if self.Banding_button.isChecked():
             file7 = self.lineEditBand.text()
+            phase7_ratio = self.band_phase_ratioSpinBox.value()
             if len(file7) > 0:
                 ARGS['number_of_bands'] = self.NoBandsSpinBox.value()
                 ARGS['lower_band_bound'] = self.band_lowerSpinBox.value()
                 ARGS['upper_band_bound'] = self.band_upperSpinBox.value()
                 ARGS['phases'].append('Bands')
-                ARGS['phase_ratio'][7] = 0
+                ARGS['phase_ratio'][7] = phase7_ratio
                 ARGS['files'][7] = file7
                 ARGS['band_filling'] = self.band_fillingSpinBox.value()
             else:

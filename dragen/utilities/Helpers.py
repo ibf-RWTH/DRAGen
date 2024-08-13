@@ -34,7 +34,7 @@ class HelperFunctions:
             array = np.zeros((2 * npts_x, 2 * RveInfo.n_pts_y, 2 * RveInfo.n_pts_z), order='C', dtype='int16')
         return array
 
-    @staticmethod
+    """@staticmethod
     def gen_array() -> np.zeros:
         npts_x = RveInfo.n_pts
         if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
@@ -47,7 +47,7 @@ class HelperFunctions:
 
         else:
             array = np.zeros((2 * npts_x, 2 * RveInfo.n_pts_y, 2 * RveInfo.n_pts_z), order='C')
-        return array
+        return array"""
 
     @staticmethod
     def gen_array_2d() -> np.zeros:
@@ -55,8 +55,16 @@ class HelperFunctions:
         return array
 
     @staticmethod
-    def gen_grid_new(shape):
+    def gen_grid_new():
         npts_x = RveInfo.n_pts
+        n_x = RveInfo.n_pts
+        n_y = RveInfo.n_pts
+        n_z = RveInfo.n_pts
+        if RveInfo.n_pts_y is not None:
+            n_y = RveInfo.n_pts_y
+        if RveInfo.n_pts_z is not None:
+            n_y = RveInfo.n_pts_z
+        shape = (n_x, n_y, n_z)
         if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
             xyz = np.linspace(0, RveInfo.box_size, shape[0], endpoint=True, dtype=np.float32)
             x_grid, y_grid, z_grid = np.meshgrid(xyz, xyz, xyz, indexing='ij')
@@ -76,7 +84,7 @@ class HelperFunctions:
             x_grid, y_grid, z_grid = np.meshgrid(x, y, z, indexing='ij')
         return x_grid, y_grid, z_grid
 
-    @staticmethod
+    '''@staticmethod
     def gen_grid():
         npts_x = RveInfo.n_pts
         if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
@@ -96,7 +104,7 @@ class HelperFunctions:
             y = np.linspace(-RveInfo.box_size_y / 2, RveInfo.box_size_y + RveInfo.box_size_y / 2, 2 * RveInfo.n_pts_y, endpoint=True)
             z = np.linspace(-RveInfo.box_size_z / 2, RveInfo.box_size_z + RveInfo.box_size_z / 2, 2 * RveInfo.n_pts_z, endpoint=True)
             x_grid, y_grid, z_grid = np.meshgrid(x, y, z, indexing='ij')
-        return x_grid, y_grid, z_grid
+        return x_grid, y_grid, z_grid'''
 
     @staticmethod
     def gen_grid2d():
@@ -330,7 +338,7 @@ class HelperFunctions:
         """
         #vol = 4/3*np.pi*radius_b*radius_b*radius_c
         array = self.gen_array_new()
-        ellipsoid = self.ellipsoid(array.shape, radius_a, radius_b, radius_c)
+        ellipsoid = self.ellipsoid(radius_a, radius_b, radius_c)
         inside = ellipsoid <= 1
         array[inside] = 1
         if RveInfo.low_rsa_resolution:
@@ -368,11 +376,11 @@ class HelperFunctions:
         empty_array[empty_array == -200] = 0
 
         if RveInfo.band_orientation == 'xy':
-            r = self.gen_grid()[2]
+            r = self.gen_grid_new()[2]
         elif RveInfo.band_orientation == 'yz':
-            r = self.gen_grid()[0]
+            r = self.gen_grid_new()[0]
         elif RveInfo.band_orientation == 'xz':
-            r = self.gen_grid()[1]
+            r = self.gen_grid_new()[1]
         else:
             RveInfo.LOGGER.error("Error: plane must be defined as xy, yz or xz! Default: xy")
             sys.exit(1)
@@ -557,7 +565,7 @@ class HelperFunctions:
     def gen_boundaries_3D(self, points_array) -> np.ndarray:
         t_0 = datetime.datetime.now()
         box_size = RveInfo.box_size
-        x_grid, y_grid, z_grid = self.gen_grid()
+        x_grid, y_grid, z_grid = self.gen_grid_new()
 
         """
         Each region around the RVE needs to be labled on order to move grainparts
@@ -968,11 +976,11 @@ class HelperFunctions:
 
         return ellipse
 
-    def ellipsoid(self, shape, a, b, c, alpha=0):
+    def ellipsoid(self, a, b, c, alpha=0):
+        
+        x_grid, y_grid, z_grid = self.gen_grid_new()
 
-        x_grid, y_grid, z_grid = self.gen_grid_new(shape)
-
-        x_0 = int(float(RveInfo.box_size)/2)
+        x_0 = int(float(RveInfo.box_size) /2)
         y_0 = int(float(RveInfo.box_size) / 2)
         z_0 = int(float(RveInfo.box_size) / 2)
 
@@ -987,7 +995,6 @@ class HelperFunctions:
                     1 / b ** 2 * (-(x_grid - x_0) * np.sin(np.deg2rad(alpha+RveInfo.slope_offset)) +
                                   (y_grid - y_0) * np.cos(np.deg2rad(alpha+RveInfo.slope_offset))) ** 2 + \
                     1 / c ** 2 * (z_grid - z_0) ** 2
-
         return ellipsoid
 
     def process_df(self, df, shrink_factor: float) -> pd.DataFrame:

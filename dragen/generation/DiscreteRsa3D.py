@@ -24,16 +24,16 @@ class DiscreteRsa3D(HelperFunctions):
         self.n_grains = len(a)
 
         super().__init__()
-        n_x = RveInfo.n_pts
+        """n_x = RveInfo.n_pts
         n_y = RveInfo.n_pts
         n_z = RveInfo.n_pts
         if RveInfo.n_pts_y is not None:
             n_y = RveInfo.n_pts_y
         if RveInfo.n_pts_z is not None:
             n_y = RveInfo.n_pts_z
-        shape = (n_x, n_y, n_z)
+        shape = (n_x, n_y, n_z)"""
 
-        self.x_grid, self.y_grid, self.z_grid = super().gen_grid_new(shape)
+        self.x_grid, self.y_grid, self.z_grid = super().gen_grid_new()
         if not RveInfo.gui_flag:
             self.pbar = tqdm(total=self.n_grains)
 
@@ -70,7 +70,7 @@ class DiscreteRsa3D(HelperFunctions):
         c = c[iterator]
         alpha = alpha[iterator]
 
-        ellipsoid = super().ellipsoid(array.shape, a, b, c, alpha=alpha)
+        ellipsoid = super().ellipsoid(a, b, c, alpha=alpha)
 
         inside = ellipsoid <= 1
         ellipsoid_array = np.zeros_like(ellipsoid, dtype='int16')
@@ -290,12 +290,13 @@ class DiscreteRsa3D(HelperFunctions):
 
             if band_points_old > 0:
                 # > xy x grain_points heißt, dass mindestens XX% des Korns im freien Raum platziert werden müssen
-                if ((free_points_old + band_points_old - free_points - band_points) != 1.0 * np.count_nonzero(periodic_grain)) | \
+                ##if ((free_points_old + band_points_old - free_points - band_points) != 1.0 * np.count_nonzero(periodic_grain)) | \
+                ##        (band_points / band_vol_0 < 0.90):  # Prozentbereich nach außen muss möglich sein (90%)
+                if ((free_points_old + band_points_old - free_points - band_points) != 1.0 * np.count_nonzero(periodic_grain)) and \
                         (band_points / band_vol_0 < 0.90):  # Prozentbereich nach außen muss möglich sein (90%)
                     print('Attempt: ', attempt)
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
-
                 else:
                     # Place now the grain in the "real" rsa
                     placement_rsa[(periodic_grain == -(1000 + i + startindex)) & ((rsa2 == 0) | (rsa2 == -200))] = -(1000 + i + startindex)

@@ -71,9 +71,9 @@ element_type = 'HEX8'
 anim_flag = False
 
 #Choosing active files
-files = {1: None, 2: None, 3: None, 4: Pearlite, 5:Bainite, 6: None, 7: Bands}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
+files = {1: None, 2: None, 3: Pearlite, 4: Bainite, 5:None, 6: None, 7: Bands}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
 # Change the file name to 'None' if its empty
-phase_ratio = {1: 0, 2: 0, 3: 0, 4: 0.45, 5: 0.45, 6: 0, 7:0.1}
+phase_ratio = {1: 0, 2: 0, 3: 0.45, 4: 0.45, 5: 0, 6: 0, 7: 0.1}
 phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusions', 'Bands']
 
 #Band thickness
