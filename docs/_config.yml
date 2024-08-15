@@ -30,12 +30,13 @@ url: "https://ibf-rwth.github.io" # the base hostname & protocol for your site, 
 #github_username:  jekyll
 
 # Build settings
-theme: pages-themes/modernist@v0.2.0 #minima
+theme: minima #pages-themes/modernist@v0.2.0
 plugins:
   - jekyll-seo-tag
   - jekyll-feed
   - jekyll-remote-theme
 
+paginate: 10 # Number of posts per page if using pagination
 
 # Exclude from processing.
 # The following items will not be processed, by default.
