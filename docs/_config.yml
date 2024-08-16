@@ -29,8 +29,9 @@ url: "https://ibf-rwth.github.io" # the base hostname & protocol for your site, 
 #twitter_username: jekyllrb
 #github_username:  jekyll
 
-# Build settings
-theme: minima #pages-themes/modernist@v0.2.0
+# Buil#d settings
+#theme: minima #pages-themes/modernist@v0.2.0
+remote_theme: pages-themes/minimal@v0.2.0
 plugins:
   - jekyll-seo-tag
   - jekyll-feed
