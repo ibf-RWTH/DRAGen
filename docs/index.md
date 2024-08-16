@@ -35,7 +35,7 @@ For more:
 
 [Generating Input Data for Microstructure Modelling: A Deep Learning Approach Using Generative Adversarial Networks](https://www.mdpi.com/1996-1944/13/19/4236)
 
-<p align="left"><img src="docs/DRAGen_readme_paper.jpg" height="400" alt=""> </img></p>
+<p align="left"><img src="DRAGen_readme_paper.jpg" height="400" alt=""></p>
 
 _Note: For developing it is highly recommended to use Python versions Python 3.10._<br>
 **If further questions appear please check the lower section or get in touch with us.**
@@ -110,28 +110,28 @@ Run DRAGen:<br>
 ## Related Projects
 
 ### MCRpy
-<p align="center"><img src="docs/MCRpy-logo_png.png" height="200" alt="MCRpy logo"> </img></p>
+<p align="center"><img src="MCRpy-logo_png.png" height="200" alt="MCRpy logo"> </p>
 
 [MCRpy](https://github.com/NEFM-TUDresden/MCRpy) (Microstructure Characterization and Reconstruction in Python) facilitates the process by employing a range of descriptors and enables the reconstruction of new microstructures. One key advantage of MCRpy is its extensibility, allowing the combination of various descriptors without the need for loss functions. Additionally, it provides flexibility in choosing optimizers to address emerging optimization problems.
 
 
 
 ### DAMASK
-<p align="center"><img src="docs/DAMASK_banner.png" height="100" alt="DAMASK banner"> </img></p>
+<p align="center"><img src="DAMASK_banner.png" height="100" alt="DAMASK banner"></p>
 
 [DAMASK](https://damask.mpie.de/index.html) (Düsseldorf Advanced Materials Simulation Kit) excels in its ability to handle a variety of simulation programs under different conditions, particularly for advanced high-strength materials. Its capability to address the interconnected nature of deformation, phase transformations, heating effects, and potential damage makes DAMASK an invaluable choice for researchers and practitioners seeking a comprehensive understanding of materials behavior in diverse scenarios.
 
 
 ### Moose 
 
-<p align="center"><img src="docs/moose_logo.png" height="80" alt="Moose banner"> </img></p>
+<p align="center"><img src="moose_logo.png" height="80" alt="Moose banner"> </img></p>
 
 [MOOSE](https://mooseframework.inl.gov/) (Multiphysics Object-Oriented Simulation Environment) framework is an open-source software framework designed for solving complex physics-based engineering simulations. Moose supports adaptive mesh refinement which improves the accuracy and efficiency. It is possible to develop a simulation application tailored to specific needs. 
 
 
 ### MTEX
 
-<p align="center"><img src="docs/MTEX_100x67px.png" height="130" alt="MTEX banner"> </img></p>
+<p align="center"><img src="MTEX_100x67px.png" height="130" alt="MTEX banner"> </p>
 
 [MTEX](https://mtex-toolbox.github.io/index) (Materials Texture and Microstructure Analysis Toolbox) is an open-source Matlab tool that allows data processing using techniques such as EDSB, and analysis on microstructure and crystallographic textures. It has powerful visualization tools for displaying crystallographic data, including pole figures, stereographic projections, and other graphical representations of orientation information.
 
