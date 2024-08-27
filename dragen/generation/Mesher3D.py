@@ -1447,6 +1447,7 @@ class AbaqusMesher(MeshingHelper):
         f.close()
 
         pv.save_meshio(RveInfo.store_path + '/rve-part.inp', smooth_mesh)
+        pv.save_meshio(RveInfo.store_path + '/rve-part.vtk', smooth_mesh)
         f = open(RveInfo.store_path + '/rve-part.inp', 'r')
         lines = f.readlines()
         f.close()

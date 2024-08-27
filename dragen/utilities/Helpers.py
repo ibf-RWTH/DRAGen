@@ -250,6 +250,10 @@ class HelperFunctions:
         print('len:', data.__len__())
         while (grain_vol > 1.05 * max_volume) or (grain_vol < 1.0 * max_volume):
 
+            if len(data) == 0:
+                RveInfo.LOGGER.info('Input data was exceeded not enough data!!')
+                break
+
             if grain_vol > 1.05*max_volume:
 
                 grain_vol -= input_df["volume"].iloc[-1]
@@ -272,9 +276,6 @@ class HelperFunctions:
                 vol = grain["volume"]
                 grain_vol += vol
                 input_df = pd.concat([input_df, grain_df])
-                if len(data) == 0:
-                    RveInfo.LOGGER.info('Input data was exceeded not enough data!!')
-                    break
 
         print('Volume of df', input_df['volume'].sum())
         input_df['old_gid'] = old_idx # get old idx so that the substructure generator knows which grains are chosen in the input data
