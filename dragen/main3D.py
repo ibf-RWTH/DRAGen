@@ -483,10 +483,15 @@ class DataTask3D(HelperFunctions):
                     print('phase_id, i, slice_ID', phase_id, i, slice_ID)
                     grain_shapes_slice = shape().get_ellipses(rve, slice_ID, phase_id)
                     slice_ID += 4
-                    if len(grain_shapes_slice) == 0:
-                        RveInfo.RESULT_LOG.info(f'No {phase} found in slice {slice_ID}. Slice was neglected for {phase}')
+                    if grain_shapes_slice is not None:
+                        if len(grain_shapes_slice) == 0:
+                            RveInfo.RESULT_LOG.info(
+                                f'No {phase} found in slice {slice_ID}. Slice was neglected for {phase}')
+                            continue
+                        else:
+                            grain_shapes = pd.concat([grain_shapes, grain_shapes_slice])
+                    else:
                         continue
-                    grain_shapes = pd.concat([grain_shapes, grain_shapes_slice])
 
                 grain_shapes['inout'] = 'out'
                 grain_shapes = grain_shapes.rename(columns={"AR": "AR (-)", "slope": "slope (°)"})
