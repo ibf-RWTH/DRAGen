@@ -101,7 +101,7 @@ Number 5 specifies the inclusions and number 6 the Band phase. Either .csv or .p
 
 Run(dimension=dimension, box_size=box_size, box_size_y=box_size_y, box_size_z=box_size_z, resolution=resolution,
     number_of_rves=number_of_rves, slope_offset=slope_offset, abaqus_flag=abaqus_flag, damask_flag=damask_flag,
-    moose_flag=moose_flag, element_type=element_type, pbc_flag=pbc_flag, submodel_flag=submodel_flag,
+    moose_flag=moose_flag, calibration_rve_flag=calibration_rve_flag, element_type=element_type, pbc_flag=pbc_flag, submodel_flag=submodel_flag,
     phase2iso_flag=phase2iso_flag, smoothing_flag=smoothing_flag, xfem_flag=x_fem_flag, gui_flag=False, anim_flag=anim_flag,
     visualization_flag=visualization_flag, root=root, info_box_obj=None, progress_obj=None, phase_ratio=phase_ratio,
     file_dict=files, phases=phases, number_of_bands=number_of_bands, upper_band_bound=upper_band_bound,
@@ -110,4 +110,3 @@ Run(dimension=dimension, box_size=box_size, box_size_y=box_size_y, box_size_z=bo
     subs_file=subs_file, equiv_d=equiv_d, p_sigma=p_sigma, t_mu=t_mu, b_sigma=b_sigma,
     decreasing_factor=decreasing_factor, lower=lower, upper=upper, circularity=circularity, plt_name=plt_name,
     save=save, plot=plot, filename=filename, orientation_relationship=orientation_relationship).run()
-
