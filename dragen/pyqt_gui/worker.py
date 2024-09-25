@@ -73,7 +73,7 @@ class Worker(QObject):
 
     def run(self):
         """Long-running task."""
-        run_obj = Run(dimension=self.dimension, box_size=self.box_size, box_size_y=self.box_size_y,
+        run_obj = Run(dimension=self.dimension, box_size=self.box_size, box_size_y=self.box_size_y, calibration_rve_flag=False,
                       box_size_z=self.box_size_z, resolution=self.resolution, number_of_rves=self.number_of_rves,
                       slope_offset=self.slope_offset, abaqus_flag=self.abaqus_flag, damask_flag=self.damask_flag,
                       moose_flag=self.moose_flag, element_type=self.element_type, pbc_flag=self.pbc_flag,

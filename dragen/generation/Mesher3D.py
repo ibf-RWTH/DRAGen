@@ -1412,6 +1412,7 @@ class AbaqusMesher(MeshingHelper):
         f.close()
 
         pv.save_meshio(RveInfo.store_path + '/rve-part.inp', smooth_mesh)
+        pv.save_meshio(RveInfo.store_path + '/rve-part.vtk', smooth_mesh)
         f = open(RveInfo.store_path + '/rve-part.inp', 'r')
         lines = f.readlines()
         f.close()
@@ -1564,7 +1565,7 @@ class AbaqusMesher(MeshingHelper):
 
         plotter = pv.Plotter(off_screen=True)
         plotter.add_mesh(smooth_mesh, scalars='phaseID', scalar_bar_args={'title': 'Phase IDs'},
-                         show_edges=True, interpolate_before_map=True)
+                         show_edges=False, interpolate_before_map=True)
         plotter.add_axes()
         plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
                      screenshot=RveInfo.store_path+'/Figs/pyvista_smooth_Mesh_phases.png')
@@ -1572,7 +1573,7 @@ class AbaqusMesher(MeshingHelper):
 
         plotter = pv.Plotter(off_screen=True)
         plotter.add_mesh(smooth_mesh, scalars='GrainID', scalar_bar_args={'title':'Grain IDs'},
-                         show_edges=True, interpolate_before_map=True)
+                         show_edges=False, interpolate_before_map=True)
         plotter.add_axes()
         plotter.show(interactive=True, auto_close=True, window_size=[800, 600],
                      screenshot=RveInfo.store_path + '/Figs/pyvista_smooth_Mesh_grains.png')

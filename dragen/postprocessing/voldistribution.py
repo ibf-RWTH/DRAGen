@@ -37,8 +37,6 @@ class PostProcVol:
         if RveInfo.dimension == 3:
             output_df['r_ref'] = np.cbrt(3 * output_df['final_discrete_volume'] / (4 * np.pi))
         total_vol_out = sum(output_df['final_discrete_volume'].to_numpy().flatten().tolist())
-        print(output_df[['final_discrete_volume', 'phaseID']].head())
-        print(total_vol_out)
 
         # process current_phase output data
         current_phase_output_df_conti = output_df.loc[output_df['phaseID'] == phaseID]
@@ -47,7 +45,6 @@ class PostProcVol:
         current_phase_vol_out = sum(current_phase_output_list)
         current_phase_ratio_out = current_phase_vol_out / total_vol_out
         current_phase_ref_r_out = current_phase_output_df_conti['r_ref'].to_numpy().flatten().tolist()
-
         return current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out
 
 
@@ -95,5 +92,8 @@ class PostProcVol:
         plt.xticks(fontsize=24)
         plt.yticks(fontsize=24)
         plt.legend(fontsize=24)
+        plt.tight_layout()
         plt.savefig(RveInfo.store_path + '/Postprocessing/size_distribution_{}.png'.format(label))
         plt.close()
+        df = pd.DataFrame({"Grain Radius of Reference Sphere (µm)" : x_d, "Normalized Density Input (-)" : np.exp(log_pdf_in), "Normalized Density Output (-)" : np.exp(log_pdf_out)})
+        df.to_csv(RveInfo.store_path + '/Postprocessing/size_distribution_{}.csv'.format(label), sep=';', index=False)

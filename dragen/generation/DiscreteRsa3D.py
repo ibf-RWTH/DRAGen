@@ -108,7 +108,7 @@ class DiscreteRsa3D(HelperFunctions):
         ax.scatter(grains_x, grains_y, grains_z, c=array[np.where((array > 0) | (array == -1000) | (array < -200))],
                    s=1, vmin=-0,
                    vmax=n_grains, cmap='seismic')  # lower -200 for band grains and inclusions
-        ax.scatter(free_space_x, free_space_y, free_space_z, color='grey', alpha=0.01)
+        ax.scatter(free_space_x, free_space_y, free_space_z, color='grey', alpha=0.5)
 
         ax.set_xlim(-5, RveInfo.box_size + 5)
         ax.set_ylim(-5, RveInfo.box_size + 5)
@@ -116,8 +116,8 @@ class DiscreteRsa3D(HelperFunctions):
         ax.set_xlabel('x (µm)')
         ax.set_ylabel('y (µm)')
         ax.set_zlabel('z (µm)')
-        # ax.view_init(90, 270)
-        # plt.show()
+        #ax.view_init(90, 270)
+        #plt.show()
 
         # ax.view_init(270, 90)  # facing in z-direction (clockwise rotation)
         # ax.view_init(90, 270) #facing against z-direction (counterclockwise rotation)
@@ -132,8 +132,9 @@ class DiscreteRsa3D(HelperFunctions):
     def run_rsa(self, band_ratio_rsa=None, banded_rsa_array=None, x0_alt=None, y0_alt=None, z0_alt=None):
         if RveInfo.gui_flag:
             RveInfo.infobox_obj.emit('starting RSA')
+        else:
+            print('starting RSA')
         status = False
-        bandratio = band_ratio_rsa
 
         if banded_rsa_array is None:
             rsa = super().gen_array_new()
@@ -141,7 +142,6 @@ class DiscreteRsa3D(HelperFunctions):
         else:
             rsa = banded_rsa_array
 
-        band_vol_0 = np.count_nonzero(rsa == -200)
         x_0_list = list()
         y_0_list = list()
         z_0_list = list()
@@ -191,6 +191,10 @@ class DiscreteRsa3D(HelperFunctions):
                             'total time needed for placement of grain {}: {}'.format(i, time_elapse.total_seconds()))
             else:
                 # free points old - free points should equal non zero in periodic grain
+                if np.count_nonzero(periodic_grain) == 0:
+                    rsa = backup_rsa.copy()
+                    attempt = attempt + 1
+                    continue
                 intersecting_pts = np.count_nonzero(periodic_grain) - (free_points_old - free_points)
                 intersecting_ratio = intersecting_pts / np.count_nonzero(periodic_grain)
 
@@ -338,7 +342,7 @@ class DiscreteRsa3D(HelperFunctions):
         elastic (so identifier smaller -200 and therefore phaseID = 2 at the moment (14.04.2021)
 
         Parameters:
-            -rve: completely tesselated rve after the tesselation and before the mesher
+            -rve: completecompletely tesselated rve after the tesselation and before the mesher
             -animation: Flag for animation
 
         Behavior very similar to the "vanilla" rsa. The gen-ellipsoid method places where the array is 0. So create an

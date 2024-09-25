@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pandas as pd
 from dragen.utilities.InputInfo import RveInfo
@@ -9,8 +11,11 @@ class shape:
         pass
 
     def thresh_callback(self, img, max_id, phaseID):
+        #cv2.imwrite(f'{RveInfo.fig_path}/test_{time.time()}.png', img)
         if RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] or RveInfo.number_of_bands>0:
             print('inclusions and bands will be neglected in shape analysis')
+            ell_data = None
+            return ell_data
         a = list()
         b = list()
         x = list()
@@ -31,6 +36,7 @@ class shape:
                 # findContours, then fitEllipse for each contour.
                 cnts, hiers = cv2.findContours(np.asarray(threshed*255, dtype=np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2:]
                 plot_img = np.dstack([img, img, img])
+
                 for cnt in cnts:
                     if cnt.__len__() < 5:
                         continue
@@ -69,7 +75,11 @@ class shape:
                         print('fail')
 
         AR = [a[i]/b[i] for i in range(len(a)) if (b[i] > 0) and (a[i]/b[i]) < 100]
+        major = [a[i] for i in range(len(a)) if (b[i] > 0) and (a[i]/b[i]) < 100]
+        minor = [b[i] for i in range(len(a)) if (b[i] > 0) and (a[i] / b[i]) < 100]
+        Area = [np.pi*a[i]*b[i] for i in range(len(a)) if (b[i] > 0) and (a[i]/b[i]) < 100]
         slope = [slope[i] for i in range(len(a)) if b[i] > 0 and (a[i]/b[i]) < 100]
+        #ell_dict = {'Area': Area, 'Major':major, 'Minor': minor, 'AR': AR, 'slope': slope}
         ell_dict = {'AR': AR, 'slope': slope}
         ell_data = pd.DataFrame(ell_dict)
 
@@ -96,8 +106,10 @@ class shape:
         input_df.loc[mask, 'AR'] = input_df['a'] / input_df['b']
         input_df.loc[~mask, 'AR'] = input_df['b'] / input_df['a']
 
+        #data = input_df[['phaseID','a', 'b', 'AR', 'alpha']]
         data = input_df[['phaseID', 'AR', 'alpha']]
         data['inout'] = 'in'
+        #data = data.rename(columns={'alpha': 'slope', 'a':'major', 'b':'minor'})
         data = data.rename(columns={'alpha': 'slope'})
         return data
 

@@ -3,7 +3,9 @@ import sys
 import damask
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import datetime
+from scipy.ndimage import shift
 from tkinter import messagebox
 from dragen.utilities.InputInfo import RveInfo
 from dragen.InputGenerator.C_WGAN_GP import WGANCGP
@@ -256,6 +258,10 @@ class HelperFunctions:
         print('len:', data.__len__())
         while (grain_vol > 1.05 * max_volume) or (grain_vol < 1.0 * max_volume):
 
+            if len(data) == 0:
+                RveInfo.LOGGER.info('Input data was exceeded not enough data!!')
+                break
+
             if grain_vol > 1.05*max_volume:
 
                 grain_vol -= input_df["volume"].iloc[-1]
@@ -278,9 +284,6 @@ class HelperFunctions:
                 vol = grain["volume"]
                 grain_vol += vol
                 input_df = pd.concat([input_df, grain_df])
-                if len(data) == 0:
-                    RveInfo.LOGGER.info('Input data was exceeded not enough data!!')
-                    break
 
         print('Volume of df', input_df['volume'].sum())
         input_df['old_gid'] = old_idx # get old idx so that the substructure generator knows which grains are chosen in the input data
@@ -432,15 +435,44 @@ class HelperFunctions:
                 points_array_mod[np.where(points_array_copy == -100 - i)] = iterator
         return points_array_mod
 
-    def make_periodic_3D_new(self, ellipse_array, nbins_x, nbins_y, n_bins_z) -> np.ndarray:
+    def make_periodic_3D_new(self, ellipse_array, x_0, y_0, z_0) -> np.ndarray:
         if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
-            ellipse_array_periodic = np.roll(ellipse_array, (nbins_x, nbins_y, n_bins_z), axis=(0, 1, 2))
+            n_bins_x = x_0
+            n_bins_y = y_0
+            n_bins_z = z_0
+            ellipse_array_periodic = np.roll(ellipse_array, (n_bins_x, n_bins_y, n_bins_z), axis=(0, 1, 2))
         elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
-            ellipse_array_periodic = np.roll(ellipse_array, (nbins_x, n_bins_z), axis=(0, 2))
+            n_bins_x = x_0
+            n_bins_y = (y_0 - int(RveInfo.box_size_y / 2) / RveInfo.bin_size)
+            n_bins_z = z_0
+            ellipse_array_periodic = shift(ellipse_array, (0, n_bins_y, 0), cval=0)
+            """if np.count_nonzero(ellipse_array_periodic) == 0:
+                while np.count_nonzero(ellipse_array_periodic) == 0:
+                    print(n_bins_y)
+                    if n_bins_y < 0:
+                        n_bins_y += 1
+                    else:
+                        n_bins_y -= 1
+                    ellipse_array_periodic = shift(ellipse_array, (0, n_bins_y, 0), cval=0)"""
+
+            ellipse_array_periodic = np.roll(ellipse_array_periodic, (n_bins_x, n_bins_z), axis=(0, 2))
+
+
+
         elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
-            ellipse_array_periodic = np.roll(ellipse_array, (nbins_x, nbins_y), axis=(0, 1))
+            n_bins_x = x_0
+            n_bins_y = y_0
+            n_bins_z = (z_0 - int(RveInfo.box_size_z / 2) * RveInfo.bin_size)
+            ellipse_array_periodic = shift(ellipse_array, (0, 0, n_bins_z), cval=0)
+            ellipse_array_periodic = np.roll(ellipse_array_periodic, (n_bins_x, n_bins_y), axis=(0, 1))
         elif RveInfo.box_size_y is not None and RveInfo.box_size_z is not None:
-            ellipse_array_periodic = ellipse_array
+            n_bins_x = x_0
+            n_bins_y = (y_0 - int(RveInfo.box_size_y / 2) * RveInfo.bin_size)
+            n_bins_z = (z_0 - int(RveInfo.box_size_z / 2) * RveInfo.bin_size)
+            ellipse_array_periodic = shift(ellipse_array, (n_bins_x, 0, 0), cval=0)
+            ellipse_array_periodic = shift(ellipse_array_periodic, (0, n_bins_y, 0), cval=0)
+            ellipse_array_periodic = shift(ellipse_array_periodic, (0, 0, n_bins_z), cval=0)
+            ellipse_array_periodic = ellipse_array_periodic
         return ellipse_array_periodic
 
 
