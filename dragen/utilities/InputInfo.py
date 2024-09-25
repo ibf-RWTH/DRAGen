@@ -167,7 +167,7 @@ class RveInfo:
     roughness_flag: bool = False
     """Flag not yet activated since roughness is not yet implemented"""
 
-    texture_flag: bool = True
+    texture_flag: bool = False
     """Flag to activate Texture analysis if texture is needed"""
 
     root: str = './'
