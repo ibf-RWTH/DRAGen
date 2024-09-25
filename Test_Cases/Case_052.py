@@ -67,6 +67,7 @@ pbc_flag = True
 submodel_flag = False
 phase2iso_flag = {1:True, 2:False, 3:False, 4:True, 5:True}
 x_fem_flag = False
+calibration_rve_flag = False
 element_type = 'HEX8'
 anim_flag = False
 
