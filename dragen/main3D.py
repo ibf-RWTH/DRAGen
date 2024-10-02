@@ -61,32 +61,36 @@ class DataTask3D(HelperFunctions):
             if files[file_idx].endswith('.csv'):
                 phase_input_df = super().read_input(files[file_idx], RveInfo.dimension)
             elif files[file_idx].endswith('.pkl'):
-                phase_input_df = super().read_input_gan(files[file_idx], RveInfo.dimension, size=1000)
+                size = 1000
+                if RveInfo.PHASENUM[phase] == 7:
+                    size = 25000
+                phase_input_df = super().read_input_gan(files[file_idx], RveInfo.dimension, size=size)
             else:
                 print(files, file_idx)
 
             if phase != 'Bands':
+                phase_id = RveInfo.PHASENUM[phase]
                 if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
 
                     adjusted_size = np.cbrt((RveInfo.box_size ** 3 -
                                              (RveInfo.box_size ** 2 * sum_bw))
                                             * RveInfo.phase_ratio[file_idx])
-                    grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
+                    grains_df = super().sample_input_3D(phase_input_df,bs=adjusted_size, phase_id=phase_id)
                 elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
                     adjusted_size = np.cbrt((RveInfo.box_size ** 2 * RveInfo.box_size_y -
                                              (RveInfo.box_size ** 2 * sum_bw))
                                             * RveInfo.phase_ratio[file_idx])
-                    grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
+                    grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size, phase_id=phase_id)
                 elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
                     adjusted_size = np.cbrt((RveInfo.box_size ** 2 * RveInfo.box_size_z -
                                              (RveInfo.box_size ** 2 * sum_bw))
                                             * RveInfo.phase_ratio[file_idx])
-                    grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
+                    grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size, phase_id=phase_id)
                 else:
                     adjusted_size = np.cbrt((RveInfo.box_size * RveInfo.box_size_y * RveInfo.box_size_z -
                                              (RveInfo.box_size ** 2 * sum_bw))
                                             * RveInfo.phase_ratio[file_idx])
-                    grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size)
+                    grains_df = super().sample_input_3D(phase_input_df, bs=adjusted_size, phase_id=phase_id)
 
                 grains_df['phaseID'] = RveInfo.PHASENUM[phase]
                 total_df = pd.concat([total_df, grains_df])
@@ -148,7 +152,7 @@ class DataTask3D(HelperFunctions):
             #print(box_size_y)
             band_data = bands_df.copy()
             adjusted_size = np.cbrt((RveInfo.bandwidths[0] * RveInfo.box_size ** 2) * RveInfo.band_filling)
-            bands_df = super().sample_input_3D(band_data, adjusted_size, constraint=RveInfo.bandwidths[0])
+            bands_df = super().sample_input_3D(band_data, adjusted_size, phase_id=7, constraint=RveInfo.bandwidths[0])
             bands_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
             bands_df.reset_index(inplace=True, drop=True)
             bands_df['GrainID'] = bands_df.index
@@ -192,7 +196,7 @@ class DataTask3D(HelperFunctions):
                 # ---------------------------------------------------------------------------------------------------
                 # Sample grains for the second band
                 adjusted_size = np.cbrt((RveInfo.bandwidths[i] * RveInfo.box_size ** 2) * RveInfo.band_filling)
-                new_df = super().sample_input_3D(band_data, adjusted_size, constraint=RveInfo.bandwidths[0])
+                new_df = super().sample_input_3D(band_data, adjusted_size, phase_id=7, constraint=RveInfo.bandwidths[0])
                 new_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
                 new_df.reset_index(inplace=True, drop=True)
                 new_df['GrainID'] = new_df.index
@@ -542,12 +546,13 @@ class DataTask3D(HelperFunctions):
             input_ratio = list()
             labels = list()
             for i, phase in enumerate(RveInfo.phases):
-                if RveInfo.PHASENUM[phase] > 6:  # phase ratio postprocessing for bands not relevant
-                    continue
+                #if RveInfo.PHASENUM[phase] > 6:  # phase ratio postprocessing for bands not relevant
+                #    continue
                 ratio = RveInfo.phase_ratio[RveInfo.PHASENUM[phase]]
                 input_ratio.append(ratio)
                 label = RveInfo.phases[i]
                 labels.append(label)
+            print(input_ratio)
             PostProcVol().gen_pie_chart_phases(input_ratio, labels, 'input')
             PostProcVol().gen_pie_chart_phases(phase_ratios, labels, 'output')
 
