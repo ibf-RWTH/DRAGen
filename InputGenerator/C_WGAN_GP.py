@@ -27,7 +27,7 @@ import datetime
 from qhoptim.pyt import QHAdam
 
 # Own Stuff
-from dragen.InputGenerator import WGAN_BaseClass, gan_utils
+from InputGenerator import gan_utils, WGAN_BaseClass
 
 
 # Inherit from the original WGAN
@@ -478,7 +478,7 @@ class WGANCGP(WGAN_BaseClass.WGAN):
                 except Exception as e:
                     print('Not all data could be loaded! \n To avoid subsequent Errors, the process is canceled')
                     print(e)
-                    sys.exit(0)
+                    sys.exit(1)
         elif single:
             print('Loading deprecated BestGenerators')
             with open(file_list, 'rb') as file:
