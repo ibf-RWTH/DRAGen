@@ -6,9 +6,7 @@ File for running a sufficient CWGAN-GP Training
 
 
 import os
-import datetime
 import pandas as pd
-from dragen.InputGenerator import C_WGAN_GP
 
 """
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -43,8 +41,9 @@ df6 = pd.read_csv(SOURCE + '/Einschlüsse_RDxTD_AR.csv')
 # Martensite
 df7 = pd.read_csv(SOURCE + '/Input_Martensite_BNxRD_old.csv')
 df8 = pd.read_csv(SOURCE + '/Input_Martensite_RDxBN_raw.csv')
-df9 = pd.read_csv(SOURCE + '/Input_Martensite_RDxBN_ws.csv')"""
+df9 = pd.read_csv(SOURCE + '/Input_Martensite_RDxBN_ws.csv')
 
+"""
 # Data Stainless_Steel
 df1 = pd.read_csv(SOURCE + '/1_4310_TDxND_GrainData.csv')
 df2 = pd.read_csv(SOURCE + '/1_4310_RDxND_GrainData.csv')
@@ -113,6 +112,6 @@ Bot.result_df.to_csv(store_path+'/Result.csv')
 # Generate RVE-Input for given Boxsize
 Bot.get_rve_input(bs=10)
 print(Bot.rve_inp)   # This is the RVE-Input data
-Bot.rve_inp.to_csv(store_path+'/RVE_inp.csv')
+Bot.rve_inp.to_csv(store_path+'/RVE_inp.csv')"""
 
 
