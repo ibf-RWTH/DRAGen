@@ -3,13 +3,11 @@ import sys
 import damask
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import datetime
 from scipy.ndimage import shift
 from tkinter import messagebox
 from dragen.utilities.InputInfo import RveInfo
-from dragen.InputGenerator.C_WGAN_GP import WGANCGP
-from dragen.InputGenerator.linking import Reconstructor
+from InputGenerator.C_WGAN_GP import WGANCGP
 
 
 class HelperFunctions:
@@ -241,7 +239,7 @@ class HelperFunctions:
             data = data.drop(labels=['c'], axis=1).reset_index(drop=True)
             return data
 
-    def sample_input_3D(self, data, bs, constraint=None) -> pd.DataFrame:
+    def sample_input_3D(self, data, bs, phase_id, constraint=None) -> pd.DataFrame:
         if constraint is None:
             constraint = 10000
         else:
@@ -277,7 +275,7 @@ class HelperFunctions:
                 data = data.drop(labels=data.index[idx], axis=0)
                 if (grain['a'] > constraint*2) or (grain['b'] > constraint) or (grain['c'] > constraint*2):  # Dickenunterschied für die Bänbder
                     continue
-                elif grain["a"] < min_rad or grain["b"] < min_rad or grain["c"] < min_rad:
+                elif (grain["a"] < min_rad or grain["b"] < min_rad or grain["c"] < min_rad) and phase_id != 7:
                     continue
 
                 old_idx.append(idx)
