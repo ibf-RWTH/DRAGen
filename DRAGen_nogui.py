@@ -1,79 +1,97 @@
 from dragen.run import Run
+#Model details
 dimension = 3
-box_size = 10
+box_size = 15
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
-
-resolution = 0.75
+resolution = 2
 number_of_rves = 1
 smoothing_flag = False
-# Banding Params
+
+# Banding Parameters:
+# If you want to add banding, change the number_of_bands to 1 or higher has to be integer 
 number_of_bands = 0
-band_filling = 0.6
+band_filling = 1
 band_orientation = 'xy'
 lower_band_bound = 2
-upper_band_bound = 5
-visualization_flag = False
-root = r'N:\01 WM MMD\21 Manuel\01_Projekte\06_Tellerfedern\04_Arbeitspakete\AP_B_Simulationen\AP_B1_Mikrostrukturmodelle\RVEs14310'
-# Substructure params
-equiv_d = 5
-p_sigma = 0.1
-t_mu = 1.0
-b_sigma = 0.1
-inclusion_flag = False
-inclusion_ratio = 0.01
-slope_offset = 0
-# Example Files
-#
-#
-###NO30
-#file1 = r'F:/OCAS/NO30_RVE_data/Data_processed.csv'
-#file2 = r"D:\2nd mini-thesis\dragen\ExampleInput\example_pag_inp.csv"
-#DP800
-file1 = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
-file2 = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
+upper_band_bound = 4
+visualization_flag = False #plotting images to figs
+root = r'./'
+shrink_factor = 0.4
 
-#Bainite
+#Inclusion Setting
+# To add make inclusions_flag = True
+inclusion_flag = False
+inclusion_ratio = 0.05
+slope_offset = 0
+
+
+#Files:
+#Ferrite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
+Martensite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
+#Pearlite = r'./ExampleInput/Pearlite/TrainedData_Pearlite.pkl'   
+#Bainite = r'./ExampleInput/Bainite/TrainedData_Bainite.pkl' 
+#Austenite = r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
+Austenite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
+
 #PAGs
 
 #Blocks
 
 #Inclusions
-#file5 = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\Inclusions/Inclusions_DRAGen_Input.csv'
+#Inclusion = r'./ExampleInput/Inclusions/TrainedData_Inclusion.pkl'
 
-#Bands
-#file6 = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\DP800/TrainedData_Martensite.pkl'
-#file6 = r'E:\Sciebo\IEHK\Publications\ComputationalSci\DRAGen\matdata\DP800/TrainedData_Ferrite.pkl'
+
+#Bands Files File 6
+
+#Bands = r'./ExampleInput/Banding/TrainedData_Band.pkl'
+
+
 
 # test pearlite phase
+# Substructure params
 subs_flag = False
-subs_file = './ExampleInput/example_block_inp.csv'
+equiv_d = 5
+p_sigma = 0.1
+t_mu = 1.0
+b_sigma = 0.1
 subs_file_flag = False
-gan_flag = False
+subs_file = './ExampleInput/Substructure/example_block_inp.csv'
+
+#Texture Type
 moose_flag = False
 abaqus_flag = True
+damask_flag = False
+#Texture Setting
 pbc_flag = True
 submodel_flag = False
-damask_flag = False
-phase2iso_flag = {1:True, 2:True, 3:True, 4:True, 5:True}
-calibration_rve_flag = True
+phase2iso_flag = {1:True, 2:False, 3:True, 4:True, 5:True}
 x_fem_flag = False
+calibration_rve_flag = False
 element_type = 'HEX8'
 anim_flag = False
 
-files = {1: file1, 2: file2, 3: None, 4: None, 5: None, 6: None, 7:None}  # , 2: file2, 6: file6}
-phase_ratio = {1: 0.8, 2: 0.2, 3: 0, 4: 0, 5: 0, 6: 0, 7:0}
-phases = ['Ferrite', 'Martensite'] #, 'Bands']
+#Choosing active files
+files = {1: None, 2: Martensite, 3: None, 4: None, 5:Austenite, 6: None, 7: None}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
+# Change the file name to 'None' if its empty
+phase_ratio = {1: 0, 2: 0.5, 3: 0, 4: 0, 5: 0.5, 6: 0, 7:0}
+phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusions', 'Bands']
 
+#Band thickness
 upper = None
 lower = None
+
 circularity = 1
 decreasing_factor = 0.95
-plt_name = 'substructure_plot.png'
-save = True
+
+#Plot and save settings
 plot = False
+plt_name = 'substructure_plot.png'
+
+save = True
 filename = 'substructure_plot.png'
 orientation_relationship = 'KS'
+
 "test git"
 '''
 specific number is fixed for each phase. 1->ferrite, 2->martensite so far. The order of input files should also have the 
