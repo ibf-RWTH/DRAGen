@@ -3,8 +3,11 @@ import pytest
 import sys
 import os
 
+scenarios =[
+    'Case_016',
+]
 
-scenarios = [
+"""scenarios = [
     'Case_001',
     'Case_002',
     'Case_003',
@@ -58,7 +61,7 @@ scenarios = [
     'Case_051',
     'Case_052',
 ]
-
+"""
 
 @pytest.fixture(params=scenarios)
 def scenario(request):

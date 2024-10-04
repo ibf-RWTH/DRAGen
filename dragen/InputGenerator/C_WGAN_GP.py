@@ -27,7 +27,7 @@ import datetime
 from qhoptim.pyt import QHAdam
 
 # Own Stuff
-from InputGenerator import gan_utils, WGAN_BaseClass
+from dragen.InputGenerator import gan_utils, WGAN_BaseClass
 
 
 # Inherit from the original WGAN

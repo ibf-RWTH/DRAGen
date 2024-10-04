@@ -451,7 +451,10 @@ class DataTask3D(HelperFunctions):
         ref_r_out = dict()
         grain_shapes_in = shape().get_input_ellipses()
         for phase in RveInfo.phases:
+            
             phase_id = RveInfo.PHASENUM[phase]
+            if RveInfo.phase_ratio[phase_id] == 0:
+                continue
             slice_ID = 0
             if phase_id < 6:
                 # generate pair plots for shape comparison for each phase
@@ -548,11 +551,12 @@ class DataTask3D(HelperFunctions):
             for i, phase in enumerate(RveInfo.phases):
                 #if RveInfo.PHASENUM[phase] > 6:  # phase ratio postprocessing for bands not relevant
                 #    continue
+                if RveInfo.phase_ratio[i+1] == 0:
+                    continue
                 ratio = RveInfo.phase_ratio[RveInfo.PHASENUM[phase]]
                 input_ratio.append(ratio)
                 label = RveInfo.phases[i]
                 labels.append(label)
-            print(input_ratio)
             PostProcVol().gen_pie_chart_phases(input_ratio, labels, 'input')
             PostProcVol().gen_pie_chart_phases(phase_ratios, labels, 'output')
 
@@ -562,8 +566,6 @@ class DataTask3D(HelperFunctions):
             file_idx = RveInfo.PHASENUM[phase]
             if RveInfo.phase_ratio[file_idx] == 0:
                 continue
-            print(f'ref_r_in[{phase}]')
-            print(ref_r_in[phase])
             PostProcVol().gen_plots(ref_r_in[phase], ref_r_out[phase], phase)
             if RveInfo.gui_flag:
                 RveInfo.infobox_obj.emit('checkout the evaluation report of the rve stored at:\n'
