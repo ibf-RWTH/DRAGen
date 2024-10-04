@@ -114,7 +114,7 @@ class SubMesher(AbaqusMesher):
         f.close()
         
         for i in range(numberofblocks):
-            HelperFunctions.write_material_def(i, phase)
+            HelperFunctions.write_material_helper(i, phase, self.grains_df)
 
     def write_block_data(self) -> None:
         f = open(RveInfo.store_path + '/graindata.inp', 'w+')

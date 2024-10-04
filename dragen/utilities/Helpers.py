@@ -1132,7 +1132,8 @@ class HelperFunctions:
             setup_file.write(f'{member}: {str(RveInfo().__getattribute__(member))} \n')
         setup_file.close()
 
-    def write_material_def(i, phase) -> None:
+    @staticmethod
+    def write_material_helper(i, phase, grains_df) -> None:
         f = open(RveInfo.store_path + '/Materials.inp', 'a')
         if phase[i] == 1:
             if not RveInfo.phase2iso_flag[1]:
@@ -1164,9 +1165,18 @@ class HelperFunctions:
                 f.write(f'{i+1}.,4.\n')
         elif phase[i] == 5:
             if not RveInfo.phase2iso_flag[5]:
-                f.write(f'*Material, name=Austenite_{i+1}\n')
+                f.write(f'*Material, name=Austenite_{i + 1}\n')
                 f.write('*Depvar\n')
-                f.write('    176,\n')
-                f.write('*User Material, constants=2\n')
-                f.write(f'{i+1}.,2.\n')
+                if RveInfo.subroutinetype['ICAMS']:
+                    f.write('    176,\n')
+                    f.write('*User Material, constants=2\n')
+                    f.write(f'{i+1}.,2.\n')
+                elif RveInfo.subroutinetype['TRIP']:
+                    phi1 = grains_df['phi1'].tolist()[i]
+                    PHI  = grains_df['PHI'].tolist()[i]
+                    phi2 = grains_df['phi2'].tolist()[i]
+                    f.write('    150,\n')
+                    f.write('*User Material, constants=4\n')
+                    f.write(f'4.,{phi1}, {PHI}, {phi2}\n')
+
         f.close()

@@ -21,11 +21,11 @@ class RveInfo:
     """box_size describes the edge length of the rve in a cubic case, if the rve is not cubic it describes the length
     of the edge in x-direction"""
 
-    box_size_y: any([float, int]) = None
+    box_size_y: any([float, int, None]) = None
     """If this value is set to any other value than None the rve will take this value in µm and the 
     periodicity will be turned off in y-direction"""
 
-    box_size_z: any([float, int]) = None
+    box_size_z: any([float, int, None]) = None
     """If this value is set to any other value than None the rve will take this value in µm and the 
     periodicity will be turned off in z-direction"""
 
@@ -128,6 +128,7 @@ class RveInfo:
 
     abaqus_flag: bool = None
     """Set to True for Abaqus input file"""
+    subroutinetype: dict = {'ICAMS': False, 'TRIP': True}
 
     damask_flag: bool = None
     """Set to True for DAMASK input file"""
@@ -150,7 +151,7 @@ class RveInfo:
     anim_flag: bool = None
     """If set to True RSA and Tesselation will be plotted"""
 
-    phase2iso_flag: bool = None
+    phase2iso_flag: dict = None
     """assumption for abaqus that second phase is treated as isotropic material"""
 
     pbc_flag: bool = None

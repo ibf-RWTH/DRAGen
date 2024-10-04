@@ -1195,7 +1195,7 @@ class AbaqusMesher(MeshingHelper):
             # add inclusion
         f.close()
         for i in range(numberofgrains):
-            HelperFunctions.write_material_def(i, phase)
+            HelperFunctions.write_material_helper(i, phase, self.grains_df)
 
     def write_submodel_step_def(self) -> None:
 
@@ -1561,7 +1561,8 @@ class AbaqusMesher(MeshingHelper):
             self.write_submodel_step_def()
         elif RveInfo.pbc_flag:
             self.write_pbc_step_def()
-        self.write_grain_data()
+        if RveInfo.subroutinetype['ICAMS']:
+            self.write_grain_data()
 
         plotter = pv.Plotter(off_screen=True)
         plotter.add_mesh(smooth_mesh, scalars='phaseID', scalar_bar_args={'title': 'Phase IDs'},

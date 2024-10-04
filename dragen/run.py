@@ -23,8 +23,8 @@ class Run(HelperFunctions):
             self,
             dimension: int,
             box_size: int,
-            box_size_y: int,
-            box_size_z: int,
+            box_size_y: any([int, None]),
+            box_size_z: any([int, None]),
             resolution: float,
             number_of_rves: int,
 
@@ -39,7 +39,7 @@ class Run(HelperFunctions):
             element_type: str,
             pbc_flag: bool,
             submodel_flag: bool,
-            phase2iso_flag: bool,
+            phase2iso_flag: dict,
             smoothing_flag: bool,
             xfem_flag: bool,
 
@@ -58,8 +58,10 @@ class Run(HelperFunctions):
 
             # band related  parameters:
             number_of_bands: int,
-            upper_band_bound: float, lower_band_bound: float,
-            band_orientation: str, band_filling: float,
+            upper_band_bound: float,
+            lower_band_bound: float,
+            band_orientation: str,
+            band_filling: float,
 
             # substructure related parameters:
             subs_flag: bool,
@@ -70,8 +72,8 @@ class Run(HelperFunctions):
             t_mu: float,
             b_sigma: float,
             decreasing_factor: float,
-            lower: float,
-            upper: float,
+            lower: any([float, None]),
+            upper: any([float, None]),
             circularity: float,
             plt_name: str,
             save: bool,
