@@ -1139,30 +1139,63 @@ class HelperFunctions:
             if not RveInfo.phase2iso_flag[1]:
                 f.write(f'*Material, name=Ferrite_{i+1}\n')
                 f.write('*Depvar\n')
-                f.write('    176,\n')
-                f.write('*User Material, constants=2\n')
-                f.write(f'{i+1}.,3.\n')
+                if RveInfo.subroutinetype['ICAMS']:
+                    f.write('    176,\n')
+                    f.write('*User Material, constants=2\n')
+                    f.write(f'{i+1}.,3.\n')
+                elif RveInfo.subroutinetype['TRIP']:
+                    phi1 = grains_df['phi1'].tolist()[i]
+                    PHI = grains_df['PHI'].tolist()[i]
+                    phi2 = grains_df['phi2'].tolist()[i]
+                    f.write('    150,\n')
+                    f.write('*User Material, constants=4\n')
+                    f.write(f'3.,{phi1}, {PHI}, {phi2}\n')
+
         elif phase[i] == 2:
             if not RveInfo.phase2iso_flag[2]:
                 f.write(f'*Material, name=Martensite_{i+1}\n')
                 f.write('*Depvar\n')
-                f.write('    176,\n')
-                f.write('*User Material, constants=2\n')
-                f.write(f'{i+1}.,4.\n')
+                if RveInfo.subroutinetype['ICAMS']:
+                    f.write('    176,\n')
+                    f.write('*User Material, constants=2\n')
+                    f.write(f'{i+1}.,4.\n')
+                elif RveInfo.subroutinetype['TRIP']:
+                    phi1 = grains_df['phi1'].tolist()[i]
+                    PHI = grains_df['PHI'].tolist()[i]
+                    phi2 = grains_df['phi2'].tolist()[i]
+                    f.write('    150,\n')
+                    f.write('*User Material, constants=4\n')
+                    f.write(f'3.,{phi1}, {PHI}, {phi2}\n')
         elif phase[i] == 3:
             if not RveInfo.phase2iso_flag[3]:
                 f.write(f'*Material, name=Pearlite_{i+1}\n')
                 f.write('*Depvar\n')
-                f.write('    176,\n')
-                f.write('*User Material, constants=2\n')
-                f.write(f'{i+1}.,4.\n')
+                if RveInfo.subroutinetype['ICAMS']:
+                    f.write('    176,\n')
+                    f.write('*User Material, constants=2\n')
+                    f.write(f'{i+1}.,4.\n')
+                elif RveInfo.subroutinetype['TRIP']:
+                    phi1 = grains_df['phi1'].tolist()[i]
+                    PHI = grains_df['PHI'].tolist()[i]
+                    phi2 = grains_df['phi2'].tolist()[i]
+                    f.write('    150,\n')
+                    f.write('*User Material, constants=4\n')
+                    f.write(f'3.,{phi1}, {PHI}, {phi2}\n')
         elif phase[i] == 4:
             if not RveInfo.phase2iso_flag[4]:
                 f.write(f'*Material, name=Bainite_{i+1}\n')
                 f.write('*Depvar\n')
-                f.write('    176,\n')
-                f.write('*User Material, constants=2\n')
-                f.write(f'{i+1}.,4.\n')
+                if RveInfo.subroutinetype['ICAMS']:
+                    f.write('    176,\n')
+                    f.write('*User Material, constants=2\n')
+                    f.write(f'{i+1}.,4.\n')
+                elif RveInfo.subroutinetype['TRIP']:
+                    phi1 = grains_df['phi1'].tolist()[i]
+                    PHI = grains_df['PHI'].tolist()[i]
+                    phi2 = grains_df['phi2'].tolist()[i]
+                    f.write('    150,\n')
+                    f.write('*User Material, constants=4\n')
+                    f.write(f'3.,{phi1}, {PHI}, {phi2}\n')
         elif phase[i] == 5:
             if not RveInfo.phase2iso_flag[5]:
                 f.write(f'*Material, name=Austenite_{i + 1}\n')
