@@ -7,7 +7,7 @@ import datetime
 from scipy.ndimage import shift
 from tkinter import messagebox
 from dragen.utilities.InputInfo import RveInfo
-from dragen.InputGenerator.C_WGAN_GP import WGANCGP
+from InputGenerator.C_WGAN_GP import WGANCGP
 
 
 class HelperFunctions:
