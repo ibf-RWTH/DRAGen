@@ -540,7 +540,7 @@ class DataTask3D(HelperFunctions):
                             names = [f"{key}_texture_section_plot_{phase}.png"]
                             for name in names:
                                 Texture().calc_odf(sym_tex, phi2_list=[0, 45, 90], store_path=f'{RveInfo.store_path}/Postprocessing', figname=name)
-            if phase_id == 7:
+            if phase_id == 6 or phase_id == 7:
                 current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out = \
                     PostProcVol().gen_in_out_lists(phaseID=phase_id)
                 phase_ratios.append(current_phase_ratio_out)
@@ -549,8 +549,6 @@ class DataTask3D(HelperFunctions):
             input_ratio = list()
             labels = list()
             for i, phase in enumerate(RveInfo.phases):
-                #if RveInfo.PHASENUM[phase] > 6:  # phase ratio postprocessing for bands not relevant
-                #    continue
                 if RveInfo.phase_ratio[i+1] == 0:
                     continue
                 ratio = RveInfo.phase_ratio[RveInfo.PHASENUM[phase]]
