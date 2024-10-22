@@ -1438,8 +1438,9 @@ class AbaqusMesher(MeshingHelper):
             RveInfo.progress_obj.emit(50)
         if RveInfo.roughness_flag:
             # TODO: roghness einbauen
-            #grid = self.apply_roughness(grid)
-            pass
+            roughness = GRID.bounds[3]/5
+            perlin_octave = 8
+            GRID = self.apply_roughness(grid=GRID, max_roughness=roughness, perlinOctave=perlin_octave)
 
         f = open(RveInfo.store_path + '/DRAGen_RVE.inp', 'w+')
         f.write('*Heading\n')

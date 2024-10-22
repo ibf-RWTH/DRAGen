@@ -5,6 +5,7 @@ import sys
 import logging
 import tetgen
 from dragen.utilities.InputInfo import RveInfo
+from perlin_noise import PerlinNoise
 
 
 class MeshingHelper:
@@ -80,6 +81,31 @@ class MeshingHelper:
             plotter.close()
 
         return grid
+
+    @staticmethod
+    def apply_roughness(grid: pv.UnstructuredGrid, max_roughness: float = 3.,  perlinOctave: int=5):
+        grid_y_shape = (RveInfo.n_pts+2, RveInfo.n_pts+2)
+        if RveInfo.n_pts_z is not None:
+            grid_y_shape = (RveInfo.n_pts, RveInfo.n_pts_z)
+
+        xyz = grid.points
+        noise = PerlinNoise(octaves=perlinOctave, seed=1)
+        coord_df = pd.DataFrame(data=xyz, columns=["x", "y", "z"])
+
+        y_pts_unique = np.unique(coord_df['y'])
+        for y in y_pts_unique:
+            amp = max_roughness * (y/max(y_pts_unique))**4
+            y_i_df = coord_df.loc[coord_df['y'] == y]
+            y_i_df = y_i_df.index.tolist()
+
+            pt_counter = 0
+            for i in range(grid_y_shape[0]):
+                for j in range(grid_y_shape[1]):
+                    z = noise([i / grid_y_shape[0], j / grid_y_shape[1]])
+                    grid.points[y_i_df[pt_counter], 1] += amp*z
+                    pt_counter += 1
+        return grid
+        #grid.plot(show_grid=True, show_edges=True)
 
     def smoothen_mesh(self, grid: pv.UnstructuredGrid, n_iter: int) -> pv.UnstructuredGrid:
         if not RveInfo.smoothing_flag:
