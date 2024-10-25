@@ -128,7 +128,7 @@ class RveInfo:
 
     abaqus_flag: bool = None
     """Set to True for Abaqus input file"""
-    subroutinetype: dict = {'ICAMS': False, 'TRIP': True}
+    subroutinetype: dict = {'ICAMS': True, 'TRIP': False}
 
     damask_flag: bool = None
     """Set to True for DAMASK input file"""

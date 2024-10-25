@@ -1437,7 +1437,6 @@ class AbaqusMesher(MeshingHelper):
         if RveInfo.gui_flag:
             RveInfo.progress_obj.emit(50)
         if RveInfo.roughness_flag:
-            # TODO: roghness einbauen
             roughness = GRID.bounds[3]/5
             perlin_octave = 8
             GRID = self.apply_roughness(grid=GRID, max_roughness=roughness, perlinOctave=perlin_octave)
