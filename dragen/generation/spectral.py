@@ -100,6 +100,7 @@ def write_load(store_path: str) -> None:
 def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
     if rve.dtype != np.int64:
         rve = rve.astype('int64')
+    rve = rve - 1
     grid = damask.Grid(material=rve, size=[spacing, spacing, spacing])
 
     print('Anzahl Materialien im Grid', grid.N_materials)
