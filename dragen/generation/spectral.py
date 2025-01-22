@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 from dragen.utilities.InputInfo import RveInfo
 import pyvista as pv
+import os
+import yaml
 
 
 def write_material(store_path: str, grains: list, angles: pd.DataFrame) -> None:
@@ -108,3 +110,41 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
     grid.save(fname=store_path + '/grid.vti', compress=True)
     vtk_grid = pv.read(store_path + '/grid.vti')
     vtk_grid.save(store_path + '/grid.vtk')
+
+    grid2 = pv.read(os.path.join(store_path, r'grid.vti'))
+    
+    grid2['phi'] = [1 for i in range(rve.shape[0]**3)]
+ 
+    with open(os.path.join(store_path, r'material.yaml'), 'r') as ym:
+        ym = yaml.safe_load(ym)
+    
+    mat = ym['material']
+    n_ferrite = 0
+    n_martensite = 0
+    phase_list = list()
+    for m in mat:
+        phase = m['constituents'][0]['phase']
+        if 'Ferrite' in phase:
+            n_ferrite += 1
+            phase_list.append(1)
+        else:
+            n_martensite += 1
+            phase_list.append(2)
+    
+    ferrite_vox = 0
+    martensite_vox = 0
+    phase_array = np.zeros(grid2['material'].__len__())
+    for k in range(phase_list.__len__()):
+        grain_vol = np.count_nonzero(grid2['material'] == k)
+        if phase_list[k] == 1:
+            ferrite_vox += grain_vol
+            points = grid2['material'].flatten(order='F') == k
+            phase_array[points] = 0
+        else:
+            martensite_vox += grain_vol
+            points = grid2['material'].flatten(order='F') == k
+            phase_array[points] = 1
+    
+    grid2['phases'] = phase_array
+    
+    grid2.save(os.path.join(store_path, r'grid.vti'))
