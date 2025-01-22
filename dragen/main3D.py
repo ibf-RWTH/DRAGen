@@ -323,8 +323,38 @@ class DataTask3D(HelperFunctions):
         """
         if rve_status:
             # TODO: Hier gibt es einen relativ großen Mesh/Grid-Preprocessing Block --> Auslagern
-            periodic_rve_df, periodic_rve = super().repair_periodicity_3D_new(rve)
-            print('line 308:', periodic_rve.shape)
+            print('line 328:', rve.shape)
+            if RveInfo.damask_flag:
+                box_size = RveInfo.box_size
+                if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
+                    rve_x = np.linspace(0, RveInfo.box_size, rve.shape[0], endpoint=True)
+                    rve_y = np.linspace(0, RveInfo.box_size, rve.shape[1], endpoint=True)
+                    rve_z = np.linspace(0, RveInfo.box_size, rve.shape[2], endpoint=True)
+
+                elif RveInfo.box_size_y is not None and RveInfo.box_size_z is None:
+                    rve_x = np.linspace(0, RveInfo.box_size, rve.shape[0], endpoint=True)
+                    rve_y = np.linspace(0, RveInfo.box_size_y, rve.shape[1], endpoint=True)
+                    rve_z = np.linspace(0, RveInfo.box_size, rve.shape[2], endpoint=True)
+
+                elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
+                    rve_x = np.linspace(0, RveInfo.box_size, rve.shape[0], endpoint=True)
+                    rve_y = np.linspace(0, RveInfo.box_size, rve.shape[1], endpoint=True)
+                    rve_z = np.linspace(0, RveInfo.box_size_z, rve.shape[2] , endpoint=True)
+
+                else:
+                    rve_x = np.linspace(0, RveInfo.box_size, rve.shape[0], endpoint=True)
+                    rve_y = np.linspace(0, RveInfo.box_size_y, rve.shape[1] , endpoint=True)
+                    rve_z = np.linspace(0, RveInfo.box_size_z, rve.shape[2] , endpoint=True)
+
+                xx, yy, zz = np.meshgrid(rve_x, rve_y, rve_z, indexing='ij')
+                rve_dict = {'x': xx.flatten(), 'y': yy.flatten(), 'z': zz.flatten(), 'GrainID': rve.flatten()}
+                rve_df = pd.DataFrame(rve_dict)
+                rve_df['box_size'] = box_size
+                rve_df['n_pts'] = RveInfo.n_pts
+                periodic_rve_df, periodic_rve = rve_df, rve
+            else:
+                periodic_rve_df, periodic_rve = super().repair_periodicity_3D_new(rve)
+            print('line 359:', periodic_rve.shape)
             periodic_rve_df['phaseID'] = 0
             print('len rve edge:', np.cbrt(len(periodic_rve_df)))
             # An den NaN-Werten in dem DF liegt es nicht!
@@ -396,8 +426,8 @@ class DataTask3D(HelperFunctions):
                 spectral.write_material(store_path=RveInfo.store_path, grains=phase_list, angles=grains_df[['phi1', 'PHI', 'phi2']])
                 spectral.write_load(RveInfo.store_path)
                 spectral.write_grid(store_path=RveInfo.store_path,
-                                    rve=rve,
-                                    spacing=RveInfo.box_size / 1000)
+                                    rve=periodic_rve,
+                                    spacing=RveInfo.box_size / 1000000)
 
             if RveInfo.moose_flag:
                 print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
