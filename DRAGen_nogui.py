@@ -27,12 +27,12 @@ slope_offset = 0
 
 
 #Files:
-#Ferrite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
+Ferrite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
 Martensite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
 #Pearlite = r'./ExampleInput/Pearlite/TrainedData_Pearlite.pkl'   
 #Bainite = r'./ExampleInput/Bainite/TrainedData_Bainite.pkl' 
 #Austenite = r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
-Austenite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
+#Austenite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
 
 #PAGs
 
@@ -57,11 +57,18 @@ t_mu = 1.0
 b_sigma = 0.1
 subs_file_flag = False
 subs_file = './ExampleInput/Substructure/example_block_inp.csv'
+circularity = 1
+decreasing_factor = 0.95
+plot = False
+plt_name = 'substructure_plot.png'
+save = True
+filename = 'substructure_plot.png'
+orientation_relationship = 'KS'
 
 #Texture Type
 moose_flag = False
-abaqus_flag = True
-damask_flag = False
+abaqus_flag = False
+damask_flag = True
 #Texture Setting
 pbc_flag = True
 submodel_flag = False
@@ -72,25 +79,14 @@ element_type = 'HEX8'
 anim_flag = False
 
 #Choosing active files
-files = {1: None, 2: Martensite, 3: None, 4: None, 5:Austenite, 6: None, 7: None}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
+files = {1: Ferrite, 2: Martensite, 3: None, 4: None, 5:None, 6: None, 7: None}  # ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Inclusion', 'Banding']
 # Change the file name to 'None' if its empty
-phase_ratio = {1: 0, 2: 0.5, 3: 0, 4: 0, 5: 0.5, 6: 0, 7:0}
+phase_ratio = {1: 0.2, 2: 0.8, 3: 0, 4: 0, 5: 0.0, 6: 0, 7:0}
 phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusions', 'Bands']
 
 #Band thickness
 upper = None
 lower = None
-
-circularity = 1
-decreasing_factor = 0.95
-
-#Plot and save settings
-plot = False
-plt_name = 'substructure_plot.png'
-
-save = True
-filename = 'substructure_plot.png'
-orientation_relationship = 'KS'
 
 "test git"
 '''
