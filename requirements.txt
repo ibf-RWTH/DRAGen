@@ -1,4 +1,4 @@
-damask==3.0.0a8
+damask==3.0.2
 geomloss==0.2.6
 idna==3.6
 lit==17.0.6

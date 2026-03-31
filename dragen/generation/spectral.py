@@ -84,14 +84,13 @@ def write_material(store_path: str, grains: list, angles: pd.DataFrame) -> None:
 
 
 def write_load(store_path: str) -> None:
-    load_case = damask.Config(solver={'mechanical': 'spectral_polarization'},
-                              loadstep=[])
+    load_case = damask.LoadcaseGrid(solver={'mechanical': 'spectral_polarization'}, loadstep=[])
 
-    F = ['x', 0, 0, 0, 'x', 0, 0, 0, 2e-2]
+    F = [0.001, 0, 0, 0, 'x', 0, 0, 0, 'x']
     P = ['x' if i != 'x' else 0 for i in F]
 
     load_case['loadstep'].append({'boundary_conditions': {},
-                                  'discretization': {'t': 10., 'N': 100}, 'f_out': 4})
+                                  'discretization': {'t': 10, 'N': 100}, 'f_out': 4})
     load_case['loadstep'][0]['boundary_conditions']['mechanical'] = \
         {'P': [P[0:3], P[3:6], P[6:9]],
          'dot_F': [F[0:3], F[3:6], F[6:9]]}
@@ -103,7 +102,7 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
     if rve.dtype != np.int64:
         rve = rve.astype('int64')
     rve = rve - 1
-    grid = damask.Grid(material=rve, size=[spacing, spacing, spacing])
+    grid = damask.GeomGrid(material=rve, size=[spacing, spacing, spacing])
 
     print('Anzahl Materialien im Grid', grid.N_materials)
 
