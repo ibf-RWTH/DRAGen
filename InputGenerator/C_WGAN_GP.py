@@ -5,8 +5,6 @@ Conditional Wasserstein Generative Adversarial Network with Gradient Penalty
 Author: Niklas Fehlemann, IMS IEHK
 """
 
-# TODO: Refactor all prints to LOGGER commands (In OutputFolder)
-
 import sys
 import torch
 import torch.autograd as autograd
