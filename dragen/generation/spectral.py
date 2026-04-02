@@ -156,6 +156,14 @@ def write_material(store_path: str, grains: list, angles: pd.DataFrame) -> None:
                       }
                  }
 
+    # Dummy phase, should be replaced with martensite or pearlite
+    band = {'lattice': 'cI',
+                 'mechanical':
+                     {'output': ['F', 'P', 'F_p'],
+                      'elastic': {'type': 'Hooke', 'C_11': 417.4e10, 'C_12': 242.4e10, 'C_44': 211.1e10},
+                      }
+                 }
+
     if 1 in grains:
         matdata['phase']['Ferrite'] = ferrite
     if 2 in grains:
@@ -168,6 +176,8 @@ def write_material(store_path: str, grains: list, angles: pd.DataFrame) -> None:
         matdata['phase']['Austenite'] = austenite
     if 6 in grains:
         matdata['phase']['ThirdPhase'] = inclusion
+    if 7 in grains:
+        matdata['phase']['Band'] = band
 
     # Material
     i = 0
@@ -190,6 +200,9 @@ def write_material(store_path: str, grains: list, angles: pd.DataFrame) -> None:
                                            homogenization='SX')
         elif p == 6:
             matdata = matdata.material_add(phase=['ThirdPhase'], O=damask.Rotation.from_random(1),
+                                           homogenization='SX')
+        elif p == 7:
+            matdata = matdata.material_add(phase=['Band'], O=damask.Rotation.from_random(1),
                                            homogenization='SX')
         i += 1
 

@@ -1234,7 +1234,16 @@ class AbaqusMesher(MeshingHelper):
             ff.write('*Elastic\n')
             ff.write('210000, 0.3')
             ff.close()
-            # add inclusion
+        if RveInfo.phase_ratio[7] > 0:
+            f.write('**\n')
+            f.write('*Include, Input=Bands.inp\n')
+            ff = open(RveInfo.store_path + '/Inclusions.inp', 'w+')
+            ff.write('** MATERIALS\n')
+            ff.write('**\n')
+            ff.write('*Material, name=Inclusions\n')
+            ff.write('*Elastic\n')
+            ff.write('210000, 0.3')
+            ff.close()
         f.close()
         for i in range(numberofgrains):
             HelperFunctions.write_material_helper(i, phase, self.grains_df)
