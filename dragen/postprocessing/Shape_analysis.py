@@ -12,7 +12,7 @@ class shape:
 
     def thresh_callback(self, img, max_id, phaseID):
         #cv2.imwrite(f'{RveInfo.fig_path}/test_{time.time()}.png', img)
-        if RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] or RveInfo.number_of_bands>0:
+        if phaseID in [6,7]: #RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] or RveInfo.number_of_bands>0:
             print('inclusions and bands will be neglected in shape analysis')
             ell_data = None
             return ell_data
