@@ -3,19 +3,19 @@ import numpy as np
 from dragen.run import Run
 #Model details
 dimension = 3
-box_size = 30
+box_size = 32
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
 resolution = 2
-number_of_rves = 3
+number_of_rves = 1
 smoothing_flag = False
 
 # Banding Parameters:
 # If you want to add banding, change the number_of_bands to 1 or higher has to be integer 
 number_of_bands = 1
 band_filling = 1
-band_orientation = 'xy'
-lower_band_bound = 2
+band_orientation = 'xz'
+lower_band_bound = 3.9
 upper_band_bound = 4
 visualization_flag = False #plotting images to figs
 root = r'./'
@@ -47,7 +47,7 @@ lower = 1.5
 
 #Texture Type
 moose_flag = False
-abaqus_flag = True
+abaqus_flag = False
 damask_flag = True
 #Texture Setting
 pbc_flag = True
@@ -59,24 +59,21 @@ element_type = 'HEX8'
 anim_flag = False
 
 #Files:
-Ferrite =  r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
+Ferrite =  r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
 Martensite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
 #Pearlite = r'./ExampleInput/Pearlite/TrainedData_Pearlite.pkl'
 #Bainite = r'./ExampleInput/Bainite/TrainedData_Bainite.pkl'
 #Austenite = r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
-Austenite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl' #r'./ExampleInput/Ferrite/Homogeneous_Grainsize.csv'
 
 #Choosing active files
 
 # If the phase ratio is > 0, a file has to be provided
 pr_bands = number_of_bands * np.mean([lower_band_bound, upper_band_bound]) * box_size * box_size / (box_size**3)
-pr_ferrite = 0.8 - 0.5*pr_bands
-pr_austenite = 0.2 - 0.5*pr_bands
+pr_ferrite = 0.65 - 0.5*pr_bands
+pr_martensite = 0.35 - 0.5*pr_bands
 
-phase_ratio = {1: pr_ferrite, 2: 0, 3: 0, 4: 0, 5: pr_austenite, 6: 0, 7: pr_bands}
-
-files = {1: Ferrite, 2: None, 3: Martensite, 4: None, 5: Austenite, 6: None, 7: Martensite}
-
+phase_ratio = {1: pr_ferrite, 2: pr_martensite, 3: 0, 4: 0, 5: 0, 6: 0, 7: pr_bands}
+files = {1: Ferrite, 2: Martensite, 3: None, 4: None, 5: None, 6: None, 7: Martensite}
 phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusions', 'Bands']
 
 "test git"

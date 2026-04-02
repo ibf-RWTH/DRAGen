@@ -4,10 +4,11 @@ INPUT FOR DAMASK 3 from here on!
 import damask
 import numpy as np
 import pandas as pd
-from dragen.utilities.InputInfo import RveInfo
 import pyvista as pv
 import os
 import yaml
+
+from dragen.postprocessing import visualization as viz
 
 
 def write_material(store_path: str, grains: list, angles: pd.DataFrame) -> None:
@@ -226,6 +227,7 @@ def write_load(store_path: str) -> None:
 
 
 def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
+    l = np.array([0, 0, 1])
     if rve.dtype != np.int64:
         rve = rve.astype('int64')
     rve = rve - 1
@@ -234,43 +236,80 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
     print('Anzahl Materialien im Grid', grid.N_materials)
 
     grid.save(fname=store_path + '/grid.vti', compress=True)
-    vtk_grid = pv.read(store_path + '/grid.vti')
-    vtk_grid.save(store_path + '/grid.vtk')
 
     grid2 = pv.read(os.path.join(store_path, r'grid.vti'))
     
-    grid2['phi'] = [1 for i in range(rve.shape[0]**3)]
+    grid2['phi'] = [1 for _ in range(rve.shape[0]*rve.shape[1]*rve.shape[2])]
  
     with open(os.path.join(store_path, r'material.yaml'), 'r') as ym:
         ym = yaml.safe_load(ym)
     
     mat = ym['material']
-    n_ferrite = 0
-    n_martensite = 0
     phase_list = list()
     for m in mat:
         phase = m['constituents'][0]['phase']
         if 'Ferrite' in phase:
-            n_ferrite += 1
             phase_list.append(1)
-        else:
-            n_martensite += 1
+        elif 'Martensite' in phase:
             phase_list.append(2)
-    
-    ferrite_vox = 0
-    martensite_vox = 0
+        elif 'Pearlite' in phase:
+            phase_list.append(3)
+        elif 'Bainite' in phase:
+            phase_list.append(4)
+        elif 'Austenite' in phase:
+            phase_list.append(5)
+        elif 'Band' in phase:
+            phase_list.append(6)
+        else:
+            phase_list.append(7)
+
+    material_ID = grid2['material'].flatten()
+
+    phases = list(ym['phase'].keys())
+    info = []
+
+    for m in ym['material']:
+        c = m['constituents'][0]
+        phase = c['phase']
+        info.append({'phase': phase,
+                     'phaseID': phases.index(phase),
+                     'lattice': ym['phase'][phase]['lattice'],
+                     'O': c['O'],
+                     })
+
+    IPF = np.ones((len(material_ID), 3), np.uint8)
+    for i, data in enumerate(info):
+        IPF[np.where(material_ID == i)] = \
+            np.uint8(damask.Orientation(data['O'], lattice=data['lattice']).IPF_color(l) * 255)
+
+    grid2[f'IPF_{l}'] = IPF
+
     phase_array = np.zeros(grid2['material'].__len__())
     for k in range(phase_list.__len__()):
-        grain_vol = np.count_nonzero(grid2['material'] == k)
         if phase_list[k] == 1:
-            ferrite_vox += grain_vol
-            points = grid2['material'].flatten(order='F') == k
-            phase_array[points] = 0
-        else:
-            martensite_vox += grain_vol
             points = grid2['material'].flatten(order='F') == k
             phase_array[points] = 1
+        elif phase_list[k] == 2:
+            points = grid2['material'].flatten(order='F') == k
+            phase_array[points] = 2
+        elif phase_list[k] == 3:
+            points = grid2['material'].flatten(order='F') == k
+            phase_array[points] = 3
+        elif phase_list[k] == 4:
+            points = grid2['material'].flatten(order='F') == k
+            phase_array[points] = 4
+        elif phase_list[k] == 5:
+            points = grid2['material'].flatten(order='F') == k
+            phase_array[points] = 5
+        elif phase_list[k] == 6:
+            points = grid2['material'].flatten(order='F') == k
+            phase_array[points] = 6
+        else:
+            points = grid2['material'].flatten(order='F') == k
+            phase_array[points] = 7
     
     grid2['phases'] = phase_array
+
+    viz.plot_srve(grid2, store_path)
     
     grid2.save(os.path.join(store_path, r'grid.vti'))
