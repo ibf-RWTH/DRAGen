@@ -237,8 +237,8 @@ class Run(HelperFunctions):
                     rve = obj3D.calibration_rve()
                 else:
                     total_df, ex_df = obj3D.grain_sampling()
-                    rve = obj3D.rve_generation(total_df)
-                    obj3D.post_processing(rve, total_df, ex_df)
+                    rve, periodic_rve_df = obj3D.rve_generation(total_df)
+                    obj3D.post_processing(rve, total_df, ex_df, periodic_rve_df)
 
 
         else:

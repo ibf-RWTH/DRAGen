@@ -38,7 +38,6 @@ class DataTask3D(HelperFunctions):
         total_df = pd.DataFrame()
         all_phases_input_df = pd.DataFrame()
 
-        # TODO: Generiere Bandwidths hier!
         if RveInfo.number_of_bands > 0:
             low = RveInfo.lower_band_bound
             high = RveInfo.upper_band_bound
@@ -47,6 +46,8 @@ class DataTask3D(HelperFunctions):
             sum_bw = RveInfo.bandwidths.sum()
         else:
             sum_bw = 0
+
+
         input_data = pd.DataFrame()
         for phase in RveInfo.phases:
             
@@ -294,7 +295,7 @@ class DataTask3D(HelperFunctions):
                 whole_df['z_0'] = z_0_list
                 discrete_tesselation_obj = Tesselation3D(whole_df)
                 if RveInfo.low_rsa_resolution:
-                    rsa = super().upsampling_rsa(rsa)
+                    rsa = super().upsampling_rsa(rsa)  # ToDo Raus?
                 rve, rve_status = discrete_tesselation_obj.run_tesselation(rsa)
 
             # Change the band_ids to -200
@@ -381,12 +382,12 @@ class DataTask3D(HelperFunctions):
             if RveInfo.number_of_bands > 0 and RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] > 0:
                 # Set the points where == -200 to phase 2 and to grain ID i + j + 3
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = max_grain_id + 1
-                periodic_rve_df.loc[periodic_rve_df['GrainID'] == (max_grain_id + 3), 'phaseID'] = 2
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == (max_grain_id + 3), 'phaseID'] = 7
                 periodic_rve[np.where(periodic_rve == -200)] = max_grain_id + 1
             else:
                 # Set the points where == -200 to phase 2 and to grain ID i + 2
                 periodic_rve_df.loc[periodic_rve_df['GrainID'] == -200, 'GrainID'] = max_grain_id + 1
-                periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 2
+                periodic_rve_df.loc[periodic_rve_df['GrainID'] == (i + 2), 'phaseID'] = 7
                 periodic_rve[np.where(periodic_rve == -200)] = max_grain_id + 1
 
             # Start the Mesher
@@ -408,15 +409,11 @@ class DataTask3D(HelperFunctions):
                 if RveInfo.number_of_bands >= 1:
                     print('Nur Bänder')
                     phase_list = grains_df['phaseID'].tolist()
-                    #periodic_rve[np.where(periodic_rve == -200)] = last_grain_id + 1
-                    phase_list.append(2)
+                    phase_list.append(7)
 
                 elif RveInfo.phase_ratio[RveInfo.PHASENUM['Inclusions']] > 0:
                     print('Nur Inclusions')
                     phase_list = grains_df['phaseID'].tolist()
-                    """for i in range(len(inclusions_df)):
-                        #periodic_rve[np.where(periodic_rve == -(200 + i + 1))] = last_grain_id + i + 1
-                        phase_list.append(5)"""
                     print(phase_list.__len__())
 
                 else:
@@ -466,9 +463,9 @@ class DataTask3D(HelperFunctions):
                     mesher_obj.run()
         else:
             print('Tessellation did not succeed')
-        return periodic_rve
+        return periodic_rve, periodic_rve_df
 
-    def post_processing(self, rve, total_df, ex_df):
+    def post_processing(self, rve, total_df, ex_df, periodic_rve_df):
         if RveInfo.gui_flag:
             RveInfo.infobox_obj.emit('post processing started RVE is already fully meshed and can be found here:\n'
                                      f'{RveInfo.store_path}')
@@ -476,7 +473,8 @@ class DataTask3D(HelperFunctions):
             print('post processing started RVE is already fully meshed and can be found here:')
             print(RveInfo.store_path)
 
-        phase_ratios = list()
+        max_vol = periodic_rve_df.__len__()
+
         ref_r_in = dict()
         ref_r_out = dict()
         grain_shapes_in = shape().get_input_ellipses()
@@ -555,7 +553,6 @@ class DataTask3D(HelperFunctions):
 
                 current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out = \
                     PostProcVol().gen_in_out_lists(phaseID=phase_id)
-                phase_ratios.append(current_phase_ratio_out)
                 ref_r_in[phase] = current_phase_ref_r_in
                 ref_r_out[phase] = current_phase_ref_r_out
 
@@ -573,10 +570,10 @@ class DataTask3D(HelperFunctions):
             if phase_id == 6 or phase_id == 7:
                 current_phase_ref_r_in, current_phase_ratio_out, current_phase_ref_r_out = \
                     PostProcVol().gen_in_out_lists(phaseID=phase_id)
-                phase_ratios.append(current_phase_ratio_out)
 
         if len(RveInfo.phases) > 1:
             input_ratio = list()
+            phase_ratios = list()
             labels = list()
             for i, phase in enumerate(RveInfo.phases):
                 if RveInfo.phase_ratio[i+1] == 0:
@@ -585,6 +582,13 @@ class DataTask3D(HelperFunctions):
                 input_ratio.append(ratio)
                 label = RveInfo.phases[i]
                 labels.append(label)
+
+                vol = np.count_nonzero(periodic_rve_df['phaseID'].to_numpy() == RveInfo.PHASENUM[phase]) / max_vol
+                print(f'vol: {phase}', vol)
+                phase_ratios.append(vol)
+
+            print(input_ratio)
+            print(phase_ratios)
             PostProcVol().gen_pie_chart_phases(input_ratio, labels, 'input')
             PostProcVol().gen_pie_chart_phases(phase_ratios, labels, 'output')
 
