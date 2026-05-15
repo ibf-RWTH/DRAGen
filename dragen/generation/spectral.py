@@ -9,6 +9,7 @@ import os
 import yaml
 
 from dragen.postprocessing import visualization as viz
+from dragen.utilities.InputInfo import RveInfo
 
 
 def write_material(store_path: str, grains: list, angles: pd.DataFrame) -> None:
@@ -231,7 +232,14 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
     if rve.dtype != np.int64:
         rve = rve.astype('int64')
     rve = rve - 1
-    grid = damask.GeomGrid(material=rve, size=[spacing, spacing, spacing])
+    if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
+        grid = damask.GeomGrid(material=rve, size=[RveInfo.box_size, RveInfo.box_size, RveInfo.box_size])
+    elif RveInfo.box_size_z is None and RveInfo.box_size_y is not None:
+        grid = damask.GeomGrid(material=rve, size=[RveInfo.box_size, RveInfo.box_size_y, RveInfo.box_size])
+    elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
+        grid = damask.GeomGrid(material=rve, size=[RveInfo.box_size, RveInfo.box_size, RveInfo.box_size_z])
+    else:
+        grid = damask.GeomGrid(material=rve, size=[RveInfo.box_size, RveInfo.box_size_y, RveInfo.box_size_z])
 
     print('Anzahl Materialien im Grid', grid.N_materials)
 
@@ -309,6 +317,8 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
             phase_array[points] = 7
     
     grid2['phases'] = phase_array
+
+    # Placeholder: Add Subs-Code here
 
     viz.plot_srve(grid2, store_path)
     
