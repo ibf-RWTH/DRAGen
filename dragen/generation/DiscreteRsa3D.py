@@ -198,7 +198,7 @@ class DiscreteRsa3D(HelperFunctions):
                 intersecting_pts = np.count_nonzero(periodic_grain) - (free_points_old - free_points)
                 intersecting_ratio = intersecting_pts / np.count_nonzero(periodic_grain)
 
-                if intersecting_ratio > 0.01:
+                if intersecting_ratio > RveInfo.allowed_intersection_ratio:
                     rsa = backup_rsa.copy()
                     attempt = attempt + 1
                 else:
