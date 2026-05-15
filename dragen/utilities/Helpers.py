@@ -31,7 +31,7 @@ class HelperFunctions:
         elif RveInfo.box_size_y is None and RveInfo.box_size_z is not None:
             array = np.zeros((npts_x, npts_x, RveInfo.n_pts_z), order='C', dtype='int16')
         else:
-            array = np.zeros((2 * npts_x, 2 * RveInfo.n_pts_y, 2 * RveInfo.n_pts_z), order='C', dtype='int16')
+            array = np.zeros((npts_x, RveInfo.n_pts_y, RveInfo.n_pts_z), order='C', dtype='int16')
         return array
 
     """@staticmethod
@@ -56,14 +56,13 @@ class HelperFunctions:
 
     @staticmethod
     def gen_grid_new():
-        npts_x = RveInfo.n_pts
         n_x = RveInfo.n_pts
         n_y = RveInfo.n_pts
         n_z = RveInfo.n_pts
         if RveInfo.n_pts_y is not None:
             n_y = RveInfo.n_pts_y
         if RveInfo.n_pts_z is not None:
-            n_y = RveInfo.n_pts_z
+            n_z = RveInfo.n_pts_z
         shape = (n_x, n_y, n_z)
         if RveInfo.box_size_y is None and RveInfo.box_size_z is None:
             xyz = np.linspace(0, RveInfo.box_size, shape[0], endpoint=True, dtype=np.float32)
@@ -464,13 +463,15 @@ class HelperFunctions:
             ellipse_array_periodic = shift(ellipse_array, (0, 0, n_bins_z), cval=0)
             ellipse_array_periodic = np.roll(ellipse_array_periodic, (n_bins_x, n_bins_y), axis=(0, 1))
         elif RveInfo.box_size_y is not None and RveInfo.box_size_z is not None:
+            # FIXME: WARNING: Now full periodicity applies for the x != y != z case, which is presumably not 100 % reasonable
+            # Error why this not works os loacted here
             n_bins_x = x_0
-            n_bins_y = (y_0 - int(RveInfo.box_size_y / 2) * RveInfo.bin_size)
-            n_bins_z = (z_0 - int(RveInfo.box_size_z / 2) * RveInfo.bin_size)
-            ellipse_array_periodic = shift(ellipse_array, (n_bins_x, 0, 0), cval=0)
-            ellipse_array_periodic = shift(ellipse_array_periodic, (0, n_bins_y, 0), cval=0)
-            ellipse_array_periodic = shift(ellipse_array_periodic, (0, 0, n_bins_z), cval=0)
-            ellipse_array_periodic = ellipse_array_periodic
+            n_bins_y = y_0 #(y_0 - int(RveInfo.box_size_y / 2) * RveInfo.bin_size)
+            n_bins_z = z_0 #(z_0 - int(RveInfo.box_size_z / 2) * RveInfo.bin_size)
+            #ellipse_array_periodic = shift(ellipse_array, (n_bins_x, 0, 0), cval=0)
+            #ellipse_array_periodic = shift(ellipse_array, (0, n_bins_y, 0), cval=0)
+            #ellipse_array_periodic = shift(ellipse_array_periodic, (0, 0, n_bins_z), cval=0)
+            ellipse_array_periodic = np.roll(ellipse_array, (n_bins_x, n_bins_y, n_bins_z), axis=(0, 1, 2)) #np.roll(ellipse_array, (n_bins_x), axis=(0))
         return ellipse_array_periodic
 
 
@@ -1010,7 +1011,7 @@ class HelperFunctions:
         
         x_grid, y_grid, z_grid = self.gen_grid_new()
 
-        x_0 = int(float(RveInfo.box_size) /2)
+        x_0 = int(float(RveInfo.box_size) / 2)
         y_0 = int(float(RveInfo.box_size) / 2)
         z_0 = int(float(RveInfo.box_size) / 2)
 
