@@ -327,9 +327,6 @@ class DiscreteRsa3D(HelperFunctions):
 
         rsa[np.where(placement_rsa == -200)] = 0
 
-        with open(RveInfo.store_path + '/rve.log', 'a') as log:
-            log.writelines('Total number of attempts needed: {}\n\n'.format(sum_attempts))
-
         return placement_rsa, x_0_list, y_0_list, z_0_list, status
 
     def run_rsa_inclusions(self, rve):
