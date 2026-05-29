@@ -35,6 +35,12 @@ For more:
 
 [Generating Input Data for Microstructure Modelling: A Deep Learning Approach Using Generative Adversarial Networks](https://www.mdpi.com/1996-1944/13/19/4236)
 
+[Identification of martensite bands in dual‐phase steels: a deep learning object detection approach using faster region‐based‐convolutional neural network](https://onlinelibrary.wiley.com/doi/pdf/10.1002/srin.202200836)
+
+[Exploring structure–property relations in dual phase steels using crystal plasticity and variance based global sensitivity analysis](https://www.sciencedirect.com/science/article/pii/S0264127525012146)
+
+[Crystal plasticity parameter identification via statistical relevant micropillar compression](https://www.sciencedirect.com/science/article/pii/S135964542500607X#cited-by)
+
 <p align="left"><img src="docs/DRAGen_readme_paper.jpg" height="400" alt=""> </img></p>
 
 _Note: For developing it is highly recommended to use Python versions Python 3.10._<br>
