@@ -255,5 +255,7 @@ class Run(HelperFunctions):
             logger.info('dimension must be 2 or 3')
             sys.exit()
 
+        return RveInfo.store_path
+
 
 
