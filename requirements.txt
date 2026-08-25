@@ -9,6 +9,7 @@ numpy==1.26.3
 opencv-python-headless==4.9.0.80
 pandas==2.1.4
 PyQt5==5.15.10
+pytest==8.2.2
 pyvista==0.43.2
 qhoptim==1.1.0
 scikit-learn==1.4.0rc1
