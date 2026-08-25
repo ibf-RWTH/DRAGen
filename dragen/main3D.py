@@ -62,7 +62,7 @@ class DataTask3D(HelperFunctions):
             if files[file_idx].endswith('.csv'):
                 phase_input_df = super().read_input(files[file_idx], RveInfo.dimension)
             elif files[file_idx].endswith('.pkl'):
-                size = 1000
+                size = 10000
                 if RveInfo.PHASENUM[phase] == 7:
                     size = 25000
                 phase_input_df = super().read_input_gan(files[file_idx], RveInfo.dimension, size=size)
@@ -115,6 +115,7 @@ class DataTask3D(HelperFunctions):
         RveInfo.LOGGER.info("the total volume of your dataframe is {}. A boxsize of {} is recommended.".
                             format(total_volume, estimated_boxsize))
 
+        # TODO: Check where the difference in grain properties is coming from!
         input_data.to_csv(RveInfo.gen_path + '/complete_input_data.csv', index=False)
         grains_df.to_csv(RveInfo.gen_path + '/sampled_grains.csv', index=False)
 
@@ -153,6 +154,7 @@ class DataTask3D(HelperFunctions):
             #print(box_size_y)
             band_data = bands_df.copy()
             adjusted_size = np.cbrt((RveInfo.bandwidths[0] * RveInfo.box_size ** 2) * RveInfo.band_filling)
+            print(adjusted_size)
             bands_df = super().sample_input_3D(band_data, adjusted_size, phase_id=7, constraint=RveInfo.bandwidths[0])
             bands_df.sort_values(by='final_conti_volume', inplace=True, ascending=False)
             bands_df.reset_index(inplace=True, drop=True)
@@ -166,8 +168,8 @@ class DataTask3D(HelperFunctions):
             # Zum abspeichern der Werte
             band_list = list()
 
-            # Berechne center and store the values:
-            band_center_0 = int(RveInfo.bin_size + np.random.rand() * (box_size_y - RveInfo.bin_size))
+            # Berechne center and store the values: TODO: Fix for initial Investigations
+            band_center_0 = 0 #int(RveInfo.bin_size + np.random.rand() * (box_size_y - RveInfo.bin_size))
             band_half_0 = float(RveInfo.bandwidths[0] / 2)
             band_list.append([band_half_0, band_center_0])
 
@@ -419,7 +421,8 @@ class DataTask3D(HelperFunctions):
                 else:
                     print('Keine Bänder, nur grains')
                     phase_list = grains_df['phaseID'].tolist()
-                print(grains_df['phi1'])
+                print(grains_df)
+                print(periodic_rve.min())
                 spectral.write_material(store_path=RveInfo.store_path, grains=phase_list, angles=grains_df[['phi1', 'PHI', 'phi2']])
                 spectral.write_load(RveInfo.store_path)
                 spectral.write_grid(store_path=RveInfo.store_path,
@@ -532,7 +535,7 @@ class DataTask3D(HelperFunctions):
                 grain_shapes = grain_shapes.rename(columns={"AR": "AR (-)", "slope": "slope (°)"})
                 grain_shapes_in_thisPhase = grain_shapes_in.loc[grain_shapes_in['phaseID'] == phase_id, ['AR', 'slope', 'inout']]
 
-                grain_shapes_in_thisPhase = grain_shapes_in_thisPhase.sample(n=grain_shapes.__len__())
+                grain_shapes_in_thisPhase = grain_shapes_in_thisPhase.sample(n=grain_shapes.__len__(), replace=True)
                 grain_shapes_in_thisPhase = grain_shapes_in_thisPhase.rename(columns={"AR": "AR (-)", "slope": "slope (°)"})
 
                 grain_shapes = pd.concat([grain_shapes, grain_shapes_in_thisPhase])

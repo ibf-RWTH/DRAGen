@@ -321,5 +321,4 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
     # Placeholder: Add Subs-Code here
 
     viz.plot_srve(grid2, store_path)
-    
     grid2.save(os.path.join(store_path, r'grid.vti'))

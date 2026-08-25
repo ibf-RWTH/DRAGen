@@ -65,9 +65,6 @@ class RveInfo:
     upper_band_bound: float = None
     """this parameter sets a lower limit for the band thickness"""
 
-    visualization_flag: bool = None
-    """if set to True, Band generation will be plotted"""
-
     file_dict: dict = None
     """dictionary of all grain files"""
 
@@ -196,9 +193,6 @@ class RveInfo:
 
     bin_size = None
     """element size one point in grid represents"""
-
-    step_half = None
-    """half a bin"""
 
     LOGGER = logging.getLogger("RVE-Gen")
     RESULT_LOG = logging.getLogger("RVE-Result")

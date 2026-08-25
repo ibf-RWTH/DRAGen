@@ -15,7 +15,6 @@ band_filling = 1
 band_orientation = 'xy'
 lower_band_bound = 2
 upper_band_bound = 4
-visualization_flag = False #plotting images to figs
 root = r'./'
 shrink_factor = 0.4
 
@@ -105,7 +104,7 @@ Run(dimension=dimension, box_size=box_size, box_size_y=box_size_y, box_size_z=bo
     number_of_rves=number_of_rves, slope_offset=slope_offset, abaqus_flag=abaqus_flag, damask_flag=damask_flag,
     moose_flag=moose_flag, calibration_rve_flag=calibration_rve_flag, element_type=element_type, pbc_flag=pbc_flag, submodel_flag=submodel_flag,
     phase2iso_flag=phase2iso_flag, smoothing_flag=smoothing_flag, xfem_flag=x_fem_flag, gui_flag=False, anim_flag=anim_flag,
-    visualization_flag=visualization_flag, root=root, info_box_obj=None, progress_obj=None, phase_ratio=phase_ratio,
+    root=root, info_box_obj=None, progress_obj=None, phase_ratio=phase_ratio,
     file_dict=files, phases=phases, number_of_bands=number_of_bands, upper_band_bound=upper_band_bound,
     lower_band_bound=lower_band_bound, band_orientation=band_orientation, band_filling=band_filling,
     subs_flag=subs_flag, subs_file_flag=subs_file_flag,

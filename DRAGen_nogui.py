@@ -5,21 +5,20 @@ from dragen.run import Run
 dimension = 3
 box_size = 32
 box_size_y = None  # if this is None it will be set to the main box_size value
-box_size_z = None  # for sheet rve set z to None and y to different value than x the other way round is buggy
+box_size_z = None # for sheet rve set z to None and y to different value than x the other way round is buggy
 resolution = 2
-number_of_rves = 1
+number_of_rves = 2
 smoothing_flag = False
 
 # Banding Parameters:
 # If you want to add banding, change the number_of_bands to 1 or higher has to be integer 
 number_of_bands = 1
-band_filling = 1
+band_filling = 0.5
 band_orientation = 'xz'
-lower_band_bound = 3.9
-upper_band_bound = 4
-visualization_flag = False #plotting images to figs
+lower_band_bound = 4.99
+upper_band_bound = 5
 root = r'./'
-shrink_factor = 0.4
+shrink_factor = 0.35
 
 # Inclusion Setting
 # To add make inclusions_flag = True
@@ -59,21 +58,22 @@ element_type = 'HEX8'
 anim_flag = False
 
 #Files:
-Ferrite =  r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
-Martensite = r'./ExampleInput/Martensite/TrainedData_Martensite.pkl'
+# r'Y:\03_Projekte\DFG\TRR_B05\02_Experimente\80_TrainedGANs\DP800GAN_STAND20220709\TrainedData_1.pkl'
+Ferrite= r'Y:\03_Projekte\DFG\TRR_B05\02_Experimente\80_TrainedGANs\DP800GAN_STAND20220709\Ferrite_RDxBN.csv'
+Martensite = r'Y:\03_Projekte\DFG\TRR_B05\02_Experimente\80_TrainedGANs\DP800GAN_STAND20220709\Martensite_RDxBN.csv'
 #Pearlite = r'./ExampleInput/Pearlite/TrainedData_Pearlite.pkl'
-#Bainite = r'./ExampleInput/Bainite/TrainedData_Bainite.pkl'
-#Austenite = r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
+Bainite = r'./ExampleInput/Ferrite/Homogeneous_Grainsize.csv'
+Austenite = r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
 
 #Choosing active files
 
 # If the phase ratio is > 0, a file has to be provided
 pr_bands = number_of_bands * np.mean([lower_band_bound, upper_band_bound]) * box_size * box_size / (box_size**3)
-pr_ferrite = 0.65 - 0.5*pr_bands
+pr_ferrite = 1 - 1*pr_bands
 pr_martensite = 0.35 - 0.5*pr_bands
 
-phase_ratio = {1: pr_ferrite, 2: pr_martensite, 3: 0, 4: 0, 5: 0, 6: 0, 7: pr_bands}
-files = {1: Ferrite, 2: Martensite, 3: None, 4: None, 5: None, 6: None, 7: Martensite}
+phase_ratio = {1: pr_ferrite, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: pr_bands}
+files = {1: Ferrite, 2: None, 3: None, 4: None, 5: None, 6: None, 7: Martensite}
 phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusions', 'Bands']
 
 "test git"
@@ -88,7 +88,7 @@ Run(dimension=dimension, box_size=box_size, box_size_y=box_size_y, box_size_z=bo
     number_of_rves=number_of_rves, slope_offset=slope_offset, abaqus_flag=abaqus_flag, damask_flag=damask_flag,
     moose_flag=moose_flag, calibration_rve_flag=calibration_rve_flag, element_type=element_type, pbc_flag=pbc_flag, submodel_flag=submodel_flag,
     phase2iso_flag=phase2iso_flag, smoothing_flag=smoothing_flag, xfem_flag=x_fem_flag, gui_flag=False, anim_flag=anim_flag,
-    visualization_flag=visualization_flag, root=root, info_box_obj=None, progress_obj=None, phase_ratio=phase_ratio,
+    root=root, info_box_obj=None, progress_obj=None, phase_ratio=phase_ratio,
     file_dict=files, phases=phases, number_of_bands=number_of_bands, upper_band_bound=upper_band_bound,
     lower_band_bound=lower_band_bound, band_orientation=band_orientation, band_filling=band_filling,
     subs_flag=subs_flag, subs_file_flag=subs_file_flag,

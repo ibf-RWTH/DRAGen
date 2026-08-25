@@ -614,33 +614,19 @@ class Ui_MainWindow(object):
         self.gridLayout_6.setContentsMargins(0, 0, 0, 0)
         self.gridLayout_6.setObjectName("gridLayout_6")
 
-        self.visualization_flag_button = QtWidgets.QCheckBox(self.gridLayoutWidget_7)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.visualization_flag_button.sizePolicy().hasHeightForWidth())
-        self.gridLayout_6.addWidget(self.visualization_flag_button, 0, 0, 1, 1)
-
-        self.visualization_flag_label = QtWidgets.QLabel(self.gridLayoutWidget_7)
-        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.visualization_flag_label.sizePolicy().hasHeightForWidth())
-        self.gridLayout_6.addWidget(self.visualization_flag_label, 0, 1, 1, 1)
-
         self.animation_flag_button = QtWidgets.QCheckBox(self.gridLayoutWidget_7)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.animation_flag_button.sizePolicy().hasHeightForWidth())
-        self.gridLayout_6.addWidget(self.animation_flag_button, 1, 0, 1, 1)
+        self.gridLayout_6.addWidget(self.animation_flag_button, 0, 0, 1, 1)
 
         self.animation_flag_label = QtWidgets.QLabel(self.gridLayoutWidget_7)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.animation_flag_label.sizePolicy().hasHeightForWidth())
-        self.gridLayout_6.addWidget(self.animation_flag_label, 1, 1, 1, 1)
+        self.gridLayout_6.addWidget(self.animation_flag_label, 0, 1, 1, 1)
 
         # Specimen Orientation Tab
         self.specimen_tab = QtWidgets.QWidget()
@@ -1238,7 +1224,6 @@ class Ui_MainWindow(object):
         self.label_packet_size_user.setText(_translate("MainWindow", "Packet size (sigma)"))
         self.label_circularity_user.setText(_translate("MainWindow", "circulatrity (packets)"))
 
-        self.visualization_flag_label.setText(_translate("MainWindow", "Plot figures of RSA and Tesselation"))
         self.animation_flag_label.setText(_translate("MainWindow", "Plot figures of Banding RSA"))
 
         self.slope_offset_label.setText(_translate("MainWindow", "enter the angle for your specimenorientation\n"
@@ -1526,7 +1511,7 @@ class Ui_MainWindow(object):
                 'moose_flag': False, 'anim_flag': None, 'xfem_flag': False, 'pbc_flag': False,
                 'submodel_flag': False, 'element_type': None, 'slope_offset': 0, 'smoothing': True,
                 'number_of_bands': 0, 'lower_band_bound': None, 'upper_band_bound': None, 'band_orientation': None,
-                'band_filling': None, 'visualization_flag': None,
+                'band_filling': None,
                 'file_dict': {}, 'phase_ratio': {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7:0},
                 'subs_flag': False, 'subs_file_flag': False,
                 'subs_file': None, 'orientation_relationship': None, 'subrun': None, 'pag_file': None, 'equiv_d': None,
@@ -1819,15 +1804,10 @@ class Ui_MainWindow(object):
         else:
             store_path_flag = True
 
-        if self.visualization_flag_button.isChecked():
-            ARGS['visualization_flag'] = True
-        else:
-            ARGS['visualization_flag'] = False
-
         if self.animation_flag_button.isChecked():
-            ARGS['animation_flag'] = True
+            ARGS['anim_flag'] = True
         else:
-            ARGS['animation_flag'] = False
+            ARGS['anim_flag'] = False
 
         if len(ARGS['files'].values()) > 0:
             import_flag = True

@@ -29,7 +29,6 @@ class Worker(QObject):
 
         self.band_filling = ARGS['band_filling']
 
-        self.visualization_flag = ARGS['visualization_flag']
         self.file_dict = ARGS['files']
         self.phase_ratio = ARGS['phase_ratio']
 
@@ -79,7 +78,7 @@ class Worker(QObject):
                       moose_flag=self.moose_flag, element_type=self.element_type, pbc_flag=self.pbc_flag,
                       submodel_flag=self.submodel_flag, phase2iso_flag=self.phase2iso_flag,xfem_flag=self.xfem_flag,
                       smoothing_flag=self.smoothing_flag, gui_flag=self.gui_flag, anim_flag=self.anim_flag,
-                      visualization_flag=self.visualization_flag, root=self.root, info_box_obj=self.info_box,
+                      root=self.root, info_box_obj=self.info_box,
                       progress_obj=self.progress, phase_ratio=self.phase_ratio, file_dict=self.file_dict,
                       phases=self.phases, number_of_bands=self.number_of_bands, upper_band_bound=self.upper_band_bound,
                       lower_band_bound=self.lower_band_bound, band_orientation=self.band_orientation,

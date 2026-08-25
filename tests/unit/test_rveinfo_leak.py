@@ -23,7 +23,7 @@ def _run_kwargs(box_size_y):
         number_of_rves=1, slope_offset=0, abaqus_flag=False, damask_flag=False, moose_flag=False,
         calibration_rve_flag=False, element_type='HEX8', pbc_flag=True, submodel_flag=False,
         phase2iso_flag={1: True}, smoothing_flag=False, xfem_flag=False, gui_flag=False,
-        anim_flag=False, visualization_flag=False, root='./', info_box_obj=None, progress_obj=None,
+        anim_flag=False, root='./', info_box_obj=None, progress_obj=None,
         phase_ratio={1: 1}, file_dict={1: None}, phases=['Ferrite'], number_of_bands=0,
         upper_band_bound=1, lower_band_bound=1, band_orientation='xy', band_filling=1,
         subs_flag=False, subs_file_flag=False, subs_file='', equiv_d=5, p_sigma=0.1, t_mu=1.0,

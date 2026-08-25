@@ -47,7 +47,6 @@ class Run(HelperFunctions):
             gui_flag: bool,
 
             anim_flag: bool,
-            visualization_flag: bool,
             root: str,
             info_box_obj, progress_obj,
 
@@ -110,7 +109,6 @@ class Run(HelperFunctions):
         RveInfo.dimension = dimension
         RveInfo.slope_offset = slope_offset
         RveInfo.smoothing_flag = smoothing_flag
-        RveInfo.visualization_flag = visualization_flag
         RveInfo.file_dict = file_dict  # TODO: Change to dict based output
         RveInfo.phase_ratio = phase_ratio
         RveInfo.gui_flag = gui_flag
@@ -162,7 +160,6 @@ class Run(HelperFunctions):
             if RveInfo.n_pts_z % 2 != 0:
                 RveInfo.n_pts_z += 1
         RveInfo.bin_size = RveInfo.box_size / RveInfo.n_pts
-        RveInfo.step_half = RveInfo.bin_size / 2
 
     @staticmethod
     def setup_logging():
