@@ -26,16 +26,15 @@ def _run_kwargs(box_size_y):
         anim_flag=False, root='./', info_box_obj=None, progress_obj=None,
         phase_ratio={1: 1}, file_dict={1: None}, phases=['Ferrite'], number_of_bands=0,
         upper_band_bound=1, lower_band_bound=1, band_orientation='xy', band_filling=1,
-        subs_flag=False, subs_file_flag=False, subs_file='', equiv_d=5, p_sigma=0.1, t_mu=1.0,
-        b_sigma=0.1, decreasing_factor=0.95, lower=1.5, upper=2.5, circularity=1, plt_name='p.png',
-        save=False, plot=False, filename='f.png', orientation_relationship='KS',
+        subs_flag=False, subs_file_flag=False, subs_file='', t_mu=1.0,
     )
 
 
 @pytest.mark.xfail(
     strict=True,
-    reason="dragen/run.py:155-163 -- n_pts_y/n_pts_z are only reset conditionally, so a stale "
-           "value leaks from a prior Run() into the next one in the same process.",
+    reason="dragen/run.py Run.__init__ -- n_pts_y/n_pts_z are only reset inside `if box_size_y:` / "
+           "`if box_size_z:`, so a stale value leaks from a prior Run() into the next one in the "
+           "same process.",
 )
 def test_n_pts_y_resets_when_box_size_y_is_dropped():
     Run(**_run_kwargs(box_size_y=6))

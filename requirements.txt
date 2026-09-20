@@ -5,6 +5,7 @@ lit==17.0.6
 matplotlib==3.8.2
 meshio==5.3.4
 netCDF4==1.6.5
+networkx==3.4.2
 numpy==1.26.3
 opencv-python-headless==4.9.0.80
 pandas==2.1.4

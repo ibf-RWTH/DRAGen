@@ -1,18 +1,19 @@
 import numpy as np
+from sympy import false
 
 from dragen.run import Run
 #Model details
 dimension = 3
-box_size = 32
+box_size = 30
 box_size_y = None  # if this is None it will be set to the main box_size value
 box_size_z = None # for sheet rve set z to None and y to different value than x the other way round is buggy
 resolution = 2
-number_of_rves = 2
+number_of_rves = 1
 smoothing_flag = False
 
 # Banding Parameters:
 # If you want to add banding, change the number_of_bands to 1 or higher has to be integer 
-number_of_bands = 1
+number_of_bands = 0
 band_filling = 0.5
 band_orientation = 'xz'
 lower_band_bound = 4.99
@@ -26,23 +27,31 @@ inclusion_flag = False
 inclusion_ratio = 0.05
 slope_offset = 0
 
-# Substructure params
-subs_flag = False
-equiv_d = 5
-p_sigma = 0.1
+# Substructure params (only used when subs_flag is True, 3D only)
+subs_flag = True
+# Block thickness: either a mean value in micrometres...
 t_mu = 1.0
-b_sigma = 0.1
+# ...or sampled from a measured distribution (needs a 'block_thickness' column)
 subs_file_flag = False
 subs_file = './ExampleInput/Substructure/example_block_inp.csv'
-circularity = 1
-decreasing_factor = 0.95
-plot = False
-plt_name = 'substructure_plot.png'
-save = True
-filename = 'substructure_plot.png'
-orientation_relationship = 'KS'
-upper = 2.5
-lower = 1.5
+# Phases that get packets/blocks: 2 Martensite, 3 Pearlite, 4 Bainite
+subs_transformable_phase_ids = [2, 3, 4]
+# Percentile clip on the measured block thickness distribution (only used with subs_file_flag)
+subs_lower_percentile = 5
+subs_upper_percentile = 95
+# Target cells per packet, and the packet size below which a packet is kept as a single block
+subs_min_packet_cells = 100
+subs_min_block_cells = 10
+# Packets/blocks smaller than this get merged into a neighbour
+subs_min_cells_per_packet = 5
+subs_min_cells_per_block = 5
+# 'KS' -> the 24 ideal Kurdjumov-Sachs variants
+# 'experimental' -> transformations measured from a parent/child EBSD pair. Needs
+#   subs_child_orientation_file (grain_id, phi1, PHI, phi2) and a parent orientation csv; the
+#   parent defaults to the phase input file of the first transformable phase.
+subs_orientation_mode = 'KS'
+subs_parent_orientation_file = None
+subs_child_orientation_file = None
 
 #Texture Type
 moose_flag = False
@@ -68,12 +77,12 @@ Austenite = r'./ExampleInput/Austenite/TrainedData_Austenite.pkl'
 #Choosing active files
 
 # If the phase ratio is > 0, a file has to be provided
-pr_bands = number_of_bands * np.mean([lower_band_bound, upper_band_bound]) * box_size * box_size / (box_size**3)
-pr_ferrite = 1 - 1*pr_bands
-pr_martensite = 0.35 - 0.5*pr_bands
+#pr_bands = number_of_bands * np.mean([lower_band_bound, upper_band_bound]) * box_size * box_size / (box_size**3)
+#pr_ferrite = 1 - 1*pr_bands
+#pr_martensite = 0.35 - 0.5*pr_bands
 
-phase_ratio = {1: pr_ferrite, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: pr_bands}
-files = {1: Ferrite, 2: None, 3: None, 4: None, 5: None, 6: None, 7: Martensite}
+phase_ratio = {1: 0.3, 2: 0, 3: 0, 4: 0.7, 5: 0, 6: 0, 7: 0}
+files = {1: Ferrite, 2: None, 3: None, 4: Austenite, 5: None, 6: None, 7: None}
 phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusions', 'Bands']
 
 "test git"
@@ -91,8 +100,13 @@ Run(dimension=dimension, box_size=box_size, box_size_y=box_size_y, box_size_z=bo
     root=root, info_box_obj=None, progress_obj=None, phase_ratio=phase_ratio,
     file_dict=files, phases=phases, number_of_bands=number_of_bands, upper_band_bound=upper_band_bound,
     lower_band_bound=lower_band_bound, band_orientation=band_orientation, band_filling=band_filling,
-    subs_flag=subs_flag, subs_file_flag=subs_file_flag,
-    subs_file=subs_file, equiv_d=equiv_d, p_sigma=p_sigma, t_mu=t_mu, b_sigma=b_sigma,
-    decreasing_factor=decreasing_factor, lower=lower, upper=upper, circularity=circularity, plt_name=plt_name,
-    save=save, plot=plot, filename=filename, orientation_relationship=orientation_relationship).run()
+    subs_flag=subs_flag, subs_file_flag=subs_file_flag, subs_file=subs_file, t_mu=t_mu,
+    subs_transformable_phase_ids=subs_transformable_phase_ids,
+    subs_lower_percentile=subs_lower_percentile, subs_upper_percentile=subs_upper_percentile,
+    subs_min_packet_cells=subs_min_packet_cells, subs_min_block_cells=subs_min_block_cells,
+    subs_min_cells_per_packet=subs_min_cells_per_packet,
+    subs_min_cells_per_block=subs_min_cells_per_block,
+    subs_orientation_mode=subs_orientation_mode,
+    subs_parent_orientation_file=subs_parent_orientation_file,
+    subs_child_orientation_file=subs_child_orientation_file).run()
 

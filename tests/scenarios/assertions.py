@@ -7,7 +7,9 @@ module object -- no need to edit any of the Case_*.py files themselves to gain r
 """
 import os
 
+import numpy as np
 import pandas as pd
+import pyvista as pv
 
 from dragen.utilities.InputInfo import RveInfo
 
@@ -33,6 +35,7 @@ def verify_rve_output(module) -> None:
 
     _verify_phase_ratios(module, store_path)
     _verify_solver_output(module, store_path)
+    _verify_substructure_output(module, store_path)
 
 
 def _verify_phase_ratios(module, store_path: str) -> None:
@@ -64,3 +67,67 @@ def _verify_solver_output(module, store_path: str) -> None:
     if module.moose_flag:
         for name in ('EulerAngles.txt', 'phases.txt'):
             assert os.path.isfile(os.path.join(store_path, name)), f"missing MOOSE output {name}"
+
+
+def _verify_substructure_output(module, store_path: str) -> None:
+    """Substructures run for DAMASK and Abaqus only (dragen/main3D.py); MOOSE has no hook."""
+    if not getattr(module, 'subs_flag', False):
+        return
+    if not (module.abaqus_flag or module.damask_flag):
+        return
+
+    subs_dir = os.path.join(store_path, 'Postprocessing', 'Substructure')
+    assert os.path.isdir(subs_dir), f"missing substructure output directory {subs_dir}"
+
+    for name in ('substructure_config.yaml', 'rve_with_orientations.vtk',
+                 'combined_phase_grain_packet_block.png'):
+        assert os.path.isfile(os.path.join(subs_dir, name)), f"missing substructure output {name}"
+
+    mesh = pv.read(os.path.join(subs_dir, 'rve_with_orientations.vtk'))
+
+    for array in ('GrainID', 'phaseID', 'PacketID', 'BlockID', 'SubstructureFlag',
+                  'phi1', 'PHI', 'phi2'):
+        assert array in mesh.cell_data, f"rve_with_orientations.vtk is missing {array}"
+
+    _assert_substructure_invariant(mesh)
+
+    transformable = set(RveInfo.subs_transformable_phase_ids)
+    has_transformable_phase = any(module.phase_ratio.get(pid, 0) > 0 for pid in transformable)
+
+    sub_flag = np.asarray(mesh.cell_data['SubstructureFlag']).astype(int)
+    block_id = np.asarray(mesh.cell_data['BlockID']).astype(int)
+
+    if has_transformable_phase:
+        assert np.any(sub_flag == 1), (
+            f"phases {sorted(transformable)} are present but no cell was substructured")
+        assert block_id.max() > 0, "substructure ran but produced no blocks"
+    else:
+        # Nothing to transform: the pipeline must run through and leave every cell untouched.
+        assert not np.any(sub_flag == 1), "cells were substructured despite no transformable phase"
+
+    if module.abaqus_flag:
+        for name in ('substructure.inp', 'SubstructureMaterials.inp', 'SubstructureSections.inp'):
+            assert os.path.isfile(os.path.join(store_path, name)), f"missing Abaqus deck file {name}"
+
+        deck = open(os.path.join(store_path, 'DRAGen_RVE.inp')).read()
+        assert '*Include, input=substructure.inp' in deck, "DRAGen_RVE.inp does not include substructure.inp"
+        assert '*Include, input=SubstructureMaterials.inp' in deck, (
+            "DRAGen_RVE.inp does not include SubstructureMaterials.inp")
+        # Per-grain and per-block sections would put every element in two solid sections.
+        assert '*Solid Section' not in deck, (
+            "DRAGen_RVE.inp still writes per-grain sections alongside the per-block ones")
+
+
+def _assert_substructure_invariant(mesh) -> None:
+    """SubstructureFlag == 1 -> PacketID/BlockID > 0; == 0 -> both exactly -1."""
+    sub_flag = np.asarray(mesh.cell_data['SubstructureFlag']).astype(int)
+
+    for name in ('PacketID', 'BlockID'):
+        ids = np.asarray(mesh.cell_data[name]).astype(int)
+        assert np.all(ids[sub_flag == 1] > 0), f"substructure cells with {name} <= 0"
+        assert np.all(ids[sub_flag == 0] == -1), f"non-substructure cells with {name} != -1"
+
+        positive = np.unique(ids[ids > 0])
+        if positive.size:
+            assert np.array_equal(positive, np.arange(1, positive.max() + 1)), (
+                f"{name} is not a gapless 1..N range")

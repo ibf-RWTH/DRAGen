@@ -46,14 +46,10 @@ Pearlite = r'./ExampleInput/Ferrite/TrainedData_Ferrite.pkl'
 #Bands = r'./ExampleInput/Banding/TrainedData_Band.pkl'
 
 
-
 # test pearlite phase
 # Substructure params
 subs_flag = False
-equiv_d = 5
-p_sigma = 0.1
 t_mu = 1.0
-b_sigma = 0.1
 subs_file_flag = False
 subs_file = './ExampleInput/Substructure/example_block_inp.csv'
 
@@ -76,20 +72,6 @@ files = {1: None, 2: None, 3: Pearlite, 4: None, 5:None, 6: None, 7: None}  # ['
 phase_ratio = {1: 0, 2: 0, 3: 1, 4: 0, 5: 0, 6: 0, 7:0}
 phases = ['Ferrite', 'Martensite', 'Pearlite', 'Bainite', 'Austenite', 'Inclusions', 'Bands']
 
-#Band thickness
-upper = None
-lower = None
-
-circularity = 1
-decreasing_factor = 0.95
-
-#Plot and save settings
-plot = False
-plt_name = 'substructure_plot.png'
-
-save = True
-filename = 'substructure_plot.png'
-orientation_relationship = 'KS'
 
 "test git"
 '''
@@ -107,8 +89,5 @@ Run(dimension=dimension, box_size=box_size, box_size_y=box_size_y, box_size_z=bo
     root=root, info_box_obj=None, progress_obj=None, phase_ratio=phase_ratio,
     file_dict=files, phases=phases, number_of_bands=number_of_bands, upper_band_bound=upper_band_bound,
     lower_band_bound=lower_band_bound, band_orientation=band_orientation, band_filling=band_filling,
-    subs_flag=subs_flag, subs_file_flag=subs_file_flag,
-    subs_file=subs_file, equiv_d=equiv_d, p_sigma=p_sigma, t_mu=t_mu, b_sigma=b_sigma,
-    decreasing_factor=decreasing_factor, lower=lower, upper=upper, circularity=circularity, plt_name=plt_name,
-    save=save, plot=plot, filename=filename, orientation_relationship=orientation_relationship).run()
+    subs_flag=subs_flag, subs_file_flag=subs_file_flag, subs_file=subs_file, t_mu=t_mu).run()
 

@@ -34,28 +34,9 @@ class Worker(QObject):
 
         self.subs_flag = ARGS['subs_flag']
         self.subs_file_flag = ARGS['subs_file_flag']
-        self.subs_file = ARGS['subs_file']
-        self.orientation_relationship = ARGS['orientation_relationship']  # Default: 'KS', options:
-        # self.sub_run = ARGS['subrun']
+        self.subs_file = ARGS['subs_file']  # measured block thicknesses, used if subs_file_flag
+        self.t_mu = ARGS['t_mu']  # mean block thickness, used if not subs_file_flag
 
-        self.pak_file = ARGS['pag_file'] # TODO: @Linghao make dict for several substructures also add radio button in GUI to select the substructured phase
-        self.equiv_d = ARGS['equiv_d']
-        self.circularity = ARGS['circularity']
-        self.p_sigma = ARGS['p_sigma']
-
-        self.block_file = ARGS['block_file']  # TODO: Check what the difference between block_file and subs_file actually is?!
-        self.t_mu = ARGS['t_mu']  # mean blockthickness
-        self.b_sigma = ARGS['b_sigma']  # block_thickness variance
-        self.decreasing_facotr = ARGS['decreasing_factor']  # The tilt thing
-        self.lower = ARGS['lower']  # min value blockthickness (cutoff)
-        self.upper = ARGS['upper']  # max value blockthickness (cutoff)
-        self.plt_name = ARGS['plt_name']  # just set a fixed name substructure fig
-        self.save = ARGS['save']  # path to substruckture fig
-        self.plot = ARGS['plot']  # Set to True always
-        self.filename = ARGS['filename']  # substruct.csv
-
-
-        ###
         self.phases = ARGS['phases']
         self.abaqus_flag = ARGS['abaqus_flag']
         self.damask_flag = ARGS['damask_flag']
@@ -83,10 +64,6 @@ class Worker(QObject):
                       phases=self.phases, number_of_bands=self.number_of_bands, upper_band_bound=self.upper_band_bound,
                       lower_band_bound=self.lower_band_bound, band_orientation=self.band_orientation,
                       band_filling=self.band_filling, subs_flag=self.subs_flag,
-                      subs_file_flag=self.subs_file_flag, subs_file=self.subs_file, equiv_d=self.equiv_d,
-                      p_sigma=self.p_sigma, t_mu=self.t_mu, b_sigma=self.b_sigma,
-                      decreasing_factor=self.decreasing_facotr, lower=self.lower, upper=self.upper,
-                      circularity=self.circularity, plt_name=self.plt_name, save=self.save, plot=self.plot,
-                      filename=self.filename, orientation_relationship=self.orientation_relationship)
+                      subs_file_flag=self.subs_file_flag, subs_file=self.subs_file, t_mu=self.t_mu)
         run_obj.run()
         self.finished.emit()

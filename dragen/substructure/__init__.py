@@ -1,7 +1,4 @@
-# _*_ coding: utf-8 _*_
+"""Martensite substructure generation: parent grains -> packets -> blocks -> orientations.
+
+See dragen/substructure/run.py for the pipeline and the order the stages run in.
 """
-Time:     2021/10/24 21:52
-Author:   Linghao Kong
-Version:  V 0.1
-File:     __init__.py
-Describe: Write during the internship at IEHK RWTH"""

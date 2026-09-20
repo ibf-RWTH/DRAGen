@@ -44,6 +44,9 @@ class RveInfo:
     number_of_rves: int = None
     """choose a number of RVEs to be generated"""
 
+    generation_time: float = None
+    """overall generation time in seconds for the current RVE (set by Run.run() after each RVE completes)"""
+
     dimension: int = None
     """ choose as 2 or 3 for either a 2D or 3D RVE """
 
@@ -92,33 +95,39 @@ class RveInfo:
     progress_obj = None
     """internal object for GUI"""
 
-    # substructure generation parameters
-    num_cores: int = 1  # if > 1, multiprocessing used
-    # packet related parameters
-    pak_file: str = None
-    equiv_d: float = 2.0
-    circularity: float = 1.0
-    p_sigma: float = 0.1
-    # block related parameters
-    block_file: str = None
-    t_mu: float = 1.0
-    b_sigma: float = 0.1
-    decreasing_factor: float = 0.95  # check later
-    lower: float = 0.5
-    upper: float = 1.5
-    plt_name: str = None
-    save = None
-    plot = None
-    filename: str = None
     fig_path: str = None
     gen_path: str = None
     post_path: str = None
 
-    orientation_relationship: str = None
+    # substructure generation parameters
+    num_cores: int = 1  # if > 1, multiprocessing used
+    t_mu: float = 1.0
+    """mean block thickness in micrometres, used when subs_file_flag is False"""
     subs_file_flag: bool = None
-    subs_file: bool = None
+    """if True, block thicknesses are sampled from subs_file instead of from t_mu"""
+    subs_file: str = None
+    """csv of measured block thicknesses; needs a 'block_thickness' column"""
     subs_flag: bool = None
-    sub_run = None
+
+    # substructure pipeline parameters (dragen/substructure/), mirrored into SubsConfig
+    subs_transformable_phase_ids: list = None
+    """phase ids that get packets/blocks; everything else stays unsubstructured. Default [2, 3, 4]"""
+    subs_lower_percentile: float = 5.0
+    subs_upper_percentile: float = 95.0
+    """percentile clip applied to the measured block thickness distribution (subs_file)"""
+    subs_min_packet_cells: int = 100
+    """target cells per packet for the k-means split of an interior grain"""
+    subs_min_block_cells: int = 10
+    """packets with fewer cells than this are kept as a single block instead of being sliced"""
+    subs_min_cells_per_packet: int = 5
+    subs_min_cells_per_block: int = 5
+    """packets/blocks below this size are merged into a neighbour"""
+    subs_orientation_mode: str = 'KS'
+    """'KS' for the 24 ideal Kurdjumov-Sachs variants, 'experimental' for a measured OR"""
+    subs_parent_orientation_file: str = None
+    """csv of parent (PAG) orientations; defaults to the phase input of the first transformable phase"""
+    subs_child_orientation_file: str = None
+    """csv of measured block orientations with grain_id, required for 'experimental' mode"""
 
     phases: list = None
     """List of phase names"""
@@ -196,9 +205,6 @@ class RveInfo:
 
     LOGGER = logging.getLogger("RVE-Gen")
     RESULT_LOG = logging.getLogger("RVE-Result")
-
-    ######### Constants defined outside run #########
-    rve_data_substructure = None
 
     ######### Fixed Constants can only be changed here #########
 

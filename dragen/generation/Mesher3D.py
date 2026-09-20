@@ -43,7 +43,12 @@ class AbaqusMesher(MeshingHelper):
             f.write('*Section Controls, name = EC - 1, hourglass = Enhanced\n')
             f.write('1., 1., 1.\n')
         f.write('** INCLUDE MATERIAL FILE **\n')
-        f.write('*Include, input=Materials.inp\n')
+        if RveInfo.subs_flag:
+            # Per-block materials replace the per-grain ones; Materials.inp is still written by
+            # write_material_def() but is not part of the deck in this case.
+            f.write('*Include, input=SubstructureMaterials.inp\n')
+        else:
+            f.write('*Include, input=Materials.inp\n')
         f.write('** INCLUDE STEP FILE **\n')
         f.write('*Include, input=Step.inp\n')
         f.close()
@@ -1489,7 +1494,17 @@ class AbaqusMesher(MeshingHelper):
                 f.write(' {},'.format(cell))
             f.write('\n')
 
-        for i in range(self.n_grains):
+        if RveInfo.subs_flag:
+            # One section per block (dragen/substructure/export_abaqus.py) replaces the per-grain
+            # sections below; writing both would put every element in two solid sections. Those
+            # files are produced right after this mesher run, Abaqus resolves the includes later.
+            f.write('*Include, input=substructure.inp\n')
+            f.write('*Include, input=SubstructureSections.inp\n')
+            section_grains = []
+        else:
+            section_grains = range(self.n_grains)
+
+        for i in section_grains:
             nGrain = i + 1
             if self.rve.loc[GRID.cell_data['GrainID'] == nGrain].phaseID.values[0] == 1:
                 f.write('** Section: Section - {}\n'.format(nGrain))

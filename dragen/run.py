@@ -4,12 +4,12 @@ import sys
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import math
+import time
 import matplotlib.pyplot as plt
 
 
 from dragen.main2D import DataTask2D
 from dragen.main3D import DataTask3D
-from dragen.substructure.run import Run as SubRun
 from dragen.utilities.Helpers import HelperFunctions
 from dragen.utilities.InputInfo import RveInfo
 
@@ -66,19 +66,20 @@ class Run(HelperFunctions):
             subs_flag: bool,
             subs_file_flag: bool,
             subs_file: str,
-            equiv_d: float,
-            p_sigma: float,
             t_mu: float,
-            b_sigma: float,
-            decreasing_factor: float,
-            lower: any([float, None]),
-            upper: any([float, None]),
-            circularity: float,
-            plt_name: str,
-            save: bool,
-            plot: bool,
-            filename: str,
-            orientation_relationship: str
+
+            # substructure pipeline parameters (dragen/substructure/). Optional with defaults so
+            # existing callers -- the GUI worker, DRAGen_nogui.py, the test scenarios -- keep working.
+            subs_transformable_phase_ids: list = None,
+            subs_lower_percentile: float = 5.0,
+            subs_upper_percentile: float = 95.0,
+            subs_min_packet_cells: int = 100,
+            subs_min_block_cells: int = 10,
+            subs_min_cells_per_packet: int = 5,
+            subs_min_cells_per_block: int = 5,
+            subs_orientation_mode: str = 'KS',
+            subs_parent_orientation_file: str = None,
+            subs_child_orientation_file: str = None,
     ):
 
         super().__init__()
@@ -114,22 +115,24 @@ class Run(HelperFunctions):
         RveInfo.gui_flag = gui_flag
         RveInfo.infobox_obj = info_box_obj
         RveInfo.progress_obj = progress_obj
-        RveInfo.equiv_d = equiv_d
-        RveInfo.p_sigma = p_sigma
         RveInfo.t_mu = t_mu
-        RveInfo.b_sigma = b_sigma
-        RveInfo.decreasing_factor = decreasing_factor
-        RveInfo.lower = lower
-        RveInfo.upper = upper
-        RveInfo.circularity = circularity
-        RveInfo.plt_name = plt_name
-        RveInfo.save = save
-        RveInfo.plot = plot
-        RveInfo.filename = filename
-        RveInfo.orientation_relationship = orientation_relationship
         RveInfo.subs_flag = subs_flag
         RveInfo.subs_file_flag = subs_file_flag
         RveInfo.subs_file = subs_file
+        RveInfo.subs_transformable_phase_ids = (subs_transformable_phase_ids
+                                                if subs_transformable_phase_ids is not None
+                                                else [RveInfo.PHASENUM['Martensite'],
+                                                      RveInfo.PHASENUM['Pearlite'],
+                                                      RveInfo.PHASENUM['Bainite']])
+        RveInfo.subs_lower_percentile = subs_lower_percentile
+        RveInfo.subs_upper_percentile = subs_upper_percentile
+        RveInfo.subs_min_packet_cells = subs_min_packet_cells
+        RveInfo.subs_min_block_cells = subs_min_block_cells
+        RveInfo.subs_min_cells_per_packet = subs_min_cells_per_packet
+        RveInfo.subs_min_cells_per_block = subs_min_cells_per_block
+        RveInfo.subs_orientation_mode = subs_orientation_mode
+        RveInfo.subs_parent_orientation_file = subs_parent_orientation_file
+        RveInfo.subs_child_orientation_file = subs_child_orientation_file
         RveInfo.phases = phases
         RveInfo.abaqus_flag = abaqus_flag
         RveInfo.damask_flag = damask_flag
@@ -145,6 +148,10 @@ class Run(HelperFunctions):
         RveInfo.roughness_flag = False
         RveInfo.band_filling = band_filling
         RveInfo.root = root
+
+        if subs_flag and dimension == 2:
+            RveInfo.LOGGER.warning('substructure generation is only implemented for 3D RVEs, '
+                                   'subs_flag is ignored for dimension=2')
 
         RveInfo.n_pts = math.ceil(float(box_size) * RveInfo.resolution)
         if RveInfo.n_pts % 2 != 0:
@@ -211,23 +218,25 @@ class Run(HelperFunctions):
             RveInfo.infobox_obj.emit("the chosen resolution lead to {}^{} "
                                      "points in the grid".format(str(RveInfo.n_pts), str(RveInfo.dimension)))
 
-        if RveInfo.subs_flag:
-            RveInfo.sub_run = SubRun()
-
         if RveInfo.dimension == 2:
 
             obj2D = DataTask2D()
 
             for i in range(RveInfo.number_of_rves):
+                rve_start_time = time.time()
                 self.initializations(i)
                 total_df = obj2D.grain_sampling()
                 rve = obj2D.rve_generation(total_df)
                 obj2D.post_processing(rve)
+                RveInfo.generation_time = time.time() - rve_start_time
+                print(f"RVE {i} generation took {RveInfo.generation_time:.2f} seconds")
+                obj2D.write_setup_file()
 
         elif RveInfo.dimension == 3:
             # Kann Gan und nicht GAN
             obj3D = DataTask3D()
             for i in range(RveInfo.number_of_rves):
+                rve_start_time = time.time()
                 self.initializations(i)
                 if RveInfo.calibration_rve_flag:
                     print('I will generate only a calibration RVE')
@@ -236,6 +245,9 @@ class Run(HelperFunctions):
                     total_df, ex_df = obj3D.grain_sampling()
                     rve, periodic_rve_df = obj3D.rve_generation(total_df)
                     obj3D.post_processing(rve, total_df, ex_df, periodic_rve_df)
+                RveInfo.generation_time = time.time() - rve_start_time
+                print(f"RVE {i} generation took {RveInfo.generation_time:.2f} seconds")
+                obj3D.write_setup_file()
 
 
         else:

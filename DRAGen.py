@@ -1513,11 +1513,8 @@ class Ui_MainWindow(object):
                 'number_of_bands': 0, 'lower_band_bound': None, 'upper_band_bound': None, 'band_orientation': None,
                 'band_filling': None,
                 'file_dict': {}, 'phase_ratio': {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7:0},
-                'subs_flag': False, 'subs_file_flag': False,
-                'subs_file': None, 'orientation_relationship': None, 'subrun': None, 'pag_file': None, 'equiv_d': None,
-                'circularity': 1, 'p_sigma': 0.1, 'block_file': None, 't_mu': None, 'b_sigma': 0.1,
-                'decreasing_factor': 0.95, 'lower': None, 'upper': None, 'plt_name': None, 'save': True, 'plot': None,
-                'filename': 'substruct_data.csv', 'gui_flag': True,
+                'subs_flag': False, 'subs_file_flag': False, 'subs_file': None, 't_mu': None,
+                'gui_flag': True,
                 'files': {1: None, 2: None, 3: None, 4: None, 5: None, 6: None},  
                 'phase2iso_flag': {1:self.phase2iso_ferrite_checkbox.isChecked(), 2:self.phase2iso_martensite_checkbox.isChecked(), 3:self.phase2iso_Pearlite_checkbox.isChecked(), 
                                    4:self.phase2iso_Bainite_checkbox.isChecked(), 5:self.phase2iso_Austenite_checkbox.isChecked()}}
@@ -1692,90 +1689,19 @@ class Ui_MainWindow(object):
             return
 
         if self.substructure_button.isChecked():
-            if self.substructure_filemode_radio.isChecked():
-                ARGS['subs_file_flag'] = True
-                ARGS['subs_flag'] = True
-                ARGS['subs_file'] = self.substructure_file_lineEdit_file.text()
-                ARGS['equiv_d'] = None
-                ARGS['t_mu'] = None
-                ARGS['circularity'] = 1.0
-                ARGS['decreasing_factor'] = 0.95
-                if self.substructure_decreasing_fact_checkBox_file.isChecked():
-                    ARGS['decreasing_factor'] = self.substructure_decreasing_fact_SpinBox_file.value()
-                ARGS['p_sigma'] = 0.01
-                if self.substructure_packet_size_checkBox_file.isChecked():
-                    ARGS['p_sigma'] = self.substructure_packet_size_SpinBox_file.value()
-                ARGS['b_sigma'] = 0.01
-                if self.substructure_block_thickness_checkBox_file.isChecked():
-                    ARGS['b_sigma'] = self.substructure_block_thickness_SpinBox_file.value()
-                ARGS['lower'] = None
-                if self.substructure_min_block_thickness_checkBox_file.isChecked():
-                    ARGS['lower'] = self.substructure_min_block_thickness_SpinBox_file.value()
-                ARGS['upper'] = None
-                if self.substructure_max_block_thickness_checkBox_file.isChecked():
-                    ARGS['upper'] = self.substructure_max_block_thickness_SpinBox_file.value()
-                ARGS['save'] = True
-                if self.substructure_save_result_checkBox_file.isChecked():
-                    ARGS['save'] = True
-                    ARGS['filename'] = self.substructure_save_result_lineEdit_file.text()
-                else:
-                    ARGS['save'] = False
-            else:
-                ARGS['subs_flag'] = True
-                ARGS['equiv_d'] = self.substructure_packet_eq_d_SpinBox_user.value()
-                ARGS['t_mu'] = self.substructure_block_thickness_SpinBox_user.value()
-                ARGS['subs_file_flag'] = False
-                ARGS['decreasing_factor'] = 0.95
-                if self.substructure_decreasing_fact_checkBox_user.isChecked():
-                    ARGS['decreasing_factor'] = self.substructure_decreasing_fact_SpinBox_user.value()
-                ARGS['circularity'] = 1.0
-                if self.substructure_circularity_checkBox_user.isChecked():
-                    ARGS['circularity'] = self.substructure_circularity_SpinBox_user.value()
-                ARGS['p_sigma'] = 0.01
-                if self.substructure_packet_size_checkBox_user.isChecked():
-                    ARGS['p_sigma'] = self.substructure_packet_size_SpinBox_user.value()
-                ARGS['b_sigma'] = 0.01
-                if self.substructure_block_thickness_sigma_checkBox_user.isChecked():
-                    ARGS['b_sigma'] = self.substructure_block_thickness_sigma_SpinBox_user.value()
-                ARGS['lower'] = None
-                if self.substructure_min_block_thickness_checkBox_user.isChecked():
-                    ARGS['lower'] = self.substructure_min_block_thickness_SpinBox_user.value()
-                ARGS['upper'] = None
-                if self.substructure_max_block_thickness_checkBox_user.isChecked():
-                    ARGS['upper'] = self.substructure_max_block_thickness_SpinBox_user.value()
-                ARGS['save'] = True
-                if self.substructure_save_result_checkBox_user.isChecked():
-                    ARGS['save'] = True
-                    ARGS['filename'] = self.substructure_save_result_lineEdit_user.text()
-                else:
-                    ARGS['save'] = False
-                ARGS['subs_file'] = None
-
-        # if self.roughness_button.isChecked(): # TODO: Nach release hinzufügen?
-
-        if self.substructure_button.isChecked():
             ARGS['subs_flag'] = True
             if self.substructure_filemode_radio.isChecked():
+                # Block thicknesses are sampled from the measured distribution in the file.
                 ARGS['subs_file_flag'] = True
                 ARGS['subs_file'] = self.substructure_file_lineEdit_file.text()
-                ARGS['p_sigma'] = self.substructure_packet_size_SpinBox_file.value()
-                ARGS['b_sigma'] = self.substructure_block_thickness_SpinBox_file.value()
-                ARGS['decreasing_factor'] = self.substructure_decreasing_fact_SpinBox_file.value()
-                ARGS['lower'] = self.substructure_min_block_thickness_SpinBox_file.value()
-                ARGS['upper'] = self.substructure_max_block_thickness_SpinBox_file.value()
-                ARGS['save'] = self.substructure_save_result_lineEdit_file.text()
-            elif self.substructure_user_mode_radio.isChecked():
-                ARGS['subs_file_flag'] = False # TODO: @Linghao please check this
-                ARGS['equiv_d'] = self.substructure_packet_eq_d_SpinBox_user.value()
-                ARGS['p_sigma'] = self.substructure_packet_size_SpinBox_user.value()
-                ARGS['circularity'] = self.substructure_circularity_SpinBox_user.value()
-                ARGS['block_thickness'] = None  # TODO: @Linghao please check this
+                ARGS['t_mu'] = None
+            else:
+                # Block thicknesses come from a single mean value.
+                ARGS['subs_file_flag'] = False
+                ARGS['subs_file'] = None
+                ARGS['t_mu'] = self.substructure_block_thickness_SpinBox_user.value()
 
-                ARGS['decreasing_factor'] = self.substructure_decreasing_fact_SpinBox_user.value()
-                ARGS['b_sigma'] = self.substructure_block_thickness_SpinBox_user.value()
-                ARGS['lower'] = self.substructure_min_block_thickness_SpinBox_user.value()
-                ARGS['upper'] = self.substructure_max_block_thickness_SpinBox_user.value()
-                ARGS['save'] = self.substructure_save_result_lineEdit_user.text()
+        # if self.roughness_button.isChecked(): # TODO: Nach release hinzufügen?
 
         if self.abaqus_button.isChecked():
             ARGS['abaqus_flag'] = True

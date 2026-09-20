@@ -191,6 +191,4 @@ class DataTask2D(HelperFunctions):
                 RveInfo.infobox_obj.emit('checkout the evaluation report of the rve stored at:\n'
                                          '{}/Postprocessing'.format(RveInfo.store_path))
 
-        if RveInfo.subs_flag:
-            RveInfo.sub_run.post_processing(k=3)
         RveInfo.LOGGER.info("RVE generation process has successfully completed...")

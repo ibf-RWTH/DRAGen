@@ -12,7 +12,6 @@ import time
 from dragen.generation.DiscreteRsa3D import DiscreteRsa3D
 from dragen.generation.DiscreteTesselation3D import Tesselation3D
 from dragen.utilities.Helpers import HelperFunctions
-from dragen.generation.mesh_subs import SubMesher
 from dragen.generation.Mesher3D import AbaqusMesher
 from dragen.generation.mooseMesher import MooseMesher
 from dragen.postprocessing.voldistribution import PostProcVol
@@ -429,6 +428,10 @@ class DataTask3D(HelperFunctions):
                                     rve=periodic_rve,
                                     spacing=RveInfo.box_size / 1000000)
 
+                if RveInfo.subs_flag:
+                    # Rewrites material.yaml and grid.vti with one material per block.
+                    substrucRun().run_damask(store_path=RveInfo.store_path)
+
             if RveInfo.moose_flag:
                 print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
                 print(np.unique(grains_df['phaseID'].values))
@@ -443,27 +446,12 @@ class DataTask3D(HelperFunctions):
                 phases.to_csv(path_or_buf=RveInfo.store_path+'/phases.txt',  header=False, index=False)
 
             if RveInfo.abaqus_flag:
-                mesher_obj = None
-                if RveInfo.subs_flag:
-                    print("substructure generation is turned on...")
-                    # returns rve df containing substructures
-                    # print("phase id is ,", grains_df.iloc[0]["phaseID"])
-                    subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)
-                    # try:
-                    #     subs_rve = substrucRun().run(rve_df=periodic_rve_df, grains_df=grains_df)
-                    # except Exception as e:
-                    #     print(e)
-                    mesher_obj = SubMesher(rve_shape=rve_shape, rve=subs_rve, subs_df=grains_df)
+                AbaqusMesher(rve_shape=rve_shape, rve=periodic_rve_df, grains_df=grains_df).run()
 
-                elif RveInfo.subs_flag == False:
-                    print('######subsflag false######')
-                    print("substructure generation is turned off...")
-                    print('###INclusion DF###')
-                    print(grains_df.loc[grains_df['GrainID']<-200])
-                    print('######')
-                    mesher_obj = AbaqusMesher(rve_shape=rve_shape, rve=periodic_rve_df, grains_df=grains_df)
-                if mesher_obj:
-                    mesher_obj.run()
+                if RveInfo.subs_flag:
+                    # Adds the per-block element sets, materials and sections that
+                    # AbaqusMesher.make_assembly already *Includes into DRAGen_RVE.inp.
+                    substrucRun().run_abaqus(store_path=RveInfo.store_path)
         else:
             print('Tessellation did not succeed')
         return periodic_rve, periodic_rve_df
@@ -606,9 +594,6 @@ class DataTask3D(HelperFunctions):
                 RveInfo.infobox_obj.emit('checkout the evaluation report of the rve stored at:\n'
                                          '{}/Postprocessing'.format(RveInfo.store_path))
 
-        if RveInfo.subs_flag:
-            substrucRun().post_processing(k=3)
-        super().write_setup_file()
         RveInfo.LOGGER.info("RVE generation process has successfully completed...")
 
     def calibration_rve(self):
