@@ -228,7 +228,6 @@ def write_load(store_path: str) -> None:
 
 
 def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
-    l = np.array([0, 0, 1])
     if rve.dtype != np.int64:
         rve = rve.astype('int64')
     rve = rve - 1
@@ -245,10 +244,27 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
 
     grid.save(fname=store_path + '/grid.vti', compress=True)
 
+    visualize_srve(store_path)
+
+
+def visualize_srve(store_path: str) -> None:
+    """(Re)build the 'phases'/'IPF_[0 0 1]' cell data on grid.vti and plot the sRVE.
+
+    grid.vti as written by damask.GeomGrid.save() only carries the 'material' field, so this reads
+    it back, adds the phase/IPF-color annotation (needed by
+    dragen.substructure.adapters, which reads the 'phases' field back off grid.vti), plots it via
+    viz.plot_srve, then re-saves grid.vti with the annotation included.
+
+    Must be called again after dragen.substructure.export_damask writes the substructured
+    grid.vti/material.yaml (one material per block) -- that write only carries 'material', so the
+    plot and the on-disk annotation from the call inside write_grid() go stale otherwise.
+    """
+    l = np.array([0, 0, 1])
+
     grid2 = pv.read(os.path.join(store_path, r'grid.vti'))
-    
-    grid2['phi'] = [1 for _ in range(rve.shape[0]*rve.shape[1]*rve.shape[2])]
- 
+
+    grid2['phi'] = [1 for _ in range(grid2['material'].__len__())]
+
     with open(os.path.join(store_path, r'material.yaml'), 'r') as ym:
         ym = yaml.safe_load(ym)
     
@@ -317,8 +333,6 @@ def write_grid(store_path: str, rve: np.ndarray, spacing: float) -> None:
             phase_array[points] = 7
     
     grid2['phases'] = phase_array
-
-    # Placeholder: Add Subs-Code here
 
     viz.plot_srve(grid2, store_path)
     grid2.save(os.path.join(store_path, r'grid.vti'))

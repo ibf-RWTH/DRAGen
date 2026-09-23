@@ -431,6 +431,10 @@ class DataTask3D(HelperFunctions):
                 if RveInfo.subs_flag:
                     # Rewrites material.yaml and grid.vti with one material per block.
                     substrucRun().run_damask(store_path=RveInfo.store_path)
+                    # substrucRun.run_damask() overwrote grid.vti with only the 'material' field, so
+                    # the sRVE plot from write_grid() above is stale and its 'phases'/IPF annotation
+                    # is gone -- rebuild both against the now-final, per-block grid/material.
+                    spectral.visualize_srve(store_path=RveInfo.store_path)
 
             if RveInfo.moose_flag:
                 print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')

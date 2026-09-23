@@ -17,6 +17,8 @@ Phases:
 import pyvista as pv
 import numpy as np
 
+from dragen.utilities.InputInfo import RveInfo
+
 def plot_srve(grid, path):
     # --- Farb- und Transparenz-Konfiguration pro Phase ---
     # Solid-Color Phasen: RGB-Werte 0–255
@@ -31,6 +33,11 @@ def plot_srve(grid, path):
     # --- Plotter aufsetzen ---
     plotter = pv.Plotter(window_size=[1024, 1024], off_screen=True)
 
+    # Martensite/Pearlite/Bainite (2/3/4) only carry a meaningful orientation once the
+    # substructure pipeline has run -- otherwise they're still the sampled/random parent
+    # orientation, which isn't useful to show as an IPF map (see spectral.write_material).
+    ipf_phase_ids = {1, 2, 3, 4} if RveInfo.subs_flag else {1}
+
     # --- Erst alle opaken Phasen ---
     for phase_id in [1, 2, 3, 4, 7]:
         indices = np.where(grid['phases'] == phase_id)[0]
@@ -38,7 +45,7 @@ def plot_srve(grid, path):
             continue
         sub_grid = grid.extract_cells(indices)
 
-        if phase_id == 1:
+        if phase_id in ipf_phase_ids:
             plotter.add_mesh(sub_grid, scalars='IPF_[0 0 1]', rgb=True,
                              opacity=1.0, show_scalar_bar=False)
         else:
