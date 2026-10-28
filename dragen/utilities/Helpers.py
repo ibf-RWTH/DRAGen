@@ -241,49 +241,58 @@ class HelperFunctions:
     def sample_input_3D(self, data, bs, phase_id, constraint=None) -> pd.DataFrame:
         if constraint is None:
             constraint = 10000
-        else:
-            constraint = constraint
+
         max_volume = bs**3
         min_rad = RveInfo.bin_size
 
+        # Callers rely on this mutating their dataframe in place to add 'volume'
+        # (e.g. main3D.py keeps using phase_input_df afterwards via all_phases_input_df,
+        # which postprocessing/voldistribution.py reads 'volume' from).
         data["volume"] = 4/3*np.pi*data["a"]*data["b"]*data["c"]
-        data = data.loc[data["a"] < RveInfo.box_size/2]
+        data = data.loc[data["a"] < RveInfo.box_size/2].reset_index(drop=True)
 
-        grain_vol = 0
-        old_idx = list()
-        input_df = pd.DataFrame()
-        print('len:', data.__len__())
+        # Pull columns into numpy once so the sampling loop below never touches pandas
+        # (no .loc/.drop/.concat per grain) - those pandas calls each copy the whole
+        # frame, which is O(n) per draw and O(n^2) overall for n grains.
+        a_arr = data["a"].to_numpy()
+        b_arr = data["b"].to_numpy()
+        c_arr = data["c"].to_numpy()
+        vol_arr = data["volume"].to_numpy()
+
+        n = len(data)
+        print('len:', n)
+        draw_order = np.random.permutation(n)  # sampling without replacement, in random order
+
+        grain_vol = 0.0
+        chosen_idx = []
+        pos = 0
         while (grain_vol > 1.05 * max_volume) or (grain_vol < 1.0 * max_volume):
 
-            if len(data) == 0:
+            if grain_vol > 1.05 * max_volume:
+                last = chosen_idx.pop()
+                grain_vol -= vol_arr[last]
+                continue
+
+            if pos >= n:
                 RveInfo.LOGGER.info('Input data was exceeded not enough data!!')
                 break
 
-            if grain_vol > 1.05*max_volume:
+            idx = draw_order[pos]
+            pos += 1
 
-                grain_vol -= input_df["volume"].iloc[-1]
+            a_i, b_i, c_i = a_arr[idx], b_arr[idx], c_arr[idx]
+            if (a_i > constraint*2) or (b_i > constraint) or (c_i > constraint*2):  # Dickenunterschied für die Bänbder
+                continue
+            elif (a_i < min_rad or b_i < min_rad or c_i < min_rad) and phase_id != 7:
+                continue
 
-                input_df = input_df[:-1]  # delete last row if volume was exceeded
-                old_idx.pop(-1)
+            chosen_idx.append(idx)
+            grain_vol += vol_arr[idx]
+            print(grain_vol / max_volume)
 
-            elif grain_vol < max_volume:
-                idx = np.random.randint(0, data.__len__(), dtype='int64')
-
-                grain = data.loc[data.index[idx]]
-                grain_df = pd.DataFrame(grain).transpose()
-                data = data.drop(labels=data.index[idx], axis=0)
-                if (grain['a'] > constraint*2) or (grain['b'] > constraint) or (grain['c'] > constraint*2):  # Dickenunterschied für die Bänbder
-                    continue
-                elif (grain["a"] < min_rad or grain["b"] < min_rad or grain["c"] < min_rad) and phase_id != 7:
-                    continue
-
-                old_idx.append(idx)
-                vol = grain["volume"]
-                grain_vol += vol
-                input_df = pd.concat([input_df, grain_df])
-
+        input_df = data.iloc[chosen_idx].reset_index(drop=True)
         print('Volume of df', input_df['volume'].sum())
-        input_df['old_gid'] = old_idx # get old idx so that the substructure generator knows which grains are chosen in the input data
+        input_df['old_gid'] = chosen_idx # get old idx so that the substructure generator knows which grains are chosen in the input data
         return input_df
 
     def sample_input_2D(self, data, bs, constraint=None) -> pd.DataFrame:
@@ -330,34 +339,53 @@ class HelperFunctions:
         return input_df
 
     def convert_volume_3D(self, radius_a, radius_b, radius_c):
-        """Compute the volume for the given radii.
+        """Compute the discretized volume for the given radii.
         Parameters :
         radius_a : Integer, radius along x-axis
         radius_b : Integer, radius along y-axis
         radius_b : Integer, radius along z-axis
+
+        Uses a grid local to the grain's own bounding box (plus one voxel of
+        margin) instead of rasterizing onto the full RVE grid - the latter is
+        O(n_pts^3) per grain regardless of grain size, which is prohibitive
+        when called once per grain for RVEs with large grain counts.
         """
-        #vol = 4/3*np.pi*radius_b*radius_b*radius_c
-        array = self.gen_array_new()
-        ellipsoid = self.ellipsoid(radius_a, radius_b, radius_c)
-        inside = ellipsoid <= 1
-        array[inside] = 1
+        bin_size = RveInfo.bin_size
         if RveInfo.low_rsa_resolution:
-            d_vol = np.count_nonzero(array)*(2*RveInfo.bin_size)**3
-        else:
-            d_vol = np.count_nonzero(array) * (RveInfo.bin_size) ** 3
+            bin_size = 2 * bin_size
+
+        half_a = radius_a + bin_size
+        half_b = radius_b + bin_size
+        half_c = radius_c + bin_size
+        x = np.arange(-half_a, half_a + bin_size, bin_size)
+        y = np.arange(-half_b, half_b + bin_size, bin_size)
+        z = np.arange(-half_c, half_c + bin_size, bin_size)
+        x_grid, y_grid, z_grid = np.meshgrid(x, y, z, indexing='ij')
+
+        ellipsoid = (x_grid / radius_a) ** 2 + (y_grid / radius_b) ** 2 + (z_grid / radius_c) ** 2
+        inside = np.count_nonzero(ellipsoid <= 1)
+        d_vol = inside * bin_size ** 3
         return d_vol
 
     def convert_volume_2D(self, radius_a, radius_b):
-        """Compute the volume for the given radii.
+        """Compute the discretized volume for the given radii.
         Parameters :
         radius_a : Integer, radius along x-axis
         radius_b : Integer, radius along y-axis
+
+        See convert_volume_3D - uses a local grid instead of the full RVE grid.
         """
-        array = self.gen_array_2d()
-        ellipse = self.ellipse(radius_a, radius_b,  0, 0)
-        inside = ellipse <= 1
-        array[inside] = 1
-        d_vol = np.count_nonzero(array)*RveInfo.bin_size**2
+        bin_size = RveInfo.bin_size
+
+        half_a = radius_a + bin_size
+        half_b = radius_b + bin_size
+        x = np.arange(-half_a, half_a + bin_size, bin_size)
+        y = np.arange(-half_b, half_b + bin_size, bin_size)
+        x_grid, y_grid = np.meshgrid(x, y, indexing='ij')
+
+        ellipse = (x_grid / radius_a) ** 2 + (y_grid / radius_b) ** 2
+        inside = np.count_nonzero(ellipse <= 1)
+        d_vol = inside * bin_size ** 2
         RveInfo.LOGGER.info("Volume for the given radii: {}".format(d_vol))
         return d_vol
 
@@ -1038,7 +1066,7 @@ class HelperFunctions:
 
         final_conti_volume = [(4 / 3 * a[i] * b[i] * c[i] * np.pi) for i in range(len(a))]
 
-        for i in range(len(df)): # TODO: @Manuel, Max, Niklas: Ich glaub das ist super langsam
+        for i in range(len(df)):
             discrete_vol.append(self.convert_volume_3D(df['a'][i], df['b'][i], df['c'][i]))
         df['final_discrete_volume'] = discrete_vol
 
