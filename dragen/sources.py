@@ -6,6 +6,9 @@ optional columns b, c (default a), alpha (default 0) and phi1, PHI, phi2 (defaul
 A GAN source draws a fresh set of synthetic grains from a trained WGAN (.pkl, see
 InputGenerator/) for every RVE, as the legacy generator did.
 """
+import contextlib
+import io
+import logging
 from typing import Optional, Tuple
 
 import numpy as np
@@ -137,6 +140,17 @@ class CsvSource(GrainSource):
         return out.dropna(subset=['a', 'b', 'c', 'alpha']).reset_index(drop=True)
 
 
+@contextlib.contextmanager
+def _stdout_to_log():
+    """The GAN code prints progress; send it to the log at DEBUG level instead of stdout."""
+    buffer = io.StringIO()
+    with contextlib.redirect_stdout(buffer):
+        yield
+    text = buffer.getvalue().strip()
+    if text:
+        logging.getLogger(__name__).debug('GAN: %s', text)
+
+
 class GanSource(GrainSource):
     """Synthetic grains from a trained WGAN.
 
@@ -152,9 +166,13 @@ class GanSource(GrainSource):
 
     def _load(self):
         if self._gan is None:
+            from dragen._extras import headless_matplotlib, require
+            require('torch', 'ml')
+            headless_matplotlib()                           # the GAN code imports pyplot
             from InputGenerator.C_WGAN_GP import WGANCGP   # pulls in torch, so only on demand
-            gan = WGANCGP(df_list=[], storepath='.', num_features=3, gen_iters=500000)
-            gan.load_trained_states(single=False, file_list=[self.path])
+            with _stdout_to_log():
+                gan = WGANCGP(df_list=[], storepath='.', num_features=3, gen_iters=500000)
+                gan.load_trained_states(single=False, file_list=[self.path])
             self._gan = gan
         return self._gan
 
@@ -162,7 +180,8 @@ class GanSource(GrainSource):
         import torch
         gan = self._load()          # loading builds networks and draws from torch's RNG: seed after it
         torch.manual_seed(int(rng.integers(2 ** 31)))
-        raw = gan.sample_batch(label=0, size=self.batch_size).dropna(axis=0)
+        with _stdout_to_log():
+            raw = gan.sample_batch(label=0, size=self.batch_size).dropna(axis=0)
         return ellipses_to_ellipsoids(raw)
 
 

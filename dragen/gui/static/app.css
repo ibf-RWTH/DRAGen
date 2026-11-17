@@ -294,3 +294,7 @@ svg.hist .target { fill: none; stroke: var(--accent-2); stroke-width: 2.5; }
 .clip em { font-style: normal; font-family: var(--mono); font-size: 12px; width: 64px; text-align: right; }
 @media (max-width: 640px) { .gl-help { display: none; } }
 .viewer-tools select { width: auto; padding: 5px 8px; font-size: 13px; }
+
+.checks { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.check { flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 13.5px; cursor: pointer; }
+.check input { width: auto; margin: 0; }

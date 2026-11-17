@@ -30,14 +30,14 @@ FINISHED = (DONE, FAILED, CANCELLED, INTERRUPTED)
 class Job:
     id: str
     kind: str
-    """'generate' or 'mesh'."""
+    """'generate', 'mesh' or 'export'."""
     name: str
     status: str = QUEUED
     created: float = field(default_factory=time.time)
     started: Optional[float] = None
     finished: Optional[float] = None
     parent: Optional[str] = None
-    """For a meshing job: the generation run it meshes."""
+    """For a meshing or export job: the generation run it belongs to."""
     error: Optional[str] = None
     imported: bool = False
 
@@ -69,9 +69,11 @@ class JobManager:
 
     # ------------------------------------------------------------------------------------- #
 
-    def submit(self, kind: str, name: str, config: Optional[dict] = None, parent: Optional[str] = None) -> Job:
-        """Create a job directory and queue the job. `config` is an RveConfig dict (generation)."""
-        if kind not in ('generate', 'mesh'):
+    def submit(self, kind: str, name: str, config: Optional[dict] = None, parent: Optional[str] = None,
+               options: Optional[dict] = None) -> Job:
+        """Create a job directory and queue the job. `config` is an RveConfig dict (generation),
+        `options` the settings of an export job (written to options.json)."""
+        if kind not in ('generate', 'mesh', 'export'):
             raise ValueError(f'unknown job kind {kind!r}')
         stamp = time.strftime('%Y%m%d-%H%M%S')
         job_id = f'{stamp}-{uuid.uuid4().hex[:6]}'
@@ -81,6 +83,8 @@ class JobManager:
         if config is not None:
             from dragen.config import RveConfig
             RveConfig.from_dict(config).save(job_dir / 'config.yaml')
+        if options is not None:
+            (job_dir / 'options.json').write_text(json.dumps(options, indent=2), encoding='utf-8')
         with self._lock:
             self.jobs[job_id] = job
             self._save(job)

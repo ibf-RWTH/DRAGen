@@ -317,7 +317,7 @@ function renderJobs() {
   }
   list.replaceChildren(...ordered.map(j => {
     const item = el('li', { class: 'run-item' + (j.id === state.selected ? ' selected' : '') + (j.parent ? ' child' : '') },
-      el('span', { class: 'name', title: j.name }, (j.kind === 'mesh' ? '⬡ ' : '') + j.name),
+      el('span', { class: 'name', title: j.name }, ({ mesh: '⬡ ', export: '⇩ ' }[j.kind] || '') + j.name),
       el('span', { class: 'status ' + j.status }, j.status),
       el('span', { class: 'meta' },
         el('span', {}, j.imported ? 'imported' : ago(j.created)),
@@ -351,7 +351,7 @@ async function selectJob(id) {
   await loadDetail();
   if (changed && state.detail) {
     const { kind, status } = state.detail.job;
-    setTab(kind === 'mesh' ? 'mesh' : (status === 'done' ? 'overview' : 'log'));
+    setTab({ mesh: 'mesh', export: 'export' }[kind] || (status === 'done' ? 'overview' : 'log'));
   }
 }
 
@@ -376,7 +376,7 @@ async function loadDetail() {
 
 function renderDetail() {
   const { job, result } = state.detail;
-  $('#run-kind').textContent = job.kind === 'mesh' ? 'Mesh (experimental)' : (job.imported ? 'Imported run' : 'Generation run');
+  $('#run-kind').textContent = { mesh: 'Mesh (experimental)', export: 'Export' }[job.kind] || (job.imported ? 'Imported run' : 'Generation run');
   $('#run-title').textContent = job.name;
   const sub = [`<span class="status ${job.status}">${job.status}</span>`, `<span class="mono">${esc(job.id)}</span>`];
   if (job.elapsed !== null) sub.push(dur(job.elapsed));
@@ -393,10 +393,14 @@ function renderDetail() {
     const disabled = !!state.info.mesh_unavailable;
     actions.append(el('button', { class: 'btn', disabled, title: disabled ? state.info.mesh_unavailable : 'C3D10 mesh with smoothed, remeshed grain boundaries (experimental)', onclick: () => jobAction('mesh') }, '⬡ Mesh'));
   }
+  if (job.kind === 'generate' && job.status === 'done') {
+    actions.append(el('button', { class: 'btn', title: 'Solver files: DAMASK, Abaqus, Exodus (MOOSE), VTU, MSH, grain table', onclick: () => setTab('export') }, '⇩ Export'));
+  }
   if (job.kind === 'generate' && state.detail.config) {
     actions.append(el('button', { class: 'btn ghost', onclick: () => reuseConfig() }, 'Reuse config'));
   }
-  const files = job.kind === 'mesh' ? ['mesh.json', 'mesh.npz', 'log.txt'] : ['config.yaml', 'result.json', 'grains.csv', 'labels.npz'];
+  const files = { mesh: ['mesh.json', 'mesh.npz', 'log.txt'], export: ['export.zip', 'export.json', 'log.txt'] }[job.kind]
+    || ['config.yaml', 'result.json', 'grains.csv', 'labels.npz'];
   if (job.status === 'done') {
     const menu = el('select', { title: 'Download' }, el('option', { value: '' }, 'Download…'), ...files.map(f => el('option', { value: f }, f)));
     menu.addEventListener('change', () => {
@@ -411,14 +415,16 @@ function renderDetail() {
 
   $$('#run-tabs button').forEach(b => {
     const t = b.dataset.tab;
-    const isMesh = job.kind === 'mesh';
-    const needsResult = ['overview', '3d', 'slices', 'sizes'].includes(t);
-    b.classList.toggle('hidden', isMesh && (needsResult || t === 'config'));
-    b.disabled = !isMesh && needsResult && job.status !== 'done';
+    const isMesh = job.kind === 'mesh', isExport = job.kind === 'export';
+    const needsResult = ['overview', '3d', 'slices', 'sizes', 'export'].includes(t);
+    b.classList.toggle('hidden', (isMesh && (needsResult || t === 'config')) ||
+      (isExport && !['export', 'log'].includes(t)));
+    b.disabled = job.kind === 'generate' && needsResult && job.status !== 'done';
   });
   $('#config-view').textContent = state.detail.config ? toYaml(state.detail.config) : '';
   renderOverview();
   renderMesh();
+  renderExport();
 }
 
 function reuseConfig() {
@@ -435,6 +441,12 @@ async function jobAction(action) {
     if (action === 'mesh') {
       const res = await api(`jobs/${encodeURIComponent(job.id)}/mesh`, { method: 'POST' });
       toast('Meshing queued');
+      await refreshJobs();
+      return selectJob(res.job.id);
+    }
+    if (action === 'export') {
+      const res = await api(`jobs/${encodeURIComponent(job.id)}/export`, { method: 'POST', body: readExportForm() });
+      toast('Export queued');
       await refreshJobs();
       return selectJob(res.job.id);
     }
@@ -521,6 +533,79 @@ function renderOverview() {
         .map(([k, v]) => el('tr', {}, el('td', {}, k), el('td', {}, fmt(v)))))));
   }
   host.replaceChildren(verdict, kpis, el('div', { class: 'grid' }, ...cards));
+}
+
+const mb = n => n < 1024 * 1024 ? (n / 1024).toFixed(1) + ' kB' : (n / 1024 / 1024).toFixed(1) + ' MB';
+
+function renderExport() {
+  const host = $('#export-panel');
+  const { job, export: exp, exports, meshes } = state.detail;
+  if (job.kind === 'export') {
+    if (!exp) {
+      host.replaceChildren(el('div', { class: 'card' }, el('p', { class: 'muted' },
+        job.status === 'running' ? [el('span', { class: 'spinner' }), '  Exporting… see the log.'] : (job.status === 'queued' ? 'Waiting for a free worker.' : 'No export result.'))));
+      return;
+    }
+    const o = exp.options || {};
+    host.replaceChildren(
+      el('div', { class: 'kpis' },
+        kpi('Files', fmt(exp.files.length)), kpi('Mesh', exp.mesh, exp.cell_type),
+        kpi('Archive', mb(exp.zip_bytes), 'export.zip'),
+        exp.substructure ? kpi('Substructure', fmt(exp.substructure.blocks) + ' blocks', `${fmt(exp.substructure.packets)} packets`) : null,
+        kpi('Time', dur(Object.values(exp.seconds || {}).reduce((a, b) => a + b, 0)))),
+      el('div', { class: 'card' }, el('h2', {}, 'Files'),
+        el('table', { class: 'kv' }, ...exp.files.map(f => el('tr', {}, el('td', { class: 'mono' }, f.name),
+          el('td', {}, f.format), el('td', {}, mb(f.bytes))))),
+        el('p', { class: 'hint' }, `Abaqus: lengths in ${o.length_unit || 'm'}, materials per ${o.material_per || 'grain'}` +
+          (o.element_type ? `, element type ${o.element_type}` : '') +
+          '. The .inp holds mesh, sets, sections and periodic equations; materials and steps are yours (*Include).'),
+        el('a', { class: 'btn primary', href: `/api/jobs/${encodeURIComponent(job.id)}/files/export.zip` }, '⇩ Download export.zip')));
+    return;
+  }
+  if (job.kind !== 'generate' || job.status !== 'done') { host.replaceChildren(); return; }
+  const formats = state.info.export_formats || {};
+  const unavailable = state.info.export_unavailable || {};
+  const checks = Object.entries(formats).map(([key, label]) => el('label', { class: 'check', title: unavailable[key] || '' },
+    el('input', { type: 'checkbox', name: 'export-format', value: key, checked: !unavailable[key] && key !== 'gmsh',
+      disabled: !!unavailable[key] }), el('span', {}, label + (unavailable[key] ? ' – not installed' : ''))));
+  const doneMeshes = (meshes || []).filter(m => m.status === 'done');
+  const meshSel = el('select', { id: 'export-mesh' }, el('option', { value: 'voxel' }, 'Voxels (one hexahedron per voxel)'),
+    ...doneMeshes.map(m => el('option', { value: m.id }, `Tetrahedra: ${m.name}`)));
+  if (doneMeshes.length) meshSel.value = doneMeshes[0].id;
+  const rows = (exports || []).map(x => el('tr', {}, el('td', {}, el('a', { href: '#', onclick: e => { e.preventDefault(); selectJob(x.id); } }, x.name)),
+    el('td', {}, el('span', { class: 'status ' + x.status }, x.status)),
+    el('td', {}, x.status === 'done' ? el('a', { href: `/api/jobs/${encodeURIComponent(x.id)}/files/export.zip` }, 'export.zip') : '')));
+  host.replaceChildren(el('div', { class: 'grid' },
+    el('div', { class: 'card' }, el('h2', {}, 'Export this RVE'),
+      el('div', { class: 'field' }, el('span', { class: 'label' }, 'Formats'), el('div', { class: 'checks' }, ...checks)),
+      el('div', { class: 'row two' },
+        el('label', {}, 'Mesh (Abaqus, Exodus, VTU, MSH)', meshSel),
+        el('label', {}, 'Abaqus length unit', el('select', { id: 'export-unit' },
+          ...[['m', 'm (as the library)'], ['mm', 'mm'], ['um', 'µm (legacy files)']].map(([v, t]) => el('option', { value: v }, t))))),
+      el('div', { class: 'row two' },
+        el('label', {}, 'Abaqus materials', el('select', { id: 'export-per' },
+          el('option', { value: 'grain' }, 'one per grain (Ferrite_12, …)'), el('option', { value: 'phase' }, 'one per phase (Ferrite, …)'))),
+        el('label', {}, 'Abaqus element type', el('input', { type: 'text', id: 'export-element', placeholder: 'default: C3D8 / C3D10' }))),
+      el('div', { class: 'row two' },
+        el('label', { class: 'check inline' }, el('input', { type: 'checkbox', id: 'export-subs' }),
+          el('span', {}, 'Martensite substructure (packets, blocks; martensite, pearlite, bainite)')),
+        el('label', {}, 'Block thickness [µm]', el('input', { type: 'number', id: 'export-block', min: '0', step: 'any', value: '1' }))),
+      el('p', { class: 'hint' }, doneMeshes.length ? 'DAMASK always uses the voxels.' :
+        'Without a finished mesh the voxels are exported; “⬡ Mesh” builds a smoothed tetrahedral mesh first. DAMASK always uses the voxels.'),
+      el('button', { class: 'btn primary', onclick: () => jobAction('export') }, '⇩ Start export')),
+    el('div', { class: 'card' }, el('h2', {}, 'Exports of this run'),
+      rows.length ? el('table', { class: 'kv' }, ...rows) : el('p', { class: 'muted' }, 'No export yet.'))));
+}
+
+function readExportForm() {
+  return {
+    formats: $$('input[name=export-format]:checked').map(i => i.value),
+    mesh: $('#export-mesh').value,
+    length_unit: $('#export-unit').value,
+    material_per: $('#export-per').value,
+    element_type: $('#export-element').value.trim() || null,
+    substructure: $('#export-subs').checked ? { block_thickness: Number($('#export-block').value) } : null,
+  };
 }
 
 function renderMesh() {
@@ -774,7 +859,7 @@ async function tick() {
   if (state.view === 'run' && state.selected) {
     const job = state.jobs.find(j => j.id === state.selected);
     const live = state.detail && ['queued', 'running'].includes(state.detail.job.status);
-    const meshLive = state.detail && (state.detail.meshes || []).some(m => ['queued', 'running'].includes(m.status));
+    const meshLive = state.detail && [...(state.detail.meshes || []), ...(state.detail.exports || [])].some(m => ['queued', 'running'].includes(m.status));
     if (job && (live || meshLive || job.status !== state.detail?.job.status)) await loadDetail();
   }
 }

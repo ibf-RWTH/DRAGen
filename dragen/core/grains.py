@@ -87,3 +87,13 @@ class GrainTable:
             df[[f'center_{a}' for a in 'xyz'[:self.ndim]]] = self.centers
         df.insert(0, 'GrainID', np.arange(1, len(self) + 1))
         return df
+
+    @staticmethod
+    def from_frame(df: pd.DataFrame) -> 'GrainTable':
+        """Inverse of to_frame (row order = grain order; volume and GrainID are ignored)."""
+        axes = [a for a in ('a', 'b', 'c') if a in df]
+        centers = [f'center_{a}' for a in 'xyz'[:len(axes)]]
+        return GrainTable(radii=df[axes].to_numpy(dtype=float), alpha=df['alpha'].to_numpy(dtype=float),
+                          euler=df[EULER].to_numpy(dtype=float), phase=df['phaseID'].to_numpy(dtype=int),
+                          band=df['band'].to_numpy(dtype=int) if 'band' in df else None,
+                          centers=df[centers].to_numpy() if all(c in df for c in centers) else None)

@@ -15,9 +15,9 @@ from dragen.pipeline import generate  # noqa: E402
 
 
 def lognormal_config(box, seed, periodic=None):
-    import legacy_baseline
+    import common
     return RveConfig(box=BoxConfig((box,) * 3, 2, periodic=periodic),
-                     phases=(PhaseConfig('ferrite', legacy_baseline.lognormal_input(), 1.0),), seed=seed)
+                     phases=(PhaseConfig('ferrite', common.lognormal_input(), 1.0),), seed=seed)
 
 
 def report_of(result, periodic):
@@ -54,11 +54,11 @@ def small_inclusions(tmp_path_factory):
 
 @pytest.mark.parametrize('seed', [1, 2, 3])
 def test_rework_with_bands_and_inclusions(seed, small_inclusions):
-    import legacy_baseline
+    import common
     from dragen.analysis.acceptance import feature_violations
     from dragen.analysis.features import band_report, inclusion_report
     from dragen.config import BandConfig, InclusionConfig
-    source = legacy_baseline.lognormal_input()
+    source = common.lognormal_input()
     config = RveConfig(box=BoxConfig((20,) * 3, 2), phases=(PhaseConfig('ferrite', source, 1.0),), seed=seed,
                        bands=BandConfig(count=2, phase='martensite', source=source, thickness=(3, 4), filling=0.5),
                        inclusions=InclusionConfig(source=small_inclusions, fraction=0.01))

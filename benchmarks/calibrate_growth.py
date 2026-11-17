@@ -26,7 +26,7 @@ import dragen.pipeline as pipeline  # noqa: E402
 from dragen.analysis import metrics  # noqa: E402
 from dragen.analysis.acceptance import violations  # noqa: E402
 from dragen.config import BoxConfig, PhaseConfig, RveConfig, TessellationConfig  # noqa: E402
-from legacy_baseline import lognormal_input  # noqa: E402
+from common import lognormal_input  # noqa: E402
 
 OUT = os.path.join(REPO_ROOT, 'benchmarks', 'results', 'calibration', 'growth_exponent.csv')
 GAN = os.path.join(REPO_ROOT, 'ExampleInput')

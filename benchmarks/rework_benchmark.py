@@ -20,7 +20,7 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, REPO_ROOT)
 sys.path.insert(0, os.path.dirname(__file__))
 
-from legacy_baseline import lognormal_input  # noqa: E402
+from common import lognormal_input  # noqa: E402
 from dragen.analysis import metrics  # noqa: E402
 from dragen.analysis.acceptance import feature_violations, violations  # noqa: E402
 from dragen.analysis.features import band_report, inclusion_report  # noqa: E402

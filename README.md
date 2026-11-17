@@ -5,6 +5,7 @@
 <!--![logo](docs/GUI.PNG)-->
 
  [**Installation**](#Installation)
+| [**Use as a library**](#use-as-a-library)
 | [**Related Projects**](#Related-Projects)
 | [**Tutorial**](Tutorial)
 
@@ -43,75 +44,112 @@ For more:
 
 <p align="left"><img src="docs/DRAGen_readme_paper.jpg" height="400" alt=""> </img></p>
 
-_Note: For developing it is highly recommended to use Python versions Python 3.10._<br>
 **If further questions appear please check the lower section or get in touch with us.**
 
 
 ## Installation
 
-As the first step, conda needs to be installed.
-To be sure conda is installed correctly on your system [look up here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)<br>
+DRAGen needs Python 3.12 or newer. Clone the repository and install it into a virtual environment
+(conda, venv or uv):
 
-Git must be installed on the system. Check with:
 ```
-$ git --version
+git clone https://github.com/ibf-RWTH/DRAGen.git
+cd DRAGen
+python -m venv .venv                      # or: conda create --name DRAGen python=3.12
+.venv/Scripts/activate                    # Linux/macOS: source .venv/bin/activate
+pip install -e ".[ml,damask]"             # ml: GAN grain sources (torch), damask: DAMASK export
 ```
-If it has not been installed use this:
-```
-$ conda install -c anaconda git
-```
-Open the user path and create the directory where the DRAGen repo will be cloned.
-Should be like this:
-```
-(base) C:\Users> cd \Users\{username}
-(base) C:\Users\username> mkdir GitRepos
-(base) C:\Users\username> cd GitRepos
-```
-To clone this repository into the desired destination, use:<br>
-```
-$ git clone https://github.com/ibf-RWTH/DRAGen.git
-```
-To be able to use DRAGen, the working directory must be set to the location where the repo was downloaded to in the previous step file which is downloaded at the previous step.
-Use the commands to go to the exact file by following the path.
-```
-$ cd DRAGen
-```
-To see the folders on the current point:
-```
-$ dir
-```
-Create a virtual environment as follows:<br>
-```
-$ conda create --name DRAGen python=3.10
-$ conda activate DRAGen
-```
-(if an error occurs check your conda installation)<br>
-To see the list of the environments on conda:
-```
-$ conda info --envs
-```
-Be sure the DRAGen environment is activated it should look somewhat like this:<br>
-```
-(DRAGen)....$ 
-```
-Install one of two required module packages depending on cuda availability on the device:
 
-To install requirements without cuda:<br> 
+Check the installation with a first RVE:
+
 ```
-(DRAGen)....$ pip install -r requirements.txt 
+dragen template config.yaml               # example configuration (micrometres)
+dragen generate config.yaml -o out -f grains,vtu,abaqus
+dragen gui                                # browser front end "DRAGen Studio"
 ```
-To install requirements if cuda is available:<br> 
+
+`dragen generate` writes one directory per RVE (`out/rve_000`, ...) with `rve.npz`,
+`metadata.json`, the configuration and the requested exports (`-f damask,abaqus,exodus,vtu,gmsh,
+grains` or `all`; `--mesh tet` adds a tetrahedral mesh with smoothed grain boundaries). A
+`substructure:` section in the configuration adds martensite packets and blocks
+(`dragen.substructure.SubstructureConfig`). `dragen export out/rve_000 -f damask` exports a saved
+RVE again. The PyQt GUI and the generator of DRAGen 1.x (`DRAGen.py`, `DRAGen_nogui.py`) are
+available on the git tag `legacy-baseline`.
+
+## Use as a library
+
+DRAGen can be called from Python without a GUI through `dragen.api`. The core needs only numpy,
+scipy, pandas, pyyaml, gmsh and meshio; everything else is an optional extra:
+
+| Extra | For |
+|---|---|
+| `ml` | grain sources from trained GANs (`.pkl`): torch, geomloss, qhoptim, matplotlib (Agg), seaborn, tqdm |
+| `damask` | `export_damask` |
+| `test` | pytest, netCDF4 (reads the Exodus files back in the tests) |
+
 ```
-(DRAGen)....$ pip install -r requirements_cuda.txt 
+pip install -e ".[ml,damask]"          # or, from another uv project: uv add --editable "../DRAGen[ml,damask]"
 ```
-Check if every step is utilized correctly by running first generation with:<br>
+
+Example (run from the repository root, it uses the trained GANs in `ExampleInput`):
+
+```python
+from pathlib import Path
+from dragen.api import PhaseSpec, RVESpec, generate_rve
+from dragen.api import BandSpec, InclusionSpec        # optional features
+from dragen.export import export_abaqus, export_damask, export_exodus, export_grains, export_vtu
+
+spec = RVESpec(
+    box_size_m=5.5e-6,              # cube edge in metres (or (x, y, z))
+    resolution=16,                  # voxels along x
+    phases=[PhaseSpec('ferrite', 0.7, Path('ExampleInput/Ferrite/TrainedData_Ferrite.pkl')),
+            PhaseSpec('martensite', 0.3, Path('ExampleInput/Martensite/TrainedData_Martensite.pkl'))],
+    mesh='tet',                     # 'voxel' (default) or also a tetrahedral mesh
+    seed=1,
+)
+rve = generate_rve(spec)
+print(rve.grain_ids.shape, rve.orientations.shape, rve.tet_mesh.cells.shape)
+export_damask(rve, Path('out/damask'))  # grid.vti + material.yaml (no load case)
+export_abaqus(rve, Path('out/rve'))     # rve.inp (mesh, sets, sections, PBC) + graindata.inp
+export_exodus(rve, Path('out/rve'))     # rve.e for MOOSE: block per grain, box-face sets
+export_vtu(rve, Path('out/rve'))        # rve.vtu; also export_gmsh
+export_grains(rve, Path('out/grains'))  # grains.csv, one row per grain
 ```
-(DRAGen)....$ python DRAGen_nogui.py
-```
-Run DRAGen:<br>
-```
-(DRAGen)....$ python DRAGen.py
-```
+
+2D: `RVESpec(box_size_m=(x, y), ...)` gives a pixel RVE (`grain_ids` of shape (nx, ny)); with
+`mesh='tet'` it gets a triangle mesh (3 or 6 nodes) with smoothed grain boundaries, and the
+exports write plane elements (Abaqus CPE4/CPE3/CPE6, Exodus QUAD4/TRI3/TRI6, DAMASK one cell layer).
+
+Martensite substructure: `from dragen.substructure import SubstructureConfig, generate_substructure,
+apply_substructure`; `apply_substructure(rve, generate_substructure(rve, SubstructureConfig(
+block_thickness=1.0)))` returns an RVE with one region per block (3D).
+
+Bands and inclusions: `RVESpec(..., bands=BandSpec(count=1, thickness_m=(3e-6, 4e-6),
+source=..., phase='martensite'), inclusions=InclusionSpec(source=..., fraction=0.01))`. The grains
+of a band are merged into one grain (`rve.band_ids` gives the band of a grain).
+
+Exports: the mesh exports (Abaqus, Exodus, VTU, MSH) take the tetrahedral mesh if there is one,
+otherwise one hexahedron per voxel (`mesh='voxel'|'tet'` chooses). The Abaqus file is model data
+without materials and steps: include it in a job file that defines one material per section
+(`Ferrite_12`, ... or per phase with `material_per='phase'`) and loads the reference nodes
+`RP_X/RP_Y/RP_Z`, whose displacement is the jump across the periodic box. Exodus side and node sets
+carry the names of MOOSE's GeneratedMesh (`left/right`, `bottom/top`, `back/front`).
+
+Conventions (details in the docstring of `dragen/api.py`):
+
+* Lengths in metres; the grain sources (GAN, CSV) stay in micrometres.
+* Axes x = RD, y = TD, z = ND; `grain_ids[i, j, k]` is the voxel at (x, y, z).
+* Grain IDs 1 … G; row g − 1 of `orientations` and `phase_ids` belongs to grain g
+  (`rve.orientation_of(ids)` does the lookup).
+* Orientations as unit quaternions (w, x, y, z), w ≥ 0, active rotation crystal → sample. These are
+  the same four numbers DAMASK uses for the orientation; `euler_bunge_deg` holds the Bunge angles.
+* Orientations come from the grain source if it has `phi1, PHI, phi2`, from
+  `PhaseSpec(orientations=...)` (a CSV of measured orientations) if given, otherwise they are random.
+* Same spec, same input files and same seed give the same RVE.
+
+The library writes nothing to stdout; messages go to `logging`. `generate_rve(spec, out_dir)` also
+saves `rve.npz` and `metadata.json` (version, git commit, seed, SHA-256 of spec and input files,
+run times, warnings).
 
 ## Related Projects
 

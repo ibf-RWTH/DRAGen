@@ -38,7 +38,7 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 OUT_DIR = os.path.join(REPO_ROOT, 'benchmarks', 'results', 'code_metrics')
 LIBRARY_ROOTS = ('dragen', 'InputGenerator')
 LOCAL_PACKAGES = {'dragen', 'InputGenerator', 'tests', 'benchmarks'}
-ENTRY_MODULES = ('dragen', 'dragen.run', 'dragen.pipeline')
+ENTRY_MODULES = ('dragen', 'dragen.run', 'dragen.pipeline', 'dragen.api', 'dragen.cli')  # dragen.run: legacy, up to tag legacy-baseline
 
 
 def git(*args, cwd=REPO_ROOT) -> str:

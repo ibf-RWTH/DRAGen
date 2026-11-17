@@ -15,12 +15,9 @@ from dragen.gui.jobs import REPO_ROOT
 INPUT_DIRS = (REPO_ROOT / 'ExampleInput', REPO_ROOT / 'benchmarks' / 'inputs')
 
 NOT_SUPPORTED = [
-    {'feature': 'Substructure (packets, blocks)', 'planned': 'E1',
-     'note': 'dragen.substructure exists but is not connected to the new pipeline yet'},
-    {'feature': 'Export to Abaqus, DAMASK, MOOSE', 'planned': 'E1',
-     'note': 'exporters for the new code are missing; the GUI stores labels.npz and grains.csv'},
-    {'feature': 'Slope offset', 'planned': 'E1/E2', 'note': 'not implemented in the new code (V25)'},
-    {'feature': '2D RVEs', 'planned': 'E2', 'note': 'the new pipeline is only tested in 3D'},
+    {'feature': 'Slope offset', 'planned': 'E2', 'note': 'not implemented in the new code (V25)'},
+    {'feature': '2D RVEs', 'planned': 'later',
+     'note': 'library (RVESpec with two box sizes) and CLI support 2D with triangle meshes; the GUI form and views are 3D only'},
     {'feature': 'Progress per epoch, animations', 'planned': 'E2',
      'note': 'the generator reports stage timings only'},
 ]
@@ -313,6 +310,11 @@ class RunData:
                 'actual': np.histogram(actual, edges)[0].tolist(),
                 'target': np.histogram(target, edges)[0].tolist() if len(target) else [],
                 'unit': 'um', 'quantity': 'equivalent diameter'}
+
+    def export(self) -> Optional[dict]:
+        import json
+        path = self.path / 'export.json'
+        return json.loads(path.read_text(encoding='utf-8')) if path.exists() else None
 
     def mesh(self) -> Optional[dict]:
         import json

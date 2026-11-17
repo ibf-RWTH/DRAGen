@@ -2,6 +2,7 @@
 
     python -m dragen.gui.worker generate <job dir>
     python -m dragen.gui.worker mesh <job dir>
+    python -m dragen.gui.worker export <job dir>
 
 A generation job reads <job dir>/config.yaml and writes, like benchmarks/rework_benchmark.py,
 labels.npz, grains.csv (row k belongs to label k + 1) and result.json (report, acceptance
@@ -9,6 +10,10 @@ violations, bands, inclusions, tessellation statistics, timings). A meshing job 
 named in <job dir>/job.json ('parent') and writes mesh.json (statistics and quality checks) and
 mesh.npz (tet10 nodes, elements, grain per element). Progress goes to stdout, which the server
 captures in log.txt.
+
+An export job reads <job dir>/options.json (run directory, optional mesh job directory, formats
+and their settings), writes the files of dragen.export into <job dir>/export/, zips them into
+export.zip and lists them in export.json.
 """
 import json
 import logging
@@ -144,15 +149,86 @@ def mesh_job(job_dir: Path) -> None:
     _log(f'{out["elements"]} {mesh.cell_type} elements, {out["nodes"]} nodes in {total:.1f} s')
 
 
+EXPORT_FORMATS = ('damask', 'abaqus', 'exodus', 'vtu', 'gmsh', 'grains')
+
+
+def export_job(job_dir: Path) -> None:
+    import zipfile
+
+    import pandas as pd
+
+    from dragen import export
+    from dragen.api import result_from_generation, tet_mesh_from_arrays
+    from dragen.config import RveConfig
+    from dragen.core.grains import GrainTable
+
+    options = json.loads((job_dir / 'options.json').read_text(encoding='utf-8'))
+    run_dir = Path(options['run_dir'])
+    config = RveConfig.load(run_dir / 'config.yaml')
+    labels = np.load(run_dir / 'labels.npz')['labels']
+    grains = GrainTable.from_frame(pd.read_csv(run_dir / 'grains.csv'))
+    tet = None
+    if options.get('mesh_dir'):
+        mesh = np.load(Path(options['mesh_dir']) / 'mesh.npz')
+        tet = tet_mesh_from_arrays(mesh['points'], mesh['cells'], mesh['grain'], config.box)
+        _log(f'mesh: {len(tet.cells)} {tet.cell_type} elements from {Path(options["mesh_dir"]).name}')
+    else:
+        _log(f'mesh: voxels ({labels.size} hexahedra)')
+    result = result_from_generation(config, labels, grains, tet=tet,
+                                    metadata={'gui_run': run_dir.name, 'gui_mesh': options.get('mesh_dir')})
+    substructure = None
+    if options.get('substructure'):
+        from dragen.substructure import SubstructureConfig, apply_substructure, generate_substructure
+        sub = generate_substructure(result, SubstructureConfig.from_dict(options['substructure']))
+        result = apply_substructure(result, sub)
+        substructure = sub.stats
+        _log(f'substructure: {sub.stats["packets"]} packets, {sub.stats["blocks"]} blocks -> '
+             f'{result.n_grains} regions')
+    out_dir = job_dir / 'export'
+    files, seconds = [], {}
+    for fmt in options['formats']:
+        if fmt not in EXPORT_FORMATS:
+            raise ValueError(f'unknown export format {fmt!r}')
+        _log(f'{fmt} ...')
+        start = time.perf_counter()
+        if fmt == 'damask':
+            written = export.export_damask(result, out_dir / 'damask')
+        elif fmt == 'abaqus':
+            written = export.export_abaqus(result, out_dir / 'abaqus' / 'rve',
+                                           length_unit=options.get('length_unit', 'm'),
+                                           element_type=options.get('element_type') or None,
+                                           material_per=options.get('material_per', 'grain'))
+        elif fmt == 'grains':
+            written = export.export_grains(result, out_dir / 'grains')
+        else:
+            written = getattr(export, f'export_{fmt}')(result, out_dir / 'rve')
+        seconds[fmt] = round(time.perf_counter() - start, 3)
+        written = written.values() if isinstance(written, dict) else [written]
+        for path in written:
+            files.append({'format': fmt, 'name': Path(path).relative_to(out_dir).as_posix(),
+                          'bytes': Path(path).stat().st_size})
+        _log(f'  {fmt}: {seconds[fmt]:.2f} s')
+    (out_dir / 'metadata.json').write_text(json.dumps(_plain(result.metadata), indent=2), encoding='utf-8')
+    with zipfile.ZipFile(job_dir / 'export.zip', 'w', zipfile.ZIP_DEFLATED) as z:
+        for path in sorted(out_dir.rglob('*')):
+            if path.is_file():
+                z.write(path, path.relative_to(out_dir).as_posix())
+    summary = {'parent': job_dir.name, 'run': run_dir.name, 'mesh': 'tet' if tet is not None else 'voxel',
+               'cell_type': tet.cell_type if tet is not None else 'hexahedron', 'options': options,
+               'files': files, 'seconds': seconds, 'substructure': substructure, 'zip_bytes': (job_dir / 'export.zip').stat().st_size}
+    (job_dir / 'export.json').write_text(json.dumps(_plain(summary), indent=2), encoding='utf-8')
+    _log(f'{len(files)} files, export.zip {summary["zip_bytes"] / 2 ** 20:.1f} MB')
+
+
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
-    if len(argv) != 2 or argv[0] not in ('generate', 'mesh'):
+    if len(argv) != 2 or argv[0] not in ('generate', 'mesh', 'export'):
         print(__doc__)
         return 2
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s %(name)s: %(message)s',
                         datefmt='%H:%M:%S', stream=sys.stdout)
     job_dir = Path(argv[1])
-    (generate_job if argv[0] == 'generate' else mesh_job)(job_dir)
+    {'generate': generate_job, 'mesh': mesh_job, 'export': export_job}[argv[0]](job_dir)
     return 0
 
 

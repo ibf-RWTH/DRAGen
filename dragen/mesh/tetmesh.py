@@ -301,7 +301,8 @@ def _write_msh(f, model: SurfaceModel, points: np.ndarray) -> None:
 
     def bbox(v):
         x = points[v]
-        return ' '.join(f'{c!r}' for c in np.concatenate([x.min(axis=0), x.max(axis=0)]))
+        # repr of a Python float: shortest exact form; numpy 2 would print np.float64(...)
+        return ' '.join(repr(float(c)) for c in np.concatenate([x.min(axis=0), x.max(axis=0)]))
 
     f.write('$MeshFormat\n4.1 0 8\n$EndMeshFormat\n$Entities\n')
     f.write(f'{len(topo.anchors)} {len(lines)} {len(surfaces)} 0\n')

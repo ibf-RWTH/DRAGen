@@ -17,6 +17,9 @@
     GET    /api/jobs/<id>/files/<name>     config.yaml, result.json, grains.csv, labels.npz, mesh.*
     POST   /api/jobs/<id>/cancel
     POST   /api/jobs/<id>/mesh             start a meshing job for a finished generation run
+    POST   /api/jobs/<id>/export           {formats, mesh, length_unit, material_per, element_type,
+                                            substructure: SubstructureConfig dict or null}
+                                           -> export job (files of dragen.export, export.zip)
     DELETE /api/jobs/<id>
 """
 import json
@@ -33,7 +36,29 @@ from dragen.gui import runs
 from dragen.gui.jobs import DONE, JobManager
 
 STATIC = Path(__file__).resolve().parent / 'static'
-DOWNLOADS = ('config.yaml', 'result.json', 'grains.csv', 'labels.npz', 'log.txt', 'mesh.json', 'mesh.npz')
+DOWNLOADS = ('config.yaml', 'result.json', 'grains.csv', 'labels.npz', 'log.txt', 'mesh.json', 'mesh.npz',
+             'export.zip', 'export.json')
+EXPORT_LABELS = {'damask': 'DAMASK grid (grid.vti, material.yaml)',
+                 'abaqus': 'Abaqus (rve.inp, graindata.inp)',
+                 'exodus': 'Exodus II for MOOSE (rve.e)',
+                 'vtu': 'VTK unstructured grid (rve.vtu)',
+                 'gmsh': 'Gmsh MSH 2.2 (rve.msh)',
+                 'grains': 'Grain table (grains.csv)'}
+
+
+def export_unavailable() -> dict:
+    """Per export format the reason it cannot run here (missing package); absent = available."""
+    out = {}
+    try:
+        import damask  # noqa: F401
+    except Exception as err:
+        out['damask'] = f"{type(err).__name__}: {err} (install the extra 'damask')"
+    try:
+        import meshio  # noqa: F401
+    except Exception as err:
+        for fmt in ('vtu', 'gmsh'):
+            out[fmt] = f'{type(err).__name__}: {err}'
+    return out
 
 
 def mesh_available() -> Optional[str]:
@@ -109,6 +134,7 @@ class Handler(BaseHTTPRequestHandler):
                     'phases': [p.name.lower() for p in Phase if p not in (Phase.INCLUSIONS, Phase.BANDS)],
                     'band_phases': [p.name.lower() for p in Phase if p != Phase.INCLUSIONS],
                     'not_supported': runs.NOT_SUPPORTED, 'mesh_unavailable': self.server.mesh_unavailable,
+                    'export_formats': EXPORT_LABELS, 'export_unavailable': self.server.export_unavailable,
                     'max_parallel': jobs.max_parallel}
         if route == ('GET', 'inputs'):
             return {'inputs': runs.input_files()}
@@ -158,11 +184,14 @@ class Handler(BaseHTTPRequestHandler):
         data = runs.RunData(jobs.path(job.id))
         action = parts[1] if len(parts) > 1 else None
         if method == 'GET' and action is None:
-            out = {'job': job.to_dict(), 'config': data.config(), 'result': data.result(), 'mesh': data.mesh()}
+            out = {'job': job.to_dict(), 'config': data.config(), 'result': data.result(), 'mesh': data.mesh(),
+                   'export': data.export()}
             if job.kind == 'generate' and job.status == DONE:
                 out['grains'] = data.grain_meta()
                 out['spacing'] = list(data.spacing())
-            out['meshes'] = [j.to_dict() for j in jobs.list() if j.parent == job.id]
+            children = [j for j in jobs.list() if j.parent == job.id]
+            out['meshes'] = [j.to_dict() for j in children if j.kind == 'mesh']
+            out['exports'] = [j.to_dict() for j in children if j.kind == 'export']
             out['surfaces'] = self._surface_sources(job)
             return out
         if method == 'GET' and action == 'surface':
@@ -208,10 +237,57 @@ class Handler(BaseHTTPRequestHandler):
                                                     'their directory is not a job directory')
             mesh = jobs.submit('mesh', f'mesh of {job.name}', parent=job.id)
             return {'job': mesh.to_dict()}
+        if method == 'POST' and action == 'export':
+            if job.kind != 'generate' or job.status != DONE:
+                raise ApiError(HTTPStatus.CONFLICT, 'only finished generation runs can be exported')
+            options = self._export_options(job, body)
+            exp = jobs.submit('export', f'export of {job.name}', parent=job.id, options=options)
+            return {'job': exp.to_dict()}
         if method == 'DELETE' and action is None:
             jobs.delete(job.id)
             return {'deleted': job.id}
         raise ApiError(HTTPStatus.NOT_FOUND, 'unknown job endpoint')
+
+    def _export_options(self, job, body: dict) -> dict:
+        """Checked options of an export job (absolute paths, so imported runs work as well)."""
+        jobs = self.server.jobs
+        formats = body.get('formats') or []
+        unknown = [f for f in formats if f not in EXPORT_LABELS]
+        if not formats or unknown:
+            raise ApiError(HTTPStatus.BAD_REQUEST, f'choose export formats from {list(EXPORT_LABELS)}'
+                                                   + (f'; unknown: {unknown}' if unknown else ''))
+        missing = {f: r for f, r in self.server.export_unavailable.items() if f in formats}
+        if missing:
+            raise ApiError(HTTPStatus.CONFLICT, '; '.join(f'{f}: {r}' for f, r in missing.items()))
+        mesh_dir = None
+        mesh_id = body.get('mesh') or None
+        if mesh_id not in (None, 'voxel'):
+            try:
+                mesh = jobs.get(mesh_id)
+            except KeyError:
+                raise ApiError(HTTPStatus.NOT_FOUND, f'no mesh job {mesh_id}')
+            if mesh.kind != 'mesh' or mesh.parent != job.id or mesh.status != DONE:
+                raise ApiError(HTTPStatus.CONFLICT, 'the mesh must be a finished meshing job of this run')
+            mesh_dir = str(jobs.path(mesh.id).resolve())
+        unit = body.get('length_unit', 'm')
+        if unit not in ('m', 'mm', 'um'):
+            raise ApiError(HTTPStatus.BAD_REQUEST, f'length_unit must be m, mm or um, got {unit!r}')
+        per = body.get('material_per', 'grain')
+        if per not in ('grain', 'phase'):
+            raise ApiError(HTTPStatus.BAD_REQUEST, f'material_per must be grain or phase, got {per!r}')
+        element = str(body.get('element_type') or '').strip().upper() or None
+        if element is not None and not element.replace('_', '').isalnum():
+            raise ApiError(HTTPStatus.BAD_REQUEST, f'invalid element type {element!r}')
+        substructure = body.get('substructure') or None
+        if substructure is not None:
+            from dragen.substructure import SubstructureConfig
+            try:
+                substructure = SubstructureConfig.from_dict(substructure).to_dict()
+            except (ValueError, TypeError, FileNotFoundError) as err:
+                raise ApiError(HTTPStatus.BAD_REQUEST, f'substructure: {err}')
+        run_dir = jobs.path(job.id)
+        return {'run_dir': str(run_dir.resolve()), 'mesh_dir': mesh_dir, 'formats': list(dict.fromkeys(formats)),
+                'length_unit': unit, 'material_per': per, 'element_type': element, 'substructure': substructure}
 
     def _surface_sources(self, job) -> list:
         """Staircase for every finished run, plus the smoothed surface of each finished meshing
@@ -308,6 +384,7 @@ class GuiServer(ThreadingHTTPServer):
     def __init__(self, address, workdir, max_parallel: int = 2, verbose: bool = False):
         self.jobs = JobManager(workdir, max_parallel=max_parallel)
         self.mesh_unavailable = mesh_available()
+        self.export_unavailable = export_unavailable()
         self.verbose = verbose
         super().__init__(address, Handler)
 
