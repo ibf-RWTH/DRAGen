@@ -7,7 +7,6 @@
  [**Installation**](#Installation)
 | [**Use as a library**](#use-as-a-library)
 | [**Related Projects**](#Related-Projects)
-| [**Tutorial**](Tutorial)
 
 
 This repository presents an enhanced version of the Discrete Representative Volume Element (RVE) Automation and Generation Framework, known as DRAGen. Originally devised as an approach for generating Representative Volume Elements based on a Random Sequential Addition (RSA)-Algorithm and discrete tessellation, DRAGen has undergone significant improvements to broaden its capabilities. DRAGen collects and processes data from analysis of electron backscatter diffraction (EBSD) images via the [MATLAB toolbox MTEX](https://mtex-toolbox.github.io/)  or [OIM](https://www.edax.com/products/ebsd/oim-analysis) and presents it as a model. Subsequently, the generator follows the below mentioned steps:
@@ -60,7 +59,8 @@ python -m venv .venv                      # or: conda create --name DRAGen pytho
 pip install -e ".[ml,damask]"             # ml: GAN grain sources (torch), damask: DAMASK export
 ```
 
-Check the installation with a first RVE:
+Check the installation with a first RVE. Run it from the repository root: the example
+configuration refers to the input files in `ExampleInput/` by relative paths.
 
 ```
 dragen template config.yaml               # example configuration (micrometres)
