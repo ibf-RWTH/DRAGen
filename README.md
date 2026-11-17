@@ -5,6 +5,7 @@
 <!--![logo](docs/GUI.PNG)-->
 
  [**Installation**](#Installation)
+| [**Web GUI**](#web-gui-dragen-studio)
 | [**Use as a library**](#use-as-a-library)
 | [**Related Projects**](#Related-Projects)
 
@@ -65,7 +66,7 @@ configuration refers to the input files in `ExampleInput/` by relative paths.
 ```
 dragen template config.yaml               # example configuration (micrometres)
 dragen generate config.yaml -o out -f grains,vtu,abaqus
-dragen gui                                # browser front end "DRAGen Studio"
+dragen gui                                # browser front end "DRAGen Studio", see below
 ```
 
 `dragen generate` writes one directory per RVE (`out/rve_000`, ...) with `rve.npz`,
@@ -75,6 +76,28 @@ grains` or `all`; `--mesh tet` adds a tetrahedral mesh with smoothed grain bound
 (`dragen.substructure.SubstructureConfig`). `dragen export out/rve_000 -f damask` exports a saved
 RVE again. The PyQt GUI and the generator of DRAGen 1.x (`DRAGen.py`, `DRAGen_nogui.py`) are
 available on the git tag `legacy-baseline`.
+
+## Web GUI (DRAGen Studio)
+
+DRAGen Studio runs in the browser and needs no extra packages beyond the installation above
+(`[ml]` for GAN grain sources). Start it in the activated environment:
+
+```
+dragen gui                                # or from the repository root: python DRAGen_web.py
+```
+
+This starts a local server on http://127.0.0.1:8765/ and opens it in the browser. Stop it with Ctrl+C
+in the terminal. In the GUI you set up an RVE (box, resolution, phases with their grain sources
+from `ExampleInput/`, bands, inclusions), generate it, mesh it, view the result and export it.
+Generating and meshing run as background jobs, so the page stays responsive.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--port` | 8765 | port of the local server |
+| `--workdir` | `~/DRAGen_runs` | one folder per job (configuration, log, results); past runs are listed again after a restart |
+| `--parallel` | 2 | jobs running at the same time |
+| `--no-browser` | off | do not open the browser (open the printed address yourself) |
+| `--host` | 127.0.0.1 | only reachable from this computer; `0.0.0.0` makes it reachable in the network (no login, use with care) |
 
 ## Use as a library
 
