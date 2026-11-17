@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DRAGen Studio</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 4h11l-3 9 8 2-5 13H4z' fill='%236d5efc'/%3E%3Cpath d='M17 4h11v11l-9-2zM20 17l8 2v9h-12z' fill='%2322c3a6'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 4h11l-3 9 8 2-5 13H4z" class="b1"/><path d="M17 4h11v11l-9-2zM20 17l8 2v9h-12z" class="b2"/></svg>
+    <div><strong>DRAGen</strong> <span>Studio</span></div>
+  </div>
+  <div class="queue" id="queue-summary" title="Jobs"></div>
+  <div class="top-actions">
+    <span class="workdir" id="workdir" title="Work directory"></span>
+    <button class="icon-btn" id="theme-toggle" title="Switch light / dark theme" aria-label="Switch theme">
+      <svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z"/></svg>
+    </button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <button class="btn primary wide" id="new-run"><span class="plus">+</span> New RVE</button>
+    <div class="search"><input id="run-filter" type="search" placeholder="Filter runs"></div>
+    <div class="filters" id="status-filters">
+      <button data-status="all" class="chip active">All</button>
+      <button data-status="running" class="chip">Running</button>
+      <button data-status="done" class="chip">Done</button>
+      <button data-status="failed" class="chip">Failed</button>
+    </div>
+    <ul class="run-list" id="run-list"></ul>
+  </aside>
+
+  <main id="main">
+    <!-- configuration ------------------------------------------------------------------- -->
+    <section id="view-new" class="view">
+      <div class="view-head">
+        <div>
+          <h1>New RVE</h1>
+          <p class="muted">Configure a run of the reworked generator. Every RVE runs as its own job in a worker process.</p>
+        </div>
+        <div class="head-actions">
+          <select id="preset-select" title="Load a preset"><option value="">Load preset…</option></select>
+          <button class="btn ghost" id="preset-save">Save preset</button>
+          <button class="btn ghost" id="preset-delete" title="Delete the selected preset">Delete</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>Box</h2>
+          <div class="row three">
+            <label>x [µm]<input type="number" step="any" min="0" data-bind="box.size.0"></label>
+            <label>y [µm]<input type="number" step="any" min="0" data-bind="box.size.1"></label>
+            <label>z [µm]<input type="number" step="any" min="0" data-bind="box.size.2"></label>
+          </div>
+          <div class="row two">
+            <label>Resolution [voxels/µm]<input type="number" step="any" min="0" data-bind="box.resolution"></label>
+            <div class="field">
+              <span class="label">Periodic</span>
+              <div class="toggles">
+                <label class="toggle"><input type="checkbox" data-bind="box.periodic.0"><span>x</span></label>
+                <label class="toggle"><input type="checkbox" data-bind="box.periodic.1"><span>y</span></label>
+                <label class="toggle"><input type="checkbox" data-bind="box.periodic.2"><span>z</span></label>
+              </div>
+            </div>
+          </div>
+          <div class="stat-line" id="box-stats"></div>
+        </div>
+
+        <div class="card">
+          <h2>Run</h2>
+          <div class="row two">
+            <label>Name<input type="text" id="run-name" placeholder="optional"></label>
+            <label>Seed<input type="number" step="1" data-bind="seed" placeholder="random"></label>
+          </div>
+          <div class="row two">
+            <label>Number of RVEs<input type="number" step="1" min="1" data-bind="n_rves"></label>
+            <div class="field hint">One job per RVE with consecutive seeds.</div>
+          </div>
+        </div>
+
+        <div class="card span2">
+          <div class="card-head">
+            <h2>Phases</h2>
+            <div class="fraction-sum" id="fraction-sum"></div>
+          </div>
+          <div id="phase-rows" class="phase-rows"></div>
+          <button class="btn ghost small" id="add-phase">+ Add phase</button>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Bands</h2>
+            <label class="switch"><input type="checkbox" id="bands-on"><span></span></label>
+          </div>
+          <div id="bands-body" class="collapsible">
+            <div class="row two">
+              <label>Count<input type="number" min="1" step="1" data-bind="bands.count"></label>
+              <label>Phase<select data-bind="bands.phase" id="band-phase"></select></label>
+            </div>
+            <label>Source (.csv / GAN .pkl)<input type="text" list="input-list" data-bind="bands.source"></label>
+            <div class="row three">
+              <label>Thickness min [µm]<input type="number" step="any" data-bind="bands.thickness.0"></label>
+              <label>max [µm]<input type="number" step="any" data-bind="bands.thickness.1"></label>
+              <label>Filling<input type="number" step="any" min="0" max="1" data-bind="bands.filling"></label>
+            </div>
+            <label>Band plane
+              <select data-bind="bands.normal_axis" data-type="int">
+                <option value="2">x–y plane (normal z)</option>
+                <option value="1">x–z plane (normal y)</option>
+                <option value="0">y–z plane (normal x)</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Inclusions</h2>
+            <label class="switch"><input type="checkbox" id="incl-on"><span></span></label>
+          </div>
+          <div id="incl-body" class="collapsible">
+            <label>Source (.csv / GAN .pkl)<input type="text" list="input-list" data-bind="inclusions.source"></label>
+            <label>Volume fraction of the box<input type="number" step="any" min="0" max="1" data-bind="inclusions.fraction"></label>
+            <p class="hint">Placed only inside grown grains; inclusions that fit nowhere are left out.</p>
+          </div>
+        </div>
+
+        <details class="card span2 advanced">
+          <summary><h2>Advanced</h2><span class="muted">RSA and tessellation</span></summary>
+          <div class="row three">
+            <label>Seed volume fraction<input type="number" step="any" data-bind="rsa.shrink_volume_fraction"></label>
+            <label>Max. seed overlap<input type="number" step="any" data-bind="rsa.max_overlap"></label>
+            <label>Max. attempts / grain<input type="number" step="1" data-bind="rsa.max_attempts_per_grain"></label>
+          </div>
+          <div class="row three">
+            <label>Kernel margin<input type="number" step="any" data-bind="tessellation.kernel_margin"></label>
+            <label>Growth exponent β<input type="number" step="any" data-bind="tessellation.growth_exponent"></label>
+            <label class="toggle inline"><input type="checkbox" data-bind="tessellation.connected_growth"><span>Connected growth</span></label>
+          </div>
+        </details>
+
+        <div class="card span2 unsupported">
+          <h2>Not available in the new code yet</h2>
+          <ul id="unsupported"></ul>
+        </div>
+      </div>
+
+      <div class="submit-bar">
+        <div class="validation" id="validation"></div>
+        <button class="btn primary big" id="start-run">Start generation</button>
+      </div>
+      <datalist id="input-list"></datalist>
+    </section>
+
+    <!-- run detail --------------------------------------------------------------------- -->
+    <section id="view-run" class="view hidden">
+      <div class="view-head">
+        <div>
+          <div class="crumb" id="run-kind"></div>
+          <h1 id="run-title"></h1>
+          <p class="muted" id="run-sub"></p>
+        </div>
+        <div class="head-actions" id="run-actions"></div>
+      </div>
+      <nav class="tabs" id="run-tabs">
+        <button data-tab="overview" class="active">Overview</button>
+        <button data-tab="3d">3D</button>
+        <button data-tab="slices">Slices</button>
+        <button data-tab="sizes">Grain sizes</button>
+        <button data-tab="mesh">Mesh</button>
+        <button data-tab="export">Export</button>
+        <button data-tab="log">Log</button>
+        <button data-tab="config">Config</button>
+      </nav>
+
+      <div class="tab" data-tab="overview">
+        <div id="overview"></div>
+      </div>
+      <div class="tab hidden" data-tab="3d">
+        <div class="viewer">
+          <div class="viewer-tools">
+            <select id="gl-source" title="Surface"></select>
+            <select id="gl-step" title="Downsampling of the voxel field (staircase only)">
+              <option value="auto">Auto resolution</option><option value="1">Full resolution</option>
+              <option value="2">Every 2nd voxel</option><option value="4">Every 4th voxel</option>
+            </select>
+            <div class="seg" id="gl-color">
+              <button data-color="grain" class="active">Grains</button><button data-color="phase">Phases</button>
+            </div>
+            <label class="toggle inline"><input type="checkbox" id="gl-box" checked><span>Box faces</span></label>
+            <label class="toggle inline"><input type="checkbox" id="gl-edges"><span>Edges</span></label>
+            <label class="toggle inline"><input type="checkbox" id="gl-ghost" checked><span>Ghost neighbours</span></label>
+            <button class="btn small ghost" id="gl-showall" disabled>Show all</button>
+            <button class="btn small" id="gl-reset">Reset view</button>
+          </div>
+          <div class="gl-wrap" id="gl-wrap">
+            <canvas id="gl-canvas"></canvas>
+            <div class="gl-status mono" id="gl-status"></div>
+            <div class="gl-busy hidden" id="gl-busy"><span class="spinner"></span> Building surface…</div>
+            <div class="gl-pick hidden" id="gl-pick"></div>
+            <div class="tooltip hidden" id="gl-tip"></div>
+            <div class="gl-help">drag: rotate · right/shift-drag: pan · wheel/pinch: zoom · click: pick · double-click: isolate</div>
+          </div>
+          <div class="clip-tools">
+            <span class="label">Clip (keep below)</span>
+            <label class="clip"><span>x</span><input type="range" id="gl-clip-0" min="0" max="1" value="1"><em id="gl-clip-label-0">off</em></label>
+            <label class="clip"><span>y</span><input type="range" id="gl-clip-1" min="0" max="1" value="1"><em id="gl-clip-label-1">off</em></label>
+            <label class="clip"><span>z</span><input type="range" id="gl-clip-2" min="0" max="1" value="1"><em id="gl-clip-label-2">off</em></label>
+          </div>
+        </div>
+      </div>
+      <div class="tab hidden" data-tab="slices">
+        <div class="viewer">
+          <div class="viewer-tools">
+            <div class="seg" id="axis-seg">
+              <button data-axis="0">x</button><button data-axis="1">y</button><button data-axis="2" class="active">z</button>
+            </div>
+            <input type="range" id="slice-slider" min="0" max="0" value="0">
+            <span class="mono" id="slice-label"></span>
+            <div class="seg" id="color-seg">
+              <button data-color="grain" class="active">Grains</button><button data-color="phase">Phases</button>
+            </div>
+            <label class="toggle inline"><input type="checkbox" id="show-bounds" checked><span>Boundaries</span></label>
+          </div>
+          <div class="canvas-wrap" id="canvas-wrap">
+            <canvas id="slice-canvas"></canvas>
+            <div class="tooltip hidden" id="slice-tip"></div>
+          </div>
+          <div class="legend" id="phase-legend"></div>
+        </div>
+      </div>
+      <div class="tab hidden" data-tab="sizes">
+        <div class="card"><h2>Equivalent grain diameter</h2><div id="histogram"></div>
+          <p class="hint">Target: sampled ellipsoids (unshrunk volume). RVE: voxel volume of each grain.</p></div>
+      </div>
+      <div class="tab hidden" data-tab="mesh">
+        <div id="mesh-panel"></div>
+      </div>
+      <div class="tab hidden" data-tab="export">
+        <div id="export-panel"></div>
+      </div>
+      <div class="tab hidden" data-tab="log">
+        <pre class="log" id="log"></pre>
+      </div>
+      <div class="tab hidden" data-tab="config">
+        <pre class="code" id="config-view"></pre>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast-host" id="toasts"></div>
+<script src="viewer3d.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

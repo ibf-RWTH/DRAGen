@@ -27,3 +27,16 @@ example
 /ExampleInput/recon2D_Drill1_1_62um_32pnts_trim400-900_x250z120_roughness.csv
 dragen/generation/sandbox.py
 CLAUDE.md
+
+# local only: benchmark data, test output, process notes, Claude files, papers
+benchmarks/inputs/
+benchmarks/results/
+.pytest_cache/
+docs/rework/
+docs/paper/
+CLAUDE.md
+CLAUDE.local.md
+**/CLAUDE.md
+.claude/
+.venv*/
+*.egg-info/

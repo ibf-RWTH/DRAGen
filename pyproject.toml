@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dragen"
+version = "0.2.0"
+description = "Discrete RVE generation with grain sources from trained GANs, voxel and tetrahedral meshes"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Manuel Henrich" }]
+# Core: voxel RVE, tetrahedral mesh, library API and exports. Everything else is an extra and is
+# only imported inside the functions that need it.
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "pandas>=2.1",
+    "pyyaml>=6",
+    "gmsh>=4.13",
+    "meshio>=5.3",
+]
+
+[project.scripts]
+dragen = "dragen.cli:main"
+
+[project.optional-dependencies]
+# DAMASK grid export (dragen.export.export_damask)
+damask = ["damask>=3.0.2"]
+# grain sources from trained WGANs (.pkl) and their training code in InputGenerator
+ml = ["torch>=2.2", "geomloss", "qhoptim", "matplotlib>=3.8", "seaborn", "tqdm"]
+# tests (netCDF4 reads the Exodus files back independently of the writer)
+test = ["pytest>=8", "netCDF4"]
+
+[tool.setuptools.packages.find]
+include = ["dragen*", "InputGenerator*"]
+
+[tool.setuptools.package-data]
+dragen = ["gui/static/*"]
