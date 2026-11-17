@@ -52,7 +52,7 @@ DRAGen needs Python 3.12 or newer. Clone the repository and install it into a vi
 (conda, venv or uv):
 
 ```
-git clone https://github.com/ibf-RWTH/DRAGen.git
+git clone -b rework https://github.com/ibf-RWTH/DRAGen.git   # DRAGen 2 lives on branch rework; master is still 1.x
 cd DRAGen
 python -m venv .venv                      # or: conda create --name DRAGen python=3.12
 .venv/Scripts/activate                    # Linux/macOS: source .venv/bin/activate
